@@ -1,3 +1,16 @@
+"""
+encoding.py
+
+Subpocket-based structural fingerprint for kinase pocket comparison.
+
+Handles the primary functions for the structural kinase fingerprint.
+"""
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def exposure(mol, kette):
     """Input: MOL2 file of a kinase binding site, PDB code as string
     Calculates half sphere exposure for binding site residues.
@@ -216,20 +229,39 @@ def side_chain_orientation(mol, kette):
     return np.array(sco_vector, dtype=float)
 
 
-def size_feature(res):
+def get_feature_size(residue):
     """
-    Input: A residue's three letter code as string
-    Output: The residue's size value according to SiteAlign feature encoding (int)
+    Get feature value for residue's size according to SiteAlign feature encoding.
+
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+
+    Returns
+    -------
+    int
+        Residue's size value according to SiteAlign feature encoding.
+
+    References
+    ----------
+    [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
     """
-    S_res = ['ALA','CYS','GLY','PRO','SER','THR','VAL']
-    M_res = ['ASN','ASP','GLN','GLU','HIS','ILE','LEU','LYS','MET']
-    L_res = ['ARG','PHE','TRP','TYR']
-    if res in S_res:
+
+    residues_small = 'ALA CYS GLY PRO SER THR VAL'.split()
+    residues_medium = 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split()
+    residues_large = 'ARG PHE TRP TYR'.split()
+
+    if residue in residues_small:
         return 1
-    elif res in M_res:
+    elif residue in residues_medium:
         return 2
-    elif res in L_res:
+    elif residue in residues_large:
         return 3
+    else:
+        logging.warning(f'Residue unknown: {residue}')
+        return None
 
 
 def hbd_feature(res):
