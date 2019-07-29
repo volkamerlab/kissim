@@ -249,90 +249,195 @@ def get_feature_size(residue):
     Proteins, 2008.
     """
 
-    residues_small = 'ALA CYS GLY PRO SER THR VAL'.split()
-    residues_medium = 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split()
-    residues_large = 'ARG PHE TRP TYR'.split()
+    residue_sizes = {
+        1: 'ALA CYS GLY PRO SER THR VAL'.split(),
+        2: 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split(),
+        3: 'ARG PHE TRP TYR'.split()
+    }
 
-    if residue in residues_small:
-        return 1
-    elif residue in residues_medium:
-        return 2
-    elif residue in residues_large:
-        return 3
-    else:
-        logging.warning(f'Residue unknown: {residue}')
-        return None
+    result = None
+
+    for feature, residues in residue_sizes.items():
+
+        if residue in residues:
+            result = feature
+
+    return result
 
 
-def hbd_feature(res):
+def get_feature_hbd(residue):
     """
-    Input: A residue's three letter code as string
-    Output: The residue's H-bond donor value according to SiteAlign feature encoding (int)
+    Get feature value for residue's hydrogen bond donor according to SiteAlign feature encoding.
+
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+
+    Returns
+    -------
+    int
+        Residue's hydrogen bond donor value according to SiteAlign feature encoding.
+
+    References
+    ----------
+    [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
     """
-    HBD_null = ['ALA','ASP','GLY','GLU','ILE','LEU','MET','PHE','PRO','VAL']
-    HBD_one = ['ASN','CYS','GLN','HIS','LYS','SER','THR','TRP','TYR']
-    HBD_three = ['ARG']
-    if res in HBD_null:
-        return 0
-    elif res in HBD_one:
-        return 1
-    elif res in HBD_three:
-        return 3
+
+    residue_sizes = {
+        0: 'ALA ASP GLU GLY ILE LEU MET PHE PRO VAL'.split(),
+        1: 'ASN CYS GLN HIS LYS SER THR TRP TYR'.split(),
+        3: 'ARG'.split()
+    }
+
+    result = None
+
+    for feature, residues in residue_sizes.items():
+
+        if residue in residues:
+            result = feature
+
+    return result
 
 
-def hba_feature(res):
+def get_feature_hba(residue):
     """
-    Input: A residue's three letter code as string
-    Output: The residue's H-bond acceptor value according to SiteAlign feature encoding (int)
+    Get feature value for residue's size according to SiteAlign feature encoding.
+
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+
+    Returns
+    -------
+    int
+        Residue's H-bond acceptor value according to SiteAlign feature encoding.
+
+    References
+    ----------
+    [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
     """
-    HBA_null = ['ALA','ARG','CYS','GLY','ILE','LEU','LYS','MET','PHE','PRO','TRP','VAL']
-    HBA_one = ['ASN','GLN','HIS','SER','THR','TYR']
-    HBA_two = ['ASP','GLU']
-    if res in HBA_null:
-        return 0
-    elif res in HBA_one:
-        return 1
-    elif res in HBA_two:
-        return 2
+
+    residue_sizes = {
+        0: 'ALA ARG CYS GLY ILE LEU LYS MET PHE PRO TRP VAL'.split(),
+        1: 'ASN GLN HIS SER THR TYR'.split(),
+        2: 'ASP GLU'.split()
+    }
+
+    result = None
+
+    for feature, residues in residue_sizes.items():
+
+        if residue in residues:
+            result = feature
+
+    return result
 
 
-def charge_feature(res):
+def get_feature_charge(residue):
     """
-    Input: A residue's three letter code as string
-    Output: The residue's charge value according to SiteAlign feature encoding (int)
+    Get feature value for residue's charge according to SiteAlign feature encoding.
+
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+
+    Returns
+    -------
+    int
+        Residue's charge value according to SiteAlign feature encoding.
+
+    References
+    ----------
+    [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
     """
-    zero = ['ALA','ASN','CYS','GLY','GLN','HIS','ILE','LEU','MET','PHE','PRO','SER','TRP','TYR','VAL']
-    plus = ['ARG','LYS','THR']
-    minus = ['ASP','GLU']
-    if res in zero:
-        return 0
-    elif res in plus:
-        return 1
-    elif res in minus:
-        return -1
+
+    residue_sizes = {
+        0: 'ALA ASN CYS GLN GLY HIS ILE LEU MET PHE PRO SER TRP TYR VAL'.split(),
+        1: 'ARG LYS THR'.split(),
+        -1: 'ASP GLU'.split()
+    }
+
+    result = None
+
+    for feature, residues in residue_sizes.items():
+
+        if residue in residues:
+            result = feature
+
+    return result
 
 
-def aromatic_feature(res):
+def get_feature_aromatic(residue):
     """
-    Input: A residue's three letter code as string
-    Output: The residue's aromatic value according to SiteAlign feature encoding (int)
+    Get feature value for residue's aromatic feature according to SiteAlign feature encoding.
+
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+
+    Returns
+    -------
+    int
+        Residue's aromatic feature value according to SiteAlign feature encoding.
+
+    References
+    ----------
+    [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
     """
-    nix = ['VAL','THR','SER','PRO','MET','LYS','LEU','ILE','GLU','GLN','GLY','CYS', 'ASP','ASN','ARG','ALA']
-    eins = ['TYR','TRP','PHE','HIS']
-    if res in nix:
-        return 0
-    elif res in eins:
-        return 1
+
+    residue_sizes = {
+        0: 'ALA ARG ASN ASP CYS GLN GLU GLY ILE LEU LYS MET PRO SER THR VAL'.split(),
+        1: 'HIS PHE TRP TYR'.split()
+    }
+
+    result = None
+
+    for feature, residues in residue_sizes.items():
+
+        if residue in residues:
+            result = feature
+
+    return result
 
 
-def aliphatic_feature(res):
+def get_feature_aliphatic(residue):
     """
-    Input: A residue's three letter code as string
-    Output: The residue's aliphatic value according to SiteAlign feature encoding (int)
+    Get feature value for residue's aliphatic feature according to SiteAlign feature encoding.
+
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+
+    Returns
+    -------
+    int
+        Residue's aliphatic feature value according to SiteAlign feature encoding.
+
+    References
+    ----------
+    [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
     """
-    null = ['ARG','ASN','ASP','GLY','GLN','GLU','HIS','LYS','PHE','SER','TRP','TYR']
-    one = ['ALA','CYS','ILE','LEU','MET','PRO','THR','VAL']
-    if res in null:
-        return 0
-    elif res in one:
-        return 1
+
+    residue_sizes = {
+        0: 'ARG ASN ASP GLN GLU GLY HIS LYS PHE SER TRP TYR'.split(),
+        1: 'ALA CYS ILE LEU MET PRO THR VAL'.split()
+    }
+
+    result = None
+
+    for feature, residues in residue_sizes.items():
+
+        if residue in residues:
+            result = feature
+
+    return result
