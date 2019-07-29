@@ -6,10 +6,13 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the preprocessing of the KLIFS dataset.
 """
 
+import logging
 from pathlib import Path
 
 from Bio.PDB import PDBList
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def get_klifs_data_from_files(klifs_overview_file, klifs_export_file, remove_subpocket_columns=True):
