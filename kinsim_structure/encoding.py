@@ -7,6 +7,11 @@ Handles the primary functions for the structural kinase fingerprint.
 """
 
 import logging
+import re
+
+from Bio.PDB import Entity, HSExposureCA, HSExposureCB, MMCIFParser, Selection, Vector
+from Bio.PDB import calc_angle
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -127,32 +132,44 @@ def exposure(mol, kette):
     return np.array(hse_vector, dtype=float)
 
 
-# Copyright (C) 2010, Joao Rodrigues (anaryin@gmail.com)
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
-"""
-Module with assorted geometrical functions on
-macromolecules.
-"""
-from Bio.PDB import Entity
 def center_of_mass(entity, geometric=False):
     """
-    Returns gravitic [default] or geometric center of mass of an Entity.
-    Geometric assumes all masses are equal (geometric=True)
+    Calculates gravitic [default] or geometric center of mass of an Entity.
+    Geometric assumes all masses are equal (geometric=True).
+
+    Parameters
+    ----------
+    entity : Bio.PDB.Entity.Entity
+        Basic container object for PDB heirachy. Structure, Model, Chain and Residue are subclasses of Entity.
+
+    geometric : bool
+        Geometric assumes all masses are equal (geometric=True). Defaults to False.
+
+    Returns
+    -------
+    list of floats
+        Gravitic [default] or geometric center of mass of an Entity.
+
+    References
+    ----------
+    Copyright (C) 2010, Joao Rodrigues (anaryin@gmail.com)
+    This code is part of the Biopython distribution and governed by its license.
+    Please see the LICENSE file that should have been included as part of this package.
     """
+
     # Structure, Model, Chain, Residue
     if isinstance(entity, Entity.Entity):
         atom_list = entity.get_atoms()
     # List of Atoms
     elif hasattr(entity, '__iter__') and [x for x in entity if x.level == 'A']:
         atom_list = entity
-    else: # Some other weirdo object
-        raise ValueError("Center of Mass can only be calculated from the following objects:\n"
-                            "Structure, Model, Chain, Residue, list of Atoms.")
+    # Some other weirdo object
+    else:
+        raise ValueError(f'Center of Mass can only be calculated from the following objects:\n'
+                         f'Structure, Model, Chain, Residue, list of Atoms.')
 
     masses = []
-    positions = [ [], [], [] ] # [ [X1, X2, ..] , [Y1, Y2, ...] , [Z1, Z2, ...] ]
+    positions = [[], [], []]  # [ [X1, X2, ..] , [Y1, Y2, ...] , [Z1, Z2, ...] ]
 
     for atom in atom_list:
         masses.append(atom.mass)
@@ -162,13 +179,13 @@ def center_of_mass(entity, geometric=False):
 
     # If there is a single atom with undefined mass complain loudly.
     if 'ukn' in set(masses) and not geometric:
-        raise ValueError("Some Atoms don't have an element assigned.\n"
-                         "Try adding them manually or calculate the geometrical center of mass instead.")
+        raise ValueError(f'Some atoms don\'t have an element assigned.\n'
+                         f'Try adding them manually or calculate the geometrical center of mass instead.')
 
     if geometric:
         return [sum(coord_list)/len(masses) for coord_list in positions]
     else:
-        w_pos = [ [], [], [] ]
+        w_pos = [[], [], []]
         for atom_index, atom_mass in enumerate(masses):
             w_pos[0].append(positions[0][atom_index]*atom_mass)
             w_pos[1].append(positions[1][atom_index]*atom_mass)
