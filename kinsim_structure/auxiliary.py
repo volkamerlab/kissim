@@ -121,10 +121,15 @@ def get_klifs_residues_from_pdb(molecule):
 
     # Load PDB file and get residues
     pdb_path = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
-    if Path(pdb_path).exists():
-        parser = MMCIFParser()
-        structure = parser.get_structure(structure_id=code['pdb_id'],
-                                         filename=pdb_path)
+    print(code['pdb_id'])
+    print(code['chain_id'])
+    
+    if not Path(pdb_path).exists():
+        raise IOError(f'PDB file does not exist: {pdb_path}')
+
+    parser = MMCIFParser()
+    structure = parser.get_structure(structure_id=code['pdb_id'],
+                                     filename=pdb_path)
     model = structure[0]
     chain = model[code['chain_id']]
     residues = Selection.unfold_entities(entity_list=chain, target_level='R')
