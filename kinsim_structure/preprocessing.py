@@ -232,5 +232,7 @@ def download_from_pdb(klifs_data, output_path):
     pdbfile = PDBList()
     
     for index, row in klifs_data.iterrows():
-        pdbfile.retrieve_pdb_file(row.pdb_id, pdir=output_path)
+        if not (Path(output_path) / f'{row.pdb_id}.cif').exists():
+            print(Path(output_path) / f'{row.pdb_id}.cif')
+            pdbfile.retrieve_pdb_file(row.pdb_id, pdir=output_path)
 
