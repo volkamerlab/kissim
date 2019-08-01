@@ -9,9 +9,11 @@ Handles the primary functions for the structural kinase fingerprint.
 import logging
 import re
 
-from Bio.PDB import Entity, HSExposureCA, HSExposureCB, MMCIFParser, Selection, Vector
+from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
 import numpy as np
+
+from kinsim_structure.auxiliary import get_klifs_residues_from_pdb, center_of_mass
 
 logger = logging.getLogger(__name__)
 
@@ -132,118 +134,48 @@ def exposure(mol, kette):
     return np.array(hse_vector, dtype=float)
 
 
-def center_of_mass(entity, geometric=False):
-    """
-    Calculates gravitic [default] or geometric center of mass of an Entity.
-    Geometric assumes all masses are equal (geometric=True).
-
-    Parameters
-    ----------
-    entity : Bio.PDB.Entity.Entity
-        Basic container object for PDB heirachy. Structure, Model, Chain and Residue are subclasses of Entity.
-
-    geometric : bool
-        Geometric assumes all masses are equal (geometric=True). Defaults to False.
-
-    Returns
-    -------
-    list of floats
-        Gravitic [default] or geometric center of mass of an Entity.
-
-    References
-    ----------
-    Copyright (C) 2010, Joao Rodrigues (anaryin@gmail.com)
-    This code is part of the Biopython distribution and governed by its license.
-    Please see the LICENSE file that should have been included as part of this package.
-    """
-
-    # Structure, Model, Chain, Residue
-    if isinstance(entity, Entity.Entity):
-        atom_list = entity.get_atoms()
-    # List of Atoms
-    elif hasattr(entity, '__iter__') and [x for x in entity if x.level == 'A']:
-        atom_list = entity
-    # Some other weirdo object
-    else:
-        raise ValueError(f'Center of Mass can only be calculated from the following objects:\n'
-                         f'Structure, Model, Chain, Residue, list of Atoms.')
-
-    masses = []
-    positions = [[], [], []]  # [ [X1, X2, ..] , [Y1, Y2, ...] , [Z1, Z2, ...] ]
-
-    for atom in atom_list:
-        masses.append(atom.mass)
-
-        for i, coord in enumerate(atom.coord.tolist()):
-            positions[i].append(coord)
-
-    # If there is a single atom with undefined mass complain loudly.
-    if 'ukn' in set(masses) and not geometric:
-        raise ValueError(f'Some atoms don\'t have an element assigned.\n'
-                         f'Try adding them manually or calculate the geometrical center of mass instead.')
-
-    if geometric:
-        return [sum(coord_list)/len(masses) for coord_list in positions]
-    else:
-        w_pos = [[], [], []]
-        for atom_index, atom_mass in enumerate(masses):
-            w_pos[0].append(positions[0][atom_index]*atom_mass)
-            w_pos[1].append(positions[1][atom_index]*atom_mass)
-            w_pos[2].append(positions[2][atom_index]*atom_mass)
-
-        return [sum(coord_list)/sum(masses) for coord_list in w_pos]
-
-
-def side_chain_orientation(mol, kette):
+def get_side_chain_orientation(molecule):
     """
     Input: MOL2 file, PDB code as string, chain as char/string
     Calculates side chain orientation for every binding site residue
     Output: side chain orientation values for the binding site (numpy array, dtype = float)
     """
-    # write residue IDs of binding site from MOL2 file into list (in the correct order, non redundant)
-    res_ids = []
-    for name in mol.df.subst_name:
-        if name in res_ids:
-            continue
-        else:
-            res_ids.append(name)
-    res_nos = []
-    tag_or_lig = []
-    for x in res_ids:
-        # check if ID id amino acid and not ligand
-        if re.match(r'^[A-Z]{3}', x) and not '_' in x:
-            res_nos.append(int(x[3:]))
-        else:
-            tag_or_lig.append(res_ids.index(x))
-    # get protein residue IDs from PDB file and select the binding site residues based on the IDs from MOL2 file
-    res_list = Selection.unfold_entities(kette, 'R')
-    keys = [res for res in res_list if res.get_full_id()[3][1] in res_nos]
 
-    # for every binding site residue check availability of CA and CB atom in its atom list
-    sco_vector = []
-    for res in keys:
-        atomlist = [a.fullname for a in res.get_atoms()]
-        if 'CA' in atomlist:
-        # CA and CB available => calculate angle between the binding site's CoM, the residue's CA and CB
-            if 'CB' in atomlist:
-                vector1 = res['CA'].get_vector()
-                vector2 = res['CB'].get_vector()
-                vector3 = Vector(center_of_mass(res,geometric=True))
-                angle =  np.degrees(calc_angle(vector1, vector2, vector3))
-            else:
-                angle = 0.0
+    # Get KLIFS residues
+    klifs_residues = get_klifs_residues_from_pdb(molecule)
+
+    side_chain_orientation = []
+
+    for residue in klifs_residues:
+
+        atom_names = [atoms.fullname for atoms in residue.get_atoms()]
+
+        # Set CA atom
+        if 'CA' in atom_names:
+            vector_ca = residue['CA'].get_vector()
         else:
-        # if only CB available => replace CA by midpoint between CB and binding site's CoM
-            if 'CB' in atomlist:
-                logging.warning('no CA in atomlist for '+str(res.resname)+str(res.id)+', side chain orientation = 0')
-                angle = 0.0
-            else:
-                logging.warning('neither CA nor CB in atomlist for '+str(res.resname)+str(res.id)+', side chain orientation = 0')
-                angle = 0.0
-        sco_vector.append(round(angle,2))
-    for elem in tag_or_lig:
-        sco_vector.insert(elem, 0.0)
-    return np.array(sco_vector, dtype=float)
+            vector_ca = None
+
+        # Set CB atom
+        if 'CB' in atom_names:
+            vector_cb = residue['CB'].get_vector()
+        else:
+            vector_cb = None
+
+        # Set centroid
+        vector_com = Vector(center_of_mass(residue, geometric=True))
+
+        if 'CA' in atom_names and 'CB' in atom_names:
+            angle = np.degrees(calc_angle(vector_ca, vector_cb, vector_com))
+        else:
+            angle = None
+
+        if angle:
+            side_chain_orientation.append(round(angle, 2))
+        else:
+            side_chain_orientation.append(angle)
+
+    return np.array(side_chain_orientation, dtype=float)
 
 
 def get_feature_size(residue):
