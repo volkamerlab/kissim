@@ -59,32 +59,32 @@ def get_klifs_data_from_files(klifs_overview_file, klifs_export_file, remove_sub
     # - Allosteric ligand PDB ID
     
     klifs_overview.rename(
-    columns={
-        'pdb': 'pdb_id',
-        'alt': 'alternate_model',
-        'orthosteric_PDB': 'ligand_orthosteric_pdb_id',
-        'allosteric_PDB': 'ligand_allosteric_pdb_id',
-    },
-    inplace=True
-    )
-    
+        columns={
+            'pdb': 'pdb_id',
+            'alt': 'alternate_model',
+            'orthosteric_PDB': 'ligand_orthosteric_pdb_id',
+            'allosteric_PDB': 'ligand_allosteric_pdb_id',
+        },
+        inplace=True
+        )
+
     klifs_export.rename(
-    columns={
-        'NAME': 'kinase', 
-        'FAMILY': 'family', 
-        'GROUPS': 'groups', 
-        'PDB': 'pdb_id', 
-        'CHAIN': 'chain', 
-        'ALTERNATE_MODEL': 'alternate_model', 
-        'SPECIES': 'species', 
-        'LIGAND': 'ligand_orthosteric_name', 
-        'PDB_IDENTIFIER': 'ligand_orthosteric_pdb_id', 
-        'ALLOSTERIC_NAME': 'ligand_allosteric_name', 
-        'ALLOSTERIC_PDB': 'ligand_allosteric_pdb_id', 
-        'DFG': 'dfg', 
-        'AC_HELIX': 'ac_helix', 
-    },
-    inplace=True
+        columns={
+            'NAME': 'kinase',
+            'FAMILY': 'family',
+            'GROUPS': 'groups',
+            'PDB': 'pdb_id',
+            'CHAIN': 'chain',
+            'ALTERNATE_MODEL': 'alternate_model',
+            'SPECIES': 'species',
+            'LIGAND': 'ligand_orthosteric_name',
+            'PDB_IDENTIFIER': 'ligand_orthosteric_pdb_id',
+            'ALLOSTERIC_NAME': 'ligand_allosteric_name',
+            'ALLOSTERIC_PDB': 'ligand_allosteric_pdb_id',
+            'DFG': 'dfg',
+            'AC_HELIX': 'ac_helix',
+        },
+        inplace=True
     )
     
     # Check if PDB IDs occur in one file but not the other
@@ -112,15 +112,15 @@ def get_klifs_data_from_files(klifs_overview_file, klifs_export_file, remove_sub
     # Merge on mutual columns
     
     klifs_data = klifs_export.merge(
-    right=klifs_overview, 
-    how='outer', 
-    on=['species', 
-        'kinase', 
-        'pdb_id', 
-        'chain', 
-        'alternate_model', 
-        'ligand_orthosteric_pdb_id', 
-        'ligand_allosteric_pdb_id']
+        right=klifs_overview,
+        how='outer',
+        on=['species',
+            'kinase',
+            'pdb_id',
+            'chain',
+            'alternate_model',
+            'ligand_orthosteric_pdb_id',
+            'ligand_allosteric_pdb_id']
     )
     
     if not klifs_overview.shape[0] == klifs_export.shape[0] == klifs_data.shape[0]:
@@ -154,8 +154,11 @@ def filter_klifs_data(klifs_data, species='Human', drop_duplicate_pdb_ids_per_ki
         DataFrame containing merged metadate from both input KLIFS tables.
     species : str
         String for species name.
+    drop_duplicate_pdb_ids_per_kinase : bool
+        Set to True (default) to keep only first PDB ID for each kinase.
         
     Returns
+    -------
     pandas.DataFrame
         DataFrame containing merged metadate from both input KLIFS tables filtered by certain criteria.
     """
@@ -202,7 +205,6 @@ def calculate_gap_rate(klifs_data):
     """
 
     gaps = [0] * 85
-    coverage = [klifs_data.shape[0]] * 85
     
     for pocket in klifs_data.pocket:
         for klifs_position, residue in enumerate(pocket):
@@ -211,7 +213,7 @@ def calculate_gap_rate(klifs_data):
 
     gap_rate = [round(i/float(klifs_data.shape[0]), 4) for i in gaps]
     
-    return pd.concat([pd.Series(range(1,86), name='klifs_position'), 
+    return pd.concat([pd.Series(range(1, 86), name='klifs_position'),
                       pd.Series(gaps, name='gaps'),  
                       pd.Series(gap_rate, name='gap_rate')], 
                      axis=1)
@@ -235,4 +237,3 @@ def download_from_pdb(klifs_data, output_path):
         if not (Path(output_path) / f'{row.pdb_id}.cif').exists():
             print(Path(output_path) / f'{row.pdb_id}.cif')
             pdbfile.retrieve_pdb_file(row.pdb_id, pdir=output_path)
-
