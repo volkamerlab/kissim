@@ -458,19 +458,16 @@ def save_cgo_side_chain_orientation(klifs_path, output_path):
 
     """
     # Get molecule and molecule code
-    molecule = read_mol2(klifs_path)
-    code = format_klifs_code(molecule.code)
+    molecule_loader = MoleculeLoader(klifs_path)
+    molecule = molecule_loader.molecules[0]
+    code = split_klifs_code(molecule.code)
 
     # Get KLIFS residues
-    klifs_residues = get_klifs_residues_from_pdb(molecule)
+    klifs_residues = get_klifs_residues_mol2topdb(molecule)
     klifs_residues_ids = [str(residue.get_full_id()[3][1]) for residue in klifs_residues]
 
     # List contains lines for python script
-    lines = [
-        f'from pymol import *',
-        f'import os',
-        f'from pymol.cgo import *\n'
-    ]
+    lines = [f'from pymol import *', f'import os', f'from pymol.cgo import *\n']
 
     # Fetch PDB, remove solvent, remove unnecessary chain(s) and residues
     lines.append(f'cmd.fetch("{code["pdb_id"]}")')
