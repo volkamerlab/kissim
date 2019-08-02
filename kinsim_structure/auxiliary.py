@@ -344,30 +344,30 @@ def get_mol2paths_from_metadata(klifs_metadata, missing_paths=False):
         return mol2_paths_missing
 
 
+def get_klifs_residues_mol2topdb(molecule):
+    """
+    Retrieve the KLIFS residues from a PDB file using the KLIFS mol2 file as a template.
+
+    Parameters
+    ----------
+    molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+
     Returns
     -------
-
+    list of Bio.PDB.Residue.Residue
+        Residues in biopython format.
     """
 
     # Get molecule code
-    code = format_klifs_code(molecule.code)
+    code = split_klifs_code(molecule.code)
 
     # Get residue IDs of binding site from mol2 file
-    subst_names = [subst_name for subst_name in molecule.df.subst_name]
-
-    residue_ids = []
-
-    for subst_name in subst_names:
-        if re.match(r'^[A-Z]{3}', subst_name) and not '_' in subst_name:  # Check if ID is amino acid and not ligand
-            residue_ids.append(int(subst_name[3:]))
-        else:
-            raise ValueError(f'{molecule.code}: {subst_name}')
+    residue_ids = molecule.df.res_id
 
     # Load PDB file and get residues
     pdb_path = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
-    print(code['pdb_id'])
-    print(code['chain_id'])
-    
+
     if not Path(pdb_path).exists():
         raise IOError(f'PDB file does not exist: {pdb_path}')
 
