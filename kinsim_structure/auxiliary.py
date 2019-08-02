@@ -8,7 +8,6 @@ Handles the helper functions.
 
 import logging
 from pathlib import Path
-import re
 
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
