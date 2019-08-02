@@ -13,7 +13,7 @@ from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
 import numpy as np
 
-from kinsim_structure.auxiliary import get_klifs_residues_from_pdb, center_of_mass
+from kinsim_structure.auxiliary import get_klifs_residues_mol2topdb, center_of_mass
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +141,8 @@ def get_side_chain_orientation(molecule):
     Output: side chain orientation values for the binding site (numpy array, dtype = float)
     """
 
-    # Get KLIFS residues
-    klifs_residues = get_klifs_residues_from_pdb(molecule)
+    # Get KLIFS residues in PDB file based on KLIFS mol2 file
+    klifs_residues = get_klifs_residues_mol2topdb(molecule)
 
     side_chain_orientation = []
 
