@@ -5,7 +5,7 @@ kinsim_structure package.
 
 import pytest
 
-from kinsim_structure.auxiliary import format_klifs_code
+from kinsim_structure.auxiliary import split_klifs_code
 
 
 @pytest.mark.parametrize('klifs_code, split_klifs_code', [
@@ -19,6 +19,6 @@ from kinsim_structure.auxiliary import format_klifs_code
     )
 
 ])
-def test_format_klifs_code(klifs_code, split_klifs_code):
+def test_split_klifs_code(klifs_code, split_klifs_code):
 
-    assert format_klifs_code(klifs_code) == split_klifs_code
+    assert split_klifs_code(klifs_code) == split_klifs_code
