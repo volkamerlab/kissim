@@ -293,12 +293,55 @@ def split_klifs_code(klifs_code):
     return {'species': species, 'kinase': kinase, 'pdb_id': pdb_id, 'alternate_model': alternate_model, 'chain': chain}
 
 
-def get_klifs_residues_from_pdb(molecule):
+def get_mol2paths_from_metadata(klifs_metadata, missing_paths=False):
     """
+    Get a list of all mol2 file paths linked to the entries in the KLIFS metadata.
 
     Parameters
     ----------
-    molecule
+    klifs_metadata : pandas.DataFrame
+        KLIFS metadata describing every pocket entry in the KLIFS dataset.
+    missing_paths : bool
+        By default, function will return existing mol2 paths (missing_paths=False).
+        If set to True, function will return missing mol2 paths (missing_path=True).
+
+    Returns
+    -------
+    list of pathlib.Path
+        List of mol2 file paths.
+    """
+
+    # Path to KLIFS download
+    path_to_data = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full' / 'raw' / 'KLIFS_download'
+
+    mol2_paths = []
+    mol2_paths_missing = []
+
+    for index, row in klifs_metadata.iterrows():
+
+        # Depending on whether alternate model and chain ID is given build file path:
+        mol2_path = path_to_data / row.species.upper() / row.kinase
+
+        if row.alternate_model != '-' and row.chain != '-':
+            mol2_path = mol2_path / f'{row.pdb_id}_alt{row.alternate_model}_chain{row.chain}' / 'pocket.mol2'
+        elif row.alternate_model == '-' and row.chain != '-':
+            mol2_path = mol2_path / f'{row.pdb_id}_chain{row.chain}' / 'pocket.mol2'
+        elif row.alternate_model == '-' and row.chain == '-':
+            mol2_path = mol2_path / f'{row.pdb_id}' / 'pocket.mol2'
+        else:
+            raise ValueError(f'{row.alternate_model}, {row.chain}')
+
+        mol2_paths.append(mol2_path)
+
+        # Not all paths exist - save list with missing paths
+        if not mol2_path.exists():
+            mol2_paths_missing.append(mol2_path)
+
+    # Set missing_path function parameter to decide whether to return the existing (default) or missing mol2 paths.
+    if not missing_paths:
+        return mol2_paths
+    else:
+        return mol2_paths_missing
 
 
     Returns
