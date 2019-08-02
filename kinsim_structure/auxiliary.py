@@ -374,7 +374,7 @@ def get_klifs_residues_mol2topdb(molecule):
     structure = parser.get_structure(structure_id=code['pdb_id'],
                                      filename=pdb_path)
     model = structure[0]
-    chain = model[code['chain_id']]
+    chain = model[code['chain']]
     residues = Selection.unfold_entities(entity_list=chain, target_level='R')
 
     # Select KLIFS residues
