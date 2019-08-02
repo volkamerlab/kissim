@@ -12,6 +12,7 @@ import re
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
 import numpy as np
+import pandas as pd
 
 from kinsim_structure.auxiliary import get_klifs_residues_mol2topdb, center_of_mass
 
@@ -134,17 +135,18 @@ def exposure(mol, kette):
     return np.array(hse_vector, dtype=float)
 
 
-def get_side_chain_orientation(molecule):
+def get_ca_cb_com_vectors(molecule):
     """
-    Input: MOL2 file, PDB code as string, chain as char/string
-    Calculates side chain orientation for every binding site residue
-    Output: side chain orientation values for the binding site (numpy array, dtype = float)
+
     """
 
     # Get KLIFS residues in PDB file based on KLIFS mol2 file
     klifs_residues = get_klifs_residues_mol2topdb(molecule)
 
-    side_chain_orientation = []
+    # Save here values per residue
+    ca = []
+    cb = []
+    com = []
 
     for residue in klifs_residues:
 
@@ -165,17 +167,37 @@ def get_side_chain_orientation(molecule):
         # Set centroid
         vector_com = Vector(center_of_mass(residue, geometric=True))
 
-        if 'CA' in atom_names and 'CB' in atom_names:
-            angle = np.degrees(calc_angle(vector_ca, vector_cb, vector_com))
-        else:
-            angle = None
+        # Only needed for verbose function call
+        ca.append(vector_ca)
+        cb.append(vector_cb)
+        com.append(vector_com)
 
-        if angle:
+    return pd.DataFrame([ca, cb, com], index=['ca', 'cb', 'com']).transpose()
+
+
+def get_side_chain_orientation(molecule):
+    """
+    Input: MOL2 file, PDB code as string, chain as char/string
+    Calculates side chain orientation for every binding site residue
+    Output: side chain orientation values for the binding site (numpy array, dtype = float)
+    """
+
+    # Calculate CA, CB and centroid point per residue
+    angle_points = get_ca_cb_com_vectors(molecule)
+
+    # Save here angle values per residue
+    side_chain_orientation = []
+
+    for index, row in angle_points.iterrows():
+
+        if row.ca and row.cb:
+            angle = np.degrees(calc_angle(row.ca, row.cb, row.com))
             side_chain_orientation.append(round(angle, 2))
         else:
+            angle = None
             side_chain_orientation.append(angle)
 
-    return np.array(side_chain_orientation, dtype=float)
+    return side_chain_orientation
 
 
 def get_feature_size(residue):
