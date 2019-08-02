@@ -248,7 +248,7 @@ class MoleculeLoader:
         return molecules
 
 
-def format_klifs_code(klifs_code):
+def split_klifs_code(klifs_code):
     """
     Split KLIFS molecule code into its components, i.e. species name, kinase group name, PDB ID, alternate model ID,
     and chain ID.
@@ -262,7 +262,7 @@ def format_klifs_code(klifs_code):
     Returns
     -------
     list of str
-        KLIFS molecule code components: species name, kinase group name, PDB ID, alternate model ID, and chain ID.
+        KLIFS molecule code components: species name, kinase name, PDB ID, alternate model ID, and chain ID.
     """
 
     code = klifs_code.replace('/', '_').split('_')
@@ -270,27 +270,27 @@ def format_klifs_code(klifs_code):
     # Get species name
     species = code[0]
 
-    # Get kinase group name
-    group = code[1]
+    # Get kinase name
+    kinase = code[1]
 
     # Get PDB ID
     pdb_id = code[2]
 
     # Get alternate model ID
-    alternate_id = [i for i in code if 'alt' in i]
-    if alternate_id:
-        alternate_id = alternate_id[0][-1]  # Get 'X' from 'altX'
+    alternate_model = [i for i in code if 'alt' in i]
+    if alternate_model:
+        alternate_model = alternate_model[0][-1]  # Get 'X' from 'altX'
     else:
-        alternate_id = None
+        alternate_model = None
 
     # Get chain ID
-    chain_id = [i for i in code if 'chain' in i]
-    if chain_id:
-        chain_id = chain_id[0][-1]
+    chain = [i for i in code if 'chain' in i]
+    if chain:
+        chain = chain[0][-1]
     else:
-        chain_id = None
+        chain = None
 
-    return {'species': species, 'group': group, 'pdb_id': pdb_id, 'alternate_id': alternate_id, 'chain_id': chain_id}
+    return {'species': species, 'kinase': kinase, 'pdb_id': pdb_id, 'alternate_model': alternate_model, 'chain': chain}
 
 
 def get_klifs_residues_from_pdb(molecule):
