@@ -358,6 +358,9 @@ def get_klifs_residues_mol2topdb(molecule):
         Residues in biopython format.
     """
 
+    # Save PDB ID where PDB parsing failed
+    pdb_parsing_failed = []
+
     # Get molecule code
     code = split_klifs_code(molecule.code)
 
@@ -371,8 +374,14 @@ def get_klifs_residues_mol2topdb(molecule):
         raise IOError(f'PDB file does not exist: {pdb_path}')
 
     parser = MMCIFParser()
-    structure = parser.get_structure(structure_id=code['pdb_id'],
-                                     filename=pdb_path)
+    try:
+        structure = parser.get_structure(
+            structure_id=code['pdb_id'],
+            filename=pdb_path
+        )
+    except ValueError:
+        pdb_parsing_failed.append(code['pdb_id'])
+
     model = structure[0]
     chain = model[code['chain']]
     residues = Selection.unfold_entities(entity_list=chain, target_level='R')
