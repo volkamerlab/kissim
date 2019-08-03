@@ -18,6 +18,13 @@ import seaborn as sns
 
 logger = logging.getLogger(__name__)
 
+AMINO_ACIDS = pd.DataFrame(
+    [
+        'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET MSE PHE PRO SER THR TRP TYR VAL _'.split(),
+        'A R N D C Q E G H I L K M X F P S T W Y V _'.split()
+    ],
+    index='aa_three aa_one'.split()).transpose()
+
 
 class MoleculeLoader:
     """
@@ -245,6 +252,40 @@ class MoleculeLoader:
         molecules = [molecule]
 
         return molecules
+
+
+def get_amino_acids_1to3(one_letter_amino_acid):
+    """
+    Get three letter code for a one letter code amino acid.
+
+    Parameters
+    ----------
+    one_letter_amino_acid : str
+        One letter code for an amino acid.
+
+    Returns
+    -------
+    str
+        Three letter code for an amino acid.
+    """
+    return AMINO_ACIDS[AMINO_ACIDS.aa_one == one_letter_amino_acid].aa_three.iloc[0]
+
+
+def get_amino_acids_3to1(three_letter_amino_acid):
+    """
+    Get one letter code for a three letter code amino acid.
+
+    Parameters
+    ----------
+    three_letter_amino_acid : str
+        Three letter code for an amino acid.
+
+    Returns
+    -------
+    str
+        One letter code for an amino acid.
+    """
+    return AMINO_ACIDS[AMINO_ACIDS.aa_three == three_letter_amino_acid].aa_one.iloc[0]
 
 
 def split_klifs_code(klifs_code):
