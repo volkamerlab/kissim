@@ -399,14 +399,11 @@ def get_klifs_residues_mol2topdb(molecule):
         Residues in biopython format.
     """
 
-    # Save PDB ID where PDB parsing failed
-    pdb_parsing_failed = []
-
     # Get molecule code
     code = split_klifs_code(molecule.code)
 
     # Get residue IDs of binding site from mol2 file
-    residue_ids = molecule.df.res_id
+    residue_ids = [int(i) for i in molecule.df.res_id.unique()]
 
     # Load PDB file and get residues
     pdb_path = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
@@ -415,14 +412,10 @@ def get_klifs_residues_mol2topdb(molecule):
         raise IOError(f'PDB file does not exist: {pdb_path}')
 
     parser = MMCIFParser()
-    try:
-        structure = parser.get_structure(
-            structure_id=code['pdb_id'],
-            filename=pdb_path
-        )
-    except ValueError:
-        pdb_parsing_failed.append(code['pdb_id'])
-
+    structure = parser.get_structure(
+        structure_id=code['pdb_id'],
+        filename=pdb_path
+    )
     model = structure[0]
     chain = model[code['chain']]
     residues = Selection.unfold_entities(entity_list=chain, target_level='R')
