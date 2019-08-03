@@ -137,7 +137,17 @@ def exposure(mol, kette):
 
 def get_ca_cb_com_vectors(molecule):
     """
+    Get CA, CB and centroid points for each residue of a molecule.
 
+    Parameters
+    ----------
+    molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+
+    Returns
+    -------
+    pandas.DataFrame
+        CA, CB and centroid points for each residue of a molecule.
     """
 
     # Get KLIFS residues in PDB file based on KLIFS mol2 file
