@@ -185,20 +185,31 @@ def get_ca_cb_com_vectors(molecule):
     return pd.DataFrame([ca, cb, com], index=['ca', 'cb', 'com']).transpose()
 
 
-def get_side_chain_orientation(molecule):
+def get_side_chain_orientation(molecule, ca_cb_com_vectors=None):
     """
-    Input: MOL2 file, PDB code as string, chain as char/string
-    Calculates side chain orientation for every binding site residue
-    Output: side chain orientation values for the binding site (numpy array, dtype = float)
+    Calculate side chain orientation for each residue of a molecule.
+
+    Parameters
+    ----------
+    molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+    ca_cb_com_vectors : pandas.DataFrame
+        CA, CB and centroid points for each residue of a molecule.
+
+    Returns
+    -------
+    list of float
+        Side chain orientation (angle) for each residue of a molecule.
     """
 
-    # Calculate CA, CB and centroid point per residue
-    angle_points = get_ca_cb_com_vectors(molecule)
+    # If only molecule (and CA, CB and centroid points) given, calculate these points
+    if not ca_cb_com_vectors:
+        ca_cb_com_vectors = get_ca_cb_com_vectors(molecule)
 
     # Save here angle values per residue
     side_chain_orientation = []
 
-    for index, row in angle_points.iterrows():
+    for index, row in ca_cb_com_vectors.iterrows():
 
         if row.ca and row.cb:
             angle = np.degrees(calc_angle(row.ca, row.cb, row.com))
