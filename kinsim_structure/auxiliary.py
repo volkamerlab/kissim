@@ -333,55 +333,75 @@ def split_klifs_code(klifs_code):
     return {'species': species, 'kinase': kinase, 'pdb_id': pdb_id, 'alternate_model': alternate_model, 'chain': chain}
 
 
-def get_mol2paths_from_metadata(klifs_metadata, missing_paths=False):
+def get_mol2path_from_metadata_entry(klifs_metadata_entry):
     """
-    Get a list of all mol2 file paths linked to the entries in the KLIFS metadata.
+    Get the mol2 file path linked to an entry in the KLIFS metadata.
 
     Parameters
     ----------
-    klifs_metadata : pandas.DataFrame
-        KLIFS metadata describing every pocket entry in the KLIFS dataset.
-    missing_paths : bool
-        By default, function will return existing mol2 paths (missing_paths=False).
-        If set to True, function will return missing mol2 paths (missing_path=True).
+    klifs_metadata_entry : pandas.Series
+        KLIFS metadata describing a pocket entry in the KLIFS dataset.
 
     Returns
     -------
-    list of pathlib.Path
-        List of mol2 file paths.
+    pathlib.Path
+        Mol2 file path.
     """
 
     # Path to KLIFS download
     path_to_data = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full' / 'raw' / 'KLIFS_download'
 
-    mol2_paths = []
-    mol2_paths_missing = []
+    # Depending on whether alternate model and chain ID is given build file path:
+    mol2_path = path_to_data / klifs_metadata_entry.species.upper() / klifs_metadata_entry.kinase
 
-    for index, row in klifs_metadata.iterrows():
-
-        # Depending on whether alternate model and chain ID is given build file path:
-        mol2_path = path_to_data / row.species.upper() / row.kinase
-
-        if row.alternate_model != '-' and row.chain != '-':
-            mol2_path = mol2_path / f'{row.pdb_id}_alt{row.alternate_model}_chain{row.chain}' / 'pocket.mol2'
-        elif row.alternate_model == '-' and row.chain != '-':
-            mol2_path = mol2_path / f'{row.pdb_id}_chain{row.chain}' / 'pocket.mol2'
-        elif row.alternate_model == '-' and row.chain == '-':
-            mol2_path = mol2_path / f'{row.pdb_id}' / 'pocket.mol2'
-        else:
-            raise ValueError(f'{row.alternate_model}, {row.chain}')
-
-        mol2_paths.append(mol2_path)
-
-        # Not all paths exist - save list with missing paths
-        if not mol2_path.exists():
-            mol2_paths_missing.append(mol2_path)
-
-    # Set missing_path function parameter to decide whether to return the existing (default) or missing mol2 paths.
-    if not missing_paths:
-        return mol2_paths
+    if klifs_metadata_entry.alternate_model != '-' and klifs_metadata_entry.chain != '-':
+        mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_alt{klifs_metadata_entry.alternate_model}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
+    elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain != '-':
+        mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
+    elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain == '-':
+        mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}' / 'pocket.mol2'
     else:
-        return mol2_paths_missing
+        raise ValueError(f'{klifs_metadata_entry.alternate_model}, {klifs_metadata_entry.chain}')
+
+    # If file does not exist, raise error
+    if not mol2_path.exists():
+        raise FileNotFoundError(f'File not found: {mol2_path}')
+
+    return mol2_path
+
+
+def get_molecule_from_metadata_entry(klifs_metadata_entry):
+    """
+
+    Parameters
+    ----------
+    klifs_metadata_entry
+
+    Returns
+    -------
+
+    """
+
+    mol2_path = get_mol2path_from_metadata_entry(klifs_metadata_entry)
+    molecule_loader = MoleculeLoader(mol2_path)
+    molecule = molecule_loader.molecules[0]
+
+    # Add column to molecule (mol2 file)
+
+    # List of KLIFS positions excluding gap positions
+    klifs_ids = [index for index, residue in enumerate(klifs_metadata_entry.pocket) if residue != '_']
+
+    # Number of atoms per residue in molecule (mol2file)
+    number_of_atoms_per_residue = molecule.df.groupby(by='res_id').size()
+
+    klifs_ids_per_atom = []
+
+    for klifs_id, n in zip(klifs_ids, number_of_atoms_per_residue):
+        klifs_ids_per_atom = klifs_ids_per_atom + [klifs_id] * n
+
+    molecule.df['klifs_id'] = klifs_ids_per_atom
+
+    return molecule
 
 
 def get_klifs_residues_mol2topdb(molecule):
