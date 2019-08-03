@@ -9,7 +9,7 @@ Handles the primary functions for the preprocessing of the KLIFS dataset.
 import logging
 from pathlib import Path
 
-from Bio.PDB import PDBList
+from Bio.PDB import PDBList, MMCIFParser
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -298,7 +298,6 @@ def drop_missing_pdbs(klifs_metadata, path_to_data):
     ----------
     klifs_metadata : pandas.DataFrame
         DataFrame containing merged metadate from both input KLIFS tables.
-
     path_to_data : str or pathlib.Path
         Path to directory of KLIFS dataset files.
 
@@ -324,6 +323,80 @@ def drop_missing_pdbs(klifs_metadata, path_to_data):
             indices.append(index)
 
     klifs_metadata_filtered.drop(indices, inplace=True)
+
+    return klifs_metadata_filtered
+
+
+def download_from_pdb(klifs_metadata, path_to_data):
+    """
+    Download structure files from the PDB for KLIFS dataset.
+
+    Parameters
+    ----------
+    klifs_metadata : pandas.DataFrame
+        DataFrame containing merged metadate from both input KLIFS tables.
+    path_to_data : str or pathlib.Path
+        Path to directory of KLIFS dataset files.
+    """
+
+    path_to_data = Path(path_to_data) / 'raw' / 'PDB_download'
+
+    pdbfile = PDBList()
+
+    for index, row in klifs_metadata.iterrows():
+        if not (Path(path_to_data) / f'{row.pdb_id}.cif').exists():
+            print(Path(path_to_data) / f'{row.pdb_id}.cif')
+            pdbfile.retrieve_pdb_file(row.pdb_id, pdir=path_to_data)
+        else:
+            continue
+
+
+def drop_unparsable_pdbs(klifs_metadata, path_to_data):
+    """
+    Drop entries in KLIFS metadata where PDB parsing with biopython fails.
+
+    Parameters
+    ----------
+    klifs_metadata : pandas.DataFrame
+        DataFrame containing merged metadate from both input KLIFS tables.
+    path_to_data : str or pathlib.Path
+        Path to directory of KLIFS dataset files.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
+    """
+
+    path_to_data = Path(path_to_data)
+
+    klifs_metadata_filtered = klifs_metadata.copy()
+
+    pdb_ids_parsing_fails = []
+
+    for pdb_id in klifs_metadata_filtered.pdb_id.unique():
+        print(pdb_id)
+        try:
+            parser = MMCIFParser()
+            structure = parser.get_structure(
+                structure_id=pdb_id,
+                filename=path_to_data / 'raw' / 'PDB_download' / f'{pdb_id}.cif'
+            )
+        except ValueError:
+            pdb_ids_parsing_fails.append(pdb_id)
+
+    print(f'Parsing failed for {len(pdb_ids_parsing_fails)} PDB IDs: {", ".join(pdb_ids_parsing_fails)}')
+
+    with open(path_to_data / 'preprocessed' / 'pdb_ids_parsing_fails.txt', 'w') as f:
+        for i in pdb_ids_parsing_fails:
+            f.write(i)
+
+    indices = klifs_metadata_filtered[klifs_metadata_filtered.pdb_id.isin(pdb_ids_parsing_fails)].index
+
+    if list(indices):
+        klifs_metadata_filtered.drop(indices, inplace=True)
+    else:
+        pass
 
     return klifs_metadata_filtered
 
@@ -357,24 +430,3 @@ def calculate_gap_rate(klifs_metadata):
                       pd.Series(gap_rate, name='gap_rate')], 
                      axis=1)
 
-
-def download_from_pdb(klifs_metadata, output_path):
-    """
-    Download structure files from the PDB for KLIFS dataset.
-    
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    output_path : str or pathlib.Path
-        Path to output directory.
-    """
-    
-    pdbfile = PDBList()
-    
-    for index, row in klifs_metadata.iterrows():
-        if not (Path(output_path) / f'{row.pdb_id}.cif').exists():
-            print(Path(output_path) / f'{row.pdb_id}.cif')
-            pdbfile.retrieve_pdb_file(row.pdb_id, pdir=output_path)
-        else:
-            continue
