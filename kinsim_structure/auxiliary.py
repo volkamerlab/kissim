@@ -162,15 +162,20 @@ class MoleculeLoader:
             res_id_list = []
             res_name_list = []
 
-            for i, j in zip(molecule.df['subst_name'], molecule.df['atom_type']):
-                if i[:2] == j.upper():
-                    # These are ions such as CA or MG
-                    res_id_list.append(i[2:])
-                    res_name_list.append(i[:2])
+            for subst_name, atom_type in zip(molecule.df['subst_name'], molecule.df['atom_type']):
+
+                # Standardise format: e.g. CY0_797 to CYO797
+                subst_name = subst_name.replace('_', '')
+
+                # These are elements such as CA or MG
+                if subst_name[:2] == atom_type.upper():
+                    res_id_list.append(subst_name[2:])
+                    res_name_list.append(subst_name[:2])
+
+                # These are amino acid, linkers, compounds, ...
                 else:
-                    # These are amino acid, linkers, compounds, ...
-                    res_id_list.append(i[3:])
-                    res_name_list.append(i[:3])
+                    res_id_list.append(subst_name[3:])
+                    res_name_list.append(subst_name[:3])
 
             molecule.df.insert(loc=2, column='res_id', value=res_id_list)
             molecule.df.insert(loc=2, column='res_name', value=res_name_list)
