@@ -19,11 +19,11 @@ from kinsim_structure.auxiliary import get_klifs_residues_mol2topdb, center_of_m
 logger = logging.getLogger(__name__)
 
 
-def exposure(mol, kette):
-    """Input: MOL2 file of a kinase binding site, PDB code as string
-    Calculates half sphere exposure for binding site residues.
-    Output: Numpy array with exposure values for all binding site residues (dtype = float)"""
-    # write residue IDs of binding site from MOL2 file into list (in the correct order, non redundant)
+ANCHOR_RESIDUES = {
+    'hinge_region': [16, 47, 80],
+    'dfg_region': [19, 24, 81],
+    'front_pocket': [6, 48, 75]
+}
     res_ids = []
     for name in mol.df.subst_name:
         if name in res_ids:
@@ -49,17 +49,36 @@ def exposure(mol, kette):
     hse_cb = HSExposureCB(kette, RADIUS)
     hse_ca = HSExposureCA(kette, RADIUS)
 
-    hse_vector = []
-    # Case: there is no HSE value computed for the first n residue(s)
-    # solution: take value of first residue that HSE could be calculated for and assign it to the missing residues
-    # no averaging possible in this case
-    i = 0
-    if hse_keys[0][1] not in [k[1] for k in hse_cb.keys()] and hse_keys[0][1] not in [k[1] for k in hse_ca.keys()]:
-        while hse_keys[i][1] not in [k[1] for k in hse_cb.keys()] and hse_keys[i][1] not in [k[1] for k in hse_ca.keys()]:
-            ident = hse_keys[i][1][1]
-            rest = [res for res in keys if res.id[1] == ident][0]
-            logging.warning('no hse for first residue ('+str(rest.resname)+str(ident)+') of binding site sequence, compensate by next available hse')
-            i += 1
+FEATURE_LOOKUP = {
+    'size': {
+        1: 'ALA CYS GLY PRO SER THR VAL'.split(),
+        2: 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split(),
+        3: 'ARG PHE TRP TYR'.split()
+    },
+    'hbd': {
+        0: 'ALA ASP GLU GLY ILE LEU MET PHE PRO VAL'.split(),
+        1: 'ASN CYS GLN HIS LYS SER THR TRP TYR'.split(),
+        3: 'ARG'.split()
+    },
+    'hba': {
+        0: 'ALA ARG CYS GLY ILE LEU LYS MET PHE PRO TRP VAL'.split(),
+        1: 'ASN GLN HIS SER THR TYR'.split(),
+        2: 'ASP GLU'.split()
+    },
+    'charge': {
+        0: 'ALA ASN CYS GLN GLY HIS ILE LEU MET PHE PRO SER TRP TYR VAL'.split(),
+        1: 'ARG LYS THR'.split(),
+        -1: 'ASP GLU'.split()
+    },
+    'aromatic': {
+        0: 'ALA ARG ASN ASP CYS GLN GLU GLY ILE LEU LYS MET PRO SER THR VAL'.split(),
+        1: 'HIS PHE TRP TYR'.split()
+    },
+    'aliphatic': {
+        0: 'ARG ASN ASP GLN GLU GLY HIS LYS PHE SER TRP TYR'.split(),
+        1: 'ALA CYS ILE LEU MET PRO THR VAL'.split()
+    }
+}
 
     if i!=0:
         key = hse_keys[i]
