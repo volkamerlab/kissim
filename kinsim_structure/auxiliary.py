@@ -18,6 +18,8 @@ import seaborn as sns
 
 logger = logging.getLogger(__name__)
 
+PATH_TO_DATA = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full'
+
 AMINO_ACIDS = pd.DataFrame(
     [
         'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET MSE PHE PRO SER THR TRP TYR VAL _'.split(),
@@ -259,6 +261,203 @@ class MoleculeLoader:
         return molecules
 
 
+class KlifsMoleculeLoader:
+
+    def __init__(self):
+
+        self.klifs_metadata_path = PATH_TO_DATA / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
+
+    def from_file(self, mol2_path):
+        """
+        Get molecule including KLIFS position IDs from a mol2 file path.
+
+        This molecule has the form of a biopandas object, containing (i) the molecule code and
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns), including
+        KLIFS position IDs from the KLIFS metadata as additional property (column).
+
+        Parameters
+        ----------
+        mol2_path : pathlib.Path
+            Mol2 file path.
+
+        Returns
+        -------
+        biopandas.mol2.pandas_mol2.PandasMol2
+            BioPandas objects containing metadata and structural data of molecule(s) in mol2 file
+            and KLIFS position ID retrieved from KLIFS metadata.
+
+        """
+
+        # Get molecule's KLIFS metadata entry from mol2 file
+        klifs_metadata_entry = self.metadata_entry_from_file(mol2_path)
+
+        # Get molecule
+        molecule = self.load_molecule(klifs_metadata_entry, mol2_path)
+
+        return molecule
+
+    def from_metadata_entry(self, klifs_metadata_entry):
+        """
+        Get molecule including KLIFS position IDs from a KLIFS metadata entry.
+
+        This molecule has the form of a biopandas object, containing (i) the molecule code and
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns), including
+        KLIFS position IDs from the KLIFS metadata as additional property (column).
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        biopandas.mol2.pandas_mol2.PandasMol2
+            BioPandas objects containing metadata and structural data of molecule(s) in mol2 file
+            and KLIFS position ID retrieved from KLIFS metadata.
+        """
+
+        # Get molecule's mol2 file path from KLIFS metadata entry
+        mol2_path = self.file_from_metadata_entry(klifs_metadata_entry)
+
+        # Get molecule
+        molecule = self.load_molecule(klifs_metadata_entry, mol2_path)
+
+        return molecule
+
+    @staticmethod
+    def load_molecule(klifs_metadata_entry, mol2_path):
+        """
+        Load molecule from mol2 file in the form of a biopandas object, containing (i) the molecule code and
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns).
+        Add KLIFS position IDs from the KLIFS metadata as additional property (column).
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        mol2_path : pathlib.Path
+            Mol2 file path.
+
+        Returns
+        -------
+        biopandas.mol2.pandas_mol2.PandasMol2
+            BioPandas objects containing metadata and structural data of molecule(s) in mol2 file
+            and KLIFS position ID retrieved from KLIFS metadata.
+        """
+
+        # Load molecule from mol2 file
+        molecule_loader = MoleculeLoader(mol2_path)
+        molecule = molecule_loader.molecules[0]
+
+        # List of KLIFS positions (starting at 1) excluding gap positions
+        klifs_ids = [index for index, residue in enumerate(klifs_metadata_entry.pocket, 1) if residue != '_']
+
+        # Number of atoms per residue in molecule (mol2file)
+        number_of_atoms_per_residue = molecule.df.groupby(by='res_id').size()
+
+        # Get KLIFS position IDs for each atom in molecule
+        klifs_ids_per_atom = []
+
+        for klifs_id, n in zip(klifs_ids, number_of_atoms_per_residue):
+            klifs_ids_per_atom = klifs_ids_per_atom + [klifs_id] * n
+
+        # Add column for KLIFS position IDs to molecule
+        molecule.df['klifs_id'] = klifs_ids_per_atom
+
+        return molecule
+
+    def metadata_entry_from_file(self, mol2_path):
+        """
+        Get the KLIFS metadata entry linked to a mol2 file path.
+
+        Parameters
+        ----------
+        mol2_path : pathlib.Path
+            Mol2 file path.
+
+        Returns
+        -------
+        pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        """
+        # Load KLIFS metadata
+        klifs_metadata = pd.read_csv(self.klifs_metadata_path)
+
+        # Get metadata from mol2 file path: kinase, PDB ID, alternate model and chain:
+        mol2_path = Path(mol2_path)
+
+        # Get kinase
+        kinase = list(mol2_path.parents)[1].stem  # e.g. 'AAK1'
+
+        # Get structure ID
+        structure_id = list(mol2_path.parents)[0].stem.split('_')  # e.g. ['4wsq', 'altA', 'chainA']
+
+        # Get PDB ID
+        pdb_id = structure_id[0]  # e.g. '4wsq'
+
+        # Get alternate model
+        alternate_model = [i[-1] for i in structure_id if 'alt' in i]
+
+        if alternate_model:
+            alternate_model = alternate_model[0]  # e.g. ['A']
+        else:
+            alternate_model = '-'  # ['-']
+
+        # Get chain
+        chain = [i[-1] for i in structure_id if 'chain' in i]
+
+        if chain:
+            chain = chain[0]  # e.g. ['A']
+        else:
+            chain = '-'  # ['-']
+
+        klifs_metadata_entry = klifs_metadata[
+            (klifs_metadata.kinase == kinase) &
+            (klifs_metadata.pdb_id == pdb_id) &
+            (klifs_metadata.alternate_model == alternate_model) &
+            (klifs_metadata.chain == chain)
+        ]
+
+        if len(klifs_metadata_entry) == 0:
+            raise ValueError(f'No entry in metadata for file: {mol2_path}')
+
+        return klifs_metadata_entry
+
+    @staticmethod
+    def file_from_metadata_entry(klifs_metadata_entry):
+        """
+        Get the mol2 file path linked to an entry in the KLIFS metadata.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        pathlib.Path
+            Mol2 file path.
+        """
+
+        # Depending on whether alternate model and chain ID is given build file path:
+        mol2_path = PATH_TO_DATA / 'raw' / 'KLIFS_download' / klifs_metadata_entry.species.upper() / klifs_metadata_entry.kinase
+
+        if klifs_metadata_entry.alternate_model != '-' and klifs_metadata_entry.chain != '-':
+            mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_alt{klifs_metadata_entry.alternate_model}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
+        elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain != '-':
+            mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
+        elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain == '-':
+            mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}' / 'pocket.mol2'
+        else:
+            raise ValueError(f'{klifs_metadata_entry.alternate_model}, {klifs_metadata_entry.chain}')
+
+        # If file does not exist, raise error
+        if not mol2_path.exists():
+            raise FileNotFoundError(f'File not found: {mol2_path}')
+
+        return mol2_path
+
+
 def get_amino_acids_1to3(one_letter_amino_acid):
     """
     Get three letter code for a one letter code amino acid.
@@ -338,77 +537,6 @@ def split_klifs_code(klifs_code):
     return {'species': species, 'kinase': kinase, 'pdb_id': pdb_id, 'alternate_model': alternate_model, 'chain': chain}
 
 
-def get_mol2path_from_metadata_entry(klifs_metadata_entry):
-    """
-    Get the mol2 file path linked to an entry in the KLIFS metadata.
-
-    Parameters
-    ----------
-    klifs_metadata_entry : pandas.Series
-        KLIFS metadata describing a pocket entry in the KLIFS dataset.
-
-    Returns
-    -------
-    pathlib.Path
-        Mol2 file path.
-    """
-
-    # Path to KLIFS download
-    path_to_data = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full' / 'raw' / 'KLIFS_download'
-
-    # Depending on whether alternate model and chain ID is given build file path:
-    mol2_path = path_to_data / klifs_metadata_entry.species.upper() / klifs_metadata_entry.kinase
-
-    if klifs_metadata_entry.alternate_model != '-' and klifs_metadata_entry.chain != '-':
-        mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_alt{klifs_metadata_entry.alternate_model}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
-    elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain != '-':
-        mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
-    elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain == '-':
-        mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}' / 'pocket.mol2'
-    else:
-        raise ValueError(f'{klifs_metadata_entry.alternate_model}, {klifs_metadata_entry.chain}')
-
-    # If file does not exist, raise error
-    if not mol2_path.exists():
-        raise FileNotFoundError(f'File not found: {mol2_path}')
-
-    return mol2_path
-
-
-def get_molecule_from_metadata_entry(klifs_metadata_entry):
-    """
-
-    Parameters
-    ----------
-    klifs_metadata_entry
-
-    Returns
-    -------
-
-    """
-
-    mol2_path = get_mol2path_from_metadata_entry(klifs_metadata_entry)
-    molecule_loader = MoleculeLoader(mol2_path)
-    molecule = molecule_loader.molecules[0]
-
-    # Add column to molecule (mol2 file)
-
-    # List of KLIFS positions excluding gap positions
-    klifs_ids = [index for index, residue in enumerate(klifs_metadata_entry.pocket) if residue != '_']
-
-    # Number of atoms per residue in molecule (mol2file)
-    number_of_atoms_per_residue = molecule.df.groupby(by='res_id').size()
-
-    klifs_ids_per_atom = []
-
-    for klifs_id, n in zip(klifs_ids, number_of_atoms_per_residue):
-        klifs_ids_per_atom = klifs_ids_per_atom + [klifs_id] * n
-
-    molecule.df['klifs_id'] = klifs_ids_per_atom
-
-    return molecule
-
-
 def get_klifs_residues_mol2topdb(molecule):
     """
     Retrieve the KLIFS residues from a PDB file using the KLIFS mol2 file as a template.
@@ -416,7 +544,7 @@ def get_klifs_residues_mol2topdb(molecule):
     Parameters
     ----------
     molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
+        Content of mol2 or pdb file as BioPandas object.
 
     Returns
     -------
