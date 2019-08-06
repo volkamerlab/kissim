@@ -169,12 +169,12 @@ class MoleculeLoader:
 
                 # These are elements such as CA or MG
                 if subst_name[:2] == atom_type.upper():
-                    res_id_list.append(subst_name[2:])
+                    res_id_list.append(int(subst_name[2:]))
                     res_name_list.append(subst_name[:2])
 
                 # These are amino acid, linkers, compounds, ...
                 else:
-                    res_id_list.append(subst_name[3:])
+                    res_id_list.append(int(subst_name[3:]))
                     res_name_list.append(subst_name[:3])
 
             molecule.df.insert(loc=2, column='res_id', value=res_id_list)
