@@ -288,6 +288,11 @@ class KlifsMoleculeLoader:
 
         """
 
+        # Cast path to pathlib.Path and check if it exists
+        mol2_path = Path(mol2_path)
+        if not mol2_path.exists():
+            raise FileNotFoundError(f'File does not exist: {mol2_path}')
+
         # Get molecule's KLIFS metadata entry from mol2 file
         klifs_metadata_entry = self.metadata_entry_from_file(mol2_path)
 
@@ -318,6 +323,11 @@ class KlifsMoleculeLoader:
 
         # Get molecule's mol2 file path from KLIFS metadata entry
         mol2_path = self.file_from_metadata_entry(klifs_metadata_entry)
+
+        # Cast path to pathlib.Path and check if it exists
+        mol2_path = Path(mol2_path)
+        if not mol2_path.exists():
+            raise FileNotFoundError(f'File does not exist: {mol2_path}')
 
         # Get molecule
         molecule = self.load_molecule(klifs_metadata_entry, mol2_path)
