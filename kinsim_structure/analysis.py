@@ -17,6 +17,35 @@ from kinsim_structure.encoding import get_ca_cb_com_vectors, get_side_chain_orie
 logger = logging.getLogger(__name__)
 
 
+def calculate_gap_rate(klifs_metadata):
+    """
+    Calculate gap rate at every KLIFS MSA position across the filtered kinase data set
+
+    Parameters
+    ----------
+    klifs_metadata : pandas.DataFrame
+        DataFrame containing merged metadate from both input KLIFS tables.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing gap rates for each position in the KLIFS alignment for the input data.
+    """
+
+    gaps = [0] * 85
+
+    for pocket in klifs_metadata.pocket:
+        for klifs_position, residue in enumerate(pocket):
+            if residue == '_':
+                gaps[klifs_position] += 1
+    gap_rate = [round(i / float(klifs_metadata.shape[0]), 4) for i in gaps]
+
+    return pd.concat([pd.Series(range(1, 86), name='klifs_position'),
+                      pd.Series(gaps, name='gaps'),
+                      pd.Series(gap_rate, name='gap_rate')],
+                     axis=1)
+
+
 def get_non_standard_amino_acids_in_klifs(klifs_metadata):
     """
     For a given set of mol2 files, collect all non-standard amino acids.
