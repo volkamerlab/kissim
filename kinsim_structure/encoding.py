@@ -136,19 +136,24 @@ class SpatialFeatures:
 
         for name, coord in self.reference_points.items():
 
-            distance = (residues - coord).transpose().apply(lambda x: np.linalg.norm(x))
-            distance.rename(name, inplace=True)
-            distances[f'distance_to_{name}'] = np.round(distance, 2)
+            # If any reference points coordinate is None, set also distance to None
+
+            if coord.isna().any():
+                distances[f'distance_to_{name}'] = None
+            else:
+                distance = (residues - coord).transpose().apply(lambda x: np.linalg.norm(x))
+                distance.rename(name, inplace=True)
+                distances[f'distance_to_{name}'] = np.round(distance, 2)
 
         return pd.DataFrame.from_dict(distances)
 
-    @staticmethod
-    def get_reference_points(molecule):
+    def get_reference_points(self, molecule):
         """
 
         Parameters
         ----------
-        molecule
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
 
         Returns
         -------
@@ -161,17 +166,109 @@ class SpatialFeatures:
         reference_points['centroid'] = molecule.df['x y z'.split()].mean()
 
         # Calculate anchor-based reference points
-        for anchor_name, anchor_klifs_id in ANCHOR_RESIDUES.items():
 
-            # Select all anchor residues' CA atoms
-            molecule_ca = molecule.df[
-                (molecule.df.klifs_id.isin(anchor_klifs_id)) &
-                (molecule.df.atom_name == 'CA')
-            ]
+        # Get anchor atoms for each anchor-based reference point
+        anchors = self.get_anchor_atoms(molecule)
 
-            reference_points[anchor_name] = molecule_ca[['x', 'y', 'z']].mean()
+        for reference_point_name, anchor_atoms in anchors.items():
+
+            # If any anchor atom None, set also reference point coordinates to None
+            if anchor_atoms.isna().values.any():
+                reference_points[reference_point_name] = [None, None, None]
+            else:
+                reference_points[reference_point_name] = anchor_atoms.mean()
 
         return pd.DataFrame.from_dict(reference_points)
+
+    @staticmethod
+    def get_anchor_atoms(molecule):
+        """
+        For each anchor-based reference points (i.e. hinge region, DFG loop and front pocket)
+        get the three anchor (i.e. CA) atoms.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+
+        Returns
+        -------
+        dict of pandas.DataFrames
+            Coordinates (x, y, z) of the three anchor atoms (rows=anchor residue KLIFS ID x columns=coordinates) for
+            each of the anchor-based reference points.
+        """
+
+        anchors = dict()
+
+        # Calculate anchor-based reference points
+        # Process each reference point: Collect anchor residue atoms and calculate their mean
+        for reference_point_name, anchor_klifs_ids in ANCHOR_RESIDUES.items():
+
+            anchor_atoms = []
+
+            # Process each anchor residue: Get anchor atom
+            for anchor_klifs_id in anchor_klifs_ids:
+
+                # Select anchor atom, i.e. CA atom of KLIFS ID (anchor residue)
+                anchor_atom = molecule.df[
+                    (molecule.df.klifs_id == anchor_klifs_id) &
+                    (molecule.df.atom_name == 'CA')
+                ]
+
+                # If this anchor atom exists, append to anchor atoms list
+                if len(anchor_atom) == 1:
+                    anchor_atom.set_index('klifs_id', inplace=True)
+                    anchor_atom.index.name = None
+                    anchor_atoms.append(anchor_atom[['x', 'y', 'z']])
+
+                # If this anchor atom does not exist, do workarounds
+                elif len(anchor_atom) == 0:
+
+                    # Do residues (and there CA atoms) exist next to anchor residue?
+                    atom_before = molecule.df[
+                        (molecule.df.klifs_id == anchor_klifs_id - 1) &
+                        (molecule.df.atom_name == 'CA')
+                        ]
+                    atom_after = molecule.df[
+                        (molecule.df.klifs_id == anchor_klifs_id + 1) &
+                        (molecule.df.atom_name == 'CA')
+                        ]
+                    atom_before.set_index('klifs_id', inplace=True, drop=False)
+                    atom_after.set_index('klifs_id', inplace=True, drop=False)
+
+                    # If both neighboring CA atoms exist, get their mean as alternative anchor atom
+                    if len(atom_before) == 1 and len(atom_after) == 1:
+                        anchor_atom_alternative = pd.concat([atom_before, atom_after])[['x', 'y', 'z']].mean()
+                        anchor_atom_alternative = pd.DataFrame({anchor_klifs_id: anchor_atom_alternative}).transpose()
+                        anchor_atoms.append(anchor_atom_alternative)
+
+                    elif len(atom_before) == 1 and len(atom_after) == 0:
+                        atom_before.set_index('klifs_id', inplace=True)
+                        anchor_atoms.append(atom_before[['x', 'y', 'z']])
+
+                    elif len(atom_after) == 1 and len(atom_before) == 0:
+                        atom_after.set_index('klifs_id', inplace=True)
+                        anchor_atoms.append(atom_after[['x', 'y', 'z']])
+
+                    else:
+                        atom_missing = pd.DataFrame.from_dict(
+                            {anchor_klifs_id: [None, None, None]},
+                            orient='index',
+                            columns='x y z'.split()
+                        )
+                        anchor_atoms.append(atom_missing)
+
+                        print(atom_missing)
+
+                # If there are several anchor atoms, something's wrong...
+                else:
+                    raise ValueError(f'Too many anchor atoms for {molecule.code}, {reference_point_name}, {anchor_klifs_id}: '
+                                     f'{len(anchor_atom)} (one atom allowed).')
+
+            anchors[reference_point_name] = pd.concat(anchor_atoms)
+            print(anchors)
+
+        return anchors
 
 
 class SideChainOrientationFeature:
@@ -316,7 +413,8 @@ class PharmacophoreSizeFeatures:
 
         return features
 
-    def from_residue(self, residue, feature_type):
+    @staticmethod
+    def from_residue(residue, feature_type):
         """
         Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
         hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
@@ -327,7 +425,7 @@ class PharmacophoreSizeFeatures:
         residue : str
             Three-letter code for residue.
         feature_type : str
-
+            Feature type name.
 
         Returns
         -------
