@@ -262,10 +262,35 @@ class MoleculeLoader:
 
 
 class KlifsMoleculeLoader:
+    """
+    Load molecule depending on input type (mol2 file path or KLIFS metadata entry).
 
-    def __init__(self):
+    Attributes
+    ----------
+    klifs_metadata_path : pathlib.Path
+        KLIFS metadata file path.
+    molecule : biopandas.mol2.pandas_mol2.PandasMol2
+        BioPandas objects containing metadata and structural data of molecule(s) in mol2 file
+        and KLIFS position ID retrieved from KLIFS metadata.
+
+    Parameters
+    ----------
+    mol2_path : pathlib.Path
+        Mol2 file path.
+    metadata_entry : pandas.Series
+        KLIFS metadata describing a pocket entry in the KLIFS dataset.
+    """
+
+    def __init__(self, *, mol2_path=None, metadata_entry=None):
 
         self.klifs_metadata_path = PATH_TO_DATA / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
+
+        if mol2_path is not None:
+            self.molecule = self.from_file(mol2_path)
+        elif metadata_entry is not None:
+            self.molecule = self.from_metadata_entry(metadata_entry)
+        else:
+            self.molecule = None
 
     def from_file(self, mol2_path):
         """
@@ -390,6 +415,7 @@ class KlifsMoleculeLoader:
         pandas.Series
             KLIFS metadata describing a pocket entry in the KLIFS dataset.
         """
+
         # Load KLIFS metadata
         klifs_metadata = pd.read_csv(self.klifs_metadata_path)
 
@@ -428,8 +454,11 @@ class KlifsMoleculeLoader:
             (klifs_metadata.chain == chain)
         ]
 
-        if len(klifs_metadata_entry) == 0:
-            raise ValueError(f'No entry in metadata for file: {mol2_path}')
+        if len(klifs_metadata_entry) != 1:
+            raise ValueError(f'Unvalid number of entries ({len(klifs_metadata_entry)}) in metadata for file: {mol2_path}')
+
+        # Squeeze casts one row DataFrame to Series
+        klifs_metadata_entry = klifs_metadata_entry.squeeze()
 
         return klifs_metadata_entry
 
