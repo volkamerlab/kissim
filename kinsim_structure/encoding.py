@@ -258,15 +258,12 @@ class SpatialFeatures:
                         )
                         anchor_atoms.append(atom_missing)
 
-                        print(atom_missing)
-
                 # If there are several anchor atoms, something's wrong...
                 else:
                     raise ValueError(f'Too many anchor atoms for {molecule.code}, {reference_point_name}, {anchor_klifs_id}: '
                                      f'{len(anchor_atom)} (one atom allowed).')
 
             anchors[reference_point_name] = pd.concat(anchor_atoms)
-            print(anchors)
 
         return anchors
 
@@ -277,7 +274,7 @@ class SideChainOrientationFeature:
 
         self.features = self.from_molecule(molecule)
 
-    def from_molecule(self, molecule, ca_cb_com_vectors=None):
+    def from_molecule(self, molecule, verbose=False):
         """
         Calculate side chain orientation for each residue of a molecule.
 
@@ -285,8 +282,6 @@ class SideChainOrientationFeature:
         ----------
         molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
             Content of mol2 or pdb file as BioPandas object.
-        ca_cb_com_vectors : pandas.DataFrame
-            CA, CB and centroid points for each residue of a molecule.
 
         Returns
         -------
@@ -294,9 +289,8 @@ class SideChainOrientationFeature:
             Side chain orientation (angle) for each residue of a molecule.
         """
 
-        # If only molecule (and CA, CB and centroid points) given, calculate these points
-        if ca_cb_com_vectors is None:
-            ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule)
+        # Calculate/get CA, CB and centroid points
+        ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule)
 
         # Save here angle values per residue
         side_chain_orientation = []
@@ -310,7 +304,21 @@ class SideChainOrientationFeature:
                 angle = None
                 side_chain_orientation.append(angle)
 
-        return pd.DataFrame(side_chain_orientation, index=ca_cb_com_vectors.klifs_id, columns=['sco'])
+        # Either return angles only or angles plus CA, CB and centroid points as well as metadata
+        if not verbose:
+            side_chain_orientation = pd.DataFrame(
+                side_chain_orientation,
+                index=ca_cb_com_vectors.klifs_id,
+                columns=['sco']
+            )
+            return side_chain_orientation
+        else:
+            side_chain_orientation = pd.DataFrame(
+                side_chain_orientation,
+                index=ca_cb_com_vectors.index,
+                columns=['sco']
+            )
+            return pd.concat([ca_cb_com_vectors, side_chain_orientation], axis=1)
 
     @staticmethod
     def _get_ca_cb_com_vectors(molecule):
