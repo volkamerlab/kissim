@@ -1,97 +1,98 @@
 
-from biopandas.mol2 import PandasMol2
-import numpy as np
-from pathlib import Path
+import math
 import pytest
 
-from kinsim_structure.encoding import get_feature_size
-from kinsim_structure.encoding import get_feature_hbd, get_feature_hba, get_feature_charge, get_feature_aromatic, get_feature_aliphatic
-from kinsim_structure.encoding import get_side_chain_orientation
+from kinsim_structure.auxiliary import KlifsMoleculeLoader
+from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures
 
 
-@pytest.mark.parametrize('residue, feature', [
-    ('ALA', 1),
-    ('ASN', 2),
-    ('ARG', 3),
-    ('XXX', None)
+@pytest.mark.parametrize('residue, feature_type, feature', [
+    ('ALA', 'size', 1),
+    ('ASN', 'size', 2),
+    ('ARG', 'size', 3),
+    ('XXX', 'size', None),
+    ('ALA', 'hbd', 0),
+    ('ASN', 'hbd', 1),
+    ('ARG', 'hbd', 3),
+    ('XXX', 'hbd', None),
+    ('ALA', 'hba', 0),
+    ('ASN', 'hba', 1),
+    ('ASP', 'hba', 2),
+    ('XXX', 'hba', None),
+    ('ALA', 'charge', 0),
+    ('ARG', 'charge', 1),
+    ('ASP', 'charge', -1),
+    ('XXX', 'charge', None),
+    ('ALA', 'aromatic', 0),
+    ('HIS', 'aromatic', 1),
+    ('XXX', 'aromatic', None),
+    ('ARG', 'aliphatic', 0),
+    ('ALA', 'aliphatic', 1),
+    ('XXX', 'aliphatic', None)
+
 ])
-def test_get_feature_size(residue, feature):
+def test_feature_from_residue(residue, feature_type, feature):
+    """
+    Test function for retrieval of residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
+    hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
 
-    assert get_feature_size(residue) == feature
+    Parameters
+    ----------
+    residue : str
+        Three-letter code for residue.
+    feature_type : str
+        Feature type name.
+    feature : int or None
+        Feature value.
+    """
+
+    # Load molecule
+    mol2_path = '/home/dominique/Documents/projects/kinsim_structure/kinsim_structure/tests/data/AAK1/4wsq_altA_chainB/pocket.mol2'
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    molecule = klifs_molecule_loader.molecule
+
+    # Get pharmacophore and size features
+    pharmacophore_size_feature = PharmacophoreSizeFeatures(molecule)
+
+    # Call feature from residue function
+    assert pharmacophore_size_feature.from_residue(residue, feature_type) == feature
 
 
-@pytest.mark.parametrize('residue, feature', [
-    ('ALA', 0),
-    ('ASN', 1),
-    ('ARG', 3),
-    ('XXX', None)
+@pytest.mark.parametrize('reference_point_name, anchor_residue_klifs_ids, x_coordinate', [
+    ('hinge_region', [16, 47, 80], 6.25545),
+    ('dfg_region', [20, 23, 81], 11.6846),
+    ('front_pocket', [6, 48, 75], float('nan'))
 ])
-def test_get_feature_hdb(residue, feature):
+def test_get_anchor_atoms(reference_point_name, anchor_residue_klifs_ids, x_coordinate):
 
-    assert get_feature_hbd(residue) == feature
+    mol2_path = '/home/dominique/Documents/projects/kinsim_structure/kinsim_structure/tests/data/AAK1/4wsq_altA_chainB/pocket.mol2'
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    molecule = klifs_molecule_loader.molecule
 
+    # Delete residues
 
-@pytest.mark.parametrize('residue, feature', [
-    ('ALA', 0),
-    ('ASN', 1),
-    ('ASP', 2),
-    ('XXX', None)
-])
-def test_get_feature_hda(residue, feature):
+    # Case: Missing anchor residue but neighboring residues available
+    molecule.df.drop(molecule.df[molecule.df.klifs_id == 16].index, inplace=True)
 
-    assert get_feature_hba(residue) == feature
+    # Case: Missing anchor residue but neighboring residues available
+    molecule.df.drop(molecule.df[molecule.df.klifs_id.isin([18, 19])].index, inplace=True)
 
+    # Case: Missing anchor residue but neighboring residues available
+    molecule.df.drop(molecule.df[molecule.df.klifs_id.isin([24, 25])].index, inplace=True)
 
-@pytest.mark.parametrize('residue, feature', [
-    ('ALA', 0),
-    ('ARG', 1),
-    ('ASP', -1),
-    ('XXX', None)
-])
-def test_get_feature_charge(residue, feature):
+    # Case: Missing anchor and neighboring residues
+    molecule.df.drop(molecule.df[molecule.df.klifs_id.isin([5, 6, 7])].index, inplace=True)
 
-    assert get_feature_charge(residue) == feature
+    # Get spatial features
+    spatial_features = SpatialFeatures(molecule)
 
+    # Get anchor atoms
+    anchors = spatial_features.get_anchor_atoms(molecule)
 
-@pytest.mark.parametrize('residue, feature', [
-    ('ALA', 0),
-    ('HIS', 1),
-    ('XXX', None)
-])
-def test_get_feature_aromatic(residue, feature):
+    assert list(anchors[reference_point_name].index) == anchor_residue_klifs_ids
 
-    assert get_feature_aromatic(residue) == feature
-
-
-@pytest.mark.parametrize('residue, feature', [
-    ('ARG', 0),
-    ('ALA', 1),
-    ('XXX', None)
-])
-def test_get_feature_aliphatic(residue, feature):
-
-    assert get_feature_aliphatic(residue) == feature
-
-
-@pytest.mark.parametrize('filename, side_chain_orientation', [
-    ('AAK1_4wsq_altA_chainA.mol2', np.array([1.0]*85))
-])
-def test_get_side_chain_orientation(filename, side_chain_orientation):
-
-    path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
-    path = str(path)
-
-    pmol = PandasMol2().read_mol2(path=path,
-                                  columns = {0: ('atom_id', int),
-                                        1: ('atom_name', str),
-                                        2: ('x', float),
-                                        3: ('y', float),
-                                        4: ('z', float),
-                                        5: ('atom_type', str),
-                                        6: ('subst_id', str),
-                                        7: ('subst_name', str),
-                                        8: ('charge', float),
-                                        9: ('status_bit', str)}
-    )
-    assert all(get_side_chain_orientation(pmol) == side_chain_orientation)
-
+    # Ugly workaround to test NaN values in anchors
+    if math.isnan(x_coordinate):
+        assert math.isnan(anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], 'x'])
+    else:
+        assert anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], 'x'] == x_coordinate
