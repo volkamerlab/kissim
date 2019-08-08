@@ -12,6 +12,8 @@ from pathlib import Path
 from Bio.PDB import PDBList, MMCIFParser
 import pandas as pd
 
+from kinsim_structure.auxiliary import KlifsMoleculeLoader
+
 logger = logging.getLogger(__name__)
 
 
@@ -397,5 +399,39 @@ def drop_unparsable_pdbs(klifs_metadata, path_to_data):
         klifs_metadata_filtered.drop(indices, inplace=True)
     else:
         pass
+
+    return klifs_metadata_filtered
+
+
+def drop_underscored_residue_ids(klifs_metadata):
+    """
+    Drop entries in KLIFS metadata that are linked to mol2 files that contain underscores in their residue IDs.
+
+    Parameters
+    ----------
+    klifs_metadata : pandas.DataFrame
+        DataFrame containing merged metadate from both input KLIFS tables.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
+    """
+
+    klifs_metadata_filtered = klifs_metadata.copy()
+
+    ids_with_negative_residues = []
+
+    for index, row in klifs_metadata_filtered.iterrows():
+
+        print(f'{index + 1}/{len(klifs_metadata_filtered)}')
+
+        ml = KlifsMoleculeLoader(metadata_entry=row)
+        molecule = ml.molecule
+
+        if any(['_' in i for i in molecule.df.res_id]):
+            ids_with_negative_residues.append([index, molecule])
+
+    klifs_metadata_filtered.drop([i[0] for i in ids_with_negative_residues], inplace=True)
 
     return klifs_metadata_filtered
