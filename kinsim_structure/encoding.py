@@ -342,7 +342,7 @@ class SideChainOrientationFeature:
         # Save here values per residue
         data = []
         metadata = pd.DataFrame(
-            list(molecule.df.groupby(by=['klifs_id', 'res_id', 'res_name']).groups.keys()),
+            list(molecule.df.groupby(by=['klifs_id', 'res_id', 'res_name'], sort=False).groups.keys()),
             columns='klifs_id residue_id residue_name'.split()
         )
 
@@ -365,7 +365,6 @@ class SideChainOrientationFeature:
             # Set centroid
             vector_com = Vector(center_of_mass(residue, geometric=True))
 
-            # Only needed for verbose function call
             data.append([vector_ca, vector_cb, vector_com])
 
         data = pd.DataFrame(
@@ -374,7 +373,8 @@ class SideChainOrientationFeature:
         )
 
         if len(metadata) != len(data):
-            raise ValueError(f'DataFrames to be concatenated must be of same length')
+            raise ValueError(f'DataFrames to be concatenated must be of same length: '
+                             f'Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows.')
 
         return pd.concat([metadata, data], axis=1)
 
@@ -411,7 +411,7 @@ class PharmacophoreSizeFeatures:
         for feature_type in feature_types:
 
             # Select from DataFrame first row per KLIFS position (index) and residue name
-            residues = molecule.df.groupby(by='klifs_id').first()['res_name']
+            residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
             features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
             features.rename(feature_type, inplace=True)
 
