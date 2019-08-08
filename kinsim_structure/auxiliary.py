@@ -166,9 +166,6 @@ class MoleculeLoader:
 
             for subst_name, atom_type in zip(molecule.df['subst_name'], molecule.df['atom_type']):
 
-                # Standardise format: e.g. CY0_797 to CYO797
-                subst_name = subst_name.replace('_', '')
-
                 # These are elements such as CA or MG
                 if subst_name[:2] == atom_type.upper():
                     res_id_list.append(int(subst_name[2:]))
@@ -388,7 +385,8 @@ class KlifsMoleculeLoader:
         klifs_ids = [index for index, residue in enumerate(klifs_metadata_entry.pocket, 1) if residue != '_']
 
         # Number of atoms per residue in molecule (mol2file)
-        number_of_atoms_per_residue = molecule.df.groupby(by='res_id').size()
+        # Note: sort=False important otherwise negative residue IDs will be sorted to the top
+        number_of_atoms_per_residue = molecule.df.groupby(by='res_id', sort=False).size()
 
         # Get KLIFS position IDs for each atom in molecule
         klifs_ids_per_atom = []
