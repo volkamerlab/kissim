@@ -9,7 +9,10 @@ Handles the primary functions for the structural kinase fingerprint analysis.
 import logging
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader
 from kinsim_structure.encoding import SideChainOrientationFeature
@@ -17,33 +20,92 @@ from kinsim_structure.encoding import SideChainOrientationFeature
 logger = logging.getLogger(__name__)
 
 
-def calculate_gap_rate(klifs_metadata):
+class GapRate:
     """
-    Calculate gap rate at every KLIFS MSA position across the filtered kinase data set
+    ...
+
+    Attributes
+    ----------
+    data : pandas.DataFrame
+        DataFrame containing gap rates for each position in the KLIFS alignment for the input data.
 
     Parameters
     ----------
     klifs_metadata : pandas.DataFrame
         DataFrame containing merged metadate from both input KLIFS tables.
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing gap rates for each position in the KLIFS alignment for the input data.
     """
 
-    gaps = [0] * 85
+    def __init__(self, klifs_metadata):
 
-    for pocket in klifs_metadata.pocket:
-        for klifs_position, residue in enumerate(pocket):
-            if residue == '_':
-                gaps[klifs_position] += 1
-    gap_rate = [round(i / float(klifs_metadata.shape[0]), 4) for i in gaps]
+        self.data = self.calculate_gap_rate(klifs_metadata)
+        self.n_structures = klifs_metadata.shape[0]
 
-    return pd.concat([pd.Series(range(1, 86), name='klifs_position'),
-                      pd.Series(gaps, name='gaps'),
-                      pd.Series(gap_rate, name='gap_rate')],
-                     axis=1)
+    @staticmethod
+    def calculate_gap_rate(klifs_metadata):
+        """
+        Calculate gap rate at every KLIFS MSA position across the filtered kinase data set.
+
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            DataFrame containing merged metadate from both input KLIFS tables.
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame containing gap rates for each position in the KLIFS alignment for the input data.
+        """
+
+        gaps = [0] * 85
+
+        for pocket in klifs_metadata.pocket:
+            for klifs_position, residue in enumerate(pocket):
+                if residue == '_':
+                    gaps[klifs_position] += 1
+        gap_rate = [round(i / float(klifs_metadata.shape[0]), 4) for i in gaps]
+
+        data = pd.concat(
+            [
+                pd.Series(range(1, 86), name='klifs_id'),
+                pd.Series(gaps, name='gaps'),
+                pd.Series(gap_rate, name='gap_rate')
+            ],
+            axis=1
+        )
+
+        data.set_index('klifs_id', inplace=True, drop=False)
+
+        return data
+
+    def plot_gap_rate(self, path_to_results):
+        """
+        Plot gap rate for KLIFS IDs (positions).
+
+        Parameters
+        ----------
+        path_to_results : str or pathlib.Path
+            Path to directory where plot shall be saved.
+        """
+
+        path_to_results = Path(path_to_results)
+
+        plt.figure(figsize=(15, 6))
+        ax = sns.barplot(x='klifs_id',
+                         y='gap_rate',
+                         data=self.data,
+                         color='steelblue')
+        ax.set_title(f'KLIFS sequence alignment: '
+                     f'Gap rate for the 85 residue positions ({self.n_structures} KLIFS entries)',
+                     fontsize=20)
+        ax.set_xlabel('Alignment residue position')
+        ax.set_ylabel('Gap rate')
+        ax.xaxis.set_ticks(np.arange(0, 85, 5));
+        ax.set_xticklabels(np.arange(0, 85, 5));
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(20)
+
+        plt.savefig(path_to_results / 'plot_gap_rate.png', dpi=300)
 
 
 def get_non_standard_amino_acids_in_klifs(klifs_metadata):
