@@ -792,3 +792,23 @@ def save_cgo_side_chain_orientation(klifs_path, output_path):
     cgo_path = Path(output_path) / f'side_chain_orientation_{molecule.code.split("/")[1]}.py'
     with open(cgo_path, 'w') as f:
         f.write('\n'.join(lines))
+
+
+def get_aminoacids_by_molecularweight(path_to_results):
+    """
+    Get string of sorted standard amino acid names in the form of 'GLY ALA SER ...'.
+
+    Returns
+    -------
+    str
+        Sorted standard amino acid names (upper case three latter code), separated by space.
+
+    References
+    ----------
+    Molecular weight is taken from:
+    https://www.sigmaaldrich.com/life-science/metabolomics/learning-center/amino-acid-reference-chart.html
+    """
+
+    molecular_weight = pd.read_csv(path_to_results / 'amino_acids_molecular_weight.csv')
+    molecular_weight.residue_name = molecular_weight.residue_name.str.upper()
+    return ' '.join(list(molecular_weight.sort_values(['molecular_weight']).residue_name))
