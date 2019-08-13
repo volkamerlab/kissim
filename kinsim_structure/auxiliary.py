@@ -265,7 +265,7 @@ class KlifsMoleculeLoader:
 
     Parameters
     ----------
-    mol2_path : pathlib.Path
+    mol2_path : str or pathlib.Path
         Mol2 file path.
     metadata_entry : pandas.Series
         KLIFS metadata describing a pocket entry in the KLIFS dataset.
@@ -276,6 +276,7 @@ class KlifsMoleculeLoader:
         self.klifs_metadata_path = PATH_TO_DATA / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
 
         if mol2_path is not None:
+            mol2_path = Path(mol2_path)
             self.molecule = self.from_file(mol2_path)
         elif metadata_entry is not None:
             self.molecule = self.from_metadata_entry(metadata_entry)
