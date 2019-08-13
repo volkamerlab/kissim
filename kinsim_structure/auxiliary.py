@@ -93,21 +93,6 @@ class MoleculeLoader:
 
         return molecules
 
-    def get_first_molecule(self):
-        """
-        Convenience class method: get the first molecule DataFrame.
-
-        Returns
-        -------
-        biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Data for first molecule in MoleculeLoader class.
-        """
-
-        if len(self.molecules) > 0:
-            return self.molecules[0]
-        else:
-            raise IndexError('MoleculeLoader.molecules is empty.')
-
     def _load_mol2(self, remove_solvent=False):
         """
         Load molecule data from a mol2 file, which can contain multiple entries.
