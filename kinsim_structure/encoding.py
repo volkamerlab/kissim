@@ -13,6 +13,7 @@ from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from kinsim_structure.auxiliary import get_klifs_residues_mol2topdb, center_of_mass
 
@@ -56,6 +57,10 @@ FEATURE_LOOKUP = {
     }
 }
 
+MEDIAN_SIDE_CHAIN_ORIENTATION = pd.read_csv(
+    Path(__file__).parent / 'data' / 'side_chain_orientation_mean_median.csv',
+    index_col='residue_name'
+)['sco_median']
 
 class Fingerprint:
 
@@ -277,11 +282,11 @@ class SpatialFeatures:
 
 class SideChainOrientationFeature:
 
-    def __init__(self, molecule):
+    def __init__(self):
 
-        self.features = self.from_molecule(molecule)
+        self.features = None
 
-    def from_molecule(self, molecule, verbose=False):
+    def from_molecule(self, molecule, verbose=False, fill_missing=False):
         """
         Calculate side chain orientation for each residue of a molecule.
 
@@ -289,6 +294,10 @@ class SideChainOrientationFeature:
         ----------
         molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
             Content of mol2 or pdb file as BioPandas object.
+        verbose : bool
+            Either return angles only (default) or angles plus CA, CB and centroid points as well as metadata.
+        fill_missing : bool
+            Fill missing values with median value of respective amino acid angle distribution.
 
         Returns
         -------
@@ -307,8 +316,16 @@ class SideChainOrientationFeature:
             if row.ca and row.cb:
                 angle = np.degrees(calc_angle(row.ca, row.cb, row.com))
                 side_chain_orientation.append(round(angle, 2))
+
+            # If Ca and Cb are missing for angle calculation...
             else:
-                angle = None
+                # ... set median value to residue
+                if fill_missing:
+                    angle = MEDIAN_SIDE_CHAIN_ORIENTATION[row.residue_name]
+
+                # ... set None value to residue
+                else:
+                    angle = None
                 side_chain_orientation.append(angle)
 
         # Either return angles only or angles plus CA, CB and centroid points as well as metadata
@@ -318,14 +335,14 @@ class SideChainOrientationFeature:
                 index=ca_cb_com_vectors.klifs_id,
                 columns=['sco']
             )
-            return side_chain_orientation
+            self.features =  side_chain_orientation
         else:
             side_chain_orientation = pd.DataFrame(
                 side_chain_orientation,
                 index=ca_cb_com_vectors.index,
                 columns=['sco']
             )
-            return pd.concat([ca_cb_com_vectors, side_chain_orientation], axis=1)
+            self.features = pd.concat([ca_cb_com_vectors, side_chain_orientation], axis=1)
 
     @staticmethod
     def _get_ca_cb_com_vectors(molecule):
