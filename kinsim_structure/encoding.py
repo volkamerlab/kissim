@@ -474,8 +474,17 @@ class PharmacophoreSizeFeatures:
             raise KeyError(f'Feature {feature_type} does not exist. '
                            f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
 
+        # Manual addition of modified residue(s)
+        # PTR (o-phosphotyrosine): Use parent amino acid for lookup
+        if residue == 'PTR':
+            residue = 'TYR'
+        if residue == 'MSE':
+            residue = 'MET'
+
+        # Start with a feature of None
         result = None
 
+        # If residue name is listed in the feature lookup, assign respective feature
         for feature, residues in FEATURE_LOOKUP[feature_type].items():
 
             if residue in residues:
