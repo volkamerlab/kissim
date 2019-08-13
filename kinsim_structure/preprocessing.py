@@ -420,7 +420,7 @@ def drop_underscored_residue_ids(klifs_metadata):
 
     klifs_metadata_filtered = klifs_metadata.copy()
 
-    ids_with_negative_residues = []
+    ids_with_underscored_residues = []
 
     for index, row in klifs_metadata_filtered.iterrows():
 
@@ -429,8 +429,18 @@ def drop_underscored_residue_ids(klifs_metadata):
         ml = KlifsMoleculeLoader(metadata_entry=row)
         molecule = ml.molecule
 
-        if any(['_' in i for i in molecule.df.res_id]):
-            ids_with_negative_residues.append([index, molecule])
+        # Get first entry of each residue ID
+        firsts = molecule.df.groupby(by='res_id', as_index=False).first()
+
+        print(firsts.res_id)
+        # Originally in mol2 file '_', but converted to '-' during mol2 file loading
+        if any([i < 0 for i in firsts.res_id]):
+            print('ja')
+            ids_with_underscored_residues.append([index, molecule])
+
+    klifs_metadata_filtered.drop([i[0] for i in ids_with_underscored_residues], inplace=True)
+
+    return klifs_metadata_filtered
 
     klifs_metadata_filtered.drop([i[0] for i in ids_with_negative_residues], inplace=True)
 
