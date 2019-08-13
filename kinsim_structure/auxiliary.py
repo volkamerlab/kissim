@@ -166,6 +166,14 @@ class MoleculeLoader:
 
             for subst_name, atom_type in zip(molecule.df['subst_name'], molecule.df['atom_type']):
 
+                # Some subst_name entries in the KLIFs mol2 files contain underscores.
+                # Examples
+                # - 5YKS: Residues on the N-terminus of (before) the first amino acid, i.e. 3C protease cutting site
+                # - 2J53: Mutated residue
+
+                # Convert these underscores into a minus sign (so that it can still be cast to int)
+                subst_name = subst_name.replace('_', '-')
+
                 # These are elements such as CA or MG
                 if subst_name[:2] == atom_type.upper():
                     res_id_list.append(int(subst_name[2:]))
