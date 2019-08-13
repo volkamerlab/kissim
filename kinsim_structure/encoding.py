@@ -59,15 +59,17 @@ FEATURE_LOOKUP = {
 
 class Fingerprint:
 
-    def __init__(self, molecule):
+    def __init__(self):
 
-        self.features = self.from_molecule(molecule)
+        self.features = None
 
-    @staticmethod
-    def from_molecule(molecule):
+    def from_molecule(self, molecule):
 
-        physicochemical_features = PhysicoChemicalFeatures(molecule)
-        spatial_features = SpatialFeatures(molecule)
+        physicochemical_features = PhysicoChemicalFeatures()
+        physicochemical_features.from_molecule(molecule)
+
+        spatial_features = SpatialFeatures()
+        spatial_features.from_molecule(molecule)
 
         features = pd.concat(
             [
@@ -81,20 +83,22 @@ class Fingerprint:
         empty_df = pd.DataFrame([], index=range(1, 86))
         features = pd.concat([empty_df, features], axis=1)
 
-        return features
+        self.features = features
 
 
 class PhysicoChemicalFeatures:
 
-    def __init__(self, molecule):
+    def __init__(self):
 
-        self.features = self.from_molecule(molecule)
+        self.features = None
 
-    @staticmethod
-    def from_molecule(molecule):
+    def from_molecule(self, molecule):
 
-        pharmacophore_size = PharmacophoreSizeFeatures(molecule)
-        side_chain_orientation = SideChainOrientationFeature(molecule)
+        pharmacophore_size = PharmacophoreSizeFeatures()
+        pharmacophore_size.from_molecule(molecule)
+
+        side_chain_orientation = SideChainOrientationFeature()
+        side_chain_orientation.from_molecule(molecule)
 
         # Concatenate all physicochemical features
         physicochemical_features = pd.concat(
@@ -105,15 +109,15 @@ class PhysicoChemicalFeatures:
             axis=1
         )
 
-        return physicochemical_features
+        self.features = physicochemical_features
 
 
 class SpatialFeatures:
 
-    def __init__(self, molecule):
+    def __init__(self):
 
-        self.reference_points = self.get_reference_points(molecule)
-        self.features = self.from_molecule(molecule)
+        self.reference_points = None
+        self.features = None
 
     def from_molecule(self, molecule):
         """
@@ -127,6 +131,9 @@ class SpatialFeatures:
         -------
 
         """
+
+        # Get reference points
+        self.reference_points = self.get_reference_points(molecule)
 
         # Get all residues' CA atoms in molecule (set KLIFS position as index)
         residues = molecule.df[molecule.df.atom_name == 'CA']['klifs_id x y z'.split()]
@@ -145,7 +152,7 @@ class SpatialFeatures:
                 distance.rename(name, inplace=True)
                 distances[f'distance_to_{name}'] = np.round(distance, 2)
 
-        return pd.DataFrame.from_dict(distances)
+        self.features = pd.DataFrame.from_dict(distances)
 
     def get_reference_points(self, molecule):
         """
@@ -385,9 +392,9 @@ class ExposureFeature:
 
 class PharmacophoreSizeFeatures:
 
-    def __init__(self, molecule):
+    def __init__(self):
 
-        self.features = self.from_molecule(molecule)
+        self.features = None
 
     def from_molecule(self, molecule):
         """
@@ -419,7 +426,7 @@ class PharmacophoreSizeFeatures:
 
         features = pd.concat(feature_matrix, axis=1)
 
-        return features
+        self.features = features
 
     @staticmethod
     def from_residue(residue, feature_type):
