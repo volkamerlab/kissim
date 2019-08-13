@@ -805,3 +805,44 @@ def get_aminoacids_by_molecularweight(path_to_results):
     molecular_weight = pd.read_csv(path_to_results / 'amino_acids_molecular_weight.csv')
     molecular_weight.residue_name = molecular_weight.residue_name.str.upper()
     return ' '.join(list(molecular_weight.sort_values(['molecular_weight']).residue_name))
+
+
+def get_klifs_regions():
+    """
+
+    Returns
+    -------
+
+    """
+
+    klifs_regions_definitions = {
+        'I': range(1, 3 + 1),
+        'g.I': range(4, 9 + 1),
+        'II': range(10, 13 + 1),
+        'III': range(14, 19 + 1),
+        'aC': range(20, 30 + 1),
+        'b.I': range(31, 37 + 1),
+        'IV': range(38, 41 + 1),
+        'V': range(42, 44 + 1),
+        'GK': range(45, 45 + 1),
+        'hinge': range(46, 48 + 1),
+        'linker': range(49, 52 + 1),
+        'aD': range(53, 59 + 1),
+        'aE': range(60, 64 + 1),
+        'VI': range(65, 67 + 1),
+        'c.I': range(68, 75 + 1),
+        'VII': range(76, 78 + 1),
+        'VIII': range(79, 79 + 1),
+        'x': range(80, 80 + 1),
+        'DFG': range(81, 83 + 1),
+        'a.I': range(84, 85 + 1)
+    }
+
+    klifs_regions = []
+    for key, value in klifs_regions_definitions.items():
+        klifs_regions = klifs_regions + [[key, i] for i in value]
+    klifs_regions = pd.DataFrame(klifs_regions, columns=['region_name', 'klifs_id'])
+
+    klifs_regions.index = klifs_regions.klifs_id
+
+    return klifs_regions
