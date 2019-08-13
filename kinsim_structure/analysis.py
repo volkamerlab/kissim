@@ -209,6 +209,50 @@ class SideChainOrientationStatistics:
 
         self.missing_residues_ca_cb = missing_positions
 
+    def get_mean_median(self, output_path=None, from_file=None):
+        """
+        Get mean and median of side chain orientation angles for each amino acid in dataset.
+        Add angle of 0 to GLY.
+
+        Parameters
+        ----------
+        output_path : str or pathlib.Path
+            Path to directory where data file should be saved
+        from_file : None or str or pathlib.Path
+            Default is None, optionally can take path to file containing respective data.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Mean and median of side chain orientation angles for each amino acid in dataset.
+        """
+
+        if isinstance(self.data, pd.DataFrame):
+            sco_stats_std = self.data.copy()
+        elif from_file:
+            with open(Path(from_file), 'rb') as f:
+                sco_stats_std = pickle.load(f)
+        else:
+            raise ValueError(f'No data available for mean/median value calculation.')
+
+        # Calculate mean and median
+        sco_mean_median = pd.DataFrame(
+            [
+                sco_stats_std.groupby('residue_name').mean()['sco'],
+                sco_stats_std.groupby('residue_name').median()['sco']
+            ]
+        ).transpose()
+        sco_mean_median.columns = ['sco_mean', 'sco_median']
+        sco_mean_median = sco_mean_median.round(2)
+
+        # Add value: GLY=0
+        sco_mean_median.loc['GLY'] = 0
+
+        if output_path:
+            sco_mean_median.to_csv(output_path / 'side_chain_orientation_mean_median.csv')
+
+        return sco_mean_median
+
     def plot_missing_residues_ca_cb(self, path_to_results):
 
         ax = plt.gca()
