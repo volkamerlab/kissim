@@ -141,8 +141,8 @@ class SpatialFeatures:
         self.reference_points = self.get_reference_points(molecule)
 
         # Get all residues' CA atoms in molecule (set KLIFS position as index)
-        residues = molecule.df[molecule.df.atom_name == 'CA']['klifs_id x y z'.split()]
-        residues.set_index('klifs_id', drop=True, inplace=True)
+        residues_ca = molecule.df[molecule.df.atom_name == 'CA']['klifs_id x y z'.split()]
+        residues_ca.set_index('klifs_id', drop=True, inplace=True)
 
         distances = {}
 
@@ -153,7 +153,7 @@ class SpatialFeatures:
             if coord.isna().any():
                 distances[f'distance_to_{name}'] = None
             else:
-                distance = (residues - coord).transpose().apply(lambda x: np.linalg.norm(x))
+                distance = (residues_ca - coord).transpose().apply(lambda x: np.linalg.norm(x))
                 distance.rename(name, inplace=True)
                 distances[f'distance_to_{name}'] = np.round(distance, 2)
 
