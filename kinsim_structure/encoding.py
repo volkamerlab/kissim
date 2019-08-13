@@ -335,7 +335,7 @@ class SideChainOrientationFeature:
                 index=ca_cb_com_vectors.klifs_id,
                 columns=['sco']
             )
-            self.features =  side_chain_orientation
+            self.features = side_chain_orientation
         else:
             side_chain_orientation = pd.DataFrame(
                 side_chain_orientation,
