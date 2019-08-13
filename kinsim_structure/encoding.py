@@ -62,6 +62,9 @@ MEDIAN_SIDE_CHAIN_ORIENTATION = pd.read_csv(
     index_col='residue_name'
 )['sco_median']
 
+EXPOSURE_RADIUS = 13.0
+
+
 class Fingerprint:
 
     def __init__(self):
@@ -272,7 +275,8 @@ class SpatialFeatures:
 
                 # If there are several anchor atoms, something's wrong...
                 else:
-                    raise ValueError(f'Too many anchor atoms for {molecule.code}, {reference_point_name}, {anchor_klifs_id}: '
+                    raise ValueError(f'Too many anchor atoms for'
+                                     f'{molecule.code}, {reference_point_name}, {anchor_klifs_id}: '
                                      f'{len(anchor_atom)} (one atom allowed).')
 
             anchors[reference_point_name] = pd.concat(anchor_atoms)
@@ -476,6 +480,7 @@ class PharmacophoreSizeFeatures:
 
         # Manual addition of modified residue(s)
         # PTR (o-phosphotyrosine): Use parent amino acid for lookup
+        # MSE (selenomethionine): Use parent amino acid for lookup
         if residue == 'PTR':
             residue = 'TYR'
         if residue == 'MSE':
@@ -491,119 +496,3 @@ class PharmacophoreSizeFeatures:
                 result = feature
 
         return result
-
-
-def exposure(mol, kette):
-    """Input: MOL2 file of a kinase binding site, PDB code as string
-    Calculates half sphere exposure for binding site residues.
-    Output: Numpy array with exposure values for all binding site residues (dtype = float)"""
-    # write residue IDs of binding site from MOL2 file into list (in the correct order, non redundant)
-    res_ids = []
-    for name in mol.df.subst_name:
-        if name in res_ids:
-            continue
-        else:
-            res_ids.append(name)
-    # it happened, that the MOL2 data frame did not only contatin residues but also ligand information
-    res_nos = []
-    tag_or_lig = []
-    for x in res_ids:
-        # check if ID id amino acid and not ligand
-        if re.match(r'^[A-Z]{3}', x) and not '_' in x:
-            res_nos.append(int(x[3:]))
-        else:
-            tag_or_lig.append(res_ids.index(x))
-    # align binding site residue IDs from MOL2 file to the key format of HSE output dictionary
-    hse_keys = [(kette.id, (' ', ident,' ')) for ident in res_nos]
-    # get protein residue IDs from PDB file and select the binding site residues based on the IDs from MOL2 file
-    res_list = Selection.unfold_entities(kette, 'R')
-    keys = [res for res in res_list if res.get_full_id()[3][1] in res_nos]
-    # compute HSEa and HSEb for the chain
-    RADIUS = 13.0
-    hse_cb = HSExposureCB(kette, RADIUS)
-    hse_ca = HSExposureCA(kette, RADIUS)
-
-    hse_vector = []
-    # Case: there is no HSE value computed for the first n residue(s)
-    # solution: take value of first residue that HSE could be calculated for and assign it to the missing residues
-    # no averaging possible in this case
-    i = 0
-    if hse_keys[0][1] not in [k[1] for k in hse_cb.keys()] and hse_keys[0][1] not in [k[1] for k in hse_ca.keys()]:
-        while hse_keys[i][1] not in [k[1] for k in hse_cb.keys()] and hse_keys[i][1] not in [k[1] for k in hse_ca.keys()]:
-            ident = hse_keys[i][1][1]
-            rest = [res for res in keys if res.id[1] == ident][0]
-            logging.warning('no hse for first residue ('+str(rest.resname)+str(ident)+') of binding site sequence, compensate by next available hse')
-            i += 1
-
-    if i!=0:
-        key = hse_keys[i]
-        ident = key[1][1]
-        rest = [res for res in keys if res.id[1] == ident][0]
-        pred = rest.resname
-        pred_id = ident
-        logging.warning('missing hse compensated by value of '+str(pred)+str(pred_id))
-        # if there is no hse value in HSEb dict, take value from HSEa dict, else residue is missing
-        if key[1] in [k[1] for k in hse_cb.keys()]:
-            v = hse_cb[key][0]/float((hse_cb[key][0]+hse_cb[key][1]))
-        else:
-            v = hse_ca[key][0]/float((hse_ca[key][0]+hse_ca[key][1]))
-        hse_vector = [v for c in range(0,i+1)]
-        i += 1
-        pred_value = v
-    # iterate over binding site residue keys and extract HSE value from dictionary
-
-    missing = False
-    m = 0
-    m_name = []
-    for j in range(i, len(hse_keys)):
-        # get residue key, residue id and residue entity
-        key = hse_keys[j]
-        ident = key[1][1]
-        rest = [res for res in keys if res.id[1] == ident][0]
-        # check dictionaries for residue key, if residue in keys, remember residue ID in case following residue
-        # is missing in dict and a dummy needs to be computed
-        if key[1] in [k[1] for k in hse_cb.keys()]:
-            v = hse_cb[key][0]/float((hse_cb[key][0]+hse_cb[key][1]))
-            # if there are missing residues between predecessor and current key, assign average of last and current
-            # value to these
-            if missing == True:
-                dummy = np.average([pred_value, v])
-                for n in range(m):
-                    hse_vector.append(dummy)
-                    n += 1
-                logging.info('assigned average hse of '+pred+str(pred_id)+' and '+str(rest.resname)+str(ident)+' to missing residues '+','.join(m_name))
-                m = 0
-                m_name = []
-                missing = False
-            hse_vector.append(v)
-            pred_value = v
-            pred = rest.resname
-            pred_id = ident
-        elif key[1] in [k[1] for k in hse_ca.keys()]:
-            v = hse_ca[key][0]/float((hse_ca[key][0]+hse_ca[key][1]))
-            # if there are missing resiude between predecessor and current key, assign average of last and current
-            # value to these
-            if missing == True:
-                dummy = np.average([pred_value, v])
-                for n in range(m):
-                    hse_vector.append(dummy)
-                    n += 1
-                logging.info('assigned average hse of '+pred+str(pred_id)+' and '+str(rest.resname)+str(ident)+' to missing residues '+','.join(m_name))
-                m = 0
-                m_name = []
-                missing = False
-            hse_vector.append(v)
-            pred_value = v
-            pred = rest.resname
-            pred_id = ident
-        else:
-            # if residue is no dict key, raise counter
-            logging.warning('no hse available for current residue '+str(rest.resname)+str(ident))
-            missing = True
-            m += 1
-        # for missing residues at the end of the binding site sequence, append value of last available residue
-    while len(hse_vector) < len(hse_keys):
-        hse_vector.append(pred_value)
-    for elem in tag_or_lig:
-        hse_vector.insert(elem,0.0)
-    return np.array(hse_vector, dtype=float)
