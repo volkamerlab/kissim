@@ -8,6 +8,7 @@ Handles the primary functions for the structural kinase fingerprint analysis.
 
 import logging
 from pathlib import Path
+import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -340,11 +341,10 @@ class SideChainOrientationStatistics:
 
 class NonStandardKlifsAminoAcids:
 
-    def __init__(self, klifs_metadata):
-        self.data = self.get_non_standard_amino_acids_in_klifs(klifs_metadata)
+    def __init__(self):
+        self.data = None
 
-    @staticmethod
-    def get_non_standard_amino_acids_in_klifs(klifs_metadata):
+    def get_non_standard_amino_acids_in_klifs(self, klifs_metadata):
         """
         For a given set of mol2 files, collect all non-standard amino acids.
 
@@ -355,37 +355,51 @@ class NonStandardKlifsAminoAcids:
 
         Returns
         -------
-        dict
-            List of non-standard amino acids (value) for each structure contained in the input mol2 file (key).
+        pandas.DataFrame
+            Non-standard amino acids (residue ID and residue name in mol2 file and KLIFS metadata)
+            for each structure listed in the KLIFS metadata.
         """
 
-        # Get list of molecules linked to metadata
-
-        molecules = []
-        for index, row in klifs_metadata.iterrows():
-            klifs_molecule_loader = KlifsMoleculeLoader(metadata_entry=row)
-            molecule = klifs_molecule_loader.molecule
-            molecules.append(molecule)
-
-        # 20 standard amino acids
         standard_aminoacids = 'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET PHE PRO SER THR TRP TYR VAL'.split()
 
-        # Will contain per structure (key) list of non-standard amino acids (values)
-        non_standard_aminoacids = {}
+        # Initialize list for non-standard amino acid entries in dataset
+        non_std_list = []
 
-        for molecule in molecules:
+        for index, row in klifs_metadata.iterrows():
 
-            # Get deduplicated amino acid names
-            res_names = set(molecule.df.res_name)
+            # Load molecule from metadata
+            klifs_molecule_loader = KlifsMoleculeLoader(metadata_entry=row)
+            molecule = klifs_molecule_loader.molecule
 
-            # Retain only non-standard amino acids
-            non_standard_aminoacids_per_file = [res_name for res_name in res_names if res_name not in standard_aminoacids]
+            # Get first entry per residue
+            firsts = molecule.df.groupby(by='res_id', as_index=False).first()
 
-            # If structure contains non-standard amino acids, add to dict
-            if non_standard_aminoacids_per_file:
-                non_standard_aminoacids[molecule.code] = non_standard_aminoacids_per_file
+            non_std = firsts[~firsts.res_name.isin(standard_aminoacids)].copy()
+            non_std = non_std[['res_name', 'res_id', 'klifs_id']]
 
-        return non_standard_aminoacids
+            # If non-standard amino acids are present in molecule...
+            if len(non_std) > 0:
+
+                # ... add molecule code
+                non_std['code'] = molecule.code
+
+                # ... add KLIFS residue names
+                non_std['klifs_res_name'] = non_std.apply(
+                    lambda x: row.pocket[x.klifs_id - 1],
+                    axis=1
+                )
+
+                # Add to non-standard amino acid entry list
+                non_std_list.append(non_std)
+
+            # If no non-standard amino acids are present, do nothing
+            else:
+                continue
+
+        non_std_all = pd.concat(non_std_list)
+        non_std_all.reset_index(inplace=True, drop=True)
+
+        self.data = non_std_all
 
 
 
