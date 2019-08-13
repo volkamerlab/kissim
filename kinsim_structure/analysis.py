@@ -148,18 +148,10 @@ class GapRate:
 
 class SideChainOrientationStatistics:
 
-    def __init__(self, klifs_metadata):
-        self.n_structures = klifs_metadata.shape[0]
+    def __init__(self):
+        self.n_structures = None
         self.data = None
         self.missing_residues_ca_cb = None
-
-    def from_file(self, path_to_results):
-        sco_stats = pd.read_pickle(path_to_results / 'stats_missing_ca_cb_and_sco.p')
-        self.data = sco_stats
-
-    def to_file(self, path_to_results):
-        sco_stats = self.data
-        sco_stats.to_pickle(path_to_results / 'stats_missing_ca_cb_and_sco.p')
 
     def from_metadata(self, klifs_metadata):
         """
@@ -175,6 +167,9 @@ class SideChainOrientationStatistics:
             CA, CB and centroid points for each residue for all molecules described in the KLIFS metadata.
         """
 
+        # Set number of structures in dataset
+        self.n_structures = klifs_metadata.shape[0]
+
         stats = []
 
         for index, row in klifs_metadata.iterrows():
@@ -183,12 +178,12 @@ class SideChainOrientationStatistics:
             klifs_molecule_loader = KlifsMoleculeLoader(metadata_entry=row)
             molecule = klifs_molecule_loader.molecule
 
-            side_chain_orientation_feature = SideChainOrientationFeature(molecule)
-            points = side_chain_orientation_feature.from_molecule(molecule, verbose=True)
+            side_chain_orientation_feature = SideChainOrientationFeature()
+            side_chain_orientation_feature.from_molecule(molecule, verbose=True)
 
-            points['klifs_code'] = molecule.code
+            side_chain_orientation_feature.features['klifs_code'] = molecule.code
 
-            stats.append(points)
+            stats.append(side_chain_orientation_feature.features)
 
         self.data = pd.concat(stats)
 
