@@ -12,7 +12,7 @@ from pathlib import Path
 from Bio.PDB import PDBList, MMCIFParser
 import pandas as pd
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader
+from kinsim_structure.auxiliary import KlifsMoleculeLoader, get_klifs_regions
 
 logger = logging.getLogger(__name__)
 
@@ -442,6 +442,34 @@ def drop_underscored_residue_ids(klifs_metadata):
 
     return klifs_metadata_filtered
 
-    klifs_metadata_filtered.drop([i[0] for i in ids_with_negative_residues], inplace=True)
+
+def drop_residue_x(klifs_metadata):
+
+    # Get important KLIFS
+
+    klifs_regions = get_klifs_regions()
+
+    important_klifs_regions = klifs_regions[
+        klifs_regions.region_name.isin(
+            ['x', 'DFG', 'GK', 'hinge', 'linker', 'c.I']
+        )
+    ]
+
+    klifs_metadata_filtered = klifs_metadata.copy()
+
+    for index, row in klifs_metadata_filtered.iterrows():
+
+        # If pocket contains residue X
+        if 'X' in row.pocket:
+
+            # Get pocket residue(s) with X
+            pocket = pd.Series(list(row.pocket))
+            pocket_x = pocket[pocket == 'X']
+
+            # If this residues sits in an important KLIFS region, drop the PDB structure
+            shared_residues = set(pocket_x.index) & set(important_klifs_regions.index)
+            if shared_residues:
+                klifs_metadata_filtered.drop(shared_residues, inplace=True)
+                print(f'Drop PDB ID: {row.pdb_id}')
 
     return klifs_metadata_filtered
