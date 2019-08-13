@@ -12,6 +12,7 @@ from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASN', 'size', 2),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ARG', 'size', 3),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'PTR', 'size', 3),
+    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'MSE', 'size', 2),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'size', None),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'hbd', 0),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASN', 'hbd', 1),
@@ -66,9 +67,9 @@ def test_feature_from_residue(filename, residue, feature_type, feature):
 
 
 @pytest.mark.parametrize('filename, reference_point_name, anchor_residue_klifs_ids, x_coordinate', [
-    ('hinge_region', [16, 47, 80], 6.25545),
-    ('dfg_region', [20, 23, 81], 11.6846),
-    ('front_pocket', [6, 48, 75], float('nan'))
+    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'hinge_region', [16, 47, 80], 6.25545),
+    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'dfg_region', [20, 23, 81], 11.6846),
+    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'front_pocket', [6, 48, 75], float('nan'))
 ])
 def test_get_anchor_atoms(filename, reference_point_name, anchor_residue_klifs_ids, x_coordinate):
     """
