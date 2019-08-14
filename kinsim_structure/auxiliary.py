@@ -271,15 +271,15 @@ class KlifsMoleculeLoader:
         KLIFS metadata describing a pocket entry in the KLIFS dataset.
     """
 
-    def __init__(self, *, mol2_path=None, metadata_entry=None):
+    def __init__(self, *, mol2_path=None, klifs_metadata_entry=None):
 
         self.klifs_metadata_path = PATH_TO_DATA / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
 
         if mol2_path is not None:
             mol2_path = Path(mol2_path)
             self.molecule = self.from_file(mol2_path)
-        elif metadata_entry is not None:
-            self.molecule = self.from_metadata_entry(metadata_entry)
+        elif klifs_metadata_entry is not None:
+            self.molecule = self.from_metadata_entry(klifs_metadata_entry)
         else:
             self.molecule = None
 
