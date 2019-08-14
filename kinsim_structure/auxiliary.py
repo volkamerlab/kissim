@@ -489,6 +489,32 @@ class KlifsMoleculeLoader:
         return mol2_path
 
 
+class PdbChainLoader:
+
+    def __init__(self, klifs_metadata_entry):
+        self.chain = self.from_metadata_entry(klifs_metadata_entry)
+
+    @staticmethod
+    def from_metadata_entry(klifs_metadata_entry):
+
+        pdb_path = PATH_TO_DATA / 'raw' / 'PDB_download' / f'{klifs_metadata_entry.pdb_id}.cif'
+
+        if not Path(pdb_path).exists():
+            raise IOError(f'PDB file does not exist: {pdb_path}')
+
+        parser = MMCIFParser()
+        structure = parser.get_structure(
+            structure_id=klifs_metadata_entry.pdb_id,
+            filename=pdb_path
+        )
+        model = structure[0]
+
+        # Get pdb chain as denoted in metadata
+        chain = model[klifs_metadata_entry.chain]
+
+        return chain
+
+
 def get_amino_acids_1to3(one_letter_amino_acid):
     """
     Get three letter code for a one letter code amino acid.

@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
+from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.auxiliary import get_klifs_residues_mol2topdb, center_of_mass
 
 logger = logging.getLogger(__name__)
@@ -314,7 +315,7 @@ class SideChainOrientationFeature:
         """
 
         # Calculate/get CA, CB and centroid points
-        ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule)
+        ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule, chain)
 
         # Save here angle values per residue
         side_chain_orientation = []
@@ -353,7 +354,7 @@ class SideChainOrientationFeature:
             self.features = pd.concat([ca_cb_com_vectors, side_chain_orientation], axis=1)
 
     @staticmethod
-    def _get_ca_cb_com_vectors(molecule):
+    def _get_ca_cb_com_vectors(molecule, chain):
         """
         Get CA, CB and centroid points for each residue of a molecule.
 
@@ -369,7 +370,14 @@ class SideChainOrientationFeature:
         """
 
         # Get KLIFS residues in PDB file based on KLIFS mol2 file
-        klifs_residues = get_klifs_residues_mol2topdb(molecule)
+        # Data type: list of Bio.PDB.Residue.Residue
+        residues = Selection.unfold_entities(entity_list=chain, target_level='R')
+
+        # Get residue IDs of binding site from mol2 file
+        residue_ids = [int(i) for i in molecule.df.res_id.unique()]
+
+        # Select KLIFS residues
+        klifs_residues = [residue for residue in residues if residue.get_full_id()[3][1] in residue_ids]
 
         # Save here values per residue
         data = []
