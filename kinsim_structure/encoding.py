@@ -74,7 +74,7 @@ class Fingerprint:
     def from_molecule(self, molecule):
 
         physicochemical_features = PhysicoChemicalFeatures()
-        physicochemical_features.from_molecule(molecule)
+        physicochemical_features.from_molecule(molecule, chain)
 
         spatial_features = SpatialFeatures()
         spatial_features.from_molecule(molecule)
@@ -100,19 +100,23 @@ class PhysicoChemicalFeatures:
 
         self.features = None
 
-    def from_molecule(self, molecule):
+    def from_molecule(self, molecule, chain):
 
         pharmacophore_size = PharmacophoreSizeFeatures()
         pharmacophore_size.from_molecule(molecule)
 
         side_chain_orientation = SideChainOrientationFeature()
-        side_chain_orientation.from_molecule(molecule)
+        side_chain_orientation.from_molecule(molecule, chain)
+
+        exposure = ExposureFeature()
+        exposure.from_molecule(molecule, chain)
 
         # Concatenate all physicochemical features
         physicochemical_features = pd.concat(
             [
                 pharmacophore_size.features,
-                side_chain_orientation.features
+                side_chain_orientation.features,
+                exposure.features
             ],
             axis=1
         )
