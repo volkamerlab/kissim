@@ -408,7 +408,117 @@ class SideChainOrientationFeature:
 
 
 class ExposureFeature:
-    pass
+    """
+    Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the CA-CB vector
+    divided by the all CA atoms (given a sphere radius).
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 features (columns) for 85 residues (rows).
+    """
+
+    def __init__(self):
+
+        self.features = None
+
+    def from_molecule(self, molecule, chain, verbose=False):
+        """
+        Get exposure for each residue of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        verbose : bool
+            Either return exposure only (default) or additional info on HSExposureCA and HSExposureCB values.
+        """
+
+        # Calculate exposure values
+        exposures_cb = self.get_exposure_by_method(chain, method='HSExposureCB')
+        exposures_ca = self.get_exposure_by_method(chain, method='HSExposureCA')
+
+        # Join both exposures calculations
+        exposures_both = exposures_ca.join(exposures_cb, how='outer')
+
+        # Get residues IDs belonging to KLIFS binding site
+        klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
+        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=['res_id', 'klifs_id'])
+        klifs_res_ids.set_index('res_id', inplace=True, drop=False)
+
+        # Keep only KLIFS residues
+        # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
+        exposures = klifs_res_ids.join(exposures_both, how='left')
+
+        # Set index (from residue IDs) to KLIFS IDs
+        exposures.set_index('klifs_id', inplace=True, drop=True)
+
+        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
+        exposures['exposure'] = exposures.apply(
+            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
+            axis=1
+        )
+
+        if not verbose:
+            self.features = pd.DataFrame(
+                exposures.exposure,
+                index=exposures.exposure.index,
+                columns=['exposure']
+            )
+        else:
+            self.features = exposures
+
+    @staticmethod
+    def get_exposure_by_method(chain, method='HSExposureCB'):
+        """
+        Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
+
+        Parameters
+        ----------
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        method : str
+            Half sphere exposure method name: HSExposureCA or HSExposureCB.
+
+        References
+        ----------
+        Read on HSExposure module here: https://biopython.org/DIST/docs/api/Bio.PDB.HSExposure-pysrc.html
+        """
+
+        methods = 'HSExposureCB HSExposureCA'.split()
+
+        # Calculate exposure values
+        if method == methods[0]:
+            exposures = HSExposureCB(chain, EXPOSURE_RADIUS)
+        elif method == methods[1]:
+            exposures = HSExposureCA(chain, EXPOSURE_RADIUS)
+        else:
+            raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
+
+            # Define column names
+        up = f'{method[-2:].lower()}_up'
+        down = f'{method[-2:].lower()}_down'
+        angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
+        exposure = f'{method[-2:].lower()}_exposure'
+
+        # Transform into DataFrame
+        exposures = pd.DataFrame(
+            exposures.property_dict,
+            index=[up, down, angle]
+        ).transpose()
+        exposures.index = [i[1][1] for i in exposures.index]
+
+        # Check that exposures are floats (important for subsequent division)
+        if (exposures[up].dtype != 'float64') | (exposures[down].dtype != 'float64'):
+            raise TypeError(f'Wrong dtype, float64 needed!')
+
+        # Calculate exposure value: up / (up + down)
+        exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
+
+        return exposures
 
 
 class PharmacophoreSizeFeatures:
