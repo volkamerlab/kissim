@@ -67,12 +67,67 @@ EXPOSURE_RADIUS = 13.0
 
 
 class Fingerprint:
+    """
+    Kinase fingerprint with 8 physicochemical and 4 spatial properties for each residue in the KLIFS-defined
+    kinase binding site of 85 pre-aligned residues.
+
+    Physicochemical properties:
+    - Size
+    - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
+    - Side chain orientation
+    - Half sphere exposure
+
+    Spatial properties:
+    Distance of each residue to 4 reference points:
+    - Binding site centroid
+    - Hinge region
+    - DFG loop
+    - Front pocket
+
+    Attributes
+    ----------
+    molecule_code : str
+        Molecule code as defined by KLIFS in mol2 file.
+    features : pandas.DataFrame
+        12 features (columns) for 85 residues (rows).
+    """
 
     def __init__(self):
 
+        self.molecule_code = None
         self.features = None
 
-    def from_molecule(self, molecule):
+    def from_metadata_entry(self, klifs_metadata_entry):
+        """
+        Get kinase fingerprint from KLIFS metadata entry.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        """
+
+        klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+        molecule = klifs_molecule_loader.molecule
+
+        pdb_chain_loader = PdbChainLoader(klifs_metadata_entry)
+        chain = pdb_chain_loader.chain
+
+        self.from_molecule(molecule, chain)
+
+    def from_molecule(self, molecule, chain):
+        """
+        Get kinase fingerprint from molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        """
+
+        self.molecule_code = molecule.code
 
         physicochemical_features = PhysicoChemicalFeatures()
         physicochemical_features.from_molecule(molecule, chain)
@@ -96,12 +151,36 @@ class Fingerprint:
 
 
 class PhysicoChemicalFeatures:
+    """
+    Physicochemical features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+
+    Physicochemical properties:
+    - Size
+    - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
+    - Side chain orientation
+    - Half sphere exposure
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        6 features (columns) for 85 residues (rows).
+    """
 
     def __init__(self):
 
         self.features = None
 
     def from_molecule(self, molecule, chain):
+        """
+        Get physicochemical properties for each residue of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        """
 
         pharmacophore_size = PharmacophoreSizeFeatures()
         pharmacophore_size.from_molecule(molecule)
@@ -126,6 +205,23 @@ class PhysicoChemicalFeatures:
 
 
 class SpatialFeatures:
+    """
+    Spatial features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+
+    Spatial properties:
+    Distance of each residue to 4 reference points:
+    - Binding site centroid
+    - Hinge region
+    - DFG loop
+    - Front pocket
+
+    Attributes
+    ----------
+    reference_points : pandas.DataFrame
+        Coordiantes (rows) for 4 reference points (columns).
+    features : pandas.DataFrame
+        4 features (columns) for 85 residues (rows).
+    """
 
     def __init__(self):
 
@@ -134,15 +230,12 @@ class SpatialFeatures:
 
     def from_molecule(self, molecule):
         """
+        Get spatial properties for each residue of a molecule.
 
         Parameters
         ----------
         molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
             Content of mol2 or pdb file as BioPandas object.
-
-        Returns
-        -------
-
         """
 
         # Get reference points
@@ -169,6 +262,7 @@ class SpatialFeatures:
 
     def get_reference_points(self, molecule):
         """
+        Get reference points of a molecule, i.e. the binding site centroid, hinge region, DFG loop and front pocket.
 
         Parameters
         ----------
@@ -177,7 +271,8 @@ class SpatialFeatures:
 
         Returns
         -------
-
+        pandas.DataFrame
+            Coordiantes (rows) for 4 reference points (columns).
         """
 
         reference_points = dict()
@@ -290,28 +385,40 @@ class SpatialFeatures:
 
 
 class SideChainOrientationFeature:
+    """
+    Side chain orientations for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues, as
+    described by SiteAlign (Schalon et al. Proteins. 2008).
+    Side chain orientation of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 feature (columns) for 85 residues (rows).
+
+    References
+    ----------
+    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
+    """
 
     def __init__(self):
 
         self.features = None
 
-    def from_molecule(self, molecule, verbose=False, fill_missing=False):
+    def from_molecule(self, molecule, chain, verbose=False, fill_missing=False):
         """
-        Calculate side chain orientation for each residue of a molecule.
+        Get side chain orientation for each residue of a molecule.
 
         Parameters
         ----------
         molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
             Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
         verbose : bool
             Either return angles only (default) or angles plus CA, CB and centroid points as well as metadata.
         fill_missing : bool
             Fill missing values with median value of respective amino acid angle distribution.
-
-        Returns
-        -------
-        list of float
-            Side chain orientation (angle) for each residue of a molecule.
         """
 
         # Calculate/get CA, CB and centroid points
@@ -328,7 +435,7 @@ class SideChainOrientationFeature:
 
             # If Ca and Cb are missing for angle calculation...
             else:
-                # ... set median value to residue
+                # ... set median value to residue and GLY to 0
                 if fill_missing:
                     angle = MEDIAN_SIDE_CHAIN_ORIENTATION[row.residue_name]
 
@@ -362,6 +469,8 @@ class SideChainOrientationFeature:
         ----------
         molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
             Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
 
         Returns
         -------
@@ -534,6 +643,22 @@ class ExposureFeature:
 
 
 class PharmacophoreSizeFeatures:
+    """
+    Pharmacophore and size features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
+    residues, as described by SiteAlign (Schalon et al. Proteins. 2008).
+
+    Pharmacophoric features include hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature.
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        6 features (columns) for 85 residues (rows).
+
+    References
+    ----------
+    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
+    """
 
     def __init__(self):
 
@@ -541,7 +666,7 @@ class PharmacophoreSizeFeatures:
 
     def from_molecule(self, molecule):
         """
-        Get pharmacophoric and size features for all residues of a molecule.
+        Get pharmacophoric and size features for each residues of a molecule.
 
         Parameters
         ----------
@@ -575,7 +700,7 @@ class PharmacophoreSizeFeatures:
     def from_residue(residue, feature_type):
         """
         Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
-        hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
+        hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
         (according to SiteAlign feature encoding).
 
         Parameters
@@ -589,11 +714,6 @@ class PharmacophoreSizeFeatures:
         -------
         int
             Residue's size value according to SiteAlign feature encoding.
-
-        References
-        ----------
-        [1]_ Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
-        Proteins, 2008.
         """
 
         if feature_type not in FEATURE_LOOKUP.keys():
