@@ -176,7 +176,7 @@ class SideChainOrientationStatistics:
         for index, row in klifs_metadata.iterrows():
             print(f'{index + 1}/{len(klifs_metadata)}')
 
-            klifs_molecule_loader = KlifsMoleculeLoader(metadata_entry=row)
+            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=row)
             molecule = klifs_molecule_loader.molecule
 
             side_chain_orientation_feature = SideChainOrientationFeature()
@@ -368,7 +368,7 @@ class NonStandardKlifsAminoAcids:
         for index, row in klifs_metadata.iterrows():
 
             # Load molecule from metadata
-            klifs_molecule_loader = KlifsMoleculeLoader(metadata_entry=row)
+            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=row)
             molecule = klifs_molecule_loader.molecule
 
             # Get first entry per residue
