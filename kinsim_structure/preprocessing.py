@@ -426,7 +426,7 @@ def drop_underscored_residue_ids(klifs_metadata):
 
         print(f'{index + 1}/{len(klifs_metadata_filtered)}')
 
-        ml = KlifsMoleculeLoader(metadata_entry=row)
+        ml = KlifsMoleculeLoader(klifs_metadata_entry=row)
         molecule = ml.molecule
 
         # Get first entry of each residue ID
