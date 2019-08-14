@@ -324,7 +324,7 @@ class SideChainOrientationFeature:
 
             if row.ca and row.cb:
                 angle = np.degrees(calc_angle(row.ca, row.cb, row.com))
-                side_chain_orientation.append(round(angle, 2))
+                side_chain_orientation.append(angle.round(2))
 
             # If Ca and Cb are missing for angle calculation...
             else:
