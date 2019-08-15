@@ -7,7 +7,6 @@ Handles the primary functions for the structural kinase fingerprint.
 """
 
 import logging
-import re
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
@@ -16,7 +15,7 @@ import pandas as pd
 from pathlib import Path
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.auxiliary import get_klifs_residues_mol2topdb, center_of_mass
+from kinsim_structure.auxiliary import center_of_mass
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ FEATURE_LOOKUP = {
         0: 'ALA ASP GLU GLY ILE LEU MET PHE PRO VAL'.split(),
         1: 'ASN CYS GLN HIS LYS SER THR TRP TYR'.split(),
         3: 'ARG'.split()
-    },
+    },  # Note: it is correct that 2 is missing!
     'hba': {
         0: 'ALA ARG CYS GLY ILE LEU LYS MET PHE PRO TRP VAL'.split(),
         1: 'ASN GLN HIS SER THR TYR'.split(),
@@ -148,6 +147,38 @@ class Fingerprint:
         features = pd.concat([empty_df, features], axis=1)
 
         self.features = features
+
+    def normalize(self):
+
+        if self.features:
+
+            # Make a copy of DataFrame
+            normalized = self.features.copy()
+
+            # Normalize size
+            normalized['size'] = normalized['size'].apply(lambda x: x / 2)
+
+            # Normalize pharmacophoric features
+            normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3)
+            normalized['hba'] = normalized['hba'].apply(lambda x: x / 2)
+            normalized['charge'] = normalized['charge'].apply(lambda x: x / 2)
+
+            # Normalize side chain orientation
+            normalized['sco'] = normalized['sco'].apply(lambda x: x / 180)
+
+            # Normalize distances
+            normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
+                lambda x: x / 15 if x <= 15 else 1
+            )
+            normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
+                lambda x: x / 15 if x <= 15 else 1
+            )
+            normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
+                lambda x: x / 15 if x <= 15 else 1
+            )
+            normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
+                lambda x: x / 15 if x <= 15 else 1
+            )
 
 
 class PhysicoChemicalFeatures:
