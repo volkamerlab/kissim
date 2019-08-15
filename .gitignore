@@ -1,3 +1,6 @@
+# Files
+results/stats_missing_ca_cb_and_sco.p
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
