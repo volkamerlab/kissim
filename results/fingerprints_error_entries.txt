@@ -1,0 +1,3 @@
+HUMAN/CHK1_4hyh_altB_chainA
+HUMAN/CHK1_4jik_chainA
+HUMAN/LOK_2j7t_altA_chainA
