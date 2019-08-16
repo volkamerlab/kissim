@@ -33,10 +33,14 @@ def get_fingerprint(klifs_metadata_entry):
     except:
 
         with open(path_to_results / 'fingerprints_error_entries.txt', 'a+') as f_errors:
-            f_errors.write(
-                f'{klifs_metadata_entry.pdb_id}_'
-                f'{klifs_metadata_entry.chain}_'
+            error_message = f'{klifs_metadata_entry.species.upper()}/' \
+                f'{klifs_metadata_entry.kinase}_' \
+                f'{klifs_metadata_entry.pdb_id}_' \
+                f'{klifs_metadata_entry.chain}_' \
                 f'{klifs_metadata_entry.alternate_model}\n'
+            error_message.replace('_-', '')
+            f_errors.write(
+                error_message
             )
 
 
