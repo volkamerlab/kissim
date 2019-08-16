@@ -267,7 +267,7 @@ class KlifsMoleculeLoader:
     ----------
     mol2_path : str or pathlib.Path
         Mol2 file path.
-    metadata_entry : pandas.Series
+    klifs_metadata_entry : pandas.Series
         KLIFS metadata describing a pocket entry in the KLIFS dataset.
     """
 
