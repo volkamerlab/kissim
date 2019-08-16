@@ -451,7 +451,7 @@ def drop_residue_x(klifs_metadata):
 
     important_klifs_regions = klifs_regions[
         klifs_regions.region_name.isin(
-            ['x', 'DFG', 'GK', 'hinge', 'linker', 'c.I']
+            ['x', 'DFG', 'GK', 'hinge', 'g.I']
         )
     ]
 
