@@ -469,7 +469,8 @@ def drop_residue_x(klifs_metadata):
             # If this residues sits in an important KLIFS region, drop the PDB structure
             shared_residues = set(pocket_x.index) & set(important_klifs_regions.index)
             if shared_residues:
-                klifs_metadata_filtered.drop(shared_residues, inplace=True)
+                print(index)
+                klifs_metadata_filtered.drop(index, inplace=True)
                 print(f'Drop PDB ID: {row.pdb_id}')
 
     return klifs_metadata_filtered
