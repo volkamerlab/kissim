@@ -15,7 +15,7 @@ def get_spatial_features(klifs_metadata_entry):
     ml = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
     space.from_molecule(ml.molecule)
 
-    space.features['metadata_index'] = klifs_metadata_entry['index']
+    space.features['metadata_index'] = klifs_metadata_entry['metadata_index']
     space.features['kinase'] = klifs_metadata_entry.kinase
     space.features['pdb_id'] = klifs_metadata_entry.pdb_id
     space.features['chain'] = klifs_metadata_entry.chain
