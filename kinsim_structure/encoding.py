@@ -57,6 +57,19 @@ FEATURE_LOOKUP = {
     }
 }
 
+STANDARD_AA = 'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET PHE PRO SER THR TRP TYR VAL'.split()
+
+MODIFIED_AA_CONVERSION = {
+    'CAF': 'CYS',
+    'CME': 'CYS',
+    'CSS': 'CYS',
+    'OCY': 'CYS',
+    'KCX': 'LYS',
+    'MSE': 'MET',
+    'PHD': 'ASP',
+    'PTR': 'TYR'
+}
+
 MEDIAN_SIDE_CHAIN_ORIENTATION = pd.read_csv(
     Path(__file__).parent / 'data' / 'side_chain_orientation_mean_median.csv',
     index_col='residue_name'
@@ -718,6 +731,12 @@ class PharmacophoreSizeFeatures:
 
             # Select from DataFrame first row per KLIFS position (index) and residue name
             residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
+
+            # Report non-standard residues in molecule
+            non_standard_residues = set(residues) - set(STANDARD_AA)
+            if len(non_standard_residues) > 0:
+                print(non_standard_residues)
+
             features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
             features.rename(feature_type, inplace=True)
 
@@ -752,12 +771,8 @@ class PharmacophoreSizeFeatures:
                            f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
 
         # Manual addition of modified residue(s)
-        # PTR (o-phosphotyrosine): Use parent amino acid for lookup
-        # MSE (selenomethionine): Use parent amino acid for lookup
-        if residue == 'PTR':
-            residue = 'TYR'
-        if residue == 'MSE':
-            residue = 'MET'
+        if residue in MODIFIED_AA_CONVERSION.keys():
+            residue = MODIFIED_AA_CONVERSION[residue]
 
         # Start with a feature of None
         result = None
