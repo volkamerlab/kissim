@@ -9,11 +9,17 @@ from kinsim_structure.encoding import SpatialFeatures
 
 
 def get_spatial_features(klifs_metadata_entry):
+
+
     space = SpatialFeatures()
     ml = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
     space.from_molecule(ml.molecule)
 
     space.features['metadata_index'] = klifs_metadata_entry['index']
+    space.features['kinase'] = klifs_metadata_entry.kinase
+    space.features['pdb_id'] = klifs_metadata_entry.pdb_id
+    space.features['chain'] = klifs_metadata_entry.chain
+    space.features['alternate_model'] = klifs_metadata_entry.alternate_model
     space.features['qualityscore'] = klifs_metadata_entry.qualityscore
     space.features['resolution'] = klifs_metadata_entry.resolution
 
@@ -52,5 +58,5 @@ if __name__ == "__main__":
     all_distances = pd.concat(space_list)
     print(len(all_distances))
 
-    with open(path_to_results / 'distances_all.p', 'wb') as f:
+    with open(path_to_results / 'postprocessing' / 'distances_all.p', 'wb') as f:
         pickle.dump(all_distances, f)
