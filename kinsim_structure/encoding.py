@@ -13,6 +13,8 @@ from Bio.PDB import calc_angle
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from scipy.special import cbrt
+from scipy.stats.stats import moment
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.auxiliary import center_of_mass
@@ -161,37 +163,105 @@ class Fingerprint:
 
         self.features = features
 
-    def normalize(self):
+    def get_usr_fingerprint(self):
 
-        if self.features:
+        if self.features is not None:
+
+            physchem = self.features.iloc[:, [1, 2, 3, 4, 5, 6, 7, 8]]
+            distances = self.features.iloc[:, [9, 10, 11, 12]]
+
+            moments = self._calc_moments(distances)
+
+            return {
+                'physchem': physchem,
+                'moments': moments
+            }
+
+        else:
+            return None
+
+    def normalize_physchem_distances(self):
+
+        if self.features is not None:
 
             # Make a copy of DataFrame
             normalized = self.features.copy()
 
             # Normalize size
-            normalized['size'] = normalized['size'].apply(lambda x: x / 2)
+            normalized['size'] = normalized['size'].apply(lambda x: (x-1) / 2)
 
             # Normalize pharmacophoric features
             normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3)
             normalized['hba'] = normalized['hba'].apply(lambda x: x / 2)
-            normalized['charge'] = normalized['charge'].apply(lambda x: x / 2)
+            normalized['charge'] = normalized['charge'].apply(lambda x: (x+1) / 2)
 
             # Normalize side chain orientation
             normalized['sco'] = normalized['sco'].apply(lambda x: x / 180)
 
             # Normalize distances
+            distance_normalizer = 35
+
             normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-                lambda x: x / 15 if x <= 15 else 1
+                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
             )
             normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-                lambda x: x / 15 if x <= 15 else 1
+                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
             )
             normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-                lambda x: x / 15 if x <= 15 else 1
+                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
             )
             normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-                lambda x: x / 15 if x <= 15 else 1
+                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
             )
+
+            if not (normalized.iloc[:, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]].fillna(0) <= 1).any().any():
+                raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')
+
+            return normalized
+
+        else:
+            return None
+
+    def normalize_physchem_moments(self):
+
+        if self.features is not None:
+            pass
+
+        else:
+            pass
+
+
+    @staticmethod
+    def _calc_moments(distances):
+        """
+        Calculate first, second, and third moment (mean, standard deviation, and skewness) for a distance distribution.
+        Parameters
+        ----------
+        distances : pandas.DataFrame
+            Distance distribution, i.e. distances from reference point to all representatives (points)
+        Returns
+        -------
+        pandas.DataFrame
+            First, second, and third moment of distance distribution.
+        """
+
+        # Get first, second, and third moment (mean, standard deviation, and skewness) for a distance distribution
+        # Second and third moment: delta degrees of freedom = 0 (divisor N)
+        if len(distances) > 0:
+            m1 = distances.mean()
+            m2 = distances.std(ddof=0)
+            m3 = pd.Series(cbrt(moment(distances, moment=3)), index=distances.columns.tolist())
+        else:
+            # In case there is only one data point.
+            # However, this should not be possible due to restrictions in get_shape function.
+            logger.info(f'Only one data point available for moment calculation, thus write None to moments.')
+            m1, m2, m3 = None, None, None
+
+        # Store all moments in DataFrame
+        moments = pd.concat([m1, m2, m3], axis=1)
+        moments.columns = ['moment1', 'moment2', 'moment3']
+
+        return moments
 
 
 class PhysicoChemicalFeatures:
@@ -663,7 +733,7 @@ class ExposureFeature:
         else:
             raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
 
-            # Define column names
+        # Define column names
         up = f'{method[-2:].lower()}_up'
         down = f'{method[-2:].lower()}_down'
         angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
