@@ -3,7 +3,7 @@ encoding.py
 
 Subpocket-based structural fingerprint for kinase pocket comparison.
 
-Handles the primary functions for the structural kinase fingerprint.
+Handles the primary functions for the structural kinase fingerprint encoding.
 """
 
 import logging
