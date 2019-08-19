@@ -155,11 +155,14 @@ class Fingerprint:
                 spatial_features.features
             ],
             axis=1
-        )
+        ).copy()
 
         # Bring all Fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
         empty_df = pd.DataFrame([], index=range(1, 86))
         features = pd.concat([empty_df, features], axis=1)
+
+        # Set all None to nan
+        features.fillna(value=pd.np.nan, inplace=True)
 
         self.features = features
 
@@ -167,10 +170,15 @@ class Fingerprint:
 
         if self.features is not None:
 
-            physchem = self.features.iloc[:, [1, 2, 3, 4, 5, 6, 7, 8]]
-            distances = self.features.iloc[:, [9, 10, 11, 12]]
+
+            physchem_features = 'size hbd hba charge aromatic aliphatic sco exposure molecule_code'.split()
+            distances_features = 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split()
+
+            physchem = self.features.loc[:, physchem_features]
+            distances = self.features.loc[:, distances_features]
 
             moments = self._calc_moments(distances)
+            moments['molecule_code'] = self.molecule_code
 
             return {
                 'physchem': physchem,
@@ -250,12 +258,21 @@ class Fingerprint:
         if len(distances) > 0:
             m1 = distances.mean()
             m2 = distances.std(ddof=0)
-            m3 = pd.Series(cbrt(moment(distances, moment=3)), index=distances.columns.tolist())
+            m3 = pd.Series(
+                cbrt(
+                    moment(
+                        distances,
+                        moment=3,
+                        nan_policy='omit'
+                    )
+                ),
+                index=distances.columns.tolist()
+            )
         else:
             # In case there is only one data point.
             # However, this should not be possible due to restrictions in get_shape function.
             logger.info(f'Only one data point available for moment calculation, thus write None to moments.')
-            m1, m2, m3 = None, None, None
+            m1, m2, m3 = pd.np.nan, pd.np.nan, pd.np.nan
 
         # Store all moments in DataFrame
         moments = pd.concat([m1, m2, m3], axis=1)
