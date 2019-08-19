@@ -32,13 +32,12 @@ def get_fingerprint(klifs_metadata_entry):
 
     except:
 
-        with open(path_to_results / 'fingerprints_error_entries.txt', 'a+') as f_errors:
+        with open(path_to_results / 'fingerprints' / 'fingerprints_error_entries.txt', 'a+') as f_errors:
             error_message = f'{klifs_metadata_entry.species.upper()}/' \
                 f'{klifs_metadata_entry.kinase}_' \
                 f'{klifs_metadata_entry.pdb_id}_' \
-                f'{klifs_metadata_entry.chain}_' \
-                f'{klifs_metadata_entry.alternate_model}\n'
-            error_message.replace('_-', '')
+                f'chain{klifs_metadata_entry.chain}_' \
+                f'alt{klifs_metadata_entry.alternate_model}\n'
             f_errors.write(
                 error_message
             )
@@ -51,7 +50,7 @@ if __name__ == "__main__":
     path_to_kinsim = Path('/') / 'home' / 'dominique' / 'Documents' / 'projects' / 'kinsim_structure'
     path_to_results = path_to_kinsim / 'results'
 
-    metadata_path = path_to_data / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
+    metadata_path = path_to_kinsim / 'data' / 'postprocessed' / 'klifs_metadata_postprocessed.csv'
 
     # Load metadata
     klifs_metadata = pd.read_csv(metadata_path)
@@ -80,11 +79,13 @@ if __name__ == "__main__":
     print(end)
 
     # Save fingerprints
-    with open(path_to_results / 'fingerprints_parallelized.p', 'wb') as f:
+    (path_to_results / 'fingerprints').mkdir(parents=True, exist_ok=True)
+
+    with open(path_to_results / 'fingerprints' / 'fingerprints_parallelized.p', 'wb') as f:
         pickle.dump(fingerprints_list, f)
 
     fingerprints = [i.features for i in fingerprints_list if i]
     fingerprints_df = pd.concat(fingerprints)
 
     # Save fingerprints
-    fingerprints_df.to_csv(path_to_results / 'fingerprints_parallelized.csv')
+    fingerprints_df.to_csv(path_to_results / 'fingerprints' / 'fingerprints_parallelized.csv')
