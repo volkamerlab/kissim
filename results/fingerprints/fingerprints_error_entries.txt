@@ -1,6 +1,3 @@
-HUMAN/CHK1_4hyh_altB_chainA
-HUMAN/CHK1_4jik_chainA
-HUMAN/LOK_2j7t_altA_chainA
-HUMAN/CHK1_4hyh_A_B
-HUMAN/CHK1_4jik_A_-
-HUMAN/LOK_2j7t_A_A
+HUMAN/CHK1_4hyh_chainA_altB
+HUMAN/CHK1_4jik_chainA_alt-
+HUMAN/LOK_2j7t_chainA_altA
