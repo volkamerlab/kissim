@@ -26,10 +26,10 @@ def get_physchem_distances_similarity(pair, measure='modified_manhattan', weight
     Parameters
     ----------
     pair : 2-element-list of kinsim_structure.encoding.Fingerprint
-        bla
+        Fingerprint pair.
     measure : str
         Similarity measure name.
-    weight : None or float [0,1]
+    weight : None or float
         If weight is None (default), fingerprint similarity is calculated over all positions.
         If weight is given, similarity for physicochemical and distance fingerprint bits are calculated separately, and
         summed up with respect to assigned weight for the phsicochemical part and (1-weight) for the distance part.
@@ -90,19 +90,20 @@ def get_physchem_moments_similarity(fingerprint1, fingerprint2, physchem_weight=
 def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan'):
     """
     Calculate the similarity between two fingerprints based on a similarity measure.
+
     Parameters
     ----------
-    fingerprint1 : 1D array-like or pandas.DataFrame
+    fingerprint1 : pandas.DataFrame
         Fingerprint for molecule.
-    fingerprint2 : 1D array-like or pandas.DataFrame
+    fingerprint2 : pandas.DataFrame
         Fingerprint for molecule.
     measure : str
         Similarity measurement method:
          - modified_manhattan (inverse of the translated and scaled Manhattan distance)
     Returns
     -------
-    float
-        Similarity value.
+    tuple of (float, int)
+        Similarity score and coverage (ratio of bits used for similarity score).
     """
 
     measures = ['modified_manhattan']
