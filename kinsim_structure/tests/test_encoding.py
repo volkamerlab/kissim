@@ -75,8 +75,7 @@ def test_feature_from_residue(filename, residue, feature_type, feature):
     """
 
     # Load molecule
-    mol2_path = '/home/dominique/Documents/projects/kinsim_structure/kinsim_structure/tests/data/AAK1/4wsq_altA_chainB/pocket.mol2'
-    #mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
 
     klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
     molecule = klifs_molecule_loader.molecule
@@ -110,8 +109,7 @@ def test_get_anchor_atoms(filename, reference_point_name, anchor_residue_klifs_i
         X coordinate of first anchor atom.
     """
 
-    mol2_path = '/home/dominique/Documents/projects/kinsim_structure/kinsim_structure/tests/data/AAK1/4wsq_altA_chainB/pocket.mol2'
-    # mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
 
     klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
     molecule = klifs_molecule_loader.molecule
