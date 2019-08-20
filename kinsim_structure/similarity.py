@@ -6,9 +6,15 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the structural kinase fingerprint comparison.
 """
 
+import logging
+
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
+
+from kinsim_structure.encoding import FEATURE_NAMES
+
+logger = logging.getLogger(__name__)
 
 
 def get_physchem_distances_similarity(pair, measure='modified_manhattan', weight=None):
