@@ -45,9 +45,9 @@ FEATURE_LOOKUP = {
         2: 'ASP GLU'.split()
     },
     'charge': {
+        -1: 'ASP GLU'.split(),
         0: 'ALA ASN CYS GLN GLY HIS ILE LEU MET PHE PRO SER TRP TYR VAL'.split(),
-        1: 'ARG LYS THR'.split(),
-        -1: 'ASP GLU'.split()
+        1: 'ARG LYS THR'.split()
     },
     'aromatic': {
         0: 'ALA ARG ASN ASP CYS GLN GLU GLY ILE LEU LYS MET PRO SER THR VAL'.split(),
