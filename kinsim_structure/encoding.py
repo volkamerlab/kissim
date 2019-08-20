@@ -244,14 +244,6 @@ class Fingerprint:
         else:
             return None
 
-    def normalize_physchem_moments(self):
-
-        if self.features is not None:
-            pass
-
-        else:
-            pass
-
 
     @staticmethod
     def _calc_moments(distances):
