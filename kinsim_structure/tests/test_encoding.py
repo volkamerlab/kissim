@@ -1,5 +1,6 @@
-
-
+"""
+Unit and regression test for kinsim_structure.encoding classes and methods.
+"""
 
 import math
 import pandas as pd
@@ -10,11 +11,12 @@ from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.auxiliary import KlifsMoleculeLoader
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures
 
+
 @pytest.mark.parametrize('fingerprint_df, normalized_fingerprint_df', [
     (
         pd.DataFrame(
             [
-                [, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ],
             columns=FEATURE_NAMES
@@ -29,6 +31,7 @@ def test_normalize_physchem_distances(fingerprint_df):
     fp.features = fingerprint_df
 
     fp.normalize_physchem_distances()
+
 
 @pytest.mark.parametrize('filename, residue, feature_type, feature', [
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'size', 1),
