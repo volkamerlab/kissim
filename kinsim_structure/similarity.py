@@ -42,45 +42,46 @@ def get_physchem_distances_similarity(pair, measure='modified_manhattan', weight
 
     if not weight:
 
-        score = calculate_similarity(
-            pair[0].features.iloc[:, 0:12],
-            pair[1].features.iloc[:, 0:12],
+        score, coverage = calculate_similarity(
+            pair[0].normalize_physchem_distances()[FEATURE_NAMES],
+            pair[1].normalize_physchem_distances()[FEATURE_NAMES],
             measure=measure
         )
 
         return [
             pair[0].molecule_code,
             pair[1].molecule_code,
-            score
+            score,
+            coverage
         ]
 
     else:
 
         if 0 <= weight <= 1:
 
-            print(pair[0].molecule_code, pair[1].molecule_code)
-
-            physchem_score = calculate_similarity(
-                pair[0].features.iloc[:, 0:8],
-                pair[1].features.iloc[:, 0:8],
+            physchem_score, physchem_coverage = calculate_similarity(
+                pair[0].features[FEATURE_NAMES[:8]],
+                pair[1].features[FEATURE_NAMES[:8]],
                 measure=measure
             )
-            spatial_score = calculate_similarity(
-                pair[0].features.iloc[:, 9:12],
-                pair[1].features.iloc[:, 9:12],
+            spatial_score, spatial_coverage = calculate_similarity(
+                pair[0].features[FEATURE_NAMES[8:]],
+                pair[1].features[FEATURE_NAMES[8:]],
                 measure=measure
             )
 
             score = weight * physchem_score + (1-weight) * spatial_score
 
+            return [
+                pair[0].molecule_code,
+                pair[1].molecule_code,
+                score,
+                (physchem_coverage, spatial_coverage)
+
+            ]
+
         else:
             raise ValueError(f'Weight must be between 0 and 1. Given weight is: {weight}')
-
-        return [
-            pair[0].molecule_code,
-            pair[1].molecule_code,
-            score
-        ]
 
 
 def get_physchem_moments_similarity(fingerprint1, fingerprint2, physchem_weight=1, spatial_weight=1):
@@ -130,7 +131,14 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan
         ~np.isnan(fingerprints).any(axis=1)
     ]
 
-    print(fingerprints_reduced)
+    # Get number of bits that can be compared (after nan bits removal)
+    coverage = fingerprints_reduced.shape[0] / float(fingerprints.shape[0])
+
+    if coverage == 0:
+        score = None
+        return score, coverage
+    else:
+        pass
 
     if measure == measures[0]:
 
@@ -138,15 +146,9 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan
         fp1 = fingerprints_reduced[:, 0]
         fp2 = fingerprints_reduced[:, 1]
 
-        try:
+        score = 1 / (1 + 1 / len(fp1) * distance.cityblock(fp1, fp2))
 
-            score = 1 / (1 + 1 / len(fp1) * distance.cityblock(fp1, fp2))
-
-        except ZeroDivisionError:
-
-            score = None
-
-        return score
+        return score, coverage
 
     else:
         raise ValueError(f'Please choose a similarity measure: {", ".join(measures)}')
