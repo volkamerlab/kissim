@@ -110,13 +110,17 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan
     measures = ['modified_manhattan']
 
     # Convert DataFrame into 1D array
-    if isinstance(fingerprint1, pd.DataFrame):
+    if isinstance(fingerprint1, pd.DataFrame) and isinstance(fingerprint2, pd.DataFrame):
         fingerprint1 = fingerprint1.values.flatten()
-    if isinstance(fingerprint2, pd.DataFrame):
         fingerprint2 = fingerprint2.values.flatten()
+    else:
+        raise ValueError(f'Input fingerprints must be of type pandas.DataFrame '
+                         f'but are {type(fingerprint1)} (fp1) and {type(fingerprint2)} (fp2).')
 
     if len(fingerprint1) != len(fingerprint2):
         raise ValueError(f'Input fingerprints must be of same length.')
+    else:
+        pass
 
     # Merge both fingerprints to array in order to remove positions with nan values
     fingerprints = np.array(
