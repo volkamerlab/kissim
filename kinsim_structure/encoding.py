@@ -22,6 +22,21 @@ from kinsim_structure.auxiliary import center_of_mass
 logger = logging.getLogger(__name__)
 
 
+FEATURE_NAMES = [
+    'size',
+    'hbd',
+    'hba',
+    'charge',
+    'aromatic',
+    'aliphatic',
+    'sco',
+    'exposure',
+    'distance_to_centroid',
+    'distance_to_hinge_region',
+    'distance_to_dfg_region',
+    'distance_to_front_pocket'
+]
+
 ANCHOR_RESIDUES = {
     'hinge_region': [16, 47, 80],
     'dfg_region': [19, 24, 81],
@@ -170,9 +185,8 @@ class Fingerprint:
 
         if self.features is not None:
 
-
-            physchem_features = 'size hbd hba charge aromatic aliphatic sco exposure molecule_code'.split()
-            distances_features = 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split()
+            physchem_features = FEATURE_NAMES[:8] + ['molecule_code']
+            distances_features = FEATURE_NAMES[8:]
 
             physchem = self.features.loc[:, physchem_features]
             distances = self.features.loc[:, distances_features]
@@ -222,7 +236,7 @@ class Fingerprint:
                 lambda x: x / distance_normalizer if x <= distance_normalizer else 1
             )
 
-            if not (normalized.iloc[:, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]].fillna(0) <= 1).any().any():
+            if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
                 raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')
 
             return normalized
