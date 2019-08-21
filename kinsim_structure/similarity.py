@@ -32,7 +32,7 @@ def get_fingerprint_type1_similarity(pair, measure='modified_manhattan', weight=
     weight : None or float
         If weight is None (default), fingerprint similarity is calculated over all positions.
         If weight is given, similarity for physicochemical and distance fingerprint bits are calculated separately, and
-        summed up with respect to assigned weight for the phsicochemical part and (1-weight) for the distance part.
+        summed up with respect to assigned weight for the physicochemical part and (1-weight) for the distance part.
 
     Returns
     -------
@@ -43,8 +43,8 @@ def get_fingerprint_type1_similarity(pair, measure='modified_manhattan', weight=
     if not weight:
 
         score, coverage = calculate_similarity(
-            pair[0].normalize_fingerprint_type1()[FEATURE_NAMES],
-            pair[1].normalize_fingerprint_type1()[FEATURE_NAMES],
+            pair[0].fingerprint_type1_normalized,
+            pair[1].fingerprint_type1_normalized,
             measure=measure
         )
 
@@ -64,13 +64,13 @@ def get_fingerprint_type1_similarity(pair, measure='modified_manhattan', weight=
         if 0 <= weight <= 1:
 
             score_physchem, coverage_physchem = calculate_similarity(
-                pair[0].normalize_fingerprint_type1()[FEATURE_NAMES[:8]],
-                pair[1].normalize_fingerprint_type1()[FEATURE_NAMES[:8]],
+                pair[0].fingerprint_type1_normalized[FEATURE_NAMES[:8]],
+                pair[1].fingerprint_type1_normalized[FEATURE_NAMES[:8]],
                 measure=measure
             )
             score_distances, coverage_distances = calculate_similarity(
-                pair[0].normalize_fingerprint_type1()[FEATURE_NAMES[8:]],
-                pair[1].normalize_fingerprint_type1()[FEATURE_NAMES[8:]],
+                pair[0].fingerprint_type1_normalized[FEATURE_NAMES[8:]],
+                pair[1].fingerprint_type1_normalized[FEATURE_NAMES[8:]],
                 measure=measure
             )
 
@@ -96,13 +96,13 @@ def get_fingerprint_type2_similarity(pair, measure='modified_manhattan', weight=
     if 0 <= weight <= 1:
 
         score_physchem, coverage_physchem = calculate_similarity(
-            pair[0].normalize_fingerprint_type2()['physchem'],
-            pair[1].normalize_fingerprint_type2()['physchem'],
+            pair[0].fingerprint_type2_normalized['physchem'],
+            pair[1].fingerprint_type2_normalized['physchem'],
             measure=measure
         )
         score_moments, coverage_moments = calculate_similarity(
-            pair[0].normalize_fingerprint_type2()['moments'],
-            pair[1].normalize_fingerprint_type2()['moments'],
+            pair[0].fingerprint_type2_normalized['moments'],
+            pair[1].fingerprint_type2_normalized['moments'],
             measure=measure
         )
 
