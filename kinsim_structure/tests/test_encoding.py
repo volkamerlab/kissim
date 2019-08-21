@@ -74,7 +74,7 @@ def test_normalize_fingerprint_type1(fingerprint_type1, normalized_fingerprint_t
     fp.molecule_code = 'molecule'
     fp.fingerprint_type1 = fingerprint_type1
 
-    assert fp.normalize_fingerprint_type1().equals(normalized_fingerprint_type1)
+    assert fp._normalize_fingerprint_type1().equals(normalized_fingerprint_type1)
 
 
 @pytest.mark.parametrize('fingerprint_type1, fingerprint_type2', [
