@@ -55,7 +55,6 @@ def load_fingerprints(path_to_fingerprints):
     # Load fingerprints
     with open(path_to_fingerprints, 'rb') as f:
         fingerprints = pickle.load(f)
-    fingerprints = fingerprints[:10]
     logger.info(f'Number of fingerprints: {len(fingerprints)}')
 
     # Remove empty fingerprints
@@ -134,7 +133,6 @@ def main():
 
     # Get fingerprint pairs
     fingerprints = load_fingerprints(PATH_TO_KINSIM / 'results' / 'fingerprints' / 'fingerprints.p')
-    fingerprints = fingerprints[:100]  # TODO
     pairs = get_pairs(fingerprints)
 
     # Calculate pairwise similarity
