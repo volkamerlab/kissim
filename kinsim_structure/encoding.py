@@ -138,6 +138,8 @@ class Fingerprint:
         self.molecule_code = None
         self.fingerprint_type1 = None
         self.fingerprint_type2 = None
+        self.fingerprint_type1_normalized = None
+        self.fingerprint_type1_normalized = None
 
     def from_metadata_entry(self, klifs_metadata_entry):
         """
@@ -179,6 +181,8 @@ class Fingerprint:
 
         self.fingerprint_type1 = self._get_fingerprint_type1(physicochemical_features, spatial_features)
         self.fingerprint_type2 = self._get_fingerprint_type2()
+        self.fingerprint_type1_normalized = self._normalize_fingerprint_type1()
+        self.fingerprint_type2_normalized = self._normalize_fingerprint_type2()
 
     @staticmethod
     def _get_fingerprint_type1(physicochemical_features, spatial_features):
@@ -214,7 +218,7 @@ class Fingerprint:
                 'moments': moments
             }
 
-    def normalize_fingerprint_type1(self):
+    def _normalize_fingerprint_type1(self):
 
         if self.fingerprint_type1 is not None:
 
@@ -231,12 +235,12 @@ class Fingerprint:
         else:
             return None
 
-    def normalize_fingerprint_type2(self):
+    def _normalize_fingerprint_type2(self):
 
         if self.fingerprint_type2 is not None:
 
-            normalized_physchem = self._normalize_physicochemical_bits()
-            normalized_moments = self._normalize_moments_bits()
+            normalized_physchem = self.fingerprint_type1_normalized[FEATURE_NAMES[:8]]
+            normalized_moments = self.fingerprint_type2['moments']  # TODO no normalization is done here, change this?
 
             normalized = {
                 'physchem': normalized_physchem,
@@ -884,7 +888,7 @@ class PharmacophoreSizeFeatures:
             # Report non-standard residues in molecule
             non_standard_residues = set(residues) - set(STANDARD_AA)
             if len(non_standard_residues) > 0:
-                logger.info(f'{molecule.code}: {non_standard_residues}')
+                logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
 
             features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
             features.rename(feature_type, inplace=True)
