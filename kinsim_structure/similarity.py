@@ -17,7 +17,7 @@ from kinsim_structure.encoding import FEATURE_NAMES
 logger = logging.getLogger(__name__)
 
 
-def get_physchem_distances_similarity(pair, measure='modified_manhattan', weight=None):
+def get_fingerprint_type1_similarity(pair, measure='modified_manhattan', weight=None):
     """
     Get similarity score for fingerprint type1 (consisting of physicochemical and distance properties) based on a
     similarity measure (default modified Manhattan distance).
@@ -43,8 +43,8 @@ def get_physchem_distances_similarity(pair, measure='modified_manhattan', weight
     if not weight:
 
         score, coverage = calculate_similarity(
-            pair[0].normalize_physchem_distances()[FEATURE_NAMES],
-            pair[1].normalize_physchem_distances()[FEATURE_NAMES],
+            pair[0].normalize_fingerprint_type1()[FEATURE_NAMES],
+            pair[1].normalize_fingerprint_type1()[FEATURE_NAMES],
             measure=measure
         )
 
@@ -52,40 +52,75 @@ def get_physchem_distances_similarity(pair, measure='modified_manhattan', weight
             pair[0].molecule_code,
             pair[1].molecule_code,
             score,
-            coverage
+            None,
+            None,
+            coverage,
+            None,
+            None
         ]
 
     else:
 
         if 0 <= weight <= 1:
 
-            physchem_score, physchem_coverage = calculate_similarity(
-                pair[0].features[FEATURE_NAMES[:8]],
-                pair[1].features[FEATURE_NAMES[:8]],
+            score_physchem, coverage_physchem = calculate_similarity(
+                pair[0].normalize_fingerprint_type1()[FEATURE_NAMES[:8]],
+                pair[1].normalize_fingerprint_type1()[FEATURE_NAMES[:8]],
                 measure=measure
             )
-            spatial_score, spatial_coverage = calculate_similarity(
-                pair[0].features[FEATURE_NAMES[8:]],
-                pair[1].features[FEATURE_NAMES[8:]],
+            score_distances, coverage_distances = calculate_similarity(
+                pair[0].normalize_fingerprint_type1()[FEATURE_NAMES[8:]],
+                pair[1].normalize_fingerprint_type1()[FEATURE_NAMES[8:]],
                 measure=measure
             )
 
-            score = weight * physchem_score + (1-weight) * spatial_score
+            score = weight * score_physchem + (1-weight) * score_distances
 
             return [
                 pair[0].molecule_code,
                 pair[1].molecule_code,
                 score,
-                (physchem_coverage, spatial_coverage)
-
+                score_physchem,
+                score_distances,
+                None,
+                coverage_physchem,
+                coverage_distances
             ]
 
         else:
             raise ValueError(f'Weight must be between 0 and 1. Given weight is: {weight}')
 
 
-def get_physchem_moments_similarity(fingerprint1, fingerprint2, physchem_weight=1, spatial_weight=1):
-    pass
+def get_fingerprint_type2_similarity(pair, measure='modified_manhattan', weight=0.5):
+
+    if 0 <= weight <= 1:
+
+        score_physchem, coverage_physchem = calculate_similarity(
+            pair[0].normalize_fingerprint_type2()['physchem'],
+            pair[1].normalize_fingerprint_type2()['physchem'],
+            measure=measure
+        )
+        score_moments, coverage_moments = calculate_similarity(
+            pair[0].normalize_fingerprint_type2()['moments'],
+            pair[1].normalize_fingerprint_type2()['moments'],
+            measure=measure
+        )
+
+        score = weight * score_physchem + (1 - weight) * score_moments
+
+        return [
+            pair[0].molecule_code,
+            pair[1].molecule_code,
+            score,
+            score_physchem,
+            score_moments,
+            None,
+            coverage_physchem,
+            coverage_moments
+        ]
+
+    else:
+        raise ValueError(f'Weight must be between 0 and 1. Given weight is: {weight}')
 
 
 def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan'):
