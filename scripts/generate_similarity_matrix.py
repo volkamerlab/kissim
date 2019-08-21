@@ -16,7 +16,7 @@ import pickle
 
 import pandas as pd
 
-from kinsim_structure.similarity import get_physchem_distances_similarity
+from kinsim_structure.similarity import get_fingerprint_type1_similarity, get_fingerprint_type2_similarity
 
 PATH_TO_DATA = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full'
 PATH_TO_KINSIM = Path('/') / 'home' / 'dominique' / 'Documents' / 'projects' / 'kinsim_structure'
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
-    filename=PATH_TO_KINSIM / 'results' / 'similarity' / 'similarity_matrix.log',
+    filename=PATH_TO_KINSIM / 'results' / 'similarity' / 'generate_similarity_matrix.log',
     filemode='w',
     level=logging.INFO
 )
@@ -64,10 +64,10 @@ def load_fingerprints(path_to_fingerprints):
     logger.info(f'Empty fingerprints: {", ".join([i.molecule_code for i in fingerprints if i is None])}')
 
     # Remove fingerprints with empty features
-    fingerprints = [i for i in fingerprints if i.features is not None]
+    fingerprints = [i for i in fingerprints if i.fingerprint_type1 is not None]
     logger.info(f'Number of fingerprint with non-empty features: {len(fingerprints)}')
-    logger.info(
-        f'Empty fingerprint features: {", ".join([i.molecule_code for i in fingerprints if i.features is None])}')
+    logger.info(f'Empty fingerprint features: '
+                f'{", ".join([i.molecule_code for i in fingerprints if i.fingerprint_type1 is None])}')
 
     return fingerprints
 
@@ -99,6 +99,8 @@ def get_pairs(fingerprints):
 
 def get_pairwise_similarities(similarity_function, pairs):
 
+    logger.info(f'{similarity_function.__name__}')
+
     # Number of CPUs on machine
     num_cores = multiprocessing.cpu_count() - 1
     logger.info(f'Number of cores used: {num_cores}')
@@ -116,7 +118,7 @@ def get_pairwise_similarities(similarity_function, pairs):
     # Convert list to pandas.DataFrame
     scores_df = pd.DataFrame(
         score_list,
-        columns='molecule1 molecule2 score coverage'.split()
+        columns='molecule1 molecule2 score score_physchem score_spatial coverage coverage_physchem coverage_spatial'.split()
     )
 
     logger.info(f'Number of scores (list): {len(score_list)}')
@@ -131,14 +133,19 @@ def main():
     start = datetime.datetime.now()
 
     # Get fingerprint pairs
-    fingerprints = load_fingerprints(PATH_TO_KINSIM / 'results' / 'fingerprints' / 'fingerprints_parallelized.p')
+    fingerprints = load_fingerprints(PATH_TO_KINSIM / 'results' / 'fingerprints' / 'fingerprints.p')
+    fingerprints = fingerprints[:100]  # TODO
     pairs = get_pairs(fingerprints)
 
-    scores_fingerprint_type1 = get_pairwise_similarities(get_physchem_distances_similarity, pairs)
+    # Calculate pairwise similarity
+    scores_fingerprint_type1 = get_pairwise_similarities(get_fingerprint_type1_similarity, pairs)
+    scores_fingerprint_type2 = get_pairwise_similarities(get_fingerprint_type2_similarity, pairs)
 
     # Save similarities
-    (PATH_TO_KINSIM / 'results' / 'similarity').mkdir(parents=True, exist_ok=True)
-    scores_fingerprint_type1.to_csv(PATH_TO_KINSIM / 'results' / 'similarity' / 'scores_allxall_fingerprint_type1.csv')
+    path_to_similarities = PATH_TO_KINSIM / 'results' / 'similarity'
+    path_to_similarities.mkdir(parents=True, exist_ok=True)
+    scores_fingerprint_type1.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type1.csv')
+    scores_fingerprint_type2.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type2.csv')
 
     # Get end time of script
     end = datetime.datetime.now()
