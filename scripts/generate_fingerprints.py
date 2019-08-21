@@ -57,13 +57,13 @@ def get_fingerprint(klifs_metadata_entry):
 
     except:
 
-        error_message = f'{klifs_metadata_entry.species.upper()}/' \
+        empty_fingerprint = f'{klifs_metadata_entry.species.upper()}/' \
             f'{klifs_metadata_entry.kinase}_' \
             f'{klifs_metadata_entry.pdb_id}_' \
             f'chain{klifs_metadata_entry.chain}_' \
-            f'alt{klifs_metadata_entry.alternate_model}\n'
+            f'alt{klifs_metadata_entry.alternate_model}'
 
-        logger.info(f'{error_message}')
+        logger.info(f'Molecule with empty fingerprint: {empty_fingerprint}')
 
 
 def get_fingerprints(klifs_metadata):
@@ -92,7 +92,6 @@ def main():
 
     # Get metadata entries
     klifs_metadata = load_metadata(PATH_TO_KINSIM / 'data' / 'postprocessed' / 'klifs_metadata_postprocessed.csv')
-    klifs_metadata = klifs_metadata[:100]  # TODO
 
     # Calculate fingerprints
     fingerprints_list = get_fingerprints(klifs_metadata)
