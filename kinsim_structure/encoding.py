@@ -97,34 +97,47 @@ EXPOSURE_RADIUS = 13.0
 
 class Fingerprint:
     """
-    Kinase fingerprint with 8 physicochemical and 4 spatial properties for each residue in the KLIFS-defined
+    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined
     kinase binding site of 85 pre-aligned residues.
 
-    Physicochemical properties:
+    Physicochemical features:
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
     - Side chain orientation
     - Half sphere exposure
 
-    Spatial properties:
+    Spatial features:
     Distance of each residue to 4 reference points:
     - Binding site centroid
     - Hinge region
     - DFG loop
     - Front pocket
 
+    Two fingerprint types are offered:
+    - Fingeprint type 1:
+      8 physicochemical and 4 spatial (distance) features (columns) for 85 residues (rows)
+      = 1020 bit fingerprint.
+    - Fingerprint type 2 consisting of two parts:
+      (i)  8 physicochemical features (columns) for 85 residues (rows)
+           = 680 bit fingerprint
+      (ii) 12 spatial features, i.e. first three moments for each of the 4 distance distributions over 85 residues
+           = 12 bit fingerprint
+
     Attributes
     ----------
     molecule_code : str
         Molecule code as defined by KLIFS in mol2 file.
-    features : pandas.DataFrame
-        12 features (columns) for 85 residues (rows).
+    fingerprint_type1 : pandas.DataFrame
+        Fingerprint type 1.
+    fingerprint_type2 : dict of pandas.DataFrame
+        Fingerprint type 2.
     """
 
     def __init__(self):
 
         self.molecule_code = None
-        self.features = None
+        self.fingerprint_type1 = None
+        self.fingerprint_type2 = None
 
     def from_metadata_entry(self, klifs_metadata_entry):
         """
@@ -164,86 +177,129 @@ class Fingerprint:
         spatial_features = SpatialFeatures()
         spatial_features.from_molecule(molecule)
 
+        self.fingerprint_type1 = self._get_fingerprint_type1(physicochemical_features, spatial_features)
+        self.fingerprint_type2 = self._get_fingerprint_type2()
+
+    @staticmethod
+    def _get_fingerprint_type1(physicochemical_features, spatial_features):
+
         features = pd.concat(
             [
-                physicochemical_features.features,
-                spatial_features.features
+                physicochemical_features.features[FEATURE_NAMES[:8]],
+                spatial_features.features[FEATURE_NAMES[8:]]
             ],
             axis=1
         ).copy()
 
-        # Bring all Fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
+        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
         empty_df = pd.DataFrame([], index=range(1, 86))
         features = pd.concat([empty_df, features], axis=1)
 
         # Set all None to nan
         features.fillna(value=pd.np.nan, inplace=True)
 
-        self.features = features
+        return features
 
-    def get_usr_fingerprint(self):
+    def _get_fingerprint_type2(self):
 
-        if self.features is not None:
+        if self.fingerprint_type1 is not None:
 
-            physchem_features = FEATURE_NAMES[:8] + ['molecule_code']
-            distances_features = FEATURE_NAMES[8:]
+            physicochemical_bits = self.fingerprint_type1[FEATURE_NAMES[:8]]
+            spatial_bits = self.fingerprint_type1[FEATURE_NAMES[8:]]
 
-            physchem = self.features.loc[:, physchem_features]
-            distances = self.features.loc[:, distances_features]
-
-            moments = self._calc_moments(distances)
-            moments['molecule_code'] = self.molecule_code
+            moments = self._calc_moments(spatial_bits)
 
             return {
-                'physchem': physchem,
+                'physchem': physicochemical_bits,
                 'moments': moments
             }
 
-        else:
-            return None
+    def normalize_fingerprint_type1(self):
 
-    def normalize_physchem_distances(self):
+        if self.fingerprint_type1 is not None:
 
-        if self.features is not None:
+            normalized_physchem = self._normalize_physicochemical_bits()
+            normalized_distances = self._normalize_distances_bits()
 
-            # Make a copy of DataFrame
-            normalized = self.features.copy()
-
-            # Normalize size
-            normalized['size'] = normalized['size'].apply(lambda x: (x-1) / 2)
-
-            # Normalize pharmacophoric features
-            normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3)
-            normalized['hba'] = normalized['hba'].apply(lambda x: x / 2)
-            normalized['charge'] = normalized['charge'].apply(lambda x: (x+1) / 2)
-
-            # Normalize side chain orientation
-            normalized['sco'] = normalized['sco'].apply(lambda x: x / 180)
-
-            # Normalize distances
-            distance_normalizer = 35
-
-            normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
+            normalized = pd.concat(
+                [normalized_physchem, normalized_distances],
+                axis=1
             )
-            normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
-            )
-            normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
-            )
-            normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer else 1
-            )
-
-            if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
-                raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')
 
             return normalized
 
         else:
             return None
 
+    def normalize_fingerprint_type2(self):
+
+        if self.fingerprint_type2 is not None:
+
+            normalized_physchem = self._normalize_physicochemical_bits()
+            normalized_moments = self._normalize_moments_bits()
+
+            normalized = {
+                'physchem': normalized_physchem,
+                'moments': normalized_moments
+            }
+
+            return normalized
+
+        else:
+            return None
+
+    def _normalize_physicochemical_bits(self):
+
+        # Make a copy of DataFrame
+        normalized = self.fingerprint_type1[FEATURE_NAMES[:8]].copy()
+
+        # Normalize size
+        normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
+
+        # Normalize pharmacophoric features
+        normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
+        normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
+        normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
+        normalized['aromatic'] = normalized['hba'].apply(lambda x: x / 1.0)
+        normalized['aliphatic'] = normalized['hba'].apply(lambda x: x / 1.0)
+
+        # Normalize side chain orientation
+        normalized['sco'] = normalized['sco'].apply(lambda x: x / 180.0)
+
+        # Normalize exposure
+        normalized['exposure'] = normalized['exposure'].apply(lambda x: x / 1)
+
+        return normalized
+
+    def _normalize_distances_bits(self):
+
+        # Make a copy of DataFrame
+        normalized = self.fingerprint_type1[FEATURE_NAMES[8:]].copy()
+
+        # Normalize distances
+        distance_normalizer = 35.0
+
+        normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
+            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+        )
+        normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
+            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+        )
+        normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
+            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+        )
+        normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
+            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+        )
+
+        if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
+            raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')
+
+        return normalized
+
+    def _normalize_moments_bits(self):
+
+        return self.fingerprint_type2['moments']
 
     @staticmethod
     def _calc_moments(distances):
@@ -828,7 +884,7 @@ class PharmacophoreSizeFeatures:
             # Report non-standard residues in molecule
             non_standard_residues = set(residues) - set(STANDARD_AA)
             if len(non_standard_residues) > 0:
-                print(non_standard_residues)
+                logger.info(f'{molecule.code}: {non_standard_residues}')
 
             features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
             features.rename(feature_type, inplace=True)
