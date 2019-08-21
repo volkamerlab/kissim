@@ -3,6 +3,7 @@ Unit and regression test for kinsim_structure.encoding classes and methods.
 """
 
 import math
+import numpy as np
 import pandas as pd
 from pathlib import Path
 import pytest
@@ -12,25 +13,175 @@ from kinsim_structure.auxiliary import KlifsMoleculeLoader
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures
 
 
-@pytest.mark.parametrize('fingerprint_df, normalized_fingerprint_df', [
+@pytest.mark.parametrize('fingerprint_type1, normalized_fingerprint_type1', [
     (
         pd.DataFrame(
             [
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35]
+            ],
+            columns=FEATURE_NAMES
+        ),
+        pd.DataFrame(
+            [
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             ],
             columns=FEATURE_NAMES
         )
-    )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [np.nan]*12
+            ],
+            columns=FEATURE_NAMES
+        ),
+        pd.DataFrame(
+            [
+                [np.nan]*12
+            ],
+            columns=FEATURE_NAMES
+        )
+    ),
+    (
+            pd.DataFrame(
+                [
+                    [3, 3, 2, 1, 1, 1, 180, 1, 36, 36, 36, 36]
+                ],
+                columns=FEATURE_NAMES
+            ),
+            pd.DataFrame(
+                [
+                    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                ],
+                columns=FEATURE_NAMES
+            )
+    ),
 ])
-def test_normalize_physchem_distances(fingerprint_df):
+def test_normalize_fingerprint_type1(fingerprint_type1, normalized_fingerprint_type1):
+    """
+    Test normalization of fingerprint type 1 (physicochemical and distance bits).
 
-    # Set fingerprint 1
+    Parameters
+    ----------
+    fingerprint : pandas.DataFrame
+        Fingerprint.
+    normalized_fingerprint : pandas.DataFrame
+        Normalized fingerprint.
+    """
+
+    # Set fingerprint
     fp = Fingerprint()
     fp.molecule_code = 'molecule'
-    fp.features = fingerprint_df
+    fp.fingerprint_type1 = fingerprint_type1
 
-    fp.normalize_physchem_distances()
+    assert fp.normalize_fingerprint_type1().equals(normalized_fingerprint_type1)
+
+
+@pytest.mark.parametrize('fingerprint_type1, fingerprint_type2', [
+    (
+        pd.DataFrame(
+            [
+                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35],
+                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35],
+                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35],
+                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35],
+                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35],
+
+            ],
+            columns=FEATURE_NAMES
+        ),
+        {
+                'physchem': pd.DataFrame(
+                    [
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1]
+                    ],
+                    columns=FEATURE_NAMES[:8]
+                ),
+                'moments': pd.DataFrame(
+                    [
+                        [35.0, 35.0, 35.0, 35.0],
+                        [0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0]
+                    ],
+                    columns=FEATURE_NAMES[8:],
+                    index='moment1 moment2 moment3'.split()
+                ).transpose()
+        }
+    )
+])
+def test_get_fingerprint_type2(fingerprint_type1, fingerprint_type2):
+    """
+    Test fingerprint type 2 generation (physicochemical and distance moments bits).
+
+    Parameters
+    ----------
+    fingerprint_type1 : pandas.DataFrame
+        Fingerprint type 1.
+    fingerprint_type2 : dict of pandas.DataFrame
+        Fingerprint type 2.
+    """
+
+    # Set fingerprint
+    fp = Fingerprint()
+    fp.molecule_code = 'molecule'
+    fp.fingerprint_type1 = fingerprint_type1
+
+    assert fp._get_fingerprint_type2()['physchem'].equals(fingerprint_type2['physchem'])
+    assert fp._get_fingerprint_type2()['moments'].equals(fingerprint_type2['moments'])
+
+
+@pytest.mark.parametrize('fingerprint_type2, normalized_fingerprint_type2', [
+    (
+        {
+                'physchem': pd.DataFrame(
+                    [
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1],
+                        [3, 3, 2, 1, 1, 1, 180, 1]
+                    ],
+                    columns=FEATURE_NAMES[:8]
+                ),
+                'moments': pd.DataFrame(
+                    [
+                        [35.0, 35.0, 35.0, 35.0],
+                        [0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0]
+                    ],
+                    columns=FEATURE_NAMES[8:],
+                    index='moment1 moment2 moment3'.split()
+                ).transpose()
+        },
+        {
+                'physchem': pd.DataFrame(
+                    [
+                        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                    ],
+                    columns=FEATURE_NAMES[:8]
+                ),
+                'moments': pd.DataFrame(
+                    [
+                        [35.0, 35.0, 35.0, 35.0],
+                        [0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0]
+                    ],
+                    columns=FEATURE_NAMES[8:],
+                    index='moment1 moment2 moment3'.split()
+                ).transpose()
+        }
+    )
+])
+def test_normalize_fingerprint_type2(fingerprint_type2, normalized_fingerprint_type2):
+    pass
 
 
 @pytest.mark.parametrize('filename, residue, feature_type, feature', [
