@@ -76,7 +76,7 @@ class MoleculeLoader:
         """
 
         if self.molecule_path.exists():
-            logger.info(f'File to be loaded: {self.molecule_path}', extra={'molecule_id': 'all'})
+            pass
         else:
             logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
             raise FileNotFoundError(f'File not found: {self.molecule_path}')
@@ -88,8 +88,6 @@ class MoleculeLoader:
             molecules = self._load_mol2(self.remove_solvent)
         else:
             raise IOError(f'Unsupported file format {self.molecule_path.suffix}, only pdb and mol2 are supported.')
-
-        logger.info('File loaded.', extra={'molecule_id': 'all'})
 
         return molecules
 
