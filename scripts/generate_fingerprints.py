@@ -89,6 +89,7 @@ def main():
 
     # Get start time of script
     start = datetime.datetime.now()
+    logger.info(start)
 
     # Get metadata entries
     klifs_metadata = load_metadata(PATH_TO_KINSIM / 'data' / 'postprocessed' / 'klifs_metadata_postprocessed.csv')
