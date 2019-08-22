@@ -107,10 +107,10 @@ ENV/
 # PyCharm
 .idea/
 
-results/similarity/scores_allxall_fingerprint_type1_euklidean\.csv
-
-results/similarity/scores_allxall_fingerprint_type1_modManhattan\.csv
-
-results/similarity/scores_allxall_fingerprint_type2_modManhattan\.csv
-
 results/fingerprints/fingerprints\.p
+
+results/similarity/scores_allxall_fp_type1_ballester\.csv
+
+results/similarity/scores_allxall_fp_type1_euclidean\.csv
+
+results/similarity/scores_allxall_fp_type2_ballester\.csv
