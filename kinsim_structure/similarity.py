@@ -17,7 +17,7 @@ from kinsim_structure.encoding import FEATURE_NAMES
 logger = logging.getLogger(__name__)
 
 
-def get_fingerprint_type1_similarity(pair, measure='modified_manhattan', weight=0.5):
+def get_fingerprint_type1_similarity(pair, measure='ballester', weight=0.5):
     """
     Get similarity score for fingerprint type1 (consisting of physicochemical and distance properties) based on a
     similarity measure (default modified Manhattan distance).
@@ -69,7 +69,7 @@ def get_fingerprint_type1_similarity(pair, measure='modified_manhattan', weight=
         raise ValueError(f'Weight must be between 0 and 1. Given weight is: {weight}')
 
 
-def get_fingerprint_type2_similarity(pair, measure='modified_manhattan', weight=0.5):
+def get_fingerprint_type2_similarity(pair, measure='ballester', weight=0.5):
 
     if 0 <= weight <= 1:
 
@@ -113,14 +113,14 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
         Fingerprint for molecule.
     measure : str
         Similarity measurement method:
-         - modified_manhattan (inverse of the translated and scaled Manhattan distance)
+         - ballester (inverse of the translated and scaled Manhattan distance)
     Returns
     -------
     tuple of (float, int)
         Similarity score and coverage (ratio of bits used for similarity score).
     """
 
-    measures = 'modified_manhattan manhattan euclidean'.split()
+    measures = 'ballester manhattan euclidean'.split()
 
     # Convert DataFrame into 1D array
     if isinstance(fingerprint1, pd.DataFrame) and isinstance(fingerprint2, pd.DataFrame):

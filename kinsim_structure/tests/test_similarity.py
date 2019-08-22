@@ -15,21 +15,21 @@ from kinsim_structure.similarity import get_physchem_distances_similarity
     (
         pd.DataFrame([[1, 2], [3, 0]]),
         pd.DataFrame([[1, 1], [1, 1]]),
-        'modified_manhattan',
+        'ballester',
         0.5,
         1.0
     ),
     (
         pd.DataFrame([[1, 2], [3, None]]),
         pd.DataFrame([[1, 1], [1, None]]),
-        'modified_manhattan',
+        'ballester',
         0.5,
         0.75
     ),
     (
         pd.DataFrame([[1, 2], [3, np.nan]]),
         pd.DataFrame([[1, 1], [1, np.nan]]),
-        'modified_manhattan',
+        'ballester',
         0.5,
         0.75
     )
@@ -46,14 +46,14 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
         Fingerprint for molecule.
     measure : str
         Similarity measurement method:
-         - modified_manhattan (inverse of the translated and scaled Manhattan distance)
+         - ballester (inverse of the translated and scaled Manhattan distance)
     score : float
         Similarity score.
     coverage : float
          Coverage (ratio of bits used for similarity score).
     """
 
-    assert calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan') == (score, coverage)
+    assert calculate_similarity(fingerprint1, fingerprint2, measure='ballester') == (score, coverage)
 
 
 @pytest.mark.parametrize('fingerprint_df1, fingerprint_df2, measure, weight, score, coverage', [
@@ -72,7 +72,7 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
             ],
             columns=FEATURE_NAMES
         ),
-        'modified_manhattan',
+        'ballester',
         None,
         0.4,
         1.0
@@ -92,7 +92,7 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
             ],
             columns=FEATURE_NAMES
         ),
-        'modified_manhattan',
+        'ballester',
         0.1,
         0.49,
         (1.0, 1.0)
