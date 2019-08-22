@@ -135,15 +135,17 @@ def main():
     fingerprints = load_fingerprints(PATH_TO_KINSIM / 'results' / 'fingerprints' / 'fingerprints.p')
     pairs = get_pairs(fingerprints)
 
-    # Calculate pairwise similarity
-    scores_fingerprint_type1 = get_pairwise_similarities(get_fingerprint_type1_similarity, pairs)
-    scores_fingerprint_type2 = get_pairwise_similarities(get_fingerprint_type2_similarity, pairs)
-
-    # Save similarities
+    # Calculate and save pairwise similarity
     path_to_similarities = PATH_TO_KINSIM / 'results' / 'similarity'
     path_to_similarities.mkdir(parents=True, exist_ok=True)
-    scores_fingerprint_type1.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type1.csv')
-    scores_fingerprint_type2.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type2.csv')
+
+    # Fingerprint type 1
+    scores_fingerprint_type1 = get_pairwise_similarities(get_fingerprint_type1_similarity, pairs)
+    scores_fingerprint_type1.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type1_euklidean.csv')
+
+    # Fingerprint type 2
+    #scores_fingerprint_type2 = get_pairwise_similarities(get_fingerprint_type2_similarity, pairs)
+    #scores_fingerprint_type2.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type2.csv')
 
     # Get end time of script
     end = datetime.datetime.now()
