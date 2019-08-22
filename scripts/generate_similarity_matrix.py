@@ -141,7 +141,7 @@ def main():
 
     # Fingerprint type 1
     scores_fingerprint_type1 = get_pairwise_similarities(get_fingerprint_type1_similarity, pairs)
-    scores_fingerprint_type1.to_csv(path_to_similarities / 'scores_allxall_fingerprint_type1_euklidean.csv')
+    scores_fingerprint_type1.to_csv(path_to_similarities / 'scores_allxall_fp_type1_euklidean.csv')
 
     # Fingerprint type 2
     #scores_fingerprint_type2 = get_pairwise_similarities(get_fingerprint_type2_similarity, pairs)
