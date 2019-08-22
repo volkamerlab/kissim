@@ -101,7 +101,7 @@ def get_fingerprint_type2_similarity(pair, measure='modified_manhattan', weight=
         raise ValueError(f'Weight must be between 0 and 1. Given weight is: {weight}')
 
 
-def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan'):
+def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
     """
     Calculate the similarity between two fingerprints based on a similarity measure.
 
@@ -120,7 +120,7 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan
         Similarity score and coverage (ratio of bits used for similarity score).
     """
 
-    measures = ['modified_manhattan']
+    measures = 'modified_manhattan manhattan euclidean'.split()
 
     # Convert DataFrame into 1D array
     if isinstance(fingerprint1, pd.DataFrame) and isinstance(fingerprint2, pd.DataFrame):
@@ -157,14 +157,19 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='modified_manhattan
     else:
         pass
 
-    if measure == measures[0]:
+    fp1 = fingerprints_reduced[:, 0]
+    fp2 = fingerprints_reduced[:, 1]
 
-        # Calculate inverse of the translated and scaled Manhattan distance
-        fp1 = fingerprints_reduced[:, 0]
-        fp2 = fingerprints_reduced[:, 1]
-
+    if measure == measures[0]:  # Inverse of the translated and scaled Manhattan distance
         score = 1 / (1 + 1 / len(fp1) * distance.cityblock(fp1, fp2))
+        return score, coverage
 
+    elif measure == measures[1]:  # Scaled Manhattan distance
+        score = 1 - 1 / len(fp1) * distance.cityblock(fp1, fp2)
+        return score, coverage
+
+    elif measure == measures[2]:  # Euclidean distance
+        score = 1 - 1 / len(fp1) * distance.euclidean(fp1, fp2)
         return score, coverage
 
     else:
