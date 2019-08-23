@@ -114,3 +114,5 @@ results/similarity/scores_allxall_fp_type1_ballester\.csv
 results/similarity/scores_allxall_fp_type1_euclidean\.csv
 
 results/similarity/scores_allxall_fp_type2_ballester\.csv
+
+results/similarity/scores_allxall_type2_normballester\.csv
