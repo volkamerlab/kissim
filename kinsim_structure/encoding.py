@@ -580,6 +580,118 @@ class SpatialFeatures:
 
         return anchors
 
+    @staticmethod
+    def save_cgo_refpoints(klifs_metadata_entry, output_path):
+        """
+
+        Parameters
+        ----------
+        klifs_metadata_entry
+        output_path
+        """
+
+        # PyMol sphere colors (for reference points)
+        sphere_colors = {
+            'centroid': [1.0, 0.65, 0.0],  # orange
+            'hinge_region': [1.0, 0.0, 1.0],  # magenta
+            'dfg_region': [0.25, 0.41, 0.88],  # skyblue
+            'front_pocket': [0.0, 1.0, 0.0]  # green
+        }
+
+        # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
+        hinge_klifs_ids = [46, 47, 48]
+        dfg_klifs_ids = [81, 82, 83]
+
+        # Load molecule from KLIFS metadata entry
+        klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+        molecule = klifs_molecule_loader.molecule
+
+        # Path to molecule file
+        mol2_path = klifs_molecule_loader.file_from_metadata_entry(klifs_metadata_entry)
+
+        # Output path
+        Path(output_path).mkdir(parents=True, exist_ok=True)
+
+        # Mol2 residue IDs for hinge/DFG region
+        hinge_mol2_ids = molecule.df[molecule.df.klifs_id.isin(hinge_klifs_ids)].res_id.unique()
+        dfg_mol2_ids = molecule.df[molecule.df.klifs_id.isin(dfg_klifs_ids)].res_id.unique()
+
+        # Get reference points and anchor atoms (coordinates)
+        space = SpatialFeatures()
+        space.from_molecule(molecule)
+        ref_points = space.reference_points.transpose()
+        anchor_atoms = space.get_anchor_atoms(molecule)
+
+        # Collect all text lines to be written to file
+        lines = []
+
+        # Set descriptive PyMol object name for reference points
+        obj_name = f'refpoints_{molecule.code[6:]}'
+
+        # Imports
+        lines.append('from pymol import *')
+        lines.append('import os')
+        lines.append('from pymol.cgo import *\n')
+
+        # Load protein structure
+        lines.append(f'cmd.load("{mol2_path}", "protein")\n')
+        lines.append(f'cmd.show("cartoon", "protein")')
+        lines.append(f'cmd.hide("lines", "protein")')
+        lines.append(f'cmd.color("gray", "protein")\n')
+        lines.append(f'cmd.set("cartoon_transparency", 0.5, "protein")')
+        lines.append(f'cmd.set("opaque_background", "off")\n')
+
+        # Color hinge and DFG region
+        lines.append(f'cmd.set_color("hinge_color", {sphere_colors["hinge_region"]})')
+        lines.append(f'cmd.set_color("dfg_color", {sphere_colors["dfg_region"]})')
+        lines.append(f'cmd.color("hinge_color", "protein and resi {"+".join([str(i) for i in hinge_mol2_ids])}")')
+        lines.append(f'cmd.color("dfg_color", "protein and resi {"+".join([str(i) for i in dfg_mol2_ids])}")\n')
+
+        # Add spheres, i.e. reference points and anchor atoms
+        lines.append(f'obj_{obj_name} = [\n')  # Variable cannot start with digit, thus add prefix obj_
+
+        # Reference points
+        for ref_point_index, ref_point in ref_points.iterrows():
+
+            # Set and write sphere color to file
+            sphere_color = list()
+            lines.append(
+                f'\tCOLOR, '
+                f'{str(sphere_colors[ref_point_index][0])}, '
+                f'{str(sphere_colors[ref_point_index][1])}, '
+                f'{str(sphere_colors[ref_point_index][2])},'
+            )
+
+            # Write reference point coordinates and size to file
+            lines.append(
+                f'\tSPHERE, '
+                f'{str(ref_point["x"])}, '
+                f'{str(ref_point["y"])}, '
+                f'{str(ref_point["z"])}, '
+                f'{str(1)},'
+            )
+
+            # Write anchor atom coordinates and size to file
+            if ref_point_index != 'centroid':
+                for anchor_atom_index, anchor_atom in anchor_atoms[ref_point_index].iterrows():
+                    lines.append(
+                        f'\tSPHERE, '
+                        f'{str(anchor_atom["x"])}, '
+                        f'{str(anchor_atom["y"])}, '
+                        f'{str(anchor_atom["z"])}, '
+                        f'{str(0.5)},'
+                    )
+
+        # Write command to file that will load the reference points as PyMol object
+        lines.append(f']\ncmd.load_cgo(obj_{obj_name}, "{obj_name}")')
+
+        with open(output_path / f'refpoints_{molecule.code[6:]}.py', 'w') as f:
+            f.write('\n'.join(lines))
+
+        # In PyMol enter the following to save png
+        # PyMOL > ray 900, 900
+        # PyMOL > save refpoints.png
+
 
 class SideChainOrientationFeature:
     """
