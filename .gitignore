@@ -1,5 +1,11 @@
 # Files
-results/stats_missing_ca_cb_and_sco.p
+examples/results/features/stats_missing_ca_cb_and_sco.p
+examples/results/fingerprints/fingerprints.p
+examples/results/similarity/scores_allxall_fp_type1_ballester\.csv
+examples/results/similarity/scores_allxall_fp_type1_euclidean\.csv
+examples/results/similarity/scores_allxall_fp_type2_ballester\.csv
+examples/results/similarity/scores_allxall_type2_normballester\.csv
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -106,13 +112,3 @@ ENV/
 
 # PyCharm
 .idea/
-
-results/fingerprints/fingerprints\.p
-
-results/similarity/scores_allxall_fp_type1_ballester\.csv
-
-results/similarity/scores_allxall_fp_type1_euclidean\.csv
-
-results/similarity/scores_allxall_fp_type2_ballester\.csv
-
-results/similarity/scores_allxall_type2_normballester\.csv
