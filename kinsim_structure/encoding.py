@@ -474,11 +474,11 @@ class SpatialFeatures:
 
         reference_points = dict()
 
-        # Calculate centroid-based reference point
-        reference_points['centroid'] = molecule.df['x y z'.split()].mean()
+        # Calculate centroid-based reference point:
+        # Calculate mean of all CA atoms
+        reference_points['centroid'] = molecule.df[molecule.df.atom_name == 'CA']['x y z'.split()].mean()
 
-        # Calculate anchor-based reference points
-
+        # Calculate anchor-based reference points:
         # Get anchor atoms for each anchor-based reference point
         anchors = self.get_anchor_atoms(molecule)
 
