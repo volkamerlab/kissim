@@ -218,7 +218,7 @@ class SideChainOrientationStatistics:
         Parameters
         ----------
         output_path : str or pathlib.Path
-            Path to directory where data file should be saved
+            Path to directory where data file should be saved.
         from_file : None or str or pathlib.Path
             Default is None, optionally can take path to file containing respective data.
 
