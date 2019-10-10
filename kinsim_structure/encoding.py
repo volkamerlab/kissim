@@ -583,11 +583,15 @@ class SpatialFeatures:
     @staticmethod
     def save_cgo_refpoints(klifs_metadata_entry, output_path):
         """
+        Save CGO PyMol file showing a kinase with anchor residues, reference points and highlighted hinge and DFG
+        region.
 
         Parameters
         ----------
-        klifs_metadata_entry
-        output_path
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        output_path : str or pathlib.Path
+            Path to directory where data file should be saved.
         """
 
         # PyMol sphere colors (for reference points)
