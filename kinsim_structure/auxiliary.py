@@ -471,14 +471,20 @@ class KlifsMoleculeLoader:
         # Depending on whether alternate model and chain ID is given build file path:
         mol2_path = PATH_TO_DATA / 'raw' / 'KLIFS_download' / klifs_metadata_entry.species.upper() / klifs_metadata_entry.kinase
 
-        if klifs_metadata_entry.alternate_model != '-' and klifs_metadata_entry.chain != '-':
-            mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_alt{klifs_metadata_entry.alternate_model}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
-        elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain != '-':
-            mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}_chain{klifs_metadata_entry.chain}' / 'pocket.mol2'
-        elif klifs_metadata_entry.alternate_model == '-' and klifs_metadata_entry.chain == '-':
-            mol2_path = mol2_path / f'{klifs_metadata_entry.pdb_id}' / 'pocket.mol2'
+        pdb_id = klifs_metadata_entry.pdb_id
+        chain = klifs_metadata_entry.chain
+        alternate_model = klifs_metadata_entry.alternate_model
+
+        if alternate_model != '-' and chain != '-':
+            folder_name = f'{pdb_id}_alt{alternate_model}_chain{chain}'
+        elif alternate_model == '-' and chain != '-':
+            folder_name = f'{pdb_id}_chain{chain}'
+        elif alternate_model == '-' and chain == '-':
+            folder_name = f'{pdb_id}'
         else:
-            raise ValueError(f'{klifs_metadata_entry.alternate_model}, {klifs_metadata_entry.chain}')
+            raise ValueError(f'{alternate_model}, {chain}')
+
+        mol2_path = mol2_path / folder_name / 'pocket.mol2'
 
         # If file does not exist, raise error
         if not mol2_path.exists():
