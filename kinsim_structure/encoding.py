@@ -594,6 +594,8 @@ class SpatialFeatures:
             Path to directory where data file should be saved.
         """
 
+        output_path = Path(output_path)
+
         # PyMol sphere colors (for reference points)
         sphere_colors = {
             'centroid': [1.0, 0.65, 0.0],  # orange
@@ -637,19 +639,19 @@ class SpatialFeatures:
         lines.append('import os')
         lines.append('from pymol.cgo import *\n')
 
-        # Load protein structure
-        lines.append(f'cmd.load("{mol2_path}", "protein")\n')
-        lines.append(f'cmd.show("cartoon", "protein")')
-        lines.append(f'cmd.hide("lines", "protein")')
-        lines.append(f'cmd.color("gray", "protein")\n')
-        lines.append(f'cmd.set("cartoon_transparency", 0.5, "protein")')
+        # Load pocket structure
+        lines.append(f'cmd.load("{mol2_path}", "pocket_{molecule.code[6:]}")\n')
+        lines.append(f'cmd.show("cartoon", "pocket_{molecule.code[6:]}")')
+        lines.append(f'cmd.hide("lines", "pocket_{molecule.code[6:]}")')
+        lines.append(f'cmd.color("gray", "pocket_{molecule.code[6:]}")\n')
+        lines.append(f'cmd.set("cartoon_transparency", 0.5, "pocket_{molecule.code[6:]}")')
         lines.append(f'cmd.set("opaque_background", "off")\n')
 
         # Color hinge and DFG region
         lines.append(f'cmd.set_color("hinge_color", {sphere_colors["hinge_region"]})')
         lines.append(f'cmd.set_color("dfg_color", {sphere_colors["dfg_region"]})')
-        lines.append(f'cmd.color("hinge_color", "protein and resi {"+".join([str(i) for i in hinge_mol2_ids])}")')
-        lines.append(f'cmd.color("dfg_color", "protein and resi {"+".join([str(i) for i in dfg_mol2_ids])}")\n')
+        lines.append(f'cmd.color("hinge_color", "pocket_{molecule.code[6:]} and resi {"+".join([str(i) for i in hinge_mol2_ids])}")')
+        lines.append(f'cmd.color("dfg_color", "pocket_{molecule.code[6:]} and resi {"+".join([str(i) for i in dfg_mol2_ids])}")\n')
 
         # Add spheres, i.e. reference points and anchor atoms
         lines.append(f'obj_{obj_name} = [\n')  # Variable cannot start with digit, thus add prefix obj_
