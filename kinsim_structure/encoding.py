@@ -110,7 +110,7 @@ class Fingerprint:
     Distance of each residue to 4 reference points:
     - Binding site centroid
     - Hinge region
-    - DFG loop
+    - DFG region
     - Front pocket
 
     Two fingerprint types are offered:
@@ -409,7 +409,7 @@ class SpatialFeatures:
     Distance of each residue to 4 reference points:
     - Binding site centroid
     - Hinge region
-    - DFG loop
+    - DFG region
     - Front pocket
 
     Attributes
@@ -459,7 +459,7 @@ class SpatialFeatures:
 
     def get_reference_points(self, molecule):
         """
-        Get reference points of a molecule, i.e. the binding site centroid, hinge region, DFG loop and front pocket.
+        Get reference points of a molecule, i.e. the binding site centroid, hinge region, DFG region and front pocket.
 
         Parameters
         ----------
@@ -495,7 +495,7 @@ class SpatialFeatures:
     @staticmethod
     def get_anchor_atoms(molecule):
         """
-        For each anchor-based reference points (i.e. hinge region, DFG loop and front pocket)
+        For each anchor-based reference points (i.e. hinge region, DFG region and front pocket)
         get the three anchor (i.e. CA) atoms.
 
         Parameters

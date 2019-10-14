@@ -178,14 +178,14 @@ def get_species(klifs_metadata, species='Human'):
 
 def get_dfg(klifs_metadata, dfg='in'):
     """
-    Filter KLIFS dataset by DFG loop position.
+    Filter KLIFS dataset by DFG region position.
 
     Parameters
     ----------
     klifs_metadata : pandas.DataFrame
         DataFrame containing merged metadate from both input KLIFS tables.
     dfg : str
-        String for DFG loop position.
+        String for DFG region position.
 
     Returns
     -------
