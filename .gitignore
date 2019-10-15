@@ -5,7 +5,7 @@ examples/results/similarity/scores_allxall_fp_type1_ballester\.csv
 examples/results/similarity/scores_allxall_fp_type1_euclidean\.csv
 examples/results/similarity/scores_allxall_fp_type2_ballester\.csv
 examples/results/similarity/scores_allxall_type2_normballester\.csv
-
+examples/results/reference_points/cgo_reference_points
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
