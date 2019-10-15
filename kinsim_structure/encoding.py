@@ -43,6 +43,10 @@ ANCHOR_RESIDUES = {
     'front_pocket': [6, 48, 75]
 }
 
+# KLIFS IDs for hinge/DFG region (taken from KLIFS website)
+HINGE_KLIFS_IDS = [6, 47, 48]
+DFG_KLIFS_IDS = [81, 82, 83]
+
 FEATURE_LOOKUP = {
     'size': {
         1: 'ALA CYS GLY PRO SER THR VAL'.split(),
@@ -604,10 +608,6 @@ class SpatialFeatures:
             'front_pocket': [0.0, 1.0, 0.0]  # green
         }
 
-        # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
-        hinge_klifs_ids = [46, 47, 48]
-        dfg_klifs_ids = [81, 82, 83]
-
         # Load molecule from KLIFS metadata entry
         klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
         molecule = klifs_molecule_loader.molecule
@@ -619,14 +619,19 @@ class SpatialFeatures:
         Path(output_path).mkdir(parents=True, exist_ok=True)
 
         # Mol2 residue IDs for hinge/DFG region
-        hinge_mol2_ids = molecule.df[molecule.df.klifs_id.isin(hinge_klifs_ids)].res_id.unique()
-        dfg_mol2_ids = molecule.df[molecule.df.klifs_id.isin(dfg_klifs_ids)].res_id.unique()
+        hinge_mol2_ids = molecule.df[molecule.df.klifs_id.isin(HINGE_KLIFS_IDS)].res_id.unique()
+        dfg_mol2_ids = molecule.df[molecule.df.klifs_id.isin(DFG_KLIFS_IDS)].res_id.unique()
 
         # Get reference points and anchor atoms (coordinates)
         space = SpatialFeatures()
         space.from_molecule(molecule)
         ref_points = space.reference_points.transpose()
         anchor_atoms = space.get_anchor_atoms(molecule)
+
+        # Drop missing reference points and anchor atoms
+        ref_points.dropna(axis=0, how='any', inplace=True)
+        for ref_point_name, anchor_atoms_per_ref_point in anchor_atoms.items():
+            anchor_atoms_per_ref_point.dropna(axis=0, how='any', inplace=True)
 
         # Collect all text lines to be written to file
         lines = []
@@ -657,15 +662,14 @@ class SpatialFeatures:
         lines.append(f'obj_{obj_name} = [\n')  # Variable cannot start with digit, thus add prefix obj_
 
         # Reference points
-        for ref_point_index, ref_point in ref_points.iterrows():
+        for ref_point_name, ref_point in ref_points.iterrows():
 
             # Set and write sphere color to file
-            sphere_color = list()
             lines.append(
                 f'\tCOLOR, '
-                f'{str(sphere_colors[ref_point_index][0])}, '
-                f'{str(sphere_colors[ref_point_index][1])}, '
-                f'{str(sphere_colors[ref_point_index][2])},'
+                f'{str(sphere_colors[ref_point_name][0])}, '
+                f'{str(sphere_colors[ref_point_name][1])}, '
+                f'{str(sphere_colors[ref_point_name][2])},'
             )
 
             # Write reference point coordinates and size to file
@@ -678,8 +682,8 @@ class SpatialFeatures:
             )
 
             # Write anchor atom coordinates and size to file
-            if ref_point_index != 'centroid':
-                for anchor_atom_index, anchor_atom in anchor_atoms[ref_point_index].iterrows():
+            if ref_point_name != 'centroid':
+                for anchor_atom_index, anchor_atom in anchor_atoms[ref_point_name].iterrows():
                     lines.append(
                         f'\tSPHERE, '
                         f'{str(anchor_atom["x"])}, '
