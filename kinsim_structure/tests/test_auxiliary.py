@@ -24,17 +24,3 @@ from kinsim_structure.auxiliary import KlifsMoleculeLoader
 def test_split_klifs_code(klifs_code, result):
 
     assert split_klifs_code(klifs_code) == result
-
-
-@pytest.mark.parametrize('mol2_path, result', [
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', None)
-])
-def test_klifsmoleculeloader_fromfile(mol2_path, result):
-
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
-    print(mol2_path)
-
-    klifs_molecule_loader = KlifsMoleculeLoader()
-    molecule = klifs_molecule_loader.from_file(mol2_path)
-
-    assert molecule.df.kinase[0] == result
