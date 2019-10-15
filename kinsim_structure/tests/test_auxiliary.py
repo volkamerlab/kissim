@@ -3,24 +3,32 @@ Unit and regression test for auxiliary classes and functions in the kinsim_struc
 kinsim_structure package.
 """
 
-from pathlib import Path
 import pytest
 
 from kinsim_structure.auxiliary import split_klifs_code
-from kinsim_structure.auxiliary import KlifsMoleculeLoader
 
 
 @pytest.mark.parametrize('klifs_code, result', [
     (
         'HUMAN/AAK1_4wsq_altA_chainA',
-        {'species': 'HUMAN', 'group': 'AAK1', 'pdb_id': '4wsq', 'alternate_id': 'A', 'chain_id': 'A'}
+        {'species': 'HUMAN', 'kinase': 'AAK1', 'pdb_id': '4wsq', 'alternate_model': 'A', 'chain': 'A'}
     ),
     (
         'HUMAN/AAK1_4wsq',
-        {'species': 'HUMAN', 'group': 'AAK1', 'pdb_id': '4wsq', 'alternate_id': None, 'chain_id': None}
+        {'species': 'HUMAN', 'kinase': 'AAK1', 'pdb_id': '4wsq', 'alternate_model': None, 'chain': None}
     )
 
 ])
 def test_split_klifs_code(klifs_code, result):
+    """
+    Rest if KLIFS code can be split into its properties.
+
+    Parameters
+    ----------
+    klifs_code : str
+        Unique KLIFS code: SPECIES/kinase_pdbid_alternatemodel_chain.
+    result : dict
+        KLIFS attributes the KLIFS code should be split into.
+    """
 
     assert split_klifs_code(klifs_code) == result
