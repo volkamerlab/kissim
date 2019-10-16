@@ -693,7 +693,17 @@ class SpatialFeatures:
                     )
 
         # Write command to file that will load the reference points as PyMol object
-        lines.append(f']\ncmd.load_cgo(obj_{obj_name}, "{obj_name}")')
+        lines.append(f']\n')
+
+        # Add KLIFS IDs to CA atoms as labels
+
+        for res_id, klifs_id in zip(molecule.df.res_id.unique(), molecule.df.klifs_id.unique()):
+            lines.append(
+                f'cmd.label(selection="pocket_{molecule.code[6:]} and name CA and resi {res_id}", expression="\'{klifs_id}\'")'
+
+            )
+
+        lines.append(f'\ncmd.load_cgo(obj_{obj_name}, "{obj_name}")')
 
         with open(output_path / f'refpoints_{molecule.code[6:]}.py', 'w') as f:
             f.write('\n'.join(lines))
