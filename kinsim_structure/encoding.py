@@ -715,19 +715,13 @@ class SpatialFeatures:
 
 class SideChainAngleFeature:
     """
-    Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues, as
-    described by SiteAlign (Schalon et al. Proteins. 2008).
+    Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
     Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
 
     Attributes
     ----------
     features : pandas.DataFrame
         1 feature (columns) for 85 residues (rows).
-
-    References
-    ----------
-    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
-    Proteins, 2008.
     """
 
     def __init__(self):
