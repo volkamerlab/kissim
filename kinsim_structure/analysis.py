@@ -194,9 +194,15 @@ class SideChainAngleStatistics:
     def get_missing_residues_ca_cb(self, gap_rate):
 
         # Get number of missing atoms per KLIFS position
-        missing_ca = self.data[self.data.ca.isna()].groupby(by='klifs_id').size()
-        missing_cb = self.data[self.data.cb.isna()].groupby(by='klifs_id').size()
-        missing_ca_cb = self.data[(self.data.ca.isna()) & (self.data.cb.isna())].groupby(by='klifs_id', sort=False).size()
+        missing_ca = self.data[
+            self.data.ca.isna()
+        ].groupby(by='klifs_id').size()
+        missing_cb = self.data[
+            self.data.cb.isna()
+        ].groupby(by='klifs_id').size()
+        missing_ca_cb = self.data[
+            (self.data.ca.isna()) & (self.data.cb.isna())
+        ].groupby(by='klifs_id', sort=False).size()
 
         missing_positions = pd.DataFrame(
             [
@@ -403,6 +409,3 @@ class NonStandardKlifsAminoAcids:
         non_std_all.reset_index(inplace=True, drop=True)
 
         self.data = non_std_all
-
-
-
