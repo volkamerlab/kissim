@@ -41,7 +41,7 @@ ANCHOR_RESIDUES = {
     'hinge_region': [16, 47, 80],
     'dfg_region': [19, 24, 81],
     'front_pocket': [6, 48, 75]
-}
+}  # Are the same as in Eva's implementation
 
 # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
 HINGE_KLIFS_IDS = [6, 47, 48]
