@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader
-from kinsim_structure.encoding import SideChainOrientationFeature
+from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kinsim_structure.encoding import SideChainAngleFeature
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ class GapRate:
         plt.savefig(path_to_results / 'gap_rate.png', dpi=300)
 
 
-class SideChainOrientationStatistics:
+class SideChainAngleStatistics:
 
     def __init__(self):
         self.n_structures = None
@@ -179,12 +179,15 @@ class SideChainOrientationStatistics:
             klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=row)
             molecule = klifs_molecule_loader.molecule
 
-            side_chain_orientation_feature = SideChainOrientationFeature()
-            side_chain_orientation_feature.from_molecule(molecule, verbose=True)
+            pdb_chain_loader = PdbChainLoader(klifs_metadata_entry=row)
+            chain = pdb_chain_loader.chain
 
-            side_chain_orientation_feature.features['klifs_code'] = molecule.code
+            side_chain_angle_feature = SideChainAngleFeature()
+            side_chain_angle_feature.from_molecule(molecule, chain=chain, verbose=True)
 
-            stats.append(side_chain_orientation_feature.features)
+            side_chain_angle_feature.features['klifs_code'] = molecule.code
+
+            stats.append(side_chain_angle_feature.features)
 
         self.data = pd.concat(stats)
 
@@ -212,7 +215,7 @@ class SideChainOrientationStatistics:
 
     def get_mean_median(self, output_path=None, from_file=None):
         """
-        Get mean and median of side chain orientation angles for each amino acid in dataset.
+        Get mean and median of side chain angles for each amino acid in dataset.
         Add angle of 0 to GLY.
 
         Parameters
@@ -225,34 +228,34 @@ class SideChainOrientationStatistics:
         Returns
         -------
         pandas.DataFrame
-            Mean and median of side chain orientation angles for each amino acid in dataset.
+            Mean and median of side chain angles for each amino acid in dataset.
         """
 
         if isinstance(self.data, pd.DataFrame):
-            sco_stats_std = self.data.copy()
+            sca_stats_std = self.data.copy()
         elif from_file:
             with open(Path(from_file), 'rb') as f:
-                sco_stats_std = pickle.load(f)
+                sca_stats_std = pickle.load(f)
         else:
             raise ValueError(f'No data available for mean/median value calculation.')
 
         # Calculate mean and median
-        sco_mean_median = pd.DataFrame(
+        sca_mean_median = pd.DataFrame(
             [
-                sco_stats_std.groupby('residue_name').mean()['sco'],
-                sco_stats_std.groupby('residue_name').median()['sco']
+                sca_stats_std.groupby('residue_name').mean()['sca'],
+                sca_stats_std.groupby('residue_name').median()['sca']
             ]
         ).transpose()
-        sco_mean_median.columns = ['sco_mean', 'sco_median']
-        sco_mean_median = sco_mean_median.round(2)
+        sca_mean_median.columns = ['sca_mean', 'sca_median']
+        sca_mean_median = sca_mean_median.round(2)
 
         # Add value: GLY=0
-        sco_mean_median.loc['GLY'] = 0
+        sca_mean_median.loc['GLY'] = 0
 
         if output_path:
-            sco_mean_median.to_csv(output_path / 'side_chain_orientation_mean_median.csv')
+            sca_mean_median.to_csv(output_path / 'side_chain_angle_mean_median.csv')
 
-        return sco_mean_median
+        return sca_mean_median
 
     def plot_missing_residues_ca_cb(self, path_to_results):
 
@@ -279,7 +282,7 @@ class SideChainOrientationStatistics:
 
         plt.savefig(path_to_results / 'missing_residues_ca_cb.png', dpi=300)
 
-    def plot_side_chain_orientation_distribution(self, path_to_results, kind='violin'):
+    def plot_side_chain_angle_distribution(self, path_to_results, kind='violin'):
 
         kinds = 'violin histograms'.split()
 
@@ -293,35 +296,35 @@ class SideChainOrientationStatistics:
 
             ax = sns.violinplot(
                 x='residue_name',
-                y='sco',
+                y='sca',
                 data=self.data[self.data.residue_name.isin(standard_aminoacids)],
                 order=standard_aminoacids
             )
             ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
             ax.set_xlabel('Residue name (sorted by molecular weight)')
-            ax.set_ylabel('Side chain orientation angle')
+            ax.set_ylabel('Side chain angle')
 
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
                 item.set_fontsize(20)
 
-            plt.savefig(path_to_results / 'sco_violin_standard.png', dpi=300)
+            plt.savefig(path_to_results / 'sca_violin_standard.png', dpi=300)
 
             # Plot non-standard amino acids
             plt.figure(figsize=(20, 8))
 
             ax = sns.violinplot(
                 x='residue_name',
-                y='sco',
+                y='sca',
                 data=self.data[~self.data.residue_name.isin(standard_aminoacids)]
             )
             ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
             ax.set_xlabel('Residue name')
-            ax.set_ylabel('Side chain orientation angle')
+            ax.set_ylabel('Side chain angle')
 
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
                 item.set_fontsize(20)
 
-            plt.savefig(path_to_results / 'sco_violin_nonstandard.png', dpi=300)
+            plt.savefig(path_to_results / 'sca_violin_nonstandard.png', dpi=300)
 
         elif kind == kinds[1]:
 
@@ -330,9 +333,9 @@ class SideChainOrientationStatistics:
             for index, residue in enumerate(standard_aminoacids, 1):
                 group = self.data.groupby(by='residue_name').get_group(residue)
                 plt.subplot(7, 3, index)
-                group.sco.plot(kind='hist', title=residue, xlim=(0, 180))
+                group.sca.plot(kind='hist', title=residue, xlim=(0, 180))
 
-            plt.savefig(path_to_results / 'sco_histograms.png', dpi=300, bbox_inches='tight')
+            plt.savefig(path_to_results / 'sca_histograms.png', dpi=300, bbox_inches='tight')
 
         else:
 

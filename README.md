@@ -21,7 +21,7 @@ The pocket fingerprint consists of 85 concatenated residue fingerprints,
 each encoding a residue’s spatial and physicochemical properties. 
 The spatial properties describe the residue’s position in relation to the kinase pocket centroid and 
 important kinase subpockets, i.e. the hinge region, the DFG region, and the front pocket. 
-The physicochemical properties encompass for each residue its pocket exposure, side chain orientation, 
+The physicochemical properties encompass for each residue its pocket exposure, side chain angle, 
 size and pharmacophoric features. 
 Pairwise comparison of all kinases and clustering reveals kinome-wide similarities.
 

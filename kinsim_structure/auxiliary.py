@@ -702,7 +702,7 @@ def center_of_mass(entity, geometric=False):
         return [sum(coord_list)/sum(masses) for coord_list in w_pos]
 
 
-def save_cgo_side_chain_orientation(klifs_path, output_path):
+def save_cgo_side_chain_angle(klifs_path, output_path):
     """
 
     Parameters
@@ -813,7 +813,7 @@ def save_cgo_side_chain_orientation(klifs_path, output_path):
     # Group all objects to one group
     lines.append(f'cmd.group("{"_".join(code.values())}", "{" ".join(obj_names + obj_angle_names)}")')
 
-    cgo_path = Path(output_path) / f'side_chain_orientation_{molecule.code.split("/")[1]}.py'
+    cgo_path = Path(output_path) / f'side_chain_angle_{molecule.code.split("/")[1]}.py'
     with open(cgo_path, 'w') as f:
         f.write('\n'.join(lines))
 

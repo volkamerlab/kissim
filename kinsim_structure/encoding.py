@@ -29,7 +29,7 @@ FEATURE_NAMES = [
     'charge',
     'aromatic',
     'aliphatic',
-    'sco',
+    'sca',
     'exposure',
     'distance_to_centroid',
     'distance_to_hinge_region',
@@ -91,10 +91,10 @@ MODIFIED_AA_CONVERSION = {
     'PTR': 'TYR'
 }
 
-MEDIAN_SIDE_CHAIN_ORIENTATION = pd.read_csv(
-    Path(__file__).parent / 'data' / 'side_chain_orientation_mean_median.csv',
+MEDIAN_SIDE_CHAIN_ANGLE = pd.read_csv(
+    Path(__file__).parent / 'data' / 'side_chain_angle_mean_median.csv',
     index_col='residue_name'
-)['sco_median']
+)['sca_median']
 
 EXPOSURE_RADIUS = 13.0
 
@@ -107,7 +107,7 @@ class Fingerprint:
     Physicochemical features:
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
-    - Side chain orientation
+    - Side chain angle
     - Half sphere exposure
 
     Spatial features:
@@ -271,8 +271,8 @@ class Fingerprint:
         normalized['aromatic'] = normalized['hba'].apply(lambda x: x / 1.0)
         normalized['aliphatic'] = normalized['hba'].apply(lambda x: x / 1.0)
 
-        # Normalize side chain orientation
-        normalized['sco'] = normalized['sco'].apply(lambda x: x / 180.0)
+        # Normalize side chain angle
+        normalized['sca'] = normalized['sca'].apply(lambda x: x / 180.0)
 
         # Normalize exposure
         normalized['exposure'] = normalized['exposure'].apply(lambda x: x / 1)
@@ -358,7 +358,7 @@ class PhysicoChemicalFeatures:
     Physicochemical properties:
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
-    - Side chain orientation
+    - Side chain angle
     - Half sphere exposure
 
     Attributes
@@ -386,8 +386,8 @@ class PhysicoChemicalFeatures:
         pharmacophore_size = PharmacophoreSizeFeatures()
         pharmacophore_size.from_molecule(molecule)
 
-        side_chain_orientation = SideChainOrientationFeature()
-        side_chain_orientation.from_molecule(molecule, chain)
+        side_chain_angle = SideChainAngleFeature()
+        side_chain_angle.from_molecule(molecule, chain)
 
         exposure = ExposureFeature()
         exposure.from_molecule(molecule, chain)
@@ -396,7 +396,7 @@ class PhysicoChemicalFeatures:
         physicochemical_features = pd.concat(
             [
                 pharmacophore_size.features,
-                side_chain_orientation.features,
+                side_chain_angle.features,
                 exposure.features
             ],
             axis=1
@@ -703,11 +703,11 @@ class SpatialFeatures:
         # PyMOL > save refpoints.png
 
 
-class SideChainOrientationFeature:
+class SideChainAngleFeature:
     """
-    Side chain orientations for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues, as
+    Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues, as
     described by SiteAlign (Schalon et al. Proteins. 2008).
-    Side chain orientation of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
+    Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
 
     Attributes
     ----------
@@ -726,7 +726,7 @@ class SideChainOrientationFeature:
 
     def from_molecule(self, molecule, chain, verbose=False, fill_missing=False):
         """
-        Get side chain orientation for each residue of a molecule.
+        Get side chain angle for each residue of a molecule.
 
         Parameters
         ----------
@@ -744,40 +744,40 @@ class SideChainOrientationFeature:
         ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule, chain)
 
         # Save here angle values per residue
-        side_chain_orientation = []
+        side_chain_angle = []
 
         for index, row in ca_cb_com_vectors.iterrows():
 
             if row.ca and row.cb:
-                angle = np.degrees(calc_angle(row.ca, row.cb, row.com))
-                side_chain_orientation.append(angle.round(2))
+                angle = np.degrees(calc_angle(row.ca, row.cb, row.centroid))
+                side_chain_angle.append(angle.round(2))
 
             # If Ca and Cb are missing for angle calculation...
             else:
                 # ... set median value to residue and GLY to 0
                 if fill_missing:
-                    angle = MEDIAN_SIDE_CHAIN_ORIENTATION[row.residue_name]
+                    angle = MEDIAN_SIDE_CHAIN_ANGLE[row.residue_name]
 
                 # ... set None value to residue
                 else:
                     angle = None
-                side_chain_orientation.append(angle)
+                side_chain_angle.append(angle)
 
         # Either return angles only or angles plus CA, CB and centroid points as well as metadata
         if not verbose:
-            side_chain_orientation = pd.DataFrame(
-                side_chain_orientation,
+            side_chain_angle = pd.DataFrame(
+                side_chain_angle,
                 index=ca_cb_com_vectors.klifs_id,
-                columns=['sco']
+                columns=['sca']
             )
-            self.features = side_chain_orientation
+            self.features = side_chain_angle
         else:
-            side_chain_orientation = pd.DataFrame(
-                side_chain_orientation,
+            side_chain_angle = pd.DataFrame(
+                side_chain_angle,
                 index=ca_cb_com_vectors.index,
-                columns=['sco']
+                columns=['sca']
             )
-            self.features = pd.concat([ca_cb_com_vectors, side_chain_orientation], axis=1)
+            self.features = pd.concat([ca_cb_com_vectors, side_chain_angle], axis=1)
 
     @staticmethod
     def _get_ca_cb_com_vectors(molecule, chain):
@@ -837,7 +837,7 @@ class SideChainOrientationFeature:
 
         data = pd.DataFrame(
             data,
-            columns='ca cb com'.split()
+            columns='ca cb centroid'.split()
         )
 
         if len(metadata) != len(data):
