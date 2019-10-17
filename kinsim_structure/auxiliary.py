@@ -494,6 +494,19 @@ class KlifsMoleculeLoader:
 
 
 class PdbChainLoader:
+    """
+    Load chain from PDB file as Biopython object.
+
+    Attributes
+    ----------
+    chain : Bio.PDB.Chain.Chain
+        Chain from PDB file.
+
+    Parameters
+    ----------
+    klifs_metadata_entry : pandas.Series
+        KLIFS metadata describing a pocket entry in the KLIFS dataset.
+    """
 
     def __init__(self, klifs_metadata_entry):
         self.chain = self.from_metadata_entry(klifs_metadata_entry)
@@ -647,8 +660,10 @@ def center_of_mass(entity, geometric=False):
 
     Parameters
     ----------
-    entity : Bio.PDB.Entity.Entity
-        Basic container object for PDB heirachy. Structure, Model, Chain and Residue are subclasses of Entity.
+    entity : Bio.PDB.Entity.Entity or list of Bio.PDB.Atom.Atom
+        Contains atoms for which the center of mass / centroid needs to be calculated:
+        a) Basic container object for PDB heirachy. Structure, Model, Chain and Residue are subclasses of Entity.
+        b) List of container objects for atoms.
 
     geometric : bool
         Geometric assumes all masses are equal (geometric=True). Defaults to False.
