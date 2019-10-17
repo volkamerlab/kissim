@@ -14,7 +14,6 @@ from biopandas.mol2 import PandasMol2, split_multimol2
 from Bio.PDB import MMCIFParser, Selection, Vector, Entity, calc_angle
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 logger = logging.getLogger(__name__)
 
@@ -715,122 +714,6 @@ def center_of_mass(entity, geometric=False):
             w_pos[2].append(positions[2][atom_index]*atom_mass)
 
         return [sum(coord_list)/sum(masses) for coord_list in w_pos]
-
-
-def save_cgo_side_chain_angle(klifs_path, output_path):
-    """
-
-    Parameters
-    ----------
-    klifs_path
-    output_path
-
-    Returns
-    -------
-
-    """
-    # Get molecule and molecule code
-    molecule_loader = MoleculeLoader(klifs_path)
-    molecule = molecule_loader.molecules[0]
-    code = split_klifs_code(molecule.code)
-
-    # Get KLIFS residues
-    klifs_residues = get_klifs_residues_mol2topdb(molecule)
-    klifs_residues_ids = [str(residue.get_full_id()[3][1]) for residue in klifs_residues]
-
-    # List contains lines for python script
-    lines = [f'from pymol import *', f'import os', f'from pymol.cgo import *\n']
-
-    # Fetch PDB, remove solvent, remove unnecessary chain(s) and residues
-    lines.append(f'cmd.fetch("{code["pdb_id"]}")')
-    lines.append(f'cmd.remove("solvent")')
-    if code["chain_id"]:
-        lines.append(f'cmd.remove("{code["pdb_id"]} and not chain {code["chain_id"]}")')
-    lines.append(f'cmd.remove("all and not (resi {"+".join(klifs_residues_ids)})")')
-    lines.append(f'')
-
-    # Set sphere color and size
-    sphere_colors = sns.color_palette('hls', 3)
-    sphere_size = str(0.2)
-
-    # Collect all PyMol objects here (in order to group them after loading them to PyMol)
-    obj_names = []
-    obj_angle_names = []
-
-    for residue in klifs_residues:
-
-        # Get residue ID
-        residue_id = residue.get_full_id()[3][1]
-
-        # Set PyMol object name: residue ID
-        obj_name = f'{residue_id}'
-        obj_names.append(obj_name)
-
-        atom_names = [atoms.fullname for atoms in residue.get_atoms()]
-
-        # Set CA atom
-        if 'CA' in atom_names:
-            vector_ca = residue['CA'].get_vector()
-        else:
-            vector_ca = None
-
-        # Set CB atom
-        if 'CB' in atom_names:
-            vector_cb = residue['CB'].get_vector()
-        else:
-            vector_cb = None
-
-        # Set centroid
-        vector_com = Vector(center_of_mass(residue, geometric=True))
-
-        if 'CA' in atom_names and 'CB' in atom_names:
-            angle = np.degrees(calc_angle(vector_ca, vector_cb, vector_com))
-
-            # Add angle to CB atom in the form of a label
-            obj_angle_name = f'angle_{residue_id}'
-            obj_angle_names.append(obj_angle_name)
-
-            lines.append(
-                f'cmd.pseudoatom(object="angle_{residue_id}", '
-                f'pos=[{str(vector_cb[0])}, {str(vector_cb[1])}, {str(vector_cb[2])}], '
-                f'label={str(round(angle, 1))})'
-            )
-
-        vectors = [vector_ca, vector_cb, vector_com]
-
-        # Write all spheres for current residue in cgo format
-        lines.append(f'obj_{obj_name} = [')  # Variable cannot start with digit, thus add prefix obj_
-
-        # For each reference point, write sphere color, coordinates and size to file
-        for index, vector in enumerate(vectors):
-
-            if vector:
-                # Set sphere color
-                sphere_color = list(sphere_colors[index])
-
-                # Write sphere a) color and b) coordinates and size to file
-                lines.extend(
-                    [
-                        f'\tCOLOR, {str(sphere_color[0])}, {str(sphere_color[1])}, {str(sphere_color[2])},',
-                        f'\tSPHERE, {str(vector[0])}, {str(vector[1])}, {str(vector[2])}, {sphere_size},'
-                    ]
-                )
-
-        # Load the spheres as PyMol object
-        lines.extend(
-            [
-                f']',
-                f'cmd.load_cgo(obj_{obj_name}, "{obj_name}")',
-                ''
-            ]
-
-        )
-    # Group all objects to one group
-    lines.append(f'cmd.group("{"_".join(code.values())}", "{" ".join(obj_names + obj_angle_names)}")')
-
-    cgo_path = Path(output_path) / f'side_chain_angle_{molecule.code.split("/")[1]}.py'
-    with open(cgo_path, 'w') as f:
-        f.write('\n'.join(lines))
 
 
 def get_aminoacids_by_molecularweight(path_to_results):
