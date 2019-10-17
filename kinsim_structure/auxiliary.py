@@ -12,7 +12,7 @@ from pathlib import Path
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
 from Bio.PDB import MMCIFParser, Selection, Vector, Entity, calc_angle
-import numpy as np
+from IPython.display import display, clear_output, HTML
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -775,3 +775,23 @@ def get_klifs_regions():
     klifs_regions.index = klifs_regions.klifs_id
 
     return klifs_regions
+
+
+def iprint(message):
+    """
+    For jupyter notebooks: print outputs, overwrite previous ones, so it
+    looks like it's constantly updating :)
+
+    Parameters
+    ----------
+    message : str
+        Message to be printed in Jupyter notebook
+
+    References
+    ----------
+    https://github.com/jaimergp/TeachOpenCADD/blob/online-api/talktorials/11_online_apis/11b_online_docking.ipynb
+    """
+
+    clear_output(wait=True)
+    message = message.replace("\n", "<br />")
+    display(HTML(f'<pre>{message}</pre>'))
