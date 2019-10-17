@@ -1,6 +1,7 @@
 # Files
 examples/results/features/stats_missing_ca_cb_and_sco.p
-examples/results/features/stats_missing_ca_cb_and_sca.p
+examples/results/features/sca_centroid_wo_backbone/stats_missing_ca_cb_and_sca.p
+examples/results/features/sca_centroid_full_residue/stats_missing_ca_cb_and_sca.p
 examples/results/fingerprints/fingerprints.p
 examples/results/similarity/scores_allxall_fp_type1_ballester\.csv
 examples/results/similarity/scores_allxall_fp_type1_euclidean\.csv
