@@ -44,7 +44,7 @@ ANCHOR_RESIDUES = {
 }  # Are the same as in Eva's implementation
 
 # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
-HINGE_KLIFS_IDS = [6, 47, 48]
+HINGE_KLIFS_IDS = [46, 47, 48]
 DFG_KLIFS_IDS = [81, 82, 83]
 
 FEATURE_LOOKUP = {
