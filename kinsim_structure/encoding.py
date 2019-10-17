@@ -721,14 +721,20 @@ class SideChainAngleFeature:
     Attributes
     ----------
     features : pandas.DataFrame
-        1 feature (columns) for 85 residues (rows).
+        1 feature, i.e. side chain angle, (column) for 85 residues (rows).
+    features_verbose : pandas.DataFrame
+        Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
+    code : str
+
     """
 
     def __init__(self):
 
         self.features = None
+        self.features_verbose = None
+        self.code = None
 
-    def from_molecule(self, molecule, chain, verbose=False, fill_missing=False):
+    def from_molecule(self, molecule, chain, fill_missing=False):
         """
         Get side chain angle for each residue of a molecule.
 
@@ -738,11 +744,11 @@ class SideChainAngleFeature:
             Content of mol2 or pdb file as BioPandas object.
         chain : Bio.PDB.Chain.Chain
             Chain from PDB file.
-        verbose : bool
-            Either return angles only (default) or angles plus CA, CB and centroid points as well as metadata.
         fill_missing : bool
             Fill missing values with median value of respective amino acid angle distribution.
         """
+
+        self.code = molecule.code  # Necessary for cgo generation
 
         # Calculate/get CA, CB and centroid points
         ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule, chain)
@@ -752,13 +758,13 @@ class SideChainAngleFeature:
 
         for index, row in ca_cb_com_vectors.iterrows():
 
-            if row.ca and row.cb:
+            if row.ca and row.cb and row.centroid:
                 angle = np.degrees(calc_angle(row.ca, row.cb, row.centroid))
                 side_chain_angle.append(angle.round(2))
 
-            # If Ca and Cb are missing for angle calculation...
+            # If Ca, Cb, or centroid positions are missing for angle calculation...
             else:
-                # ... set median value to residue and GLY to 0
+                # ... set median value to residue and 0 to GLY
                 if fill_missing:
                     angle = MEDIAN_SIDE_CHAIN_ANGLE[row.residue_name]
 
@@ -767,21 +773,17 @@ class SideChainAngleFeature:
                     angle = None
                 side_chain_angle.append(angle)
 
-        # Either return angles only or angles plus CA, CB and centroid points as well as metadata
-        if not verbose:
-            side_chain_angle = pd.DataFrame(
-                side_chain_angle,
-                index=ca_cb_com_vectors.klifs_id,
-                columns=['sca']
-            )
-            self.features = side_chain_angle
-        else:
-            side_chain_angle = pd.DataFrame(
-                side_chain_angle,
-                index=ca_cb_com_vectors.index,
-                columns=['sca']
-            )
-            self.features = pd.concat([ca_cb_com_vectors, side_chain_angle], axis=1)
+        # Cast to DataFrame
+        side_chain_angle = pd.DataFrame(
+            side_chain_angle,
+            index=ca_cb_com_vectors.klifs_id,
+            columns=['sca']
+        )
+
+        # Save angles
+        self.features = side_chain_angle
+        # Save angles plus CA, CB and centroid points as well as metadata
+        self.features_verbose = pd.concat([ca_cb_com_vectors, side_chain_angle], axis=1)
 
     @staticmethod
     def _get_ca_cb_com_vectors(molecule, chain):
