@@ -17,7 +17,7 @@ from scipy.special import cbrt
 from scipy.stats.stats import moment
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.auxiliary import center_of_mass
+from kinsim_structure.auxiliary import center_of_mass, split_klifs_code
 
 logger = logging.getLogger(__name__)
 
@@ -807,20 +807,21 @@ class SideChainAngleFeature:
         # Data type: list of Bio.PDB.Residue.Residue
         residues = Selection.unfold_entities(entity_list=chain, target_level='R')
 
-        # Get residue IDs of binding site from mol2 file
-        residue_ids = [int(i) for i in molecule.df.res_id.unique()]
+        # Get KLIFS pocket residue IDs from mol2 file
+        pocket_residue_ids = [int(i) for i in molecule.df.res_id.unique()]
 
-        # Select KLIFS residues
-        klifs_residues = [residue for residue in residues if residue.get_full_id()[3][1] in residue_ids]
+        # Select KLIFS pocket residues
+        pocket_residues = [residue for residue in residues if residue.get_full_id()[3][1] in pocket_residue_ids]
 
         # Save here values per residue
         data = []
         metadata = pd.DataFrame(
             list(molecule.df.groupby(by=['klifs_id', 'res_id', 'res_name'], sort=False).groups.keys()),
+            index=molecule.df.klifs_id.unique(),
             columns='klifs_id residue_id residue_name'.split()
         )
 
-        for residue in klifs_residues:
+        for residue in pocket_residues:
 
             atom_names = [atoms.fullname for atoms in residue.get_atoms()]
 
@@ -848,6 +849,7 @@ class SideChainAngleFeature:
 
         data = pd.DataFrame(
             data,
+            index=molecule.df.klifs_id.unique(),
             columns='ca cb centroid'.split()
         )
 
