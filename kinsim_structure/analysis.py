@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader, iprint
 from kinsim_structure.encoding import SideChainAngleFeature
 
 logger = logging.getLogger(__name__)
@@ -174,7 +174,8 @@ class SideChainAngleStatistics:
         stats = []
 
         for index, row in klifs_metadata.iterrows():
-            print(f'{index + 1}/{len(klifs_metadata)}')
+
+            iprint(f'{index + 1}/{len(klifs_metadata)}')
 
             klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=row)
             molecule = klifs_molecule_loader.molecule
@@ -183,11 +184,11 @@ class SideChainAngleStatistics:
             chain = pdb_chain_loader.chain
 
             side_chain_angle_feature = SideChainAngleFeature()
-            side_chain_angle_feature.from_molecule(molecule, chain=chain, verbose=True)
+            side_chain_angle_feature.from_molecule(molecule, chain=chain)
 
-            side_chain_angle_feature.features['klifs_code'] = molecule.code
+            side_chain_angle_feature.features_verbose['klifs_code'] = molecule.code
 
-            stats.append(side_chain_angle_feature.features)
+            stats.append(side_chain_angle_feature.features_verbose)
 
         self.data = pd.concat(stats)
 
@@ -267,7 +268,7 @@ class SideChainAngleStatistics:
 
         ax = plt.gca()
 
-        self.missing_residues_ca_cb.loc[:, ['cb', 'gaps']].plot(
+        self.missing_residues_ca_cb.loc[:, ['gaps', 'cb', 'ca']].plot(
             figsize=(20, 6),
             kind='bar',
             stacked=True,
@@ -275,7 +276,7 @@ class SideChainAngleStatistics:
             ax=ax
         )
 
-        ax.set_title(f'Missing residues and Cb atoms ({self.n_structures} KLIFS entries)',
+        ax.set_title(f'Missing residues, Cb and Ca atoms ({self.n_structures} KLIFS entries)',
                      fontsize=20)
 
         ax.set_xlabel('KLIFS position ID')
