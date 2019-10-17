@@ -518,11 +518,11 @@ class PdbChainLoader:
         if not Path(pdb_path).exists():
             raise IOError(f'PDB file does not exist: {pdb_path}')
 
-        parser = MMCIFParser()
+        parser = MMCIFParser(QUIET=True)
         structure = parser.get_structure(
             structure_id=klifs_metadata_entry.pdb_id,
             filename=pdb_path
-        )
+        )  # Sometimes causes RuntimeWarning: invalid value encountered in double_scalars c = (self * other) / (n1 * n2)
         model = structure[0]
 
         # Get pdb chain as denoted in metadata
@@ -637,7 +637,7 @@ def get_klifs_residues_mol2topdb(molecule):
     if not Path(pdb_path).exists():
         raise IOError(f'PDB file does not exist: {pdb_path}')
 
-    parser = MMCIFParser()
+    parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(
         structure_id=code['pdb_id'],
         filename=pdb_path
