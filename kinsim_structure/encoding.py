@@ -836,10 +836,15 @@ class SideChainAngleFeature:
             else:
                 vector_cb = None
 
-            # Set centroid
-            vector_com = Vector(center_of_mass(residue, geometric=True))
+            # Set centroid for residue atoms without backbone atoms
+            atoms_wo_backbone = [atom for atom in residue.get_atoms() if atom.fullname not in 'N CA C O'.split()]
 
-            data.append([vector_ca, vector_cb, vector_com])
+            if len(atoms_wo_backbone) > 0:
+                vector_centroid = Vector(center_of_mass(atoms_wo_backbone, geometric=True))
+            else:
+                vector_centroid = None
+
+            data.append([vector_ca, vector_cb, vector_centroid])
 
         data = pd.DataFrame(
             data,
