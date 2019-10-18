@@ -837,11 +837,15 @@ class SideChainAngleFeature:
             else:
                 vector_cb = None
 
-            # Set centroid for residue atoms without backbone atoms
+            # Set centroid for residue atoms
+
+            # Select only atoms that are not part of the backbone
             atoms_wo_backbone = [atom for atom in residue.get_atoms() if atom.fullname not in 'N CA C O'.split()]
+            # Select only heavy atoms
+            atoms_wo_backbone_hydrogens = [atom for atom in residue.get_atoms() if not atom.get_id().startswith('H')]
 
             if len(atoms_wo_backbone) > 0:
-                vector_centroid = Vector(center_of_mass(atoms_wo_backbone, geometric=True))
+                vector_centroid = Vector(center_of_mass(atoms_wo_backbone_hydrogens, geometric=True))
             else:
                 vector_centroid = None
 
