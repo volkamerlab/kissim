@@ -7,6 +7,7 @@ Handles the primary functions for the structural kinase fingerprint analysis.
 """
 
 import logging
+import multiprocessing
 from pathlib import Path
 import pickle
 
@@ -19,6 +20,8 @@ from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader, ipri
 from kinsim_structure.encoding import SideChainAngleFeature
 
 logger = logging.getLogger(__name__)
+
+STANDARD_AMINOACIDS = 'GLY ALA SER PRO VAL THR CYS ILE LEU ASN ASP GLN LYS GLU MET HIS PHE ARG TYR TRP'.split()
 
 
 class ResidueConservation:
@@ -145,6 +148,305 @@ class GapRate:
             item.set_fontsize(20)
 
         plt.savefig(path_to_results / 'gap_rate.png', dpi=300)
+
+
+class SideChainAngleGenerator:
+    """
+    Generate side chain angle data (KLIFS and PDB residue ID, residue name, Ca, Cb and centroid vector, side chain angle
+    and KLIFS code) for KLIFS dataset (described by KLIFS metadata).
+
+    Attributes
+    ----------
+    data : pandas.DataFrame
+        Side chain angle data for multiple KLIFS entries, including KLIFS and PDB residue ID, residue name, Ca, Cb and
+        centroid vector, side chain angle and KLIFS code.
+    """
+
+    def __init__(self):
+        self.data = None
+
+    @staticmethod
+    def get_side_chain_angle(klifs_metadata_entry):
+        """
+        Get side chain angle data for one KLIFS entry.
+
+        Parameters
+        ----------
+        klifs_metadata_entry: pandas.Series
+            KLIFS metadata describing one pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain angle data for one KLIFS entries, including KLIFS and PDB residue ID, residue name, Ca, Cb and
+            centroid vector, side chain angle and KLIFS code.
+        """
+
+        klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+        molecule = klifs_molecule_loader.molecule
+
+        pdb_chain_loader = PdbChainLoader(klifs_metadata_entry=klifs_metadata_entry)
+        chain = pdb_chain_loader.chain
+
+        side_chain_angle_feature = SideChainAngleFeature()
+        side_chain_angle_feature.from_molecule(molecule, chain=chain)
+
+        side_chain_angle_feature.features_verbose['klifs_code'] = molecule.code
+
+        return side_chain_angle_feature.features_verbose
+
+    def get_side_chain_angles(self, klifs_metadata):
+        """
+        Get side chain angle data for multiple KLIFS entries (parallelized entry processing).
+
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            KLIFS metadata describing every pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        pandas.DataFrame
+            CA, CB and centroid points for each residue for all molecules described in the KLIFS metadata.
+        """
+
+        # Number of CPUs on machine
+        num_cores = multiprocessing.cpu_count() - 1
+
+        # List of entries to be processed
+        entry_list = [j for i, j in klifs_metadata.iterrows()]
+        print(f'{len(entry_list)} entries to be processed.')
+
+        # Create pool with `num_cores` processes
+        pool = multiprocessing.Pool(processes=num_cores)
+
+        # Apply function to each chunk in list
+        side_chain_angles = pool.map(self.get_side_chain_angle, entry_list)
+        print(f'{len(side_chain_angles)} entries processed.')
+
+        pool.close()
+        pool.join()
+
+        self.data = pd.concat(side_chain_angles)
+
+    def save_data(self, data_path):
+        """
+        Save data to file.
+
+        Parameters
+        ----------
+        data_path : pathlib.Path or str
+            Path to output data file.
+        """
+
+        data_path = Path(data_path)
+
+        if self.data is not None:
+            self.data.to_csv(data_path)
+        else:
+            print(f'No data generated to be saved to file. Please generate data first.')
+
+
+class SideChainAngleAnalyser:
+
+    def __init__(self):
+        self.data = None
+        self.missing_residues_ca_cb = None
+
+    def load_data(self, data_path):
+        """
+        Load data to file.
+
+        Parameters
+        ----------
+        data_path : pathlib.Path or str
+            Path to data file.
+        """
+
+        data_path = Path(data_path)
+
+        self.data = pd.read_csv(data_path, index_col=0)
+
+    def get_missing_residues_ca_cb(self, gap_rate):
+
+        # Get number of missing atoms per KLIFS position
+        missing_ca = self.data[
+            self.data.ca.isna()
+        ].groupby(by='klifs_id').size()
+        missing_cb = self.data[
+            self.data.cb.isna()
+        ].groupby(by='klifs_id').size()
+        missing_ca_cb = self.data[
+            (self.data.ca.isna()) & (self.data.cb.isna())
+        ].groupby(by='klifs_id', sort=False).size()
+
+        missing_positions = pd.DataFrame(
+            [
+                missing_ca,
+                missing_cb,
+                missing_ca_cb,
+                gap_rate.data.gaps
+            ],
+            index='ca cb ca_cb gaps'.split()
+        ).transpose()
+        missing_positions.fillna(value=0, inplace=True)
+        missing_positions = missing_positions.astype('int64')
+        missing_positions['klifs_id'] = missing_positions.index
+
+        self.missing_residues_ca_cb = missing_positions
+
+    def get_mean_median(self, output_path=None, from_file=None):
+        """
+        Get mean and median of side chain angles for each amino acid in dataset.
+        Add angle of 0 to GLY.
+
+        Parameters
+        ----------
+        output_path : str or pathlib.Path
+            Path to directory where data file should be saved.
+        from_file : None or str or pathlib.Path
+            Default is None, optionally can take path to file containing respective data.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Mean and median of side chain angles for each amino acid in dataset.
+        """
+
+        if isinstance(self.data, pd.DataFrame):
+            sca_stats_std = self.data.copy()
+        elif from_file:
+            with open(Path(from_file), 'rb') as f:
+                sca_stats_std = pickle.load(f)
+        else:
+            raise ValueError(f'No data available for mean/median value calculation.')
+
+        # Calculate mean and median
+        sca_mean_median = pd.DataFrame(
+            [
+                sca_stats_std.groupby('residue_name').mean()['sca'],
+                sca_stats_std.groupby('residue_name').median()['sca']
+            ]
+        ).transpose()
+        sca_mean_median.columns = ['sca_mean', 'sca_median']
+        sca_mean_median = sca_mean_median.round(2)
+
+        # Add value: GLY=0
+        sca_mean_median.loc['GLY'] = 0
+
+        if output_path:
+            sca_mean_median.to_csv(output_path / 'side_chain_angle_mean_median.csv')
+
+        return sca_mean_median
+
+    def plot_missing_residues_ca_cb(self, path_to_results):
+
+        ax = plt.gca()
+
+        self.missing_residues_ca_cb.loc[:, ['gaps', 'cb', 'ca']].plot(
+            figsize=(20, 6),
+            kind='bar',
+            stacked=True,
+            rot=1,
+            ax=ax
+        )
+
+        ax.set_title(f'Missing residues, Cb and Ca atoms ({len(self.data.groupby("klifs_code"))} KLIFS entries)',
+                     fontsize=20)
+
+        ax.set_xlabel('KLIFS position ID')
+        ax.set_ylabel('Number of missing data')
+        ax.xaxis.set_ticks(np.arange(4, 85, 5))
+        ax.set_xticklabels(np.arange(5, 86, 5))
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(20)
+
+        plt.savefig(path_to_results / 'missing_residues_ca_cb.png', dpi=300)
+
+    def plot_side_chain_angle_distribution(self, path_to_results, kind='violin'):
+
+        kinds = 'violin histograms'.split()
+
+        if kind == kinds[0]:
+
+            # Plot standard amino acids
+            self._plot_violin_standard_amino_acids(path_to_results)
+
+            # Plot non-standard amino acids
+            self._plot_violin_non_standard_amino_acids(path_to_results)
+
+        elif kind == kinds[1]:
+
+            # Plot histograms for all amino acids separately
+            self._plot_histogram_all_amino_acids(path_to_results)
+
+        else:
+
+            raise ValueError(f'Plot kind unknown. Please choose from: {", ".join(kinds)}')
+
+    def _plot_violin_standard_amino_acids(self, path_to_results):
+
+        data = self.data[self.data.residue_name.isin(STANDARD_AMINOACIDS)]
+
+        if len(data) == 0:
+            print('Plotting standard amino acids (violin): No data to plot.')
+
+        else:
+            print('Plotting standard amino acids (violin)...')
+
+            plt.figure(figsize=(25, 8))
+
+            ax = sns.violinplot(
+                x='residue_name',
+                y='sca',
+                data=data,
+                order=STANDARD_AMINOACIDS
+            )
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
+            ax.set_xlabel('Residue name (standard amino acids sorted by molecular weight)')
+            ax.set_ylabel('Side chain angle')
+
+            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+                item.set_fontsize(20)
+
+            plt.savefig(path_to_results / 'sca_violin_standard.png', dpi=300)
+
+    def _plot_violin_non_standard_amino_acids(self, path_to_results):
+
+        data = self.data[~self.data.residue_name.isin(STANDARD_AMINOACIDS)]
+
+        if len(data) == 0:
+            print('Plotting non-standard amino acids (violin): No data to plot.')
+
+        else:
+            print('Plotting non-standard amino acids (violin)...')
+
+            plt.figure(figsize=(20, 8))
+
+            ax = sns.violinplot(
+                x='residue_name',
+                y='sca',
+                data=data
+            )
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
+            ax.set_xlabel('Residue name (non-standard amino acids)')
+            ax.set_ylabel('Side chain angle')
+
+            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+                item.set_fontsize(20)
+
+            plt.savefig(path_to_results / 'sca_violin_nonstandard.png', dpi=300)
+
+    def _plot_histogram_all_amino_acids(self, path_to_results):
+
+        plt.figure(figsize=(20, 30))
+
+        for index, group in enumerate(self.data.groupby(by='residue_name'), 1):
+            plt.subplot(7, 3, index)
+            group[1].sca.plot(kind='hist', title=group[0], xlim=(0, 180))
+
+        plt.savefig(path_to_results / 'sca_histograms.png', dpi=300, bbox_inches='tight')
 
 
 class SideChainAngleStatistics:
