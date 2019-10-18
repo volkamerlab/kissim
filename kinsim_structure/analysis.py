@@ -7,6 +7,7 @@ Handles the primary functions for the structural kinase fingerprint analysis.
 """
 
 import logging
+import math
 import multiprocessing
 from pathlib import Path
 import pickle
@@ -442,8 +443,10 @@ class SideChainAngleAnalyser:
 
         plt.figure(figsize=(20, 30))
 
+        subplot_n_rows = math.ceil(len(self.data.groupby(by='residue_name')) / 3)
+
         for index, group in enumerate(self.data.groupby(by='residue_name'), 1):
-            plt.subplot(7, 3, index)
+            plt.subplot(subplot_n_rows, 3, index)
             group[1].sca.plot(kind='hist', title=group[0], xlim=(0, 180))
 
         plt.savefig(path_to_results / 'sca_histograms.png', dpi=300, bbox_inches='tight')
