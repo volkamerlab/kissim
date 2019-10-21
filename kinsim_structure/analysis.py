@@ -265,9 +265,8 @@ class SideChainAngleAnalyser:
             Path to data file.
         """
 
-        data_path = Path(data_path)
-
-        self.data = pd.read_csv(data_path, index_col=0)
+        with open(Path(data_path), 'rb') as f:
+            self.data = pickle.load(f)
 
     def get_missing_residues_ca_cb(self, gap_rate):
 
