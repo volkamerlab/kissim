@@ -273,7 +273,6 @@ class KlifsMoleculeLoader:
         self.klifs_metadata_path = PATH_TO_DATA / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
 
         if mol2_path is not None:
-            mol2_path = Path(mol2_path)
             self.molecule = self.from_file(mol2_path)
         elif klifs_metadata_entry is not None:
             self.molecule = self.from_metadata_entry(klifs_metadata_entry)
@@ -507,26 +506,44 @@ class PdbChainLoader:
         KLIFS metadata describing a pocket entry in the KLIFS dataset.
     """
 
-    def __init__(self, klifs_metadata_entry):
-        self.chain = self.from_metadata_entry(klifs_metadata_entry)
+    def __init__(self, klifs_metadata_entry=None, pdb_path=None, chain_id=None):
+
+        if (pdb_path is not None) and (chain_id is not None):
+            self.chain = self.from_file(pdb_path, chain_id)
+        elif klifs_metadata_entry is not None:
+            self.chain = self.from_metadata_entry(klifs_metadata_entry)
+        else:
+            self.chain = None
+
+    def from_metadata_entry(self, klifs_metadata_entry):
+
+        pdb_id = klifs_metadata_entry.pdb_id
+        chain_id = klifs_metadata_entry.chain
+
+        pdb_path = PATH_TO_DATA / 'raw' / 'PDB_download' / f'{pdb_id}.cif'
+
+        chain = self.from_file(pdb_path, chain_id)
+
+        return chain
 
     @staticmethod
-    def from_metadata_entry(klifs_metadata_entry):
-
-        pdb_path = PATH_TO_DATA / 'raw' / 'PDB_download' / f'{klifs_metadata_entry.pdb_id}.cif'
+    def from_file(pdb_path, chain_id):
 
         if not Path(pdb_path).exists():
             raise IOError(f'PDB file does not exist: {pdb_path}')
 
+        # Get structure
         parser = MMCIFParser(QUIET=True)
         structure = parser.get_structure(
-            structure_id=klifs_metadata_entry.pdb_id,
+            structure_id=pdb_path.stem,
             filename=pdb_path
         )  # Sometimes causes RuntimeWarning: invalid value encountered in double_scalars c = (self * other) / (n1 * n2)
+
+        # Get alternate model (always use first model)
         model = structure[0]
 
         # Get pdb chain as denoted in metadata
-        chain = model[klifs_metadata_entry.chain]
+        chain = model[chain_id]
 
         return chain
 
