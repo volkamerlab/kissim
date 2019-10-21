@@ -840,6 +840,8 @@ class SideChainAngleFeature:
             # Set centroid for residue atoms
 
             # Select only atoms that are not part of the backbone and that are no hydrogens
+            # Calculate centroid of atoms matching these conditions
+            # If there are no atoms matching these conditions, set centroid to None
             atoms_wo_backbone_hydrogens = [
                 atom for atom in residue.get_atoms() if (atom.fullname not in 'N CA C O'.split()) & (not atom.get_id().startswith('H'))
             ]
@@ -865,11 +867,14 @@ class SideChainAngleFeature:
 
     def save_cgo_side_chain_angle(self, output_path):
         """
+        Save Ca, Cb, and centroid as spheres and label Cb with side chain angle value to PyMol cgo file.
 
         Parameters
         ----------
-
+        output_path : pathlib.Path or str
+            Path to output directory.
         """
+
         # Get molecule and molecule code
         code = split_klifs_code(self.code)
 
