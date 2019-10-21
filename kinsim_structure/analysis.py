@@ -243,7 +243,8 @@ class SideChainAngleGenerator:
         data_path = Path(data_path)
 
         if self.data is not None:
-            self.data.to_csv(data_path)
+            with open(Path(data_path), 'wb') as f:
+                pickle.dump(self.data, f)
         else:
             print(f'No data generated to be saved to file. Please generate data first.')
 
