@@ -98,6 +98,52 @@ MEDIAN_SIDE_CHAIN_ANGLE = pd.read_csv(
 
 EXPOSURE_RADIUS = 13.0
 
+N_HEAVY_ATOMS = {
+    'GLY': 0,
+    'ALA': 1,
+    'CYS': 2,
+    'SER': 2,
+    'PRO': 3,
+    'THR': 3,
+    'VAL': 3,
+    'ASN': 4,
+    'ASP': 4,
+    'ILE': 4,
+    'LEU': 4,
+    'MET': 4,
+    'GLN': 5,
+    'GLU': 5,
+    'LYS': 5,
+    'HIS': 6,
+    'ARG': 7,
+    'PHE': 7,
+    'TYR': 8,
+    'TRP': 10
+}
+
+N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid calculation (>75% coverage)
+    'GLY': 0,
+    'ALA': 1,
+    'CYS': 2,
+    'SER': 2,
+    'PRO': 3,
+    'THR': 3,
+    'VAL': 3,
+    'ASN': 3,
+    'ASP': 3,
+    'ILE': 3,
+    'LEU': 3,
+    'MET': 3,
+    'GLN': 4,
+    'GLU': 4,
+    'LYS': 4,
+    'HIS': 5,
+    'ARG': 6,
+    'PHE': 6,
+    'TYR': 6,
+    'TRP': 8
+}
+
 
 class Fingerprint:
     """
@@ -812,8 +858,7 @@ class SideChainAngleFeature:
 
         return side_chain_angles
 
-    @staticmethod
-    def _get_ca_cb_com_vectors(molecule, chain):
+    def _get_ca_cb_com_vectors(self, molecule, chain):
         """
         Get CA, CB and centroid points for each residue of a molecule.
 
@@ -850,31 +895,9 @@ class SideChainAngleFeature:
 
         for residue in pocket_residues:
 
-            atom_names = [atoms.fullname for atoms in residue.get_atoms()]
-
-            # Set CA atom
-            if 'CA' in atom_names:
-                vector_ca = residue['CA'].get_vector()
-            else:
-                vector_ca = None
-
-            # Set CB atom
-            if 'CB' in atom_names:
-                vector_cb = residue['CB'].get_vector()
-            else:
-                vector_cb = None
-
-            # Select only atoms that are not part of the backbone and that are no hydrogens
-            # Calculate centroid of atoms matching these conditions
-            # If there are <=1 atoms matching these conditions, set centroid to None
-            atoms_wo_backbone_hydrogens = [
-                atom for atom in residue.get_atoms() if (atom.fullname not in 'N CA C O'.split()) & (not atom.get_id().startswith('H'))
-            ]
-
-            if len(atoms_wo_backbone_hydrogens) > 1:
-                vector_centroid = Vector(center_of_mass(atoms_wo_backbone_hydrogens, geometric=True))
-            else:
-                vector_centroid = None
+            vector_ca = self._get_ca(residue)
+            vector_cb = self._get_cb(residue)
+            vector_centroid = self._get_side_chain_centroid(residue)
 
             data.append([vector_ca, vector_cb, vector_centroid])
 
@@ -889,6 +912,97 @@ class SideChainAngleFeature:
                              f'Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows.')
 
         return pd.concat([metadata, data], axis=1)
+
+    @staticmethod
+    def _get_ca(residue):
+        """
+        Get residue's Ca atom.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector
+            Residue's Ca vector.
+        """
+
+        atom_names = [atoms.fullname for atoms in residue.get_atoms()]
+
+        # Set CA atom
+        if 'CA' in atom_names:
+            vector_ca = residue['CA'].get_vector()
+        else:
+            vector_ca = None
+
+        return vector_ca
+
+    @staticmethod
+    def _get_cb(residue):
+        """
+        Get residue's Cb atom.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector
+            Residue's Cb vector.
+        """
+
+        atom_names = [atoms.fullname for atoms in residue.get_atoms()]
+
+        if 'CB' in atom_names:
+            vector_cb = residue['CB'].get_vector()
+        else:
+            vector_cb = None
+
+        return vector_cb
+
+    @staticmethod
+    def _get_side_chain_centroid(residue):
+        """
+        Get residue's side chain centroid.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector
+            Residue's side chain centroid.
+        """
+
+        print(residue)
+        print(type(residue))
+
+        # Select only atoms that are
+        # - not part of the backbone
+        # - not oxygen atoms (OXT) on the terminal carboxyl group
+        # - not H atoms
+
+        selected_atoms = [
+            atom for atom in residue.get_atoms() if
+            (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
+        ]
+
+        # Calculate centroid of atoms matching these conditions
+        # If there are <=1 atoms matching these conditions, set centroid to None
+        if len(selected_atoms) <= 1:
+            vector_centroid = None
+        elif len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
+            vector_centroid = None
+        else:
+            vector_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
+
+        return vector_centroid
 
     def save_cgo_side_chain_angle(self, output_path):
         """
