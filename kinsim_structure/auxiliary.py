@@ -529,7 +529,9 @@ class PdbChainLoader:
     @staticmethod
     def from_file(pdb_path, chain_id):
 
-        if not Path(pdb_path).exists():
+        pdb_path = Path(pdb_path)
+
+        if not pdb_path.exists():
             raise IOError(f'PDB file does not exist: {pdb_path}')
 
         # Get structure
@@ -537,7 +539,7 @@ class PdbChainLoader:
         structure = parser.get_structure(
             structure_id=pdb_path.stem,
             filename=pdb_path
-        )  # Sometimes causes RuntimeWarning: invalid value encountered in double_scalars c = (self * other) / (n1 * n2)
+        )
 
         # Get alternate model (always use first model)
         model = structure[0]
