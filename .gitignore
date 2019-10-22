@@ -1,5 +1,6 @@
 # Files
 examples/results/features/sca_centroid_wo_backbone/side_chain_angles.p
+examples/results/features/sca_centroid_wo_backbone/number_side_chain_atoms.p
 examples/results/features/sca_centroid_full_residue/stats_missing_ca_cb_and_sca.p
 
 examples/results/fingerprints/fingerprints.p
