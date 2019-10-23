@@ -980,9 +980,6 @@ class SideChainAngleFeature:
             Residue's side chain centroid.
         """
 
-        print(residue)
-        print(type(residue))
-
         # Select only atoms that are
         # - not part of the backbone
         # - not oxygen atoms (OXT) on the terminal carboxyl group
