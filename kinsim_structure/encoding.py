@@ -1025,8 +1025,6 @@ class SideChainAngleFeature:
         if 'CA' in atom_names:
             vector_ca = residue['CA'].get_vector()
         else:
-            print(Selection.unfold_entities(entity_list=residue, target_level='S'), ' - no CA')
-            print(residue)
             vector_ca = None
 
         return vector_ca
@@ -1052,8 +1050,6 @@ class SideChainAngleFeature:
         if 'CB' in atom_names:
             vector_cb = residue['CB'].get_vector()
         else:
-            print(Selection.unfold_entities(entity_list=residue, target_level='S'), ' - no CB')
-            print(residue)
             vector_cb = None
 
         return vector_cb
@@ -1084,29 +1080,16 @@ class SideChainAngleFeature:
             (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
         ]
 
-        for atom in residue.get_atoms():
-            if atom.get_id().startswith('H'):
-                print(Selection.unfold_entities(entity_list=residue, target_level='S'), ' - H atoms')
-                print(residue)
-
         if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
-            print(Selection.unfold_entities(entity_list=residue, target_level='S'), ' - <=1 side chain atoms')
-            print(residue)
-            print(len(selected_atoms))
             return None
 
         try:  # If standard residue, calculate centroid only if enough side chain atoms available
             if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
-                print(Selection.unfold_entities(entity_list=residue, target_level='S'), ' - too few side chain atoms')
-                print(residue)
-                print(len(selected_atoms))
                 return None
             else:
                 return Vector(center_of_mass(selected_atoms, geometric=True))
 
         except KeyError:  # If non-standard residue, use whatever side chain atoms available
-            print(Selection.unfold_entities(entity_list=residue, target_level='S'), ' - non-std aa')
-            print(residue)
             return Vector(center_of_mass(selected_atoms, geometric=True))
 
     def save_cgo_side_chain_angle(self, output_path):
