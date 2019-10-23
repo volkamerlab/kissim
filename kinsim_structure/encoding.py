@@ -796,7 +796,7 @@ class SideChainOrientationFeature:
 
         Returns
         -------
-        Bio.PDB.vectors.Vector
+        Bio.PDB.vectors.Vector or None
             Residue's Ca vector.
         """
 
@@ -822,7 +822,7 @@ class SideChainOrientationFeature:
 
         Returns
         -------
-        Bio.PDB.vectors.Vector
+        Bio.PDB.vectors.Vector or None
             Residue's side chain centroid.
         """
 
@@ -835,6 +835,8 @@ class SideChainOrientationFeature:
             atom for atom in residue.get_atoms() if
             (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
         ]
+
+        # Set side chain centroid
 
         if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
             return None
