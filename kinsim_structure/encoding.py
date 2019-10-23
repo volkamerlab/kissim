@@ -771,7 +771,7 @@ class SideChainAngleFeature:
     features_verbose : pandas.DataFrame
         Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
     code : str
-
+        KLIFS code.
     """
 
     def __init__(self):
@@ -993,16 +993,17 @@ class SideChainAngleFeature:
             (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
         ]
 
-        # Calculate centroid of atoms matching these conditions
-        # If there are <=1 atoms matching these conditions, set centroid to None
-        if len(selected_atoms) <= 1:
-            vector_centroid = None
-        elif len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
-            vector_centroid = None
-        else:
-            vector_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
+        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
+            return None
 
-        return vector_centroid
+        try:  # If standard residue, calculate centroid only if enough side chain atoms available
+            if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
+                return None
+            else:
+                return Vector(center_of_mass(selected_atoms, geometric=True))
+
+        except KeyError:  # If non-standard residue, use whatever side chain atoms available
+            return Vector(center_of_mass(selected_atoms, geometric=True))
 
     def save_cgo_side_chain_angle(self, output_path):
         """
