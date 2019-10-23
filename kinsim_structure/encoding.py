@@ -759,6 +759,32 @@ class SpatialFeatures:
         # PyMOL > save refpoints.png
 
 
+class SideChainAngleOrientation:
+    """
+    Side chain orientation for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Side chain orientation of a residue is defined by the angle formed by (i) the residue's side chain centroid,
+    (ii) the residue's CB atom, and (iii) the pocket centroid (calculated based on its CA atoms).
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 feature, i.e. side chain orientation, (column) for 85 residues (rows).
+    features_verbose : pandas.DataFrame
+        Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
+    code : str
+        KLIFS code.
+    """
+
+    def __init__(self):
+
+        self.features = None
+        self.features_verbose = None
+        self.code = None
+
+    def from_molecule(self, molecule, chain, fill_missing=False):
+        pass
+
+
 class SideChainAngleFeature:
     """
     Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
