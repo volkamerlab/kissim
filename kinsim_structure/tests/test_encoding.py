@@ -355,6 +355,42 @@ def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid
         assert pocket_centroid_calculated == pocket_centroid
 
 
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, vectors', [
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', None)
+])
+def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, vectors):
+    """
+    xxx
+
+    Parameters
+    ----------
+    mol2_filename : str
+        Path to mol2 file.
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    vectors : xxx
+        xxx
+    """
+
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    feature = SideChainOrientationFeature()
+    pocket_vectors = feature._get_pocket_vectors(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+
+    pocket_vectors_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid']
+    assert list(pocket_vectors.columns) == pocket_vectors_columns
+
+
+
+
+
+
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, sca', [
     (
         'ABL1/2g2i_chainA/pocket.mol2',
