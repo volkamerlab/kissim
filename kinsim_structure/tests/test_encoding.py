@@ -10,7 +10,8 @@ import pytest
 
 from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures, SideChainAngleFeature
+from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures
+from kinsim_structure.encoding import SideChainAngleFeature, SideChainOrientationFeature
 
 
 @pytest.mark.parametrize('fingerprint_type1, normalized_fingerprint_type1', [
@@ -240,6 +241,88 @@ def test_feature_from_residue(filename, residue, feature_type, feature):
 
     # Call feature from residue function
     assert pharmacophore_size_feature.from_residue(residue, feature_type) == feature
+
+
+@pytest.mark.parametrize('pdb_filename, chain_id, residue_id, ca', [
+    ('2yjr.cif', 'A', 1272, [41.08, 39.79, 10.72]),  # Residue has CA
+    ('2yjr.cif', 'A', 1273, None)  # Residue has no CA
+])
+def test_sidechainorientation_get_ca(pdb_filename, chain_id, residue_id, ca):
+    """
+    Test if CA atom is retrieved correctly from a residue (test if-else cases).
+
+    Parameters
+    ----------
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    residue_id : int
+        Residue ID.
+    ca : list of int or None
+        3D coordinates of CA atom.
+    """
+
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    chain = pdb_chain_loader.chain
+    residue = chain[residue_id]
+
+    sca_feature = SideChainOrientationFeature()
+    ca_calculated = sca_feature._get_ca(residue)
+
+    if ca_calculated and ca:
+        # Check only x coordinate
+        assert np.isclose(list(ca_calculated)[0], ca[0], rtol=1e-03)
+    else:
+        assert ca_calculated == ca
+
+
+@pytest.mark.parametrize('pdb_filename, chain_id, residue_id, side_chain_centroid', [
+    ('5i35.cif', 'A', 336, [65.77, 23.74, 21.13]),  # Residue has enough side chain atoms for centroid calculation
+    ('5i35.cif', 'A', 337, None),  # Residue has <= 1 side chain atoms
+    ('5i35.cif', 'A', 357, [59.72, 14.73, 22.72]),  # Non-standard amino acid
+    ('5l4q.cif', 'A', 57, [-27.53, 0.05, -41.01]),  # Side chain containing H atoms
+    ('5l4q.cif', 'A', 130, None)  # Side chain with too many missing residues
+])
+def test_sidechainorientation_get_side_chain_centroid(pdb_filename, chain_id, residue_id, side_chain_centroid):
+    """
+    Test if side chain centroid is retrieved correctly from a residue (test if-else cases).
+
+    Parameters
+    ----------
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    residue_id : int
+        Residue ID.
+    side_chain_centroid : list of int or None
+        3D coordinates of CA atom.
+    """
+
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    chain = pdb_chain_loader.chain
+    try:
+        residue = chain[residue_id]
+    except KeyError:
+        # For non-standard residue MSE indexing did not work, thus use this workaround
+        residue = [i for i in chain.get_list() if i.get_id()[1] == residue_id][0]
+
+    sca_feature = SideChainOrientationFeature()
+    side_chain_centroid_calculated = sca_feature._get_side_chain_centroid(residue)
+    print(side_chain_centroid_calculated)
+
+    if side_chain_centroid_calculated and side_chain_centroid:
+        # Check only x coordinate
+        assert np.isclose(list(side_chain_centroid_calculated)[0], side_chain_centroid[0], rtol=1e-03)
+    else:
+        assert side_chain_centroid_calculated == side_chain_centroid
 
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, sca', [
