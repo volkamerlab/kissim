@@ -8,6 +8,8 @@ import pandas as pd
 from pathlib import Path
 import pytest
 
+from Bio.PDB import Vector
+
 from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SpatialFeatures
@@ -276,6 +278,7 @@ def test_sidechainorientation_get_ca(pdb_filename, chain_id, residue_id, ca):
     if ca_calculated and ca:
         # Check only x coordinate
         assert np.isclose(list(ca_calculated)[0], ca[0], rtol=1e-03)
+        assert isinstance(ca_calculated, Vector)
     else:
         assert ca_calculated == ca
 
@@ -321,6 +324,7 @@ def test_sidechainorientation_get_side_chain_centroid(pdb_filename, chain_id, re
     if side_chain_centroid_calculated and side_chain_centroid:
         # Check only x coordinate
         assert np.isclose(list(side_chain_centroid_calculated)[0], side_chain_centroid[0], rtol=1e-03)
+        assert isinstance(side_chain_centroid_calculated, Vector)
     else:
         assert side_chain_centroid_calculated == side_chain_centroid
 
@@ -346,6 +350,7 @@ def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid
     if pocket_centroid_calculated and pocket_centroid:
         # Check only x coordinate
         assert np.isclose(list(pocket_centroid_calculated)[0], pocket_centroid[0], rtol=1e-03)
+        assert isinstance(pocket_centroid_calculated, Vector)
     else:
         assert pocket_centroid_calculated == pocket_centroid
 
