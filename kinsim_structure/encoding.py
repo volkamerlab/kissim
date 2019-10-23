@@ -1312,3 +1312,234 @@ class PharmacophoreSizeFeatures:
                 result = feature
 
         return result
+
+
+########################################################################################################################
+# Not in use
+########################################################################################################################
+
+class SideChainAngleFeatureMol2:
+    """
+    Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 feature, i.e. side chain angle, (column) for 85 residues (rows).
+    features_verbose : pandas.DataFrame
+        Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
+    code : str
+        KLIFS code.
+    """
+
+    def __init__(self):
+
+        self.features = None
+        self.features_verbose = None
+        self.code = None
+
+    def from_molecule(self, molecule, fill_missing=False):
+        """
+        Get side chain angle for each residue of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        fill_missing : bool
+            Fill missing values with median value of respective amino acid angle distribution.
+        """
+
+        self.code = molecule.code  # Necessary for cgo generation
+
+        # Calculate/get CA, CB and centroid points
+        ca_cb_com_vectors = self._get_ca_cb_com_vectors(molecule)
+
+        # Get angle values per residue
+        side_chain_angles = self._get_side_chain_angles(ca_cb_com_vectors, fill_missing)
+
+        # Store angles
+        self.features = side_chain_angles
+        # Store angles plus CA, CB and centroid points as well as metadata
+        self.features_verbose = pd.concat([ca_cb_com_vectors, side_chain_angles], axis=1)
+
+    @staticmethod
+    def _get_side_chain_angles(ca_cb_com_vectors, fill_missing=False):
+        """
+        Calculate side chain angles for a molecule.
+
+        Parameters
+        ----------
+        ca_cb_com_vectors : pandas.DataFrame
+            CA, CB and centroid points for each residue of a molecule.
+        fill_missing : bool
+            Fill missing values with median value of respective amino acid angle distribution.
+
+        Returns
+        -------
+        pandas.DataFrame
+            1 feature, i.e. side chain angle, (column) for 85 residues (rows).
+        """
+
+        side_chain_angles = []
+
+        for index, row in ca_cb_com_vectors.iterrows():
+
+            # If residue is a GLY or ALA, set default angle of 180°
+            if row.residue_name in ['GLY', 'ALA']:
+                side_chain_angles.append(180.00)
+
+            # If one of the other residues and all three Ca/Cb/centroid positions available, calculate centroid
+            elif row.ca and row.cb and row.centroid:
+                angle = np.degrees(calc_angle(row.ca, row.cb, row.centroid))
+                side_chain_angles.append(angle.round(2))
+
+            # If Ca, Cb, or centroid positions are missing for angle calculation...
+            else:
+                # ... set median value to residue
+                if fill_missing:
+                    angle = MEDIAN_SIDE_CHAIN_ANGLE[row.residue_name]
+
+                # ... set None value to residue
+                else:
+                    angle = None
+                side_chain_angles.append(angle)
+
+        # Cast to DataFrame
+        side_chain_angles = pd.DataFrame(
+            side_chain_angles,
+            index=ca_cb_com_vectors.klifs_id,
+            columns=['sca']
+        )
+
+        return side_chain_angles
+
+    def _get_ca_cb_com_vectors(self, molecule):
+        """
+        Get CA, CB and centroid points for each residue of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+
+        Returns
+        -------
+        pandas.DataFrame
+            CA, CB and centroid points for each residue of a molecule.
+        """
+
+        # Save here values per residue
+        data = []
+        metadata = pd.DataFrame(
+            list(molecule.df.groupby(by=['klifs_id', 'res_id', 'res_name'], sort=False).groups.keys()),
+            index=molecule.df.klifs_id.unique(),
+            columns='klifs_id residue_id residue_name'.split()
+        )
+
+        for residue_id, residue in molecule.df.groupby('res_id'):
+            vector_ca = self._get_ca(residue)
+            vector_cb = self._get_cb(residue)
+            vector_centroid = self._get_side_chain_centroid(residue)
+
+            data.append([vector_ca, vector_cb, vector_centroid])
+
+        data = pd.DataFrame(
+            data,
+            index=molecule.df.klifs_id.unique(),
+            columns='ca cb centroid'.split()
+        )
+
+        if len(metadata) != len(data):
+            raise ValueError(f'DataFrames to be concatenated must be of same length: '
+                             f'Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows.')
+
+        return pd.concat([metadata, data], axis=1)
+
+    @staticmethod
+    def _get_ca(residue):
+        """
+        Get residue's Ca atom.
+
+        Parameters
+        ----------
+        residue : pandas.DataFrame
+            Residue's atoms.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector
+            Residue's Ca vector.
+        """
+
+        ca = residue[residue.atom_name == 'CA']
+
+        if len(ca) == 1:
+            return Vector(ca['x y z'.split()].values[0])
+        elif len(ca) == 0:
+            return None
+        else:
+            raise ValueError(f'Residue has more than one, i.e. {len(ca)}, CA atoms.')
+
+    @staticmethod
+    def _get_cb(residue):
+        """
+        Get residue's Cb atom.
+
+        Parameters
+        ----------
+        residue : pandas.DataFrame
+            Residue's atoms.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector
+            Residue's Cb vector.
+        """
+
+        cb = residue[residue.atom_name == 'CB']
+
+        if len(cb) == 1:
+            return Vector(cb['x y z'.split()].values[0])
+        elif len(cb) == 0:
+            return None
+        else:
+            raise ValueError(f'Residue has more than one, i.e. {len(cb)}, CB atoms.')
+
+    @staticmethod
+    def _get_side_chain_centroid(residue):
+        """
+        Get residue's side chain centroid.
+
+        Parameters
+        ----------
+        residue : pandas.DataFrame
+            Residue's atoms.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector
+            Residue's side chain centroid.
+        """
+
+        # Select only atoms that are
+        # - not part of the backbone
+        # - not oxygen atoms (OXT) on the terminal carboxyl group
+        # - not H atoms
+
+        selected_atoms = residue[
+            (~residue.atom_name.isin(['N', 'C', 'O', 'CA', 'OXT'])) & (~residue.atom_name.str.startswith('H'))
+        ]
+
+        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
+            return None
+
+        try:  # If standard residue, calculate centroid only if enough side chain atoms available
+            if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.res_name.unique()[0]]:
+                return None
+            else:
+                return Vector(list(selected_atoms['x y z'.split()].mean()))
+
+        except KeyError:  # If non-standard residue, use whatever side chain atoms available
+            return Vector(list(selected_atoms['x y z'.split()].mean()))
