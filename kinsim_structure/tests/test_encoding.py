@@ -325,6 +325,31 @@ def test_sidechainorientation_get_side_chain_centroid(pdb_filename, chain_id, re
         assert side_chain_centroid_calculated == side_chain_centroid
 
 
+@pytest.mark.parametrize('mol2_filename, pocket_centroid', [
+    ('ABL1/2g2i_chainA/pocket.mol2', [0.99, 21.06, 36.70])
+])
+def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid):
+    """
+
+    Parameters
+    ----------
+    mol2_filename
+    pocket_centroid
+    """
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    molecule = klifs_molecule_loader.molecule
+
+    sca_feature = SideChainOrientationFeature()
+    pocket_centroid_calculated = sca_feature._get_pocket_centroid(molecule)
+
+    if pocket_centroid_calculated and pocket_centroid:
+        # Check only x coordinate
+        assert np.isclose(list(pocket_centroid_calculated)[0], pocket_centroid[0], rtol=1e-03)
+    else:
+        assert pocket_centroid_calculated == pocket_centroid
+
+
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, sca', [
     (
         'ABL1/2g2i_chainA/pocket.mol2',
