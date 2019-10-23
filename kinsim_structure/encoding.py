@@ -780,9 +780,68 @@ class SideChainOrientationFeature:
         self.features = None
         self.features_verbose = None
         self.code = None
+        self.vector_pocket_centroid = None
 
     def from_molecule(self, molecule, chain, fill_missing=False):
         pass
+
+    def _get_pocket_vectors(self, molecule, chain):
+        """
+        Get vectors to CA, residue side chain centroid, and pocket centroid.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule.
+        """
+
+        # Get KLIFS residues in PDB file based on KLIFS mol2 file
+        # Data type: list of Bio.PDB.Residue.Residue
+        residues = Selection.unfold_entities(entity_list=chain, target_level='R')
+
+        # Get KLIFS pocket residue IDs from mol2 file
+        pocket_residue_ids = [int(i) for i in molecule.df.res_id.unique()]
+
+        # Select KLIFS pocket residues
+        pocket_residues = [residue for residue in residues if residue.get_full_id()[3][1] in pocket_residue_ids]
+
+        # Save here values per residue
+        data = []
+
+        for residue in pocket_residues:
+
+            vector_ca = self._get_ca(residue)
+            vector_side_chain_centroid = self._get_side_chain_centroid(residue)
+
+            if not self.vector_pocket_centroid:
+                self.vector_pocket_centroid = self._get_pocket_centroid(molecule)
+
+            data.append([vector_ca, vector_side_chain_centroid, self.vector_pocket_centroid])
+
+        data = pd.DataFrame(
+            data,
+            index=molecule.df.klifs_id.unique(),
+            columns='ca side_chain_centroid pocket_centroid'.split()
+        )
+
+        metadata = pd.DataFrame(
+            list(molecule.df.groupby(by=['klifs_id', 'res_id', 'res_name'], sort=False).groups.keys()),
+            index=molecule.df.klifs_id.unique(),
+            columns='klifs_id res_id res_name'.split()
+        )
+
+        if len(metadata) != len(data):
+            raise ValueError(f'DataFrames to be concatenated must be of same length: '
+                             f'Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows.')
+
+        return pd.concat([metadata, data], axis=1)
 
     @staticmethod
     def _get_ca(residue):
