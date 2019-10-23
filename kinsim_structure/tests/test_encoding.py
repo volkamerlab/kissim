@@ -272,8 +272,8 @@ def test_sidechainorientation_get_ca(pdb_filename, chain_id, residue_id, ca):
     chain = pdb_chain_loader.chain
     residue = chain[residue_id]
 
-    sca_feature = SideChainOrientationFeature()
-    ca_calculated = sca_feature._get_ca(residue)
+    feature = SideChainOrientationFeature()
+    ca_calculated = feature._get_ca(residue)
 
     if ca_calculated and ca:
         # Check only x coordinate
@@ -317,8 +317,8 @@ def test_sidechainorientation_get_side_chain_centroid(pdb_filename, chain_id, re
         # For non-standard residue MSE indexing did not work, thus use this workaround
         residue = [i for i in chain.get_list() if i.get_id()[1] == residue_id][0]
 
-    sca_feature = SideChainOrientationFeature()
-    side_chain_centroid_calculated = sca_feature._get_side_chain_centroid(residue)
+    feature = SideChainOrientationFeature()
+    side_chain_centroid_calculated = feature._get_side_chain_centroid(residue)
     print(side_chain_centroid_calculated)
 
     if side_chain_centroid_calculated and side_chain_centroid:
@@ -344,8 +344,8 @@ def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid
     klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
     molecule = klifs_molecule_loader.molecule
 
-    sca_feature = SideChainOrientationFeature()
-    pocket_centroid_calculated = sca_feature._get_pocket_centroid(molecule)
+    feature = SideChainOrientationFeature()
+    pocket_centroid_calculated = feature._get_pocket_centroid(molecule)
 
     if pocket_centroid_calculated and pocket_centroid:
         # Check only x coordinate
