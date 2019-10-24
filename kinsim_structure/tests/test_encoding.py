@@ -367,23 +367,34 @@ def test_sidechainorientation_get_side_chain_centroid(pdb_filename, chain_id, re
         assert side_chain_centroid_calculated == side_chain_centroid
 
 
-@pytest.mark.parametrize('mol2_filename, pocket_centroid', [
-    ('ABL1/2g2i_chainA/pocket.mol2', [0.99, 21.06, 36.70])
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, pocket_centroid', [
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', [-16.21, -32.25, -12.14])
 ])
-def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid):
+def test_sidechainorientation_get_pocket_centroid(mol2_filename, pdb_filename, chain_id, pocket_centroid):
     """
+    Test pocket centroid calculation.
 
     Parameters
     ----------
-    mol2_filename
-    pocket_centroid
+    mol2_filename : str
+        Path to mol2 file.
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    pocket_centroid : list of float
+        Pocket centroid coordinates.
     """
+
     mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
     klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    molecule = klifs_molecule_loader.molecule
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
 
     feature = SideChainOrientationFeature()
-    pocket_centroid_calculated = feature._get_pocket_centroid(molecule)
+    pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+    pocket_centroid_calculated = feature._get_pocket_centroid(pocket_residues)
 
     if pocket_centroid_calculated and pocket_centroid:
         # Check only x coordinate
