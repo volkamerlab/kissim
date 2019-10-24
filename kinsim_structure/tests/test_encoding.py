@@ -355,12 +355,18 @@ def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid
         assert pocket_centroid_calculated == pocket_centroid
 
 
-@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, vectors', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', None)
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, x_mean', [
+    (
+        'ABL1/2g2i_chainA/pocket.mol2',
+        '2g2i.cif',
+        'A',
+        {'ca': -16.21, 'side_chain_centroid': -16.18, 'pocket_centroid': 0.99}
+    )
 ])
-def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, vectors):
+def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, x_mean):
     """
-    xxx
+    Test if x coordinates of all CA atoms, side chain centroids, and pocket centroid in the pocket are correct, and
+    if returned DataFrame contains correct column names.
 
     Parameters
     ----------
@@ -370,8 +376,8 @@ def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, ch
         Path to cif file.
     chain_id : str
         Chain ID.
-    vectors : xxx
-        xxx
+    x_mean : dict
+        X coordinates of all CA atoms, side chain centroids, and pocket centroid in the pocket.
     """
 
     mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
@@ -384,11 +390,25 @@ def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, ch
     pocket_vectors = feature._get_pocket_vectors(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
 
     pocket_vectors_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid']
+
+    # Calculate x coordinate mean values for all three vector lists
+    x_mean_calculated = {
+        'ca': pocket_vectors['ca'].dropna().apply(lambda x: x.get_array()[0]).mean(),
+        'side_chain_centroid': pocket_vectors['side_chain_centroid'].dropna().apply(lambda x: x.get_array()[0]).mean(),
+        'pocket_centroid': pocket_vectors['pocket_centroid'].dropna().apply(lambda x: x.get_array()[0]).mean()
+    }
+
+    # Test if DataFrame contains correct columns
     assert list(pocket_vectors.columns) == pocket_vectors_columns
 
+    # Test mean x coordinate of CA atoms
+    assert np.isclose(x_mean_calculated['ca'], x_mean['ca'], rtol=1e-03)
 
+    # Test mean x coordinate of side chain centroid
+    assert np.isclose(x_mean_calculated['side_chain_centroid'], x_mean['side_chain_centroid'], rtol=1e-03)
 
-
+    # Test mean x coordinate of pocket centroid
+    assert np.isclose(x_mean_calculated['pocket_centroid'], x_mean['pocket_centroid'], rtol=1e-03)
 
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, sca', [
