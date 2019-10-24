@@ -983,14 +983,14 @@ class SideChainOrientationFeature:
             return Vector(center_of_mass(selected_atoms, geometric=True))
 
     @staticmethod
-    def _get_pocket_centroid(molecule):
+    def _get_pocket_centroid(pocket_residues):
         """
         Get centroid of pocket CA atoms.
 
         Parameters
         ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
+        pocket_residues : list of Bio.PDB.Residue.Residue
+            List of pocket residues.
 
         Returns
         -------
@@ -998,11 +998,17 @@ class SideChainOrientationFeature:
             Pocket centroid.
         """
 
-        pocket_centroid = molecule.df[molecule.df.atom_name == 'CA']['x y z'.split()].mean()
+        ca_vectors = []
 
-        if len(pocket_centroid.dropna()) == 3:
-            return Vector(pocket_centroid)
-        else:
+        for residue in pocket_residues.pocket_residues:
+            try:
+                ca_vectors.append(residue['CA'])
+            except KeyError:
+                pass
+
+        try:
+            return Vector(center_of_mass(ca_vectors, geometric=True))
+        except ValueError:
             return None
 
 
