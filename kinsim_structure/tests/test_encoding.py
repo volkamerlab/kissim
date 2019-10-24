@@ -245,6 +245,44 @@ def test_feature_from_residue(filename, residue, feature_type, feature):
     assert pharmacophore_size_feature.from_residue(residue, feature_type) == feature
 
 
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, res_id_mean, n_pocket_atoms', [
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 315.95, 659)
+])
+def test_sidechainorientation_get_pocket_residues(mol2_filename, pdb_filename, chain_id, res_id_mean, n_pocket_atoms):
+    """
+    Test the mean of the pocket's PDB residue IDs and the number of pocket atoms.
+
+    Parameters
+    ----------
+    mol2_filename : str
+        Path to mol2 file.
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    res_id_mean : float
+        Mean of pocket's PDB residue IDs.
+    n_pocket_atoms : int
+        Number of pocket atoms.
+    """
+
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    feature = SideChainOrientationFeature()
+    pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+
+    # Get and test the mean of pocket PDB residue IDs and the number of pocket atoms
+    res_id_mean_calculated = pocket_residues.res_id.mean()
+    n_pocket_atoms_calculated = sum([len(residue) for residue in pocket_residues.pocket_residues])
+
+    assert np.isclose(res_id_mean_calculated, res_id_mean, rtol=1e-03)
+    assert n_pocket_atoms_calculated == n_pocket_atoms
+
+
 @pytest.mark.parametrize('pdb_filename, chain_id, residue_id, ca', [
     ('2yjr.cif', 'A', 1272, [41.08, 39.79, 10.72]),  # Residue has CA
     ('2yjr.cif', 'A', 1273, None)  # Residue has no CA
