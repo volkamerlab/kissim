@@ -411,6 +411,43 @@ def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, ch
     assert np.isclose(x_mean_calculated['pocket_centroid'], x_mean['pocket_centroid'], rtol=1e-03)
 
 
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, angles_mean', [
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 95.58)
+])
+def test_sidechainorientation_get_vertex_angles(mol2_filename, pdb_filename, chain_id, angles_mean):
+    """
+    Test if vertex angles are calculated correctly (check mean angle), and if returned DataFrame contains correct column
+    name.
+
+    Parameters
+    ----------
+    mol2_filename : str
+        Path to mol2 file.
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    angles_mean : float
+        Mean of non-None angles.
+    """
+
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    feature = SideChainOrientationFeature()
+    pocket_vectors = feature._get_pocket_vectors(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+    angles_calculated = feature._get_vertex_angles(pocket_vectors)
+
+    assert angles_calculated.columns == ['sco']
+
+    # Calculate and test mean of all angles (excluding NaN values)
+    angles_mean_calculated = angles_calculated.sco.mean()
+    assert np.isclose(angles_mean_calculated, angles_mean, rtol=1e-03)
+
+
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, sca', [
     (
         'ABL1/2g2i_chainA/pocket.mol2',
