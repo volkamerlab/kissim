@@ -854,9 +854,11 @@ class SideChainOrientationFeature:
 
         return side_chain_orientation
 
-    def _get_pocket_vectors(self, molecule, chain):
+    @staticmethod
+    def _get_pocket_residues(molecule, chain):
         """
-        Get vectors to CA, residue side chain centroid, and pocket centroid.
+        Get KLIFS pocket residues from PDB structure data: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID,
+        PDB residue ID, and residue name for all pocket residues.
 
         Parameters
         ----------
@@ -867,21 +869,22 @@ class SideChainOrientationFeature:
 
         Returns
         -------
-        pandas.DataFrame
-            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
-            with metadata on KLIFS residue ID, PDB residue ID, and residue name.
+        pocket_residues : pandas.DataFrame
+            Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
+            name (columns) for all pocket residues (rows).
         """
 
-        # Get KLIFS residues in PDB file based on KLIFS mol2 file
-        # Data type: list of Bio.PDB.Residue.Residue
-        residues = Selection.unfold_entities(entity_list=chain, target_level='R')
+        # Get KLIFS pocket metadata, e.g. PDB residue IDs from mol2 file (DataFrame)
+        pocket_residues = pd.DataFrame(
+            molecule.df.groupby(['klifs_id', 'res_id', 'res_name']).groups.keys(),
+            columns=['klifs_id', 'res_id', 'res_name']
 
-        # Get KLIFS pocket residue IDs from mol2 file
-        pocket_residue_ids = [int(i) for i in molecule.df.res_id.unique()]
+        )
 
-        # Select KLIFS pocket residues
-        pocket_residues = [residue for residue in residues if residue.get_full_id()[3][1] in pocket_residue_ids]
+        # Select residues from chain based on PDB residue IDs and add to DataFrame
+        pocket_residues['pocket_residues'] = [chain[res_id] for res_id in pocket_residues.res_id]
 
+        return pocket_residues
         # Save here values per residue
         data = []
 
