@@ -409,7 +409,7 @@ def test_sidechainorientation_get_pocket_centroid(mol2_filename, pdb_filename, c
         'ABL1/2g2i_chainA/pocket.mol2',
         '2g2i.cif',
         'A',
-        {'ca': -16.21, 'side_chain_centroid': -16.18, 'pocket_centroid': 0.99}
+        {'ca': -16.21, 'side_chain_centroid': -16.18, 'pocket_centroid': -16.21}
     )
 ])
 def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, x_mean):
@@ -436,19 +436,19 @@ def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, ch
     pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
 
     feature = SideChainOrientationFeature()
-    pocket_vectors = feature._get_pocket_vectors(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+    pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+    pocket_vectors = feature._get_pocket_vectors(pocket_residues)
 
+    # Test if DataFrame contains correct columns
     pocket_vectors_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid']
+    assert list(pocket_vectors.columns) == pocket_vectors_columns
 
     # Calculate x coordinate mean values for all three vector lists
     x_mean_calculated = {
-        'ca': pocket_vectors['ca'].dropna().apply(lambda x: x.get_array()[0]).mean(),
-        'side_chain_centroid': pocket_vectors['side_chain_centroid'].dropna().apply(lambda x: x.get_array()[0]).mean(),
-        'pocket_centroid': pocket_vectors['pocket_centroid'].dropna().apply(lambda x: x.get_array()[0]).mean()
+        'ca': pocket_vectors.ca.dropna().apply(lambda x: x.get_array()[0]).mean(),
+        'side_chain_centroid': pocket_vectors.side_chain_centroid.dropna().apply(lambda x: x.get_array()[0]).mean(),
+        'pocket_centroid': pocket_vectors.pocket_centroid.dropna().apply(lambda x: x.get_array()[0]).mean()
     }
-
-    # Test if DataFrame contains correct columns
-    assert list(pocket_vectors.columns) == pocket_vectors_columns
 
     # Test mean x coordinate of CA atoms
     assert np.isclose(x_mean_calculated['ca'], x_mean['ca'], rtol=1e-03)
