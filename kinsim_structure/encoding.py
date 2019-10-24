@@ -798,8 +798,11 @@ class SideChainOrientationFeature:
 
         self.code = molecule.code
 
+        # Get pocket residues
+        pocket_residues = self._get_pocket_residues(molecule, chain)
+
         # Get vectors (for each residue CA atoms, side chain centroid, pocket centroid)
-        pocket_vectors = self._get_pocket_vectors(molecule, chain)
+        pocket_vectors = self._get_pocket_vectors(pocket_residues)
 
         # Get vertex angles (for each residue, vertex angle between aforementioned points)
         vertex_angles = self._get_vertex_angles(pocket_vectors)
@@ -889,27 +892,25 @@ class SideChainOrientationFeature:
         # Save here values per residue
         data = []
 
-        for residue in pocket_residues:
+        # Calculate pocket centroid
+        if not self.vector_pocket_centroid:
+            self.vector_pocket_centroid = self._get_pocket_centroid(pocket_residues)
+
+        # Calculate CA atom and side chain centroid
+        for residue in pocket_residues.pocket_residues:
 
             vector_ca = self._get_ca(residue)
             vector_side_chain_centroid = self._get_side_chain_centroid(residue)
-
-            if not self.vector_pocket_centroid:
-                self.vector_pocket_centroid = self._get_pocket_centroid(molecule)
 
             data.append([vector_ca, vector_side_chain_centroid, self.vector_pocket_centroid])
 
         data = pd.DataFrame(
             data,
-            index=molecule.df.klifs_id.unique(),
+            index=pocket_residues.klifs_id,
             columns='ca side_chain_centroid pocket_centroid'.split()
         )
 
-        metadata = pd.DataFrame(
-            list(molecule.df.groupby(by=['klifs_id', 'res_id', 'res_name'], sort=False).groups.keys()),
-            index=molecule.df.klifs_id.unique(),
-            columns='klifs_id res_id res_name'.split()
-        )
+        metadata = pocket_residues['klifs_id res_id res_name'.split()]
 
         if len(metadata) != len(data):
             raise ValueError(f'DataFrames to be concatenated must be of same length: '
