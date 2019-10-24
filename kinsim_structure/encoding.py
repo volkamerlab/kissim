@@ -1013,6 +1013,112 @@ class SideChainOrientationFeature:
         except ValueError:
             return None
 
+    def save_cgo_side_chain_orientation(self, output_path):
+        """
+        Save CA atom, side chain centroid and pocket centroid as spheres and label CA atom with side chain orientation
+        vertex angle value to PyMol cgo file.
+
+        Parameters
+        ----------
+        output_path : pathlib.Path or str
+            Path to output directory.
+        """
+
+        # Get molecule and molecule code
+        code = split_klifs_code(self.code)
+
+        # Get pocket residues
+        pocket_residues_ids = list(self.features_verbose.res_id)
+
+        # List contains lines for python script
+        lines = [f'from pymol import *', f'import os', f'from pymol.cgo import *\n']
+
+        # Fetch PDB, remove solvent, remove unnecessary chain(s) and residues
+        lines.append(f'cmd.fetch("{code["pdb_id"]}")')
+        lines.append(f'cmd.remove("solvent")')
+        if code["chain"]:
+            lines.append(f'cmd.remove("{code["pdb_id"]} and not chain {code["chain"]}")')
+        lines.append(f'cmd.remove("all and not (resi {"+".join([str(i) for i in pocket_residues_ids])})")')
+        lines.append(f'')
+
+        # Set sphere color and size
+        sphere_colors = {
+            'ca': [0.0, 1.0, 0.0],  # Green
+            'side_chain_centroid': [1.0, 0.0, 0.0],  # Red
+            'pocket_centroid': [0.0, 0.0, 1.0],  # Blue
+        }
+        sphere_size = {
+            'ca': str(0.2),
+            'side_chain_centroid': str(0.2),
+            'pocket_centroid': str(1)
+        }
+
+        # Collect all PyMol objects here (in order to group them after loading them to PyMol)
+        obj_names = []
+        obj_angle_names = []
+
+        for index, row in self.features_verbose.iterrows():
+
+            # Set PyMol object name: residue ID
+            obj_name = f'{row.res_id}'
+            obj_names.append(obj_name)
+
+            if not np.isnan(row.sco):
+
+                # Add angle to CA atom in the form of a label
+                obj_angle_name = f'angle_{row.res_id}'
+                obj_angle_names.append(obj_angle_name)
+
+                lines.append(
+                    f'cmd.pseudoatom(object="angle_{row.res_id}", '
+                    f'pos=[{str(row.ca[0])}, {str(row.ca[1])}, {str(row.ca[2])}], '
+                    f'label={str(round(row.sco, 1))})'
+                )
+
+            vectors = {
+                'ca': row.ca,
+                'side_chain_centroid': row.side_chain_centroid,
+                'pocket_centroid': row.pocket_centroid
+            }
+
+            # Write all spheres for current residue in cgo format
+            lines.append(f'obj_{obj_name} = [')  # Variable cannot start with digit, thus add prefix obj_
+
+            # For each reference point, write sphere color, coordinates and size to file
+            for key, vector in vectors.items():
+
+                if vector:
+                    # Set sphere color
+                    sphere_color = list(sphere_colors[key])
+
+                    # Write sphere a) color and b) coordinates and size to file
+                    lines.extend(
+                        [
+                            f'\tCOLOR, {str(sphere_color[0])}, {str(sphere_color[1])}, {str(sphere_color[2])},',
+                            f'\tSPHERE, {str(vector[0])}, {str(vector[1])}, {str(vector[2])}, {sphere_size[key]},'
+                        ]
+                    )
+
+            # Load the spheres as PyMol object
+            lines.extend(
+                [
+                    f']',
+                    f'cmd.load_cgo(obj_{obj_name}, "{obj_name}")',
+                    ''
+                ]
+
+            )
+        # Group all objects to one group
+        lines.append(f'cmd.group("{self.code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
+
+        cgo_path = Path(output_path) / f'side_chain_orientation_{self.code.split("/")[1]}.py'
+        with open(cgo_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        # In PyMol enter the following to save png
+        # PyMOL > ray 900, 900
+        # PyMOL > save refpoints.png
+
 
 class SideChainAngleFeature:
     """
