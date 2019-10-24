@@ -779,11 +779,35 @@ class SideChainOrientationFeature:
 
         self.features = None
         self.features_verbose = None
-        self.code = None
-        self.vector_pocket_centroid = None
+        self.code = None  # Necessary for cgo generation
+        self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
 
-    def from_molecule(self, molecule, chain, fill_missing=False):
-        pass
+    def from_molecule(self, molecule, chain):
+        """
+        Get side chain orientation for each residue in a molecule (pocket).
+        Side chain orientation of a residue is defined by the angle formed by (i) the residue's side chain centroid,
+        (ii) the residue's CB atom, and (iii) the pocket centroid (calculated based on its CA atoms).
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        """
+
+        self.code = molecule.code
+
+        # Get vectors (for each residue CA atoms, side chain centroid, pocket centroid)
+        pocket_vectors = self._get_pocket_vectors(molecule, chain)
+
+        # Get vertex angles (for each residue, vertex angle between aforementioned points)
+        vertex_angles = self._get_vertex_angles(pocket_vectors)
+
+        # Store vertex angles
+        self.features = vertex_angles
+        # Store vertex angles plus vectors and metadata
+        self.features_verbose = pd.concat([pocket_vectors, vertex_angles], axis=1)
 
     @staticmethod
     def _get_vertex_angles(pocket_vectors):
