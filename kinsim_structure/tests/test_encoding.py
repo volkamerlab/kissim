@@ -461,7 +461,7 @@ def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, ch
 
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, angles_mean', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 95.58)
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 93.75)
 ])
 def test_sidechainorientation_get_vertex_angles(mol2_filename, pdb_filename, chain_id, angles_mean):
     """
@@ -487,7 +487,8 @@ def test_sidechainorientation_get_vertex_angles(mol2_filename, pdb_filename, cha
     pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
 
     feature = SideChainOrientationFeature()
-    pocket_vectors = feature._get_pocket_vectors(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+    pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+    pocket_vectors = feature._get_pocket_vectors(pocket_residues)
     angles_calculated = feature._get_vertex_angles(pocket_vectors)
 
     assert list(angles_calculated.columns) == ['sco']
