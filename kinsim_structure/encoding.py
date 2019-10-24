@@ -876,10 +876,11 @@ class SideChainOrientationFeature:
 
         # Get KLIFS pocket metadata, e.g. PDB residue IDs from mol2 file (DataFrame)
         pocket_residues = pd.DataFrame(
-            molecule.df.groupby(['klifs_id', 'res_id', 'res_name']).groups.keys(),
-            columns=['klifs_id', 'res_id', 'res_name']
+            molecule.df.groupby('klifs_id res_id res_name'.split()).groups.keys(),
+            columns='klifs_id res_id res_name'.split()
 
         )
+        pocket_residues.set_index('klifs_id', drop=False, inplace=True)
 
         # Select residues from chain based on PDB residue IDs and add to DataFrame
         pocket_residues['pocket_residues'] = [chain[res_id] for res_id in pocket_residues.res_id]
