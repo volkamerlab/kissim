@@ -785,6 +785,51 @@ class SideChainOrientationFeature:
     def from_molecule(self, molecule, chain, fill_missing=False):
         pass
 
+    @staticmethod
+    def _get_vertex_angles(pocket_vectors):
+        """
+        Get vertex angles for residues' side chain orientations to the molecule (pocket) centroid.
+        Side chain orientation of a residue is defined by the angle formed by (i) the residue's side chain centroid,
+        (ii) the residue's CB atom, and (iii) the pocket centroid (calculated based on its CA atoms).
+
+        Parameters
+        ----------
+        pandas.DataFrame
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
+            with metadata on KLIFS residue ID, PDB residue ID, and residue name (columns) for 85 pocket residues.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation feature (column) for 85 residues (rows).
+        """
+
+        side_chain_orientation = []
+
+        for index, row in pocket_vectors.iterrows():
+
+            # If all three vectors available, calculate angle - otherwise set angle to None
+
+            if row.ca and row.side_chain_centroid and row.pocket_centroid:
+                # Calculate vertex angle: CA atom is vertex
+                angle = np.degrees(
+                    calc_angle(
+                        row.side_chain_centroid, row.ca, row.pocket_centroid
+                    )
+                )
+                side_chain_orientation.append(angle.round(2))
+            else:
+                side_chain_orientation.append(None)
+
+        # Cast to DataFrame
+        side_chain_orientation = pd.DataFrame(
+            side_chain_orientation,
+            index=pocket_vectors.klifs_id,
+            columns=['sco']
+        )
+
+        return side_chain_orientation
+
     def _get_pocket_vectors(self, molecule, chain):
         """
         Get vectors to CA, residue side chain centroid, and pocket centroid.
@@ -799,7 +844,8 @@ class SideChainOrientationFeature:
         Returns
         -------
         pandas.DataFrame
-            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule.
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
+            with metadata on KLIFS residue ID, PDB residue ID, and residue name.
         """
 
         # Get KLIFS residues in PDB file based on KLIFS mol2 file
