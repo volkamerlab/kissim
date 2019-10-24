@@ -889,6 +889,24 @@ class SideChainOrientationFeature:
         pocket_residues['pocket_residues'] = [chain[res_id] for res_id in pocket_residues.res_id]
 
         return pocket_residues
+
+    def _get_pocket_vectors(self, pocket_residues):
+        """
+        Get vectors to CA, residue side chain centroid, and pocket centroid.
+
+        Parameters
+        ----------
+        pocket_residues : pandas.DataFrame
+            Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
+            name (columns) for all pocket residues (rows).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
+            with metadata on KLIFS residue ID, PDB residue ID, and residue name.
+        """
+
         # Save here values per residue
         data = []
 
