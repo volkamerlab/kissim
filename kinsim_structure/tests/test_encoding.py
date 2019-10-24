@@ -441,11 +441,47 @@ def test_sidechainorientation_get_vertex_angles(mol2_filename, pdb_filename, cha
     pocket_vectors = feature._get_pocket_vectors(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
     angles_calculated = feature._get_vertex_angles(pocket_vectors)
 
-    assert angles_calculated.columns == ['sco']
+    assert list(angles_calculated.columns) == ['sco']
 
     # Calculate and test mean of all angles (excluding NaN values)
     angles_mean_calculated = angles_calculated.sco.mean()
     assert np.isclose(angles_mean_calculated, angles_mean, rtol=1e-03)
+
+
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
+])
+def test_sidechainorientation_from_molecule(mol2_filename, pdb_filename, chain_id):
+    """
+    Test if SideChainOrientation attributes features and features_verbose contain the correct column names.
+    Values are tested already in other test_sidechainorientation_* unit tests.
+
+    Parameters
+    ----------
+    mol2_filename : str
+        Path to mol2 file.
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    """
+
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    feature = SideChainOrientationFeature()
+    feature.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+
+    # Check column names
+    features_columns = ['sco']
+    features_verbose_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid', 'sco']
+
+    # Test column names
+    assert list(feature.features.columns) == features_columns
+    assert list(feature.features_verbose.columns) == features_verbose_columns
 
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, sca', [
