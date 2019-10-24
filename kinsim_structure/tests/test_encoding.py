@@ -365,8 +365,8 @@ def test_sidechainorientation_get_pocket_centroid(mol2_filename, pocket_centroid
 ])
 def test_sidechainorientation_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, x_mean):
     """
-    Test if x coordinates of all CA atoms, side chain centroids, and pocket centroid in the pocket are correct, and
-    if returned DataFrame contains correct column names.
+    Test if pocket vectors are calculated correctly (check mean x coordinates of all CA atoms, side chain centroids,
+    and pocket centroid in the pocket), and if returned DataFrame contains correct column names.
 
     Parameters
     ----------
