@@ -10,6 +10,7 @@ import logging
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
+import nglview as nv
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -1142,6 +1143,64 @@ class SideChainOrientationFeature:
         # In PyMol enter the following to save png
         # PyMOL > ray 900, 900
         # PyMOL > save refpoints.png
+
+    def show_in_nglviewer(self):
+
+        # Get molecule and molecule code
+        code = split_klifs_code(self.code)
+
+        pdb_id = code['pdb_id']
+        chain = code['chain']
+
+        viewer = nv.show_pdbid(pdb_id)
+        viewer.clear()
+        viewer.add_cartoon(assembly='AU')
+        viewer.center()
+
+        # Representation parameters
+        sphere_radius = {
+            'ca': 0.3,
+            'side_chain_centroid': 0.3,
+            'pocket_centroid': 1
+        }
+
+        colors = {
+            'ca': [0, 1, 0],
+            'side_chain_centroid': [1, 0, 0],
+            'pocket_centroid': [0, 0, 1]
+        }
+
+        # Show side chain angle feature per residue
+        for index, row in self.features_verbose.iterrows():
+
+            res_id = row.res_id
+
+            try:
+                ca = list(row.ca.get_array())
+            except AttributeError:
+                ca = None
+
+            try:
+                side_chain_centroid = list(row.side_chain_centroid.get_array())
+            except AttributeError:
+                side_chain_centroid = None
+
+            try:
+                pocket_centroid = list(row.pocket_centroid.get_array())
+            except AttributeError:
+                pocket_centroid = None
+
+            try:
+                selection = f'{res_id}:{chain}'
+                viewer.add_representation(repr_type='line', selection=selection)
+                viewer.shape.add_sphere(ca, colors['ca'], sphere_radius['ca'])
+                viewer.shape.add_sphere(side_chain_centroid, colors['side_chain_centroid'],
+                                        sphere_radius['side_chain_centroid'])
+                viewer.shape.add_sphere(pocket_centroid, colors['pocket_centroid'], sphere_radius['pocket_centroid'])
+            except:
+                pass
+
+            return viewer
 
 
 class SideChainAngleFeature:
