@@ -762,8 +762,9 @@ class SpatialFeatures:
 class SideChainOrientationFeature:
     """
     Side chain orientation for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
-    Side chain orientation of a residue is defined by the angle formed by (i) the residue's side chain centroid,
-    (ii) the residue's CB atom, and (iii) the pocket centroid (calculated based on its CA atoms).
+    Side chain orientation of a residue is defined by the vertex angle formed by (i) the residue's CA atom,
+    (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms), whereby
+    the CA atom forms the vertex.
 
     Attributes
     ----------
@@ -773,6 +774,8 @@ class SideChainOrientationFeature:
         Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
     code : str
         KLIFS code.
+    vector_pocket_centroid : Bio.PDB.Vector.Vector
+        Vector to pocket centroid.
     """
 
     def __init__(self):
@@ -785,8 +788,9 @@ class SideChainOrientationFeature:
     def from_molecule(self, molecule, chain):
         """
         Get side chain orientation for each residue in a molecule (pocket).
-        Side chain orientation of a residue is defined by the angle formed by (i) the residue's side chain centroid,
-        (ii) the residue's CB atom, and (iii) the pocket centroid (calculated based on its CA atoms).
+        Side chain orientation of a residue is defined by the vertex angle formed by (i) the residue's CA atom,
+        (ii) the residue's side chain centroid,  and (iii) the pocket centroid (calculated based on its CA atoms),
+        whereby the CA atom forms the vertex.
 
         Parameters
         ----------
@@ -813,55 +817,10 @@ class SideChainOrientationFeature:
         self.features_verbose = pd.concat([pocket_vectors, vertex_angles], axis=1)
 
     @staticmethod
-    def _get_vertex_angles(pocket_vectors):
-        """
-        Get vertex angles for residues' side chain orientations to the molecule (pocket) centroid.
-        Side chain orientation of a residue is defined by the angle formed by (i) the residue's side chain centroid,
-        (ii) the residue's CB atom, and (iii) the pocket centroid (calculated based on its CA atoms).
-
-        Parameters
-        ----------
-        pandas.DataFrame
-            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
-            with metadata on KLIFS residue ID, PDB residue ID, and residue name (columns) for 85 pocket residues.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Side chain orientation feature (column) for 85 residues (rows).
-        """
-
-        side_chain_orientation = []
-
-        for index, row in pocket_vectors.iterrows():
-
-            # If all three vectors available, calculate angle - otherwise set angle to None
-
-            if row.ca and row.side_chain_centroid and row.pocket_centroid:
-                # Calculate vertex angle: CA atom is vertex
-                angle = np.degrees(
-                    calc_angle(
-                        row.side_chain_centroid, row.ca, row.pocket_centroid
-                    )
-                )
-                side_chain_orientation.append(angle.round(2))
-            else:
-                side_chain_orientation.append(None)
-
-        # Cast to DataFrame
-        side_chain_orientation = pd.DataFrame(
-            side_chain_orientation,
-            index=pocket_vectors.klifs_id,
-            columns=['sco']
-        )
-
-        return side_chain_orientation
-
-    @staticmethod
     def _get_pocket_residues(molecule, chain):
         """
-        Get KLIFS pocket residues from PDB structure data: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID,
-        PDB residue ID, and residue name for all pocket residues.
+        Get KLIFS pocket residues from PDB structural data: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue
+        ID, PDB residue ID, and residue name for all pocket residues.
 
         Parameters
         ----------
@@ -872,7 +831,7 @@ class SideChainOrientationFeature:
 
         Returns
         -------
-        pocket_residues : pandas.DataFrame
+        pandas.DataFrame
             Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
             name (columns) for all pocket residues (rows).
         """
@@ -937,9 +896,55 @@ class SideChainOrientationFeature:
         return pd.concat([metadata, data], axis=1)
 
     @staticmethod
+    def _get_vertex_angles(pocket_vectors):
+        """
+        Get vertex angles for residues' side chain orientations to the molecule (pocket) centroid.
+        Side chain orientation of a residue is defined by the angle formed by (i) the residue's CB atom,
+        (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms),
+        whereby the CA atom forms the vertex.
+
+        Parameters
+        ----------
+        pocket_vectors : pandas.DataFrame
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
+            with metadata on KLIFS residue ID, PDB residue ID, and residue name (columns) for 85 pocket residues.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation feature (column) for 85 residues (rows).
+        """
+
+        side_chain_orientation = []
+
+        for index, row in pocket_vectors.iterrows():
+
+            # If all three vectors available, calculate angle - otherwise set angle to None
+
+            if row.ca and row.side_chain_centroid and row.pocket_centroid:
+                # Calculate vertex angle: CA atom is vertex
+                angle = np.degrees(
+                    calc_angle(
+                        row.side_chain_centroid, row.ca, row.pocket_centroid
+                    )
+                )
+                side_chain_orientation.append(angle.round(2))
+            else:
+                side_chain_orientation.append(None)
+
+        # Cast to DataFrame
+        side_chain_orientation = pd.DataFrame(
+            side_chain_orientation,
+            index=pocket_vectors.klifs_id,
+            columns=['sco']
+        )
+
+        return side_chain_orientation
+
+    @staticmethod
     def _get_ca(residue):
         """
-        Get residue's Ca atom.
+        Get residue's CA atom.
 
         Parameters
         ----------
@@ -949,7 +954,7 @@ class SideChainOrientationFeature:
         Returns
         -------
         Bio.PDB.vectors.Vector or None
-            Residue's Ca vector.
+            Residue's CA vector.
         """
 
         atom_names = [atoms.fullname for atoms in residue.get_atoms()]
@@ -1009,8 +1014,9 @@ class SideChainOrientationFeature:
 
         Parameters
         ----------
-        pocket_residues : list of Bio.PDB.Residue.Residue
-            List of pocket residues.
+        pocket_residues : pandas.DataFrame
+            Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
+            name (columns) for all pocket residues (rows).
 
         Returns
         -------
