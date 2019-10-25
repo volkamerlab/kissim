@@ -214,7 +214,7 @@ def test_normalize_fingerprint_type2(fingerprint_type2, normalized_fingerprint_t
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'aliphatic', None)
 
 ])
-def test_feature_from_residue(filename, residue, feature_type, feature):
+def test_pharmacophoresizefeature_from_residue(filename, residue, feature_type, feature):
     """
     Test function for retrieval of residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
     hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
