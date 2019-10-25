@@ -1152,10 +1152,10 @@ class SideChainOrientationFeature:
         pdb_id = code['pdb_id']
         chain = code['chain']
 
-        viewer = nv.show_pdbid(pdb_id)
+        viewer = nv.show_pdbid(pdb_id, default=False)
         viewer.clear()
-        viewer.add_cartoon(assembly='AU')
-        viewer.center()
+        viewer.add_cartoon(selection=f':{chain}', assembly='AU')
+        viewer.center(selection=f':{chain}')
 
         # Representation parameters
         sphere_radius = {
@@ -1175,32 +1175,24 @@ class SideChainOrientationFeature:
 
             res_id = row.res_id
 
-            try:
+            viewer.add_representation(repr_type='line', selection=f'{res_id}:{chain}')
+            viewer.add_label(selection=f'{res_id}:{chain}.CA')  # TODO: Add angles as label here
+
+            if row.ca:
                 ca = list(row.ca.get_array())
-            except AttributeError:
-                ca = None
-
-            try:
-                side_chain_centroid = list(row.side_chain_centroid.get_array())
-            except AttributeError:
-                side_chain_centroid = None
-
-            try:
-                pocket_centroid = list(row.pocket_centroid.get_array())
-            except AttributeError:
-                pocket_centroid = None
-
-            try:
-                selection = f'{res_id}:{chain}'
-                viewer.add_representation(repr_type='line', selection=selection)
                 viewer.shape.add_sphere(ca, colors['ca'], sphere_radius['ca'])
-                viewer.shape.add_sphere(side_chain_centroid, colors['side_chain_centroid'],
-                                        sphere_radius['side_chain_centroid'])
-                viewer.shape.add_sphere(pocket_centroid, colors['pocket_centroid'], sphere_radius['pocket_centroid'])
-            except:
-                pass
 
-            return viewer
+            if row.side_chain_centroid:
+                side_chain_centroid = list(row.side_chain_centroid.get_array())
+                viewer.shape.add_sphere(side_chain_centroid, colors['side_chain_centroid'], sphere_radius['side_chain_centroid'])
+
+            if row.pocket_centroid:
+                pocket_centroid = list(row.pocket_centroid.get_array())
+                viewer.shape.add_sphere(pocket_centroid, colors['pocket_centroid'], sphere_radius['pocket_centroid'])
+
+        viewer.gui_style = 'ngl'
+
+        return viewer
 
 
 class SideChainAngleFeature:
