@@ -13,7 +13,8 @@ from Bio.PDB import Vector
 from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PhysicoChemicalFeatures, SpatialFeatures
-from kinsim_structure.encoding import SideChainAngleFeature, SideChainOrientationFeature
+from kinsim_structure.encoding import PharmacophoreSizeFeatures, SideChainOrientationFeature
+from kinsim_structure.encoding import ObsoleteSideChainAngleFeature
 
 
 @pytest.mark.parametrize('fingerprint_type1, normalized_fingerprint_type1', [
@@ -597,7 +598,7 @@ def test_side_chain_angle_feature(mol2_filename, pdb_filename, chain_id, sca):
     klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
     pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
 
-    sca_feature = SideChainAngleFeature()
+    sca_feature = ObsoleteSideChainAngleFeature()
     sca_feature.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
     sca_calculated = sca_feature.features_verbose
 
