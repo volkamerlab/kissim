@@ -1195,7 +1195,225 @@ class SideChainOrientationFeature:
         return viewer
 
 
-class SideChainAngleFeature:
+class ExposureFeature:
+    """
+    Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the CA-CB vector
+    divided by the all CA atoms (given a sphere radius).
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 features (columns) for 85 residues (rows).
+    """
+
+    def __init__(self):
+
+        self.features = None
+
+    def from_molecule(self, molecule, chain, verbose=False):
+        """
+        Get exposure for each residue of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        verbose : bool
+            Either return exposure only (default) or additional info on HSExposureCA and HSExposureCB values.
+        """
+
+        # Calculate exposure values
+        exposures_cb = self.get_exposure_by_method(chain, method='HSExposureCB')
+        exposures_ca = self.get_exposure_by_method(chain, method='HSExposureCA')
+
+        # Join both exposures calculations
+        exposures_both = exposures_ca.join(exposures_cb, how='outer')
+
+        # Get residues IDs belonging to KLIFS binding site
+        klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
+        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=['res_id', 'klifs_id'])
+        klifs_res_ids.set_index('res_id', inplace=True, drop=False)
+
+        # Keep only KLIFS residues
+        # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
+        exposures = klifs_res_ids.join(exposures_both, how='left')
+
+        # Set index (from residue IDs) to KLIFS IDs
+        exposures.set_index('klifs_id', inplace=True, drop=True)
+
+        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
+        exposures['exposure'] = exposures.apply(
+            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
+            axis=1
+        )
+
+        if not verbose:
+            self.features = pd.DataFrame(
+                exposures.exposure,
+                index=exposures.exposure.index,
+                columns=['exposure']
+            )
+        else:
+            self.features = exposures
+
+    @staticmethod
+    def get_exposure_by_method(chain, method='HSExposureCB'):
+        """
+        Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
+
+        Parameters
+        ----------
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        method : str
+            Half sphere exposure method name: HSExposureCA or HSExposureCB.
+
+        References
+        ----------
+        Read on HSExposure module here: https://biopython.org/DIST/docs/api/Bio.PDB.HSExposure-pysrc.html
+        """
+
+        methods = 'HSExposureCB HSExposureCA'.split()
+
+        # Calculate exposure values
+        if method == methods[0]:
+            exposures = HSExposureCB(chain, EXPOSURE_RADIUS)
+        elif method == methods[1]:
+            exposures = HSExposureCA(chain, EXPOSURE_RADIUS)
+        else:
+            raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
+
+        # Define column names
+        up = f'{method[-2:].lower()}_up'
+        down = f'{method[-2:].lower()}_down'
+        angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
+        exposure = f'{method[-2:].lower()}_exposure'
+
+        # Transform into DataFrame
+        exposures = pd.DataFrame(
+            exposures.property_dict,
+            index=[up, down, angle]
+        ).transpose()
+        exposures.index = [i[1][1] for i in exposures.index]
+
+        # Check that exposures are floats (important for subsequent division)
+        if (exposures[up].dtype != 'float64') | (exposures[down].dtype != 'float64'):
+            raise TypeError(f'Wrong dtype, float64 needed!')
+
+        # Calculate exposure value: up / (up + down)
+        exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
+
+        return exposures
+
+
+class PharmacophoreSizeFeatures:
+    """
+    Pharmacophore and size features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
+    residues, as described by SiteAlign (Schalon et al. Proteins. 2008).
+
+    Pharmacophoric features include hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature.
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        6 features (columns) for 85 residues (rows).
+
+    References
+    ----------
+    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
+    """
+
+    def __init__(self):
+
+        self.features = None
+
+    def from_molecule(self, molecule):
+        """
+        Get pharmacophoric and size features for each residues of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Pharmacophoric and size features (columns) for each residue = KLIFS position (rows).
+        """
+
+        feature_types = 'size hbd hba charge aromatic aliphatic'.split()
+
+        feature_matrix = []
+
+        for feature_type in feature_types:
+
+            # Select from DataFrame first row per KLIFS position (index) and residue name
+            residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
+
+            # Report non-standard residues in molecule
+            non_standard_residues = set(residues) - set(STANDARD_AA)
+            if len(non_standard_residues) > 0:
+                logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
+
+            features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
+            features.rename(feature_type, inplace=True)
+
+            feature_matrix.append(features)
+
+        features = pd.concat(feature_matrix, axis=1)
+
+        self.features = features
+
+    @staticmethod
+    def from_residue(residue, feature_type):
+        """
+        Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
+        hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
+        (according to SiteAlign feature encoding).
+
+        Parameters
+        ----------
+        residue : str
+            Three-letter code for residue.
+        feature_type : str
+            Feature type name.
+
+        Returns
+        -------
+        int
+            Residue's size value according to SiteAlign feature encoding.
+        """
+
+        if feature_type not in FEATURE_LOOKUP.keys():
+            raise KeyError(f'Feature {feature_type} does not exist. '
+                           f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
+
+        # Manual addition of modified residue(s)
+        if residue in MODIFIED_AA_CONVERSION.keys():
+            residue = MODIFIED_AA_CONVERSION[residue]
+
+        # Start with a feature of None
+        result = None
+
+        # If residue name is listed in the feature lookup, assign respective feature
+        for feature, residues in FEATURE_LOOKUP[feature_type].items():
+
+            if residue in residues:
+                result = feature
+
+        return result
+
+
+########################################################################################################################
+# Not in use
+########################################################################################################################
+
+class ObsoleteSideChainAngleFeature:
     """
     Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
     Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
@@ -1536,225 +1754,7 @@ class SideChainAngleFeature:
             f.write('\n'.join(lines))
 
 
-class ExposureFeature:
-    """
-    Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
-    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the CA-CB vector
-    divided by the all CA atoms (given a sphere radius).
-
-    Attributes
-    ----------
-    features : pandas.DataFrame
-        1 features (columns) for 85 residues (rows).
-    """
-
-    def __init__(self):
-
-        self.features = None
-
-    def from_molecule(self, molecule, chain, verbose=False):
-        """
-        Get exposure for each residue of a molecule.
-
-        Parameters
-        ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
-        verbose : bool
-            Either return exposure only (default) or additional info on HSExposureCA and HSExposureCB values.
-        """
-
-        # Calculate exposure values
-        exposures_cb = self.get_exposure_by_method(chain, method='HSExposureCB')
-        exposures_ca = self.get_exposure_by_method(chain, method='HSExposureCA')
-
-        # Join both exposures calculations
-        exposures_both = exposures_ca.join(exposures_cb, how='outer')
-
-        # Get residues IDs belonging to KLIFS binding site
-        klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
-        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=['res_id', 'klifs_id'])
-        klifs_res_ids.set_index('res_id', inplace=True, drop=False)
-
-        # Keep only KLIFS residues
-        # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
-        exposures = klifs_res_ids.join(exposures_both, how='left')
-
-        # Set index (from residue IDs) to KLIFS IDs
-        exposures.set_index('klifs_id', inplace=True, drop=True)
-
-        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
-        exposures['exposure'] = exposures.apply(
-            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
-            axis=1
-        )
-
-        if not verbose:
-            self.features = pd.DataFrame(
-                exposures.exposure,
-                index=exposures.exposure.index,
-                columns=['exposure']
-            )
-        else:
-            self.features = exposures
-
-    @staticmethod
-    def get_exposure_by_method(chain, method='HSExposureCB'):
-        """
-        Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
-
-        Parameters
-        ----------
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
-        method : str
-            Half sphere exposure method name: HSExposureCA or HSExposureCB.
-
-        References
-        ----------
-        Read on HSExposure module here: https://biopython.org/DIST/docs/api/Bio.PDB.HSExposure-pysrc.html
-        """
-
-        methods = 'HSExposureCB HSExposureCA'.split()
-
-        # Calculate exposure values
-        if method == methods[0]:
-            exposures = HSExposureCB(chain, EXPOSURE_RADIUS)
-        elif method == methods[1]:
-            exposures = HSExposureCA(chain, EXPOSURE_RADIUS)
-        else:
-            raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
-
-        # Define column names
-        up = f'{method[-2:].lower()}_up'
-        down = f'{method[-2:].lower()}_down'
-        angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
-        exposure = f'{method[-2:].lower()}_exposure'
-
-        # Transform into DataFrame
-        exposures = pd.DataFrame(
-            exposures.property_dict,
-            index=[up, down, angle]
-        ).transpose()
-        exposures.index = [i[1][1] for i in exposures.index]
-
-        # Check that exposures are floats (important for subsequent division)
-        if (exposures[up].dtype != 'float64') | (exposures[down].dtype != 'float64'):
-            raise TypeError(f'Wrong dtype, float64 needed!')
-
-        # Calculate exposure value: up / (up + down)
-        exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
-
-        return exposures
-
-
-class PharmacophoreSizeFeatures:
-    """
-    Pharmacophore and size features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
-    residues, as described by SiteAlign (Schalon et al. Proteins. 2008).
-
-    Pharmacophoric features include hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature.
-
-    Attributes
-    ----------
-    features : pandas.DataFrame
-        6 features (columns) for 85 residues (rows).
-
-    References
-    ----------
-    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
-    Proteins, 2008.
-    """
-
-    def __init__(self):
-
-        self.features = None
-
-    def from_molecule(self, molecule):
-        """
-        Get pharmacophoric and size features for each residues of a molecule.
-
-        Parameters
-        ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Pharmacophoric and size features (columns) for each residue = KLIFS position (rows).
-        """
-
-        feature_types = 'size hbd hba charge aromatic aliphatic'.split()
-
-        feature_matrix = []
-
-        for feature_type in feature_types:
-
-            # Select from DataFrame first row per KLIFS position (index) and residue name
-            residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
-
-            # Report non-standard residues in molecule
-            non_standard_residues = set(residues) - set(STANDARD_AA)
-            if len(non_standard_residues) > 0:
-                logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
-
-            features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
-            features.rename(feature_type, inplace=True)
-
-            feature_matrix.append(features)
-
-        features = pd.concat(feature_matrix, axis=1)
-
-        self.features = features
-
-    @staticmethod
-    def from_residue(residue, feature_type):
-        """
-        Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
-        hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
-        (according to SiteAlign feature encoding).
-
-        Parameters
-        ----------
-        residue : str
-            Three-letter code for residue.
-        feature_type : str
-            Feature type name.
-
-        Returns
-        -------
-        int
-            Residue's size value according to SiteAlign feature encoding.
-        """
-
-        if feature_type not in FEATURE_LOOKUP.keys():
-            raise KeyError(f'Feature {feature_type} does not exist. '
-                           f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
-
-        # Manual addition of modified residue(s)
-        if residue in MODIFIED_AA_CONVERSION.keys():
-            residue = MODIFIED_AA_CONVERSION[residue]
-
-        # Start with a feature of None
-        result = None
-
-        # If residue name is listed in the feature lookup, assign respective feature
-        for feature, residues in FEATURE_LOOKUP[feature_type].items():
-
-            if residue in residues:
-                result = feature
-
-        return result
-
-
-########################################################################################################################
-# Not in use
-########################################################################################################################
-
-class SideChainAngleFeatureMol2:
+class ObsoleteSideChainAngleFeatureMol2:
     """
     Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
     Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
