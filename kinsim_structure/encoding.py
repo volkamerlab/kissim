@@ -433,8 +433,8 @@ class PhysicoChemicalFeatures:
         pharmacophore_size = PharmacophoreSizeFeatures()
         pharmacophore_size.from_molecule(molecule)
 
-        side_chain_angle = SideChainAngleFeature()
-        side_chain_angle.from_molecule(molecule, chain)
+        side_chain_orientation = SideChainOrientationFeature()
+        side_chain_orientation.from_molecule(molecule, chain)
 
         exposure = ExposureFeature()
         exposure.from_molecule(molecule, chain)
@@ -443,11 +443,18 @@ class PhysicoChemicalFeatures:
         physicochemical_features = pd.concat(
             [
                 pharmacophore_size.features,
-                side_chain_angle.features,
+                side_chain_orientation.features,
                 exposure.features
             ],
             axis=1
         )
+
+        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
+        empty_df = pd.DataFrame([], index=range(1, 86))
+        physicochemical_features = pd.concat([empty_df, physicochemical_features], axis=1)
+
+        # Set all None to nan
+        physicochemical_features.fillna(value=pd.np.nan, inplace=True)
 
         self.features = physicochemical_features
 
