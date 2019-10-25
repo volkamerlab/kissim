@@ -513,7 +513,16 @@ class SpatialFeatures:
                 distance.rename(name, inplace=True)
                 distances[f'distance_to_{name}'] = np.round(distance, 2)
 
-        self.features = pd.DataFrame.from_dict(distances)
+        spatial_features = pd.DataFrame.from_dict(distances)
+
+        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
+        empty_df = pd.DataFrame([], index=range(1, 86))
+        spatial_features = pd.concat([empty_df, spatial_features], axis=1)
+
+        # Set all None to nan
+        spatial_features.fillna(value=pd.np.nan, inplace=True)
+
+        self.features = spatial_features
 
     def get_reference_points(self, molecule):
         """
