@@ -220,6 +220,37 @@ def test_physicochemicalfeatures_from_molecule(mol2_filename, pdb_filename, chai
     assert len(features) == 85
 
 
+@pytest.mark.parametrize('mol2_filename', [
+    'ABL1/2g2i_chainA/pocket.mol2'
+])
+def test_spatialfeatures_from_molecule(mol2_filename):
+    """
+    Test length (85 rows for 85 KLIFS residues) and columns names of features DataFrame.
+    Values are tested already in respective feature unit test.
+
+    Parameters
+    ----------
+    mol2_filename : str
+        Path to mol2 file.
+    """
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+
+    spatialfeatures = SpatialFeatures()
+    spatialfeatures.from_molecule(klifs_molecule_loader.molecule)
+    features = spatialfeatures.features
+
+    spatialfeatures_columns = [
+        'distance_to_centroid',
+        'distance_to_hinge_region',
+        'distance_to_dfg_region',
+        'distance_to_front_pocket'
+    ]
+    assert list(features.columns) == spatialfeatures_columns
+    assert len(features) == 85
+
+
 @pytest.mark.parametrize('filename, residue, feature_type, feature', [
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'size', 1),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASN', 'size', 2),
