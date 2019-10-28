@@ -10,6 +10,7 @@ import logging
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
+import nglview as nv
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -432,8 +433,8 @@ class PhysicoChemicalFeatures:
         pharmacophore_size = PharmacophoreSizeFeatures()
         pharmacophore_size.from_molecule(molecule)
 
-        side_chain_angle = SideChainAngleFeature()
-        side_chain_angle.from_molecule(molecule, chain)
+        side_chain_orientation = SideChainOrientationFeature()
+        side_chain_orientation.from_molecule(molecule, chain)
 
         exposure = ExposureFeature()
         exposure.from_molecule(molecule, chain)
@@ -442,11 +443,18 @@ class PhysicoChemicalFeatures:
         physicochemical_features = pd.concat(
             [
                 pharmacophore_size.features,
-                side_chain_angle.features,
+                side_chain_orientation.features,
                 exposure.features
             ],
             axis=1
         )
+
+        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
+        empty_df = pd.DataFrame([], index=range(1, 86))
+        physicochemical_features = pd.concat([empty_df, physicochemical_features], axis=1)
+
+        # Set all None to nan
+        physicochemical_features.fillna(value=pd.np.nan, inplace=True)
 
         self.features = physicochemical_features
 
@@ -505,7 +513,16 @@ class SpatialFeatures:
                 distance.rename(name, inplace=True)
                 distances[f'distance_to_{name}'] = np.round(distance, 2)
 
-        self.features = pd.DataFrame.from_dict(distances)
+        spatial_features = pd.DataFrame.from_dict(distances)
+
+        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
+        empty_df = pd.DataFrame([], index=range(1, 86))
+        spatial_features = pd.concat([empty_df, spatial_features], axis=1)
+
+        # Set all None to nan
+        spatial_features.fillna(value=pd.np.nan, inplace=True)
+
+        self.features = spatial_features
 
     def get_reference_points(self, molecule):
         """
@@ -759,7 +776,660 @@ class SpatialFeatures:
         # PyMOL > save refpoints.png
 
 
-class SideChainAngleFeature:
+class SideChainOrientationFeature:
+    """
+    Side chain orientation for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Side chain orientation of a residue is defined by the vertex angle formed by (i) the residue's CA atom,
+    (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms), whereby
+    the CA atom forms the vertex.
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 feature, i.e. side chain orientation, (column) for 85 residues (rows).
+    features_verbose : pandas.DataFrame
+        Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
+    code : str
+        KLIFS code.
+    vector_pocket_centroid : Bio.PDB.Vector.Vector
+        Vector to pocket centroid.
+    """
+
+    def __init__(self):
+
+        self.features = None
+        self.features_verbose = None
+        self.code = None  # Necessary for cgo generation
+        self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
+
+    def from_molecule(self, molecule, chain):
+        """
+        Get side chain orientation for each residue in a molecule (pocket).
+        Side chain orientation of a residue is defined by the vertex angle formed by (i) the residue's CA atom,
+        (ii) the residue's side chain centroid,  and (iii) the pocket centroid (calculated based on its CA atoms),
+        whereby the CA atom forms the vertex.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        """
+
+        self.code = molecule.code
+
+        # Get pocket residues
+        pocket_residues = self._get_pocket_residues(molecule, chain)
+
+        # Get vectors (for each residue CA atoms, side chain centroid, pocket centroid)
+        pocket_vectors = self._get_pocket_vectors(pocket_residues)
+
+        # Get vertex angles (for each residue, vertex angle between aforementioned points)
+        vertex_angles = self._get_vertex_angles(pocket_vectors)
+
+        # Store vertex angles
+        self.features = vertex_angles
+        # Store vertex angles plus vectors and metadata
+        self.features_verbose = pd.concat([pocket_vectors, vertex_angles], axis=1)
+
+    @staticmethod
+    def _get_pocket_residues(molecule, chain):
+        """
+        Get KLIFS pocket residues from PDB structural data: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue
+        ID, PDB residue ID, and residue name for all pocket residues.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
+            name (columns) for all pocket residues (rows).
+        """
+
+        # Get KLIFS pocket metadata, e.g. PDB residue IDs from mol2 file (DataFrame)
+        pocket_residues = pd.DataFrame(
+            molecule.df.groupby('klifs_id res_id res_name'.split()).groups.keys(),
+            columns='klifs_id res_id res_name'.split()
+
+        )
+        pocket_residues.set_index('klifs_id', drop=False, inplace=True)
+
+        # Select residues from chain based on PDB residue IDs and add to DataFrame
+        pocket_residues['pocket_residues'] = [chain[res_id] for res_id in pocket_residues.res_id]
+
+        return pocket_residues
+
+    def _get_pocket_vectors(self, pocket_residues):
+        """
+        Get vectors to CA, residue side chain centroid, and pocket centroid.
+
+        Parameters
+        ----------
+        pocket_residues : pandas.DataFrame
+            Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
+            name (columns) for all pocket residues (rows).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
+            with metadata on KLIFS residue ID, PDB residue ID, and residue name.
+        """
+
+        # Save here values per residue
+        data = []
+
+        # Calculate pocket centroid
+        if not self.vector_pocket_centroid:
+            self.vector_pocket_centroid = self._get_pocket_centroid(pocket_residues)
+
+        # Calculate CA atom and side chain centroid
+        for residue in pocket_residues.pocket_residues:
+
+            vector_ca = self._get_ca(residue)
+            vector_side_chain_centroid = self._get_side_chain_centroid(residue)
+
+            data.append([vector_ca, vector_side_chain_centroid, self.vector_pocket_centroid])
+
+        data = pd.DataFrame(
+            data,
+            index=pocket_residues.klifs_id,
+            columns='ca side_chain_centroid pocket_centroid'.split()
+        )
+
+        metadata = pocket_residues['klifs_id res_id res_name'.split()]
+
+        if len(metadata) != len(data):
+            raise ValueError(f'DataFrames to be concatenated must be of same length: '
+                             f'Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows.')
+
+        return pd.concat([metadata, data], axis=1)
+
+    @staticmethod
+    def _get_vertex_angles(pocket_vectors):
+        """
+        Get vertex angles for residues' side chain orientations to the molecule (pocket) centroid.
+        Side chain orientation of a residue is defined by the angle formed by (i) the residue's CB atom,
+        (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms),
+        whereby the CA atom forms the vertex.
+
+        Parameters
+        ----------
+        pocket_vectors : pandas.DataFrame
+            Vectors to CA, residue side chain centroid, and pocket centroid for each residue of a molecule, alongside
+            with metadata on KLIFS residue ID, PDB residue ID, and residue name (columns) for 85 pocket residues.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation feature (column) for 85 residues (rows).
+        """
+
+        side_chain_orientation = []
+
+        for index, row in pocket_vectors.iterrows():
+
+            # If all three vectors available, calculate angle - otherwise set angle to None
+
+            if row.ca and row.side_chain_centroid and row.pocket_centroid:
+                # Calculate vertex angle: CA atom is vertex
+                angle = np.degrees(
+                    calc_angle(
+                        row.side_chain_centroid, row.ca, row.pocket_centroid
+                    )
+                )
+                side_chain_orientation.append(angle.round(2))
+            else:
+                side_chain_orientation.append(None)
+
+        # Cast to DataFrame
+        side_chain_orientation = pd.DataFrame(
+            side_chain_orientation,
+            index=pocket_vectors.klifs_id,
+            columns=['sco']
+        )
+
+        return side_chain_orientation
+
+    @staticmethod
+    def _get_ca(residue):
+        """
+        Get residue's CA atom.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Residue's CA vector.
+        """
+
+        atom_names = [atoms.fullname for atoms in residue.get_atoms()]
+
+        # Set CA atom
+        if 'CA' in atom_names:
+            vector_ca = residue['CA'].get_vector()
+        else:
+            vector_ca = None
+
+        return vector_ca
+
+    @staticmethod
+    def _get_side_chain_centroid(residue):
+        """
+        Get residue's side chain centroid.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Residue's side chain centroid.
+        """
+
+        # Select only atoms that are
+        # - not part of the backbone
+        # - not oxygen atoms (OXT) on the terminal carboxyl group
+        # - not H atoms
+
+        selected_atoms = [
+            atom for atom in residue.get_atoms() if
+            (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
+        ]
+
+        # Set side chain centroid
+
+        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
+            return None
+
+        try:  # If standard residue, calculate centroid only if enough side chain atoms available
+            if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
+                return None
+            else:
+                return Vector(center_of_mass(selected_atoms, geometric=True))
+
+        except KeyError:  # If non-standard residue, use whatever side chain atoms available
+            return Vector(center_of_mass(selected_atoms, geometric=True))
+
+    @staticmethod
+    def _get_pocket_centroid(pocket_residues):
+        """
+        Get centroid of pocket CA atoms.
+
+        Parameters
+        ----------
+        pocket_residues : pandas.DataFrame
+            Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
+            name (columns) for all pocket residues (rows).
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Pocket centroid.
+        """
+
+        ca_vectors = []
+
+        for residue in pocket_residues.pocket_residues:
+            try:
+                ca_vectors.append(residue['CA'])
+            except KeyError:
+                pass
+
+        try:
+            return Vector(center_of_mass(ca_vectors, geometric=True))
+        except ValueError:
+            return None
+
+    def save_cgo_side_chain_orientation(self, output_path):
+        """
+        Save CA atom, side chain centroid and pocket centroid as spheres and label CA atom with side chain orientation
+        vertex angle value to PyMol cgo file.
+
+        Parameters
+        ----------
+        output_path : pathlib.Path or str
+            Path to output directory.
+        """
+
+        # Get molecule and molecule code
+        code = split_klifs_code(self.code)
+
+        # Get pocket residues
+        pocket_residues_ids = list(self.features_verbose.res_id)
+
+        # List contains lines for python script
+        lines = [f'from pymol import *', f'import os', f'from pymol.cgo import *\n']
+
+        # Fetch PDB, remove solvent, remove unnecessary chain(s) and residues
+        lines.append(f'cmd.fetch("{code["pdb_id"]}")')
+        lines.append(f'cmd.remove("solvent")')
+        if code["chain"]:
+            lines.append(f'cmd.remove("{code["pdb_id"]} and not chain {code["chain"]}")')
+        lines.append(f'cmd.remove("all and not (resi {"+".join([str(i) for i in pocket_residues_ids])})")')
+        lines.append(f'')
+
+        # Set sphere color and size
+        sphere_colors = {
+            'ca': [0.0, 1.0, 0.0],  # Green
+            'side_chain_centroid': [1.0, 0.0, 0.0],  # Red
+            'pocket_centroid': [0.0, 0.0, 1.0],  # Blue
+        }
+        sphere_size = {
+            'ca': str(0.2),
+            'side_chain_centroid': str(0.2),
+            'pocket_centroid': str(1)
+        }
+
+        # Collect all PyMol objects here (in order to group them after loading them to PyMol)
+        obj_names = []
+        obj_angle_names = []
+
+        for index, row in self.features_verbose.iterrows():
+
+            # Set PyMol object name: residue ID
+            obj_name = f'{row.res_id}'
+            obj_names.append(obj_name)
+
+            if not np.isnan(row.sco):
+
+                # Add angle to CA atom in the form of a label
+                obj_angle_name = f'angle_{row.res_id}'
+                obj_angle_names.append(obj_angle_name)
+
+                lines.append(
+                    f'cmd.pseudoatom(object="angle_{row.res_id}", '
+                    f'pos=[{str(row.ca[0])}, {str(row.ca[1])}, {str(row.ca[2])}], '
+                    f'label={str(round(row.sco, 1))})'
+                )
+
+            vectors = {
+                'ca': row.ca,
+                'side_chain_centroid': row.side_chain_centroid,
+                'pocket_centroid': row.pocket_centroid
+            }
+
+            # Write all spheres for current residue in cgo format
+            lines.append(f'obj_{obj_name} = [')  # Variable cannot start with digit, thus add prefix obj_
+
+            # For each reference point, write sphere color, coordinates and size to file
+            for key, vector in vectors.items():
+
+                if vector:
+                    # Set sphere color
+                    sphere_color = list(sphere_colors[key])
+
+                    # Write sphere a) color and b) coordinates and size to file
+                    lines.extend(
+                        [
+                            f'\tCOLOR, {str(sphere_color[0])}, {str(sphere_color[1])}, {str(sphere_color[2])},',
+                            f'\tSPHERE, {str(vector[0])}, {str(vector[1])}, {str(vector[2])}, {sphere_size[key]},'
+                        ]
+                    )
+
+            # Load the spheres as PyMol object
+            lines.extend(
+                [
+                    f']',
+                    f'cmd.load_cgo(obj_{obj_name}, "{obj_name}")',
+                    ''
+                ]
+
+            )
+        # Group all objects to one group
+        lines.append(f'cmd.group("{self.code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
+
+        cgo_path = Path(output_path) / f'side_chain_orientation_{self.code.split("/")[1]}.py'
+        with open(cgo_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        # In PyMol enter the following to save png
+        # PyMOL > ray 900, 900
+        # PyMOL > save refpoints.png
+
+    def show_in_nglviewer(self):
+
+        # Get molecule and molecule code
+        code = split_klifs_code(self.code)
+
+        pdb_id = code['pdb_id']
+        chain = code['chain']
+
+        viewer = nv.show_pdbid(pdb_id, default=False)
+        viewer.clear()
+        viewer.add_cartoon(selection=f':{chain}', assembly='AU')
+        viewer.center(selection=f':{chain}')
+
+        # Representation parameters
+        sphere_radius = {
+            'ca': 0.3,
+            'side_chain_centroid': 0.3,
+            'pocket_centroid': 1
+        }
+
+        colors = {
+            'ca': [0, 1, 0],
+            'side_chain_centroid': [1, 0, 0],
+            'pocket_centroid': [0, 0, 1]
+        }
+
+        # Show side chain angle feature per residue
+        for index, row in self.features_verbose.iterrows():
+
+            res_id = row.res_id
+
+            viewer.add_representation(repr_type='line', selection=f'{res_id}:{chain}')
+            viewer.add_label(selection=f'{res_id}:{chain}.CA')  # TODO: Add angles as label here
+
+            if row.ca:
+                ca = list(row.ca.get_array())
+                viewer.shape.add_sphere(ca, colors['ca'], sphere_radius['ca'])
+
+            if row.side_chain_centroid:
+                side_chain_centroid = list(row.side_chain_centroid.get_array())
+                viewer.shape.add_sphere(side_chain_centroid, colors['side_chain_centroid'], sphere_radius['side_chain_centroid'])
+
+            if row.pocket_centroid:
+                pocket_centroid = list(row.pocket_centroid.get_array())
+                viewer.shape.add_sphere(pocket_centroid, colors['pocket_centroid'], sphere_radius['pocket_centroid'])
+
+        viewer.gui_style = 'ngl'
+
+        return viewer
+
+
+class ExposureFeature:
+    """
+    Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the CA-CB vector
+    divided by the all CA atoms (given a sphere radius).
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        1 features (columns) for 85 residues (rows).
+    """
+
+    def __init__(self):
+
+        self.features = None
+
+    def from_molecule(self, molecule, chain, verbose=False):
+        """
+        Get exposure for each residue of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        verbose : bool
+            Either return exposure only (default) or additional info on HSExposureCA and HSExposureCB values.
+        """
+
+        # Calculate exposure values
+        exposures_cb = self.get_exposure_by_method(chain, method='HSExposureCB')
+        exposures_ca = self.get_exposure_by_method(chain, method='HSExposureCA')
+
+        # Join both exposures calculations
+        exposures_both = exposures_ca.join(exposures_cb, how='outer')
+
+        # Get residues IDs belonging to KLIFS binding site
+        klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
+        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=['res_id', 'klifs_id'])
+        klifs_res_ids.set_index('res_id', inplace=True, drop=False)
+
+        # Keep only KLIFS residues
+        # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
+        exposures = klifs_res_ids.join(exposures_both, how='left')
+
+        # Set index (from residue IDs) to KLIFS IDs
+        exposures.set_index('klifs_id', inplace=True, drop=True)
+
+        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
+        exposures['exposure'] = exposures.apply(
+            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
+            axis=1
+        )
+
+        if not verbose:
+            self.features = pd.DataFrame(
+                exposures.exposure,
+                index=exposures.exposure.index,
+                columns=['exposure']
+            )
+        else:
+            self.features = exposures
+
+    @staticmethod
+    def get_exposure_by_method(chain, method='HSExposureCB'):
+        """
+        Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
+
+        Parameters
+        ----------
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        method : str
+            Half sphere exposure method name: HSExposureCA or HSExposureCB.
+
+        References
+        ----------
+        Read on HSExposure module here: https://biopython.org/DIST/docs/api/Bio.PDB.HSExposure-pysrc.html
+        """
+
+        methods = 'HSExposureCB HSExposureCA'.split()
+
+        # Calculate exposure values
+        if method == methods[0]:
+            exposures = HSExposureCB(chain, EXPOSURE_RADIUS)
+        elif method == methods[1]:
+            exposures = HSExposureCA(chain, EXPOSURE_RADIUS)
+        else:
+            raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
+
+        # Define column names
+        up = f'{method[-2:].lower()}_up'
+        down = f'{method[-2:].lower()}_down'
+        angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
+        exposure = f'{method[-2:].lower()}_exposure'
+
+        # Transform into DataFrame
+        exposures = pd.DataFrame(
+            exposures.property_dict,
+            index=[up, down, angle]
+        ).transpose()
+        exposures.index = [i[1][1] for i in exposures.index]
+
+        # Check that exposures are floats (important for subsequent division)
+        if (exposures[up].dtype != 'float64') | (exposures[down].dtype != 'float64'):
+            raise TypeError(f'Wrong dtype, float64 needed!')
+
+        # Calculate exposure value: up / (up + down)
+        exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
+
+        return exposures
+
+
+class PharmacophoreSizeFeatures:
+    """
+    Pharmacophore and size features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
+    residues, as described by SiteAlign (Schalon et al. Proteins. 2008).
+
+    Pharmacophoric features include hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature.
+
+    Attributes
+    ----------
+    features : pandas.DataFrame
+        6 features (columns) for 85 residues (rows).
+
+    References
+    ----------
+    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
+    Proteins, 2008.
+    """
+
+    def __init__(self):
+
+        self.features = None
+
+    def from_molecule(self, molecule):
+        """
+        Get pharmacophoric and size features for each residues of a molecule.
+
+        Parameters
+        ----------
+        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
+            Content of mol2 or pdb file as BioPandas object.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Pharmacophoric and size features (columns) for each residue = KLIFS position (rows).
+        """
+
+        feature_types = 'size hbd hba charge aromatic aliphatic'.split()
+
+        feature_matrix = []
+
+        for feature_type in feature_types:
+
+            # Select from DataFrame first row per KLIFS position (index) and residue name
+            residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
+
+            # Report non-standard residues in molecule
+            non_standard_residues = set(residues) - set(STANDARD_AA)
+            if len(non_standard_residues) > 0:
+                logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
+
+            features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
+            features.rename(feature_type, inplace=True)
+
+            feature_matrix.append(features)
+
+        features = pd.concat(feature_matrix, axis=1)
+
+        self.features = features
+
+    @staticmethod
+    def from_residue(residue, feature_type):
+        """
+        Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
+        hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
+        (according to SiteAlign feature encoding).
+
+        Parameters
+        ----------
+        residue : str
+            Three-letter code for residue.
+        feature_type : str
+            Feature type name.
+
+        Returns
+        -------
+        int
+            Residue's size value according to SiteAlign feature encoding.
+        """
+
+        if feature_type not in FEATURE_LOOKUP.keys():
+            raise KeyError(f'Feature {feature_type} does not exist. '
+                           f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
+
+        # Manual addition of modified residue(s)
+        if residue in MODIFIED_AA_CONVERSION.keys():
+            residue = MODIFIED_AA_CONVERSION[residue]
+
+        # Start with a feature of None
+        result = None
+
+        # If residue name is listed in the feature lookup, assign respective feature
+        for feature, residues in FEATURE_LOOKUP[feature_type].items():
+
+            if residue in residues:
+                result = feature
+
+        return result
+
+
+########################################################################################################################
+# Not in use
+########################################################################################################################
+
+class ObsoleteSideChainAngleFeature:
     """
     Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
     Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
@@ -1100,225 +1770,7 @@ class SideChainAngleFeature:
             f.write('\n'.join(lines))
 
 
-class ExposureFeature:
-    """
-    Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
-    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the CA-CB vector
-    divided by the all CA atoms (given a sphere radius).
-
-    Attributes
-    ----------
-    features : pandas.DataFrame
-        1 features (columns) for 85 residues (rows).
-    """
-
-    def __init__(self):
-
-        self.features = None
-
-    def from_molecule(self, molecule, chain, verbose=False):
-        """
-        Get exposure for each residue of a molecule.
-
-        Parameters
-        ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
-        verbose : bool
-            Either return exposure only (default) or additional info on HSExposureCA and HSExposureCB values.
-        """
-
-        # Calculate exposure values
-        exposures_cb = self.get_exposure_by_method(chain, method='HSExposureCB')
-        exposures_ca = self.get_exposure_by_method(chain, method='HSExposureCA')
-
-        # Join both exposures calculations
-        exposures_both = exposures_ca.join(exposures_cb, how='outer')
-
-        # Get residues IDs belonging to KLIFS binding site
-        klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
-        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=['res_id', 'klifs_id'])
-        klifs_res_ids.set_index('res_id', inplace=True, drop=False)
-
-        # Keep only KLIFS residues
-        # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
-        exposures = klifs_res_ids.join(exposures_both, how='left')
-
-        # Set index (from residue IDs) to KLIFS IDs
-        exposures.set_index('klifs_id', inplace=True, drop=True)
-
-        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
-        exposures['exposure'] = exposures.apply(
-            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
-            axis=1
-        )
-
-        if not verbose:
-            self.features = pd.DataFrame(
-                exposures.exposure,
-                index=exposures.exposure.index,
-                columns=['exposure']
-            )
-        else:
-            self.features = exposures
-
-    @staticmethod
-    def get_exposure_by_method(chain, method='HSExposureCB'):
-        """
-        Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
-
-        Parameters
-        ----------
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
-        method : str
-            Half sphere exposure method name: HSExposureCA or HSExposureCB.
-
-        References
-        ----------
-        Read on HSExposure module here: https://biopython.org/DIST/docs/api/Bio.PDB.HSExposure-pysrc.html
-        """
-
-        methods = 'HSExposureCB HSExposureCA'.split()
-
-        # Calculate exposure values
-        if method == methods[0]:
-            exposures = HSExposureCB(chain, EXPOSURE_RADIUS)
-        elif method == methods[1]:
-            exposures = HSExposureCA(chain, EXPOSURE_RADIUS)
-        else:
-            raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
-
-        # Define column names
-        up = f'{method[-2:].lower()}_up'
-        down = f'{method[-2:].lower()}_down'
-        angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
-        exposure = f'{method[-2:].lower()}_exposure'
-
-        # Transform into DataFrame
-        exposures = pd.DataFrame(
-            exposures.property_dict,
-            index=[up, down, angle]
-        ).transpose()
-        exposures.index = [i[1][1] for i in exposures.index]
-
-        # Check that exposures are floats (important for subsequent division)
-        if (exposures[up].dtype != 'float64') | (exposures[down].dtype != 'float64'):
-            raise TypeError(f'Wrong dtype, float64 needed!')
-
-        # Calculate exposure value: up / (up + down)
-        exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
-
-        return exposures
-
-
-class PharmacophoreSizeFeatures:
-    """
-    Pharmacophore and size features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
-    residues, as described by SiteAlign (Schalon et al. Proteins. 2008).
-
-    Pharmacophoric features include hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature.
-
-    Attributes
-    ----------
-    features : pandas.DataFrame
-        6 features (columns) for 85 residues (rows).
-
-    References
-    ----------
-    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand‐binding sites",
-    Proteins, 2008.
-    """
-
-    def __init__(self):
-
-        self.features = None
-
-    def from_molecule(self, molecule):
-        """
-        Get pharmacophoric and size features for each residues of a molecule.
-
-        Parameters
-        ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Pharmacophoric and size features (columns) for each residue = KLIFS position (rows).
-        """
-
-        feature_types = 'size hbd hba charge aromatic aliphatic'.split()
-
-        feature_matrix = []
-
-        for feature_type in feature_types:
-
-            # Select from DataFrame first row per KLIFS position (index) and residue name
-            residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
-
-            # Report non-standard residues in molecule
-            non_standard_residues = set(residues) - set(STANDARD_AA)
-            if len(non_standard_residues) > 0:
-                logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
-
-            features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
-            features.rename(feature_type, inplace=True)
-
-            feature_matrix.append(features)
-
-        features = pd.concat(feature_matrix, axis=1)
-
-        self.features = features
-
-    @staticmethod
-    def from_residue(residue, feature_type):
-        """
-        Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
-        hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
-        (according to SiteAlign feature encoding).
-
-        Parameters
-        ----------
-        residue : str
-            Three-letter code for residue.
-        feature_type : str
-            Feature type name.
-
-        Returns
-        -------
-        int
-            Residue's size value according to SiteAlign feature encoding.
-        """
-
-        if feature_type not in FEATURE_LOOKUP.keys():
-            raise KeyError(f'Feature {feature_type} does not exist. '
-                           f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
-
-        # Manual addition of modified residue(s)
-        if residue in MODIFIED_AA_CONVERSION.keys():
-            residue = MODIFIED_AA_CONVERSION[residue]
-
-        # Start with a feature of None
-        result = None
-
-        # If residue name is listed in the feature lookup, assign respective feature
-        for feature, residues in FEATURE_LOOKUP[feature_type].items():
-
-            if residue in residues:
-                result = feature
-
-        return result
-
-
-########################################################################################################################
-# Not in use
-########################################################################################################################
-
-class SideChainAngleFeatureMol2:
+class ObsoleteSideChainAngleFeatureMol2:
     """
     Side chain angles for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
     Side chain angle of a residue is defined by the angle between the molecule's CB-CA and CB-centroid vectors.
