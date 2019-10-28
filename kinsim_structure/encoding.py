@@ -151,6 +151,17 @@ class Fingerprint:
     Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined
     kinase binding site of 85 pre-aligned residues.
 
+    Attributes
+    ----------
+    molecule_code : str
+        Molecule code as defined by KLIFS in mol2 file.
+    fingerprint_type1 : pandas.DataFrame
+        Fingerprint type 1.
+    fingerprint_type2 : dict of pandas.DataFrame
+        Fingerprint type 2.
+
+    Notes
+    -----
     Physicochemical features:
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
@@ -173,15 +184,6 @@ class Fingerprint:
            = 680 bit fingerprint
       (ii) 12 spatial features, i.e. first three moments for each of the 4 distance distributions over 85 residues
            = 12 bit fingerprint
-
-    Attributes
-    ----------
-    molecule_code : str
-        Molecule code as defined by KLIFS in mol2 file.
-    fingerprint_type1 : pandas.DataFrame
-        Fingerprint type 1.
-    fingerprint_type2 : dict of pandas.DataFrame
-        Fingerprint type 2.
     """
 
     def __init__(self):
