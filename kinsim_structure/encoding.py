@@ -279,78 +279,61 @@ class Fingerprint:
         spatial_features = SpatialFeatures()
         spatial_features.from_molecule(molecule)
 
-        self.fingerprint_type1 = self._get_fingerprint_type1(physicochemical_features, spatial_features)
-        self.fingerprint_type2 = self._get_fingerprint_type2()
-        self.fingerprint_type1_normalized = self._normalize_fingerprint_type1()
-        self.fingerprint_type2_normalized = self._normalize_fingerprint_type2()
+        self.fingerprint['physicochemical'] = physicochemical_features.features
+        self.fingerprint['distances'] = spatial_features.features
+        self.fingerprint['moments'] = self._calc_moments(spatial_features.features)
 
-    @staticmethod
-    def _get_fingerprint_type1(physicochemical_features, spatial_features):
+        self.fingerprint_normalized['physicochemical'] = self._normalize_physicochemical_bits()
+        self.fingerprint_normalized['distances'] = self._normalize_distances_bits()
+        self.fingerprint_normalized['moments'] = self._normalize_moments_bits()
 
-        features = pd.concat(
-            [
-                physicochemical_features.features[FEATURE_NAMES[:8]],
-                spatial_features.features[FEATURE_NAMES[8:]]
-            ],
-            axis=1
-        ).copy()
+    def _get_fingerprint(self, fingerprint_type, normalized=True):
+        """
+        Get fingerprint containing both physicochemical and spatial bits (available types: distances or moments).
 
-        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
-        empty_df = pd.DataFrame([], index=range(1, 86))
-        features = pd.concat([empty_df, features], axis=1)
+        Parameters
+        ----------
+        fingerprint_type : str
+            Type of fingerprint, i.e. fingerprint with physicochemical and either distances or moments bits
+            (physicochemical + distances or physicochemical + moments).
+        normalized : bool
+            Normalized or non-normalized form of fingerprint (default: normalized).
 
-        # Set all None to nan
-        features.fillna(value=pd.np.nan, inplace=True)
+        Returns
+        -------
+        dict of pandas.DataFrames
+            Fingerprint containing physicochemical and spatial bits.
+        """
 
-        return features
+        fingerprint_types = 'physicochemical_distances physicochemical_moments'.split()
 
-    def _get_fingerprint_type2(self):
+        if fingerprint_type == 'physicochemical_distances':
 
-        if self.fingerprint_type1 is not None:
+            if normalized:
+                return {
+                    'physicochemical': self.physicochemical_normalized,
+                    'distances': self.distances_normalized
+                }
+            else:
+                return {
+                    'physicochemical': self.physicochemical,
+                    'distances': self.distances
+                }
 
-            physicochemical_bits = self.fingerprint_type1[FEATURE_NAMES[:8]]
-            spatial_bits = self.fingerprint_type1[FEATURE_NAMES[8:]]
+        elif fingerprint_type == 'physicochemical_moments':
 
-            moments = self._calc_moments(spatial_bits)
-
-            return {
-                'physchem': physicochemical_bits,
-                'moments': moments
-            }
-
-    def _normalize_fingerprint_type1(self):
-
-        if self.fingerprint_type1 is not None:
-
-            normalized_physchem = self._normalize_physicochemical_bits()
-            normalized_distances = self._normalize_distances_bits()
-
-            normalized = pd.concat(
-                [normalized_physchem, normalized_distances],
-                axis=1
-            )
-
-            return normalized
-
+            if normalized:
+                return {
+                    'physicochemical': self.physicochemical_normalized,
+                    'moments': self.moments_normalized
+                }
+            else:
+                return {
+                    'physicochemical': self.physicochemical,
+                    'moments': self.moments
+                }
         else:
-            return None
-
-    def _normalize_fingerprint_type2(self):
-
-        if self.fingerprint_type2 is not None:
-
-            normalized_physchem = self.fingerprint_type1_normalized[FEATURE_NAMES[:8]]
-            normalized_moments = self.fingerprint_type2['moments']  # TODO no normalization is done here, change this?
-
-            normalized = {
-                'physchem': normalized_physchem,
-                'moments': normalized_moments
-            }
-
-            return normalized
-
-        else:
-            return None
+            raise ValueError(f'Fingerprint type unknown. Please choose from {", ".join(fingerprint_types)}.')
 
     def _normalize_physicochemical_bits(self):
 
