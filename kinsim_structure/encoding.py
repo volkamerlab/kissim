@@ -200,6 +200,47 @@ class Fingerprint:
             'distances': None,
             'moments': None
         }
+
+    @property
+    def physicochemical(self):
+        return self.fingerprint['physicochemical']
+
+    @property
+    def distances(self):
+        return self.fingerprint['distances']
+
+    @property
+    def moments(self):
+        return self.fingerprint['moments']
+
+    @property
+    def physicochemical_distances(self):
+        return self._get_fingerprint('physicochemical_distances', normalized=False)
+
+    @property
+    def physicochemical_moments(self):
+        return self._get_fingerprint('physicochemical_moments', normalized=False)
+
+    @property
+    def physicochemical_normalized(self):
+        return self.fingerprint_normalized['physicochemical']
+
+    @property
+    def distances_normalized(self):
+        return self.fingerprint_normalized['distances']
+
+    @property
+    def moments_normalized(self):
+        return self.fingerprint_normalized['moments']
+
+    @property
+    def physicochemical_distances_normalized(self):
+        return self._get_fingerprint('physicochemical_distances', normalized=True)
+
+    @property
+    def physicochemical_moments_normalized(self):
+        return self._get_fingerprint('physicochemical_moments', normalized=True)
+
     def from_metadata_entry(self, klifs_metadata_entry):
         """
         Get kinase fingerprint from KLIFS metadata entry.
