@@ -337,56 +337,70 @@ class Fingerprint:
 
     def _normalize_physicochemical_bits(self):
 
-        # Make a copy of DataFrame
-        normalized = self.fingerprint_type1[FEATURE_NAMES[:8]].copy()
+        if self.physicochemical:
 
-        # Normalize size
-        normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
+            # Make a copy of DataFrame
+            normalized = self.physicochemical.copy()
 
-        # Normalize pharmacophoric features
-        normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
-        normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
-        normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
-        normalized['aromatic'] = normalized['hba'].apply(lambda x: x / 1.0)
-        normalized['aliphatic'] = normalized['hba'].apply(lambda x: x / 1.0)
+            # Normalize size
+            normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
 
-        # Normalize side chain angle
-        normalized['sca'] = normalized['sca'].apply(lambda x: x / 180.0)
+            # Normalize pharmacophoric features
+            normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
+            normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
+            normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
+            normalized['aromatic'] = normalized['hba'].apply(lambda x: x / 1.0)
+            normalized['aliphatic'] = normalized['hba'].apply(lambda x: x / 1.0)
 
-        # Normalize exposure
-        normalized['exposure'] = normalized['exposure'].apply(lambda x: x / 1)
+            # Normalize side chain angle
+            normalized['sca'] = normalized['sca'].apply(lambda x: x / 180.0)
 
-        return normalized
+            # Normalize exposure
+            normalized['exposure'] = normalized['exposure'].apply(lambda x: x / 1)
+
+            return normalized
+
+        else:
+            return None
 
     def _normalize_distances_bits(self):
 
-        # Make a copy of DataFrame
-        normalized = self.fingerprint_type1[FEATURE_NAMES[8:]].copy()
+        if self.distances:
 
-        # Normalize distances
-        distance_normalizer = 35.0
+            # Make a copy of DataFrame
+            normalized = self.distances.copy()
 
-        normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-        normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-        normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-        normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
+            # Normalize distances
+            distance_normalizer = 35.0  # TODO Add updated min/max here
 
-        if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
-            raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')
+            normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
+                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+            )
+            normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
+                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+            )
+            normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
+                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+            )
+            normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
+                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+            )
 
-        return normalized
+            if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
+                raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')  # TODO Revise
+
+            return normalized
+
+        else:
+            return None
 
     def _normalize_moments_bits(self):
 
-        return self.fingerprint_type2['moments']
+        if self.moments:
+            return self.moments  # TODO Add actual code here
+
+        else:
+            return None
 
     @staticmethod
     def _calc_moments(distances):
