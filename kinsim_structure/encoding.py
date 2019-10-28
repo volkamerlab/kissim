@@ -189,11 +189,17 @@ class Fingerprint:
     def __init__(self):
 
         self.molecule_code = None
-        self.fingerprint_type1 = None
-        self.fingerprint_type2 = None
-        self.fingerprint_type1_normalized = None
-        self.fingerprint_type1_normalized = None
 
+        self.fingerprint = {
+            'physicochemical': None,
+            'distances': None,
+            'moments': None
+        }
+        self.fingerprint_normalized = {
+            'physicochemical': None,
+            'distances': None,
+            'moments': None
+        }
     def from_metadata_entry(self, klifs_metadata_entry):
         """
         Get kinase fingerprint from KLIFS metadata entry.
