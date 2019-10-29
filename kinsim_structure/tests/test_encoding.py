@@ -195,6 +195,65 @@ def test_normalize_fingerprint_type2(fingerprint_type2, normalized_fingerprint_t
     pass
 
 
+@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
+    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
+])
+def test_fingerprint_from_molecule(mol2_filename, pdb_filename, chain_id):
+    """
+    Test if Fingerprint class attributes (accessed via property function) have correct DataFrame shape, column and
+    index names.
+
+    Parameters
+    ----------
+    mol2_filename : str
+        Path to mol2 file.
+    pdb_filename : str
+        Path to cif file.
+    chain_id : str
+        Chain ID.
+    """
+
+    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+    fingerprint = Fingerprint()
+    fingerprint.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+
+    # Non-normalized
+    assert fingerprint.physicochemical.shape == (85, 8)
+    assert list(fingerprint.physicochemical.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.physicochemical.columns) == FEATURE_NAMES['physicochemical']
+
+    assert fingerprint.distances.shape == (85, 4)
+    assert list(fingerprint.distances.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.distances.columns) == FEATURE_NAMES['distances']
+
+    assert fingerprint.moments.shape == (4, 3)
+    assert list(fingerprint.moments.index) == FEATURE_NAMES['distances']
+    assert list(fingerprint.moments.columns) == FEATURE_NAMES['moments']
+
+    assert list(fingerprint.physicochemical_distances.keys()) == 'physicochemical distances'.split()
+    assert list(fingerprint.physicochemical_moments.keys()) == 'physicochemical moments'.split()
+
+    # Normalized
+    assert fingerprint.physicochemical_normalized.shape == (85, 8)
+    assert list(fingerprint.physicochemical_normalized.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.physicochemical_normalized.columns) == FEATURE_NAMES['physicochemical']
+
+    assert fingerprint.distances.shape == (85, 4)
+    assert list(fingerprint.distances_normalized.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.distances_normalized.columns) == FEATURE_NAMES['distances']
+
+    assert fingerprint.moments.shape == (4, 3)
+    assert list(fingerprint.moments_normalized.index) == FEATURE_NAMES['distances']
+    assert list(fingerprint.moments_normalized.columns) == FEATURE_NAMES['moments']
+
+    assert list(fingerprint.physicochemical_distances_normalized.keys()) == 'physicochemical distances'.split()
+    assert list(fingerprint.physicochemical_moments_normalized.keys()) == 'physicochemical moments'.split()
+
 
 @pytest.mark.parametrize('distances, moments', [
     (
