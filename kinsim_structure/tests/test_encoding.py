@@ -10,11 +10,18 @@ import pytest
 
 from Bio.PDB import Vector
 
-from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
+from kinsim_structure.encoding import Fingerprint
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PhysicoChemicalFeatures, SpatialFeatures
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SideChainOrientationFeature
 from kinsim_structure.encoding import ObsoleteSideChainAngleFeature
+
+FEATURE_NAMES = {
+    'physicochemical': 'size hbd hba charge aromatic aliphatic sco exposure'.split(),
+    'distances': 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split(),
+    'moments': 'moment1 moment2 moment3'.split(),
+    'klifs_ids': list(range(1, 86))
+}
 
 
 @pytest.mark.parametrize('fingerprint_type1, normalized_fingerprint_type1', [
