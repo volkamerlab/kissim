@@ -333,6 +333,14 @@ class Fingerprint:
             raise ValueError(f'Fingerprint type unknown. Please choose from {", ".join(fingerprint_types)}.')
 
     def _normalize_physicochemical_bits(self):
+        """
+        Normalize physicochemical bits.
+
+        Returns
+        -------
+        pandas.DataFrame
+            8 physicochemical features (columns) for 85 residues (rows).
+        """
 
         if self.physicochemical is not None:
 
