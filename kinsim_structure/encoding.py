@@ -28,6 +28,19 @@ ANCHOR_RESIDUES = {
     'front_pocket': [6, 48, 75]
 }  # Are the same as in Eva's implementation
 
+DISTANCE_CUTOFF = {  # 99% percentile of all distances
+    'distance_to_centroid': 21.38,
+    'distance_to_hinge_region': 23.07,
+    'distance_to_dfg_region': 26.69,
+    'distance_to_front_pocket': 23.55
+}
+
+MOMENTS_CUTOFF = {  # 99% percentile of all moments
+    'moment1': 0,
+    'moment2': 0,
+    'moment3': 0
+}
+
 # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
 HINGE_KLIFS_IDS = [46, 47, 48]
 DFG_KLIFS_IDS = [81, 82, 83]
