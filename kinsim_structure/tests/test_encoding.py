@@ -30,13 +30,13 @@ FEATURE_NAMES = {
             [
                 [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35]
             ],
-            columns=FEATURE_NAMES
+            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
         ),
         pd.DataFrame(
             [
                 [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             ],
-            columns=FEATURE_NAMES
+            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
         )
     ),
     (
@@ -44,13 +44,13 @@ FEATURE_NAMES = {
             [
                 [np.nan]*12
             ],
-            columns=FEATURE_NAMES
+            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
         ),
         pd.DataFrame(
             [
                 [np.nan]*12
             ],
-            columns=FEATURE_NAMES
+            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
         )
     ),
     (
@@ -58,13 +58,13 @@ FEATURE_NAMES = {
                 [
                     [3, 3, 2, 1, 1, 1, 180, 1, 36, 36, 36, 36]
                 ],
-                columns=FEATURE_NAMES
+                columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
             ),
             pd.DataFrame(
                 [
                     [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
                 ],
-                columns=FEATURE_NAMES
+                columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
             )
     ),
 ])
@@ -99,7 +99,7 @@ def test_normalize_fingerprint_type1(fingerprint_type1, normalized_fingerprint_t
                 [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35],
 
             ],
-            columns=FEATURE_NAMES
+            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
         ),
         {
                 'physchem': pd.DataFrame(
@@ -110,7 +110,7 @@ def test_normalize_fingerprint_type1(fingerprint_type1, normalized_fingerprint_t
                         [3, 3, 2, 1, 1, 1, 180, 1],
                         [3, 3, 2, 1, 1, 1, 180, 1]
                     ],
-                    columns=FEATURE_NAMES[:8]
+                    columns=FEATURE_NAMES['physicochemical']
                 ),
                 'moments': pd.DataFrame(
                     [
@@ -118,8 +118,8 @@ def test_normalize_fingerprint_type1(fingerprint_type1, normalized_fingerprint_t
                         [0.0, 0.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0]
                     ],
-                    columns=FEATURE_NAMES[8:],
-                    index='moment1 moment2 moment3'.split()
+                    columns=FEATURE_NAMES['distances'],
+                    index=FEATURE_NAMES['moments']
                 ).transpose()
         }
     )
@@ -156,7 +156,7 @@ def test_get_fingerprint_type2(fingerprint_type1, fingerprint_type2):
                         [3, 3, 2, 1, 1, 1, 180, 1],
                         [3, 3, 2, 1, 1, 1, 180, 1]
                     ],
-                    columns=FEATURE_NAMES[:8]
+                    columns=FEATURE_NAMES['physicochemical']
                 ),
                 'moments': pd.DataFrame(
                     [
@@ -164,8 +164,8 @@ def test_get_fingerprint_type2(fingerprint_type1, fingerprint_type2):
                         [0.0, 0.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0]
                     ],
-                    columns=FEATURE_NAMES[8:],
-                    index='moment1 moment2 moment3'.split()
+                    columns=FEATURE_NAMES['distances'],
+                    index=FEATURE_NAMES['moments']
                 ).transpose()
         },
         {
@@ -177,7 +177,7 @@ def test_get_fingerprint_type2(fingerprint_type1, fingerprint_type2):
                         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
                         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
                     ],
-                    columns=FEATURE_NAMES[:8]
+                    columns=FEATURE_NAMES['physicochemical']
                 ),
                 'moments': pd.DataFrame(
                     [
@@ -185,8 +185,8 @@ def test_get_fingerprint_type2(fingerprint_type1, fingerprint_type2):
                         [0.0, 0.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0]
                     ],
-                    columns=FEATURE_NAMES[8:],
-                    index='moment1 moment2 moment3'.split()
+                    columns=FEATURE_NAMES['distances'],
+                    index=FEATURE_NAMES['moments']
                 ).transpose()
         }
     )
