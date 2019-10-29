@@ -406,14 +406,15 @@ class Fingerprint:
     def _calc_moments(distances):
         """
         Calculate first, second, and third moment (mean, standard deviation, and skewness) for a distance distribution.
+
         Parameters
         ----------
         distances : pandas.DataFrame
-            Distance distribution, i.e. distances from reference point to all representatives (points)
+            Distance distribution, i.e. distances (rows) from reference point (columns) to all representatives/points.
         Returns
         -------
         pandas.DataFrame
-            First, second, and third moment of distance distribution.
+            First, second, and third moment (column) of distance distribution (row).
         """
 
         # Get first, second, and third moment (mean, standard deviation, and skewness) for a distance distribution
