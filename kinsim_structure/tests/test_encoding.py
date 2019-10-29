@@ -24,68 +24,141 @@ FEATURE_NAMES = {
 }
 
 
-@pytest.mark.parametrize('fingerprint_type1, normalized_fingerprint_type1', [
+@pytest.mark.parametrize('physicochemical, physicochemical_normalized', [
     (
         pd.DataFrame(
             [
-                [3, 3, 2, 1, 1, 1, 180, 1, 35, 35, 35, 35]
+                [3, 3, 2, 1, 1, 1, 180, 1]
             ],
-            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
+            columns=FEATURE_NAMES['physicochemical']
         ),
         pd.DataFrame(
             [
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             ],
-            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
+            columns=FEATURE_NAMES['physicochemical']
         )
     ),
     (
         pd.DataFrame(
             [
-                [np.nan]*12
+                [3, 3, 2, 1, 1, 1, 180, 1]
             ],
-            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
+            columns=FEATURE_NAMES['physicochemical']
         ),
         pd.DataFrame(
             [
-                [np.nan]*12
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             ],
-            columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
+            columns=FEATURE_NAMES['physicochemical']
         )
     ),
     (
-            pd.DataFrame(
-                [
-                    [3, 3, 2, 1, 1, 1, 180, 1, 36, 36, 36, 36]
-                ],
-                columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
-            ),
-            pd.DataFrame(
-                [
-                    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-                ],
-                columns=FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances']
-            )
-    ),
+        pd.DataFrame(
+            [
+                [np.nan] * 8
+            ],
+            columns=FEATURE_NAMES['physicochemical']
+        ),
+        pd.DataFrame(
+            [
+                [np.nan] * 8
+            ],
+            columns=FEATURE_NAMES['physicochemical']
+        )
+    )
 ])
-def test_normalize_fingerprint_type1(fingerprint_type1, normalized_fingerprint_type1):
+def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochemical_normalized):
     """
-    Test normalization of fingerprint type 1 (physicochemical and distance bits).
+    Test normalization of physicochemical bits.
 
     Parameters
     ----------
-    fingerprint : pandas.DataFrame
-        Fingerprint.
-    normalized_fingerprint : pandas.DataFrame
-        Normalized fingerprint.
+    physicochemical : pandas.DataFrame
+        Physicochemical bits.
+    physicochemical_normalized : pandas.DataFrame
+        Normalized physicochemical bits.
     """
 
-    # Set fingerprint
-    fp = Fingerprint()
-    fp.molecule_code = 'molecule'
-    fp.fingerprint_type1 = fingerprint_type1
+    fingerprint = Fingerprint()
+    fingerprint.molecule_code = 'molecule'
+    fingerprint.fingerprint['physicochemical'] = physicochemical
 
-    assert fp._normalize_fingerprint_type1().equals(normalized_fingerprint_type1)
+    physicochemical_normalized_calculated = fingerprint._normalize_physicochemical_bits()
+
+    if np.isnan(physicochemical.iloc[0, 0]):
+        assert np.isnan(physicochemical_normalized_calculated).all().all() and np.isnan(physicochemical_normalized).all().all()
+    else:
+        assert np.isclose(physicochemical_normalized_calculated, physicochemical_normalized, rtol=1e-02).all()
+
+
+@pytest.mark.parametrize('distances, distances_normalized', [
+    (
+        pd.DataFrame(
+            [
+                [35, 35, 35, 35]
+            ],
+            columns=FEATURE_NAMES['distances']
+        ),
+        pd.DataFrame(
+            [
+                [1.0, 1.0, 1.0, 1.0]
+            ],
+            columns=FEATURE_NAMES['distances']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [36, 36, 36, 36]
+            ],
+            columns=FEATURE_NAMES['distances']
+        ),
+        pd.DataFrame(
+            [
+                [1.0, 1.0, 1.0, 1.0]
+            ],
+            columns=FEATURE_NAMES['distances']
+        )
+    ),
+
+    (
+        pd.DataFrame(
+            [
+                [np.nan] * 4
+            ],
+            columns=FEATURE_NAMES['distances']
+        ),
+        pd.DataFrame(
+            [
+                [np.nan] * 4
+            ],
+            columns=FEATURE_NAMES['distances']
+        )
+    )
+])
+def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
+    """
+    Test normalization of distances bits.
+
+    Parameters
+    ----------
+    distances : pandas.DataFrame
+        Distances.
+    distances_normalized : pandas.DataFrame
+        Normalized distances.
+    """
+
+    fingerprint = Fingerprint()
+    fingerprint.molecule_code = 'molecule'
+    fingerprint.fingerprint['distances'] = distances
+
+    distances_normalized_calculated = fingerprint._normalize_distances_bits()
+
+    if np.isnan(distances.iloc[0, 0]):
+        assert np.isnan(distances_normalized_calculated).all().all() and np.isnan(distances_normalized).all().all()
+    else:
+        assert np.isclose(distances_normalized_calculated, distances_normalized, rtol=1e-02).all()
 
 
 @pytest.mark.parametrize('fingerprint_type1, fingerprint_type2', [
