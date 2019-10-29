@@ -195,6 +195,30 @@ def test_normalize_fingerprint_type2(fingerprint_type2, normalized_fingerprint_t
     pass
 
 
+
+@pytest.mark.parametrize('distances, moments', [
+    (
+        pd.DataFrame([[1, 1], [4, 4], [4, 4]]),
+        pd.DataFrame([[3.00, 1.41, -1.26], [3.00, 1.41, -1.26]], columns='moment1 moment2 moment3'.split())
+    ),
+    (
+        pd.DataFrame([[1, 2]]),
+        pd.DataFrame([[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]], columns='moment1 moment2 moment3'.split())
+    )
+])
+def test_fingerprint_calc_moments(distances, moments):
+
+    fingerprint = Fingerprint()
+    moments_calculated = fingerprint._calc_moments(distances)
+
+    print(len(distances))
+    print(moments_calculated)
+
+    assert np.isclose(moments_calculated.moment1[0], moments.moment1[0], rtol=1e-02)
+    assert np.isclose(moments_calculated.moment2[0], moments.moment2[0], rtol=1e-02)
+    assert np.isclose(moments_calculated.moment3[0], moments.moment3[0], rtol=1e-02)
+
+
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
     ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
 ])
