@@ -433,25 +433,25 @@ class Fingerprint:
             return None
 
     @staticmethod
-    def _normalize_distance(distance, cutoff):
+    def _normalize(value, cutoff):
         """
-        Normalize a distance using a cutoff value (distance values equal or greater than the cutoff are set to 1.0).
+        Normalize a value using a cutoff value (values equal or greater than the cutoff are set to 1.0).
 
         Parameters
         ----------
-        distance : float or int
-            Distance.
+        value : float or int
+            Value to be normalized.
         cutoff : float or int
-            Distance cutoff for normalization.
+            Cutoff for normalization (maximum), values equal or greater than cutoff are set to 1.0.
 
         Returns
         -------
         float
-            Normalized distance.
+            Normalized value.
         """
 
-        if distance <= cutoff or np.isnan(distance):
-            return distance / float(cutoff)
+        if value <= cutoff or np.isnan(value):
+            return value / float(cutoff)
         else:
             return 1.0
 
