@@ -24,8 +24,6 @@ FEATURE_NAMES = {
 }
 
 
-
-
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
     ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
 ])
@@ -149,7 +147,11 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
     physicochemical_normalized_calculated = fingerprint._normalize_physicochemical_bits()
 
     if np.isnan(physicochemical.iloc[0, 0]):
-        assert np.isnan(physicochemical_normalized_calculated).all().all() and np.isnan(physicochemical_normalized).all().all()
+        assert np.isnan(
+            physicochemical_normalized_calculated
+        ).all().all() and np.isnan(
+            physicochemical_normalized
+        ).all().all()
     else:
         assert np.isclose(physicochemical_normalized_calculated, physicochemical_normalized, rtol=1e-02).all()
 
@@ -218,7 +220,11 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
     distances_normalized_calculated = fingerprint._normalize_distances_bits()
 
     if np.isnan(distances.iloc[0, 0]):
-        assert np.isnan(distances_normalized_calculated).all().all() and np.isnan(distances_normalized).all().all()
+        assert np.isnan(
+            distances_normalized_calculated
+        ).all().all() and np.isnan(
+            distances_normalized
+        ).all().all()
     else:
         assert np.isclose(distances_normalized_calculated, distances_normalized, rtol=1e-02).all()
 
@@ -262,7 +268,11 @@ def test_fingerprint_normalize_moments_bits(moments, moments_normalized):
     moments_normalized_calculated = fingerprint._normalize_moments_bits()
 
     if np.isnan(moments.iloc[0, 0]):
-        assert np.isnan(moments_normalized_calculated).all().all() and np.isnan(moments_normalized).all().all()
+        assert np.isnan(
+            moments_normalized_calculated
+        ).all().all() and np.isnan(
+            moments_normalized
+        ).all().all()
     else:
         assert np.isclose(moments_normalized_calculated, moments_normalized, rtol=1e-02).all()
 
