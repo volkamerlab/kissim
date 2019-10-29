@@ -368,6 +368,14 @@ class Fingerprint:
             return None
 
     def _normalize_distances_bits(self):
+        """
+        Normalize distances bits.
+
+        Returns
+        -------
+        pandas.DataFrame
+            4 distance features (columns) for 85 residues (rows).
+        """
 
         if self.distances is not None:
 
