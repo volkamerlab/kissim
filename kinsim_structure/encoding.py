@@ -508,7 +508,7 @@ class PhysicoChemicalFeatures:
     Attributes
     ----------
     features : pandas.DataFrame
-        6 features (columns) for 85 residues (rows).
+        8 features (columns) for 85 residues (rows).
     """
 
     def __init__(self):
