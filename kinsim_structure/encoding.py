@@ -432,10 +432,7 @@ class Fingerprint:
                 index=distances.columns.tolist()
             )
         else:
-            # In case there is only one data point.
-            # However, this should not be possible due to restrictions in get_shape function.
-            logger.info(f'Only one data point available for moment calculation, thus write None to moments.')
-            m1, m2, m3 = pd.np.nan, pd.np.nan, pd.np.nan
+            raise ValueError(f'No data available to calculate moments.')
 
         # Store all moments in DataFrame
         moments = pd.concat([m1, m2, m3], axis=1)
