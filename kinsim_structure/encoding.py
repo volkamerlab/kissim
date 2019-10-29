@@ -22,22 +22,6 @@ from kinsim_structure.auxiliary import center_of_mass, split_klifs_code
 
 logger = logging.getLogger(__name__)
 
-
-FEATURE_NAMES = [
-    'size',
-    'hbd',
-    'hba',
-    'charge',
-    'aromatic',
-    'aliphatic',
-    'sca',
-    'exposure',
-    'distance_to_centroid',
-    'distance_to_hinge_region',
-    'distance_to_dfg_region',
-    'distance_to_front_pocket'
-]
-
 ANCHOR_RESIDUES = {
     'hinge_region': [16, 47, 80],
     'dfg_region': [19, 24, 81],
