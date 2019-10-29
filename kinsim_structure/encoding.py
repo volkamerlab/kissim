@@ -402,9 +402,32 @@ class Fingerprint:
             return None
 
     def _normalize_moments_bits(self):
+        """
+        Normalize moments bits.
+
+        Returns
+        -------
+        pandas.DataFrame
+            3 moment features (columns) for 4 distance distributions residues (rows).
+        """
 
         if self.moments is not None:
-            return self.moments  # TODO Add actual code here
+
+            # Make a copy of DataFrame
+            normalized = self.moments.copy()
+
+            # Normalize using cutoffs defined for each moment
+            normalized['moment1'] = normalized['moment1'].apply(
+                lambda x: self._normalize(x, MOMENT_CUTOFFS['moment1'])
+            )
+            normalized['moment2'] = normalized['moment2'].apply(
+                lambda x: self._normalize(x, MOMENT_CUTOFFS['moment2'])
+            )
+            normalized['moment3'] = normalized['moment3'].apply(
+                lambda x: self._normalize(x, MOMENT_CUTOFFS['moment3'])
+            )
+
+            return normalized
 
         else:
             return None
