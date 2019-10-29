@@ -609,7 +609,7 @@ def test_sidechainorientation_from_molecule(mol2_filename, pdb_filename, chain_i
         )
     )
 ])
-def test_side_chain_angle_feature(mol2_filename, pdb_filename, chain_id, sca):
+def test_sidechainangle_from_molecule(mol2_filename, pdb_filename, chain_id, sca):
     """
     Test if side chain angles are assigned correctly (also for special cases, i.e. GLY and ALA).
 
@@ -642,7 +642,7 @@ def test_side_chain_angle_feature(mol2_filename, pdb_filename, chain_id, sca):
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'dfg_region', [20, 23, 81], 11.6846),
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 'front_pocket', [6, 48, 75], float('nan'))
 ])
-def test_get_anchor_atoms(filename, reference_point_name, anchor_residue_klifs_ids, x_coordinate):
+def test_spatial_get_anchor_atoms(filename, reference_point_name, anchor_residue_klifs_ids, x_coordinate):
     """
     Test function that calculates the anchor atoms for different scenarios (missing anchor residues, missing neighbors)
 
@@ -696,7 +696,7 @@ def test_get_anchor_atoms(filename, reference_point_name, anchor_residue_klifs_i
 @pytest.mark.parametrize('filename, x_coordinate', [
     ('AAK1/4wsq_altA_chainB/pocket.mol2', 1.02664)
 ])
-def test_get_reference_points(filename, x_coordinate):
+def test_spatial_get_reference_points(filename, x_coordinate):
     """
     Test calculation of reference point "centroid" of a pocket.
 
