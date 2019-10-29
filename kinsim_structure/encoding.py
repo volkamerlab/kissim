@@ -366,24 +366,19 @@ class Fingerprint:
             # Make a copy of DataFrame
             normalized = self.distances.copy()
 
-            # Normalize distances
-            distance_normalizer = 35.0  # TODO Add updated min/max here
-
+            # Normalize using cutoffs defined for each reference point
             normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_centroid'])
             )
             normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_hinge_region'])
             )
             normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_dfg_region'])
             )
             normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-                lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
+                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_front_pocket'])
             )
-
-            if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
-                raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')  # TODO Revise
 
             return normalized
 
@@ -397,6 +392,29 @@ class Fingerprint:
 
         else:
             return None
+
+    @staticmethod
+    def _normalize_distance(distance, cutoff):
+        """
+        Normalize a distance using a cutoff value (distance values equal or greater than the cutoff are set to 1.0).
+
+        Parameters
+        ----------
+        distance : float or int
+            Distance.
+        cutoff : float or int
+            Distance cutoff for normalization.
+
+        Returns
+        -------
+        float
+            Normalized distance.
+        """
+
+        if distance <= cutoff or np.isnan(distance):
+            return distance / float(cutoff)
+        else:
+            return 1.0
 
     @staticmethod
     def _calc_moments(distances):
