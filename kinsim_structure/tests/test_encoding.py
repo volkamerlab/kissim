@@ -306,6 +306,25 @@ def test_fingerprint_calc_moments(distances, moments):
     assert np.isclose(moments_calculated.moment3[0], moments.moment3[0], rtol=1e-02)
 
 
+@pytest.mark.parametrize('distance, cutoff, distance_normalized', [
+    (0.00, 20.00, 0.00),
+    (10.00, 20.00, 0.50),
+    (20.00, 20.00, 1.00),
+    (21.00, 20.00, 1.00),
+    (np.nan, 20.00, np.nan)
+
+])
+def test_fingerprint_normalize_distance(distance, cutoff, distance_normalized):
+
+    fingerprint = Fingerprint()
+    distance_normalized_calculated = fingerprint._normalize_distance(distance, cutoff)
+
+    if np.isnan(distance):
+        assert np.isnan(distance_normalized_calculated) and np.isnan(distance_normalized)
+    else:
+        assert np.isclose(distance_normalized_calculated, distance_normalized, rtol=1e-06)
+
+
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
     ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
 ])
