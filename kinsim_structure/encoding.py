@@ -35,10 +35,10 @@ DISTANCE_CUTOFF = {  # 99% percentile of all distances
     'distance_to_front_pocket': 23.55
 }
 
-MOMENTS_CUTOFF = {  # 99% percentile of all moments
-    'moment1': 0,
-    'moment2': 0,
-    'moment3': 0
+MOMENT_CUTOFFS = {  # 99% percentile of all moments
+    'moment1': 14.14,
+    'moment2': 5.29,
+    'moment3': 4.66
 }
 
 # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
