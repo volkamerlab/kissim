@@ -28,7 +28,7 @@ ANCHOR_RESIDUES = {
     'front_pocket': [6, 48, 75]
 }  # Are the same as in Eva's implementation
 
-DISTANCE_CUTOFF = {  # 99% percentile of all distances
+DISTANCE_CUTOFFS = {  # 99% percentile of all distances
     'distance_to_centroid': 21.38,
     'distance_to_hinge_region': 23.07,
     'distance_to_dfg_region': 26.69,
@@ -376,16 +376,16 @@ class Fingerprint:
 
             # Normalize using cutoffs defined for each reference point
             normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_centroid'])
+                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_centroid'])
             )
             normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_hinge_region'])
+                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_hinge_region'])
             )
             normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_dfg_region'])
+                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_dfg_region'])
             )
             normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-                lambda x: self._normalize_distance(x, DISTANCE_CUTOFF['distance_to_front_pocket'])
+                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_front_pocket'])
             )
 
             return normalized
