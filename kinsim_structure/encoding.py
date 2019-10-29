@@ -352,8 +352,8 @@ class Fingerprint:
             normalized['aromatic'] = normalized['hba'].apply(lambda x: x / 1.0)
             normalized['aliphatic'] = normalized['hba'].apply(lambda x: x / 1.0)
 
-            # Normalize side chain angle
-            normalized['sca'] = normalized['sca'].apply(lambda x: x / 180.0)
+            # Normalize side chain orientation
+            normalized['sco'] = normalized['sco'].apply(lambda x: x / 180.0)
 
             # Normalize exposure
             normalized['exposure'] = normalized['exposure'].apply(lambda x: x / 1)
