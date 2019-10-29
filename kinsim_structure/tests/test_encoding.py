@@ -10,7 +10,7 @@ import pytest
 
 from Bio.PDB import Vector
 
-from kinsim_structure.encoding import Fingerprint
+from kinsim_structure.encoding import Fingerprint, DISTANCE_CUTOFF
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PhysicoChemicalFeatures, SpatialFeatures
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SideChainOrientationFeature
@@ -166,13 +166,13 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
     (
         pd.DataFrame(
             [
-                [35, 35, 35, 35]
+                [10, 10, 10, 10]
             ],
             columns=FEATURE_NAMES['distances']
         ),
         pd.DataFrame(
             [
-                [1.0, 1.0, 1.0, 1.0]
+                [0.4677, 0.4335, 0.3747, 0.4246]
             ],
             columns=FEATURE_NAMES['distances']
         )
@@ -180,7 +180,12 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
     (
         pd.DataFrame(
             [
-                [36, 36, 36, 36]
+                [
+                    DISTANCE_CUTOFF['distance_to_centroid'],
+                    DISTANCE_CUTOFF['distance_to_hinge_region'],
+                    DISTANCE_CUTOFF['distance_to_dfg_region'],
+                    DISTANCE_CUTOFF['distance_to_front_pocket']
+                ]
             ],
             columns=FEATURE_NAMES['distances']
         ),
@@ -225,14 +230,20 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
 
     distances_normalized_calculated = fingerprint._normalize_distances_bits()
 
-    if np.isnan(distances.iloc[0, 0]):
-        assert np.isnan(
-            distances_normalized_calculated
-        ).all().all() and np.isnan(
-            distances_normalized
-        ).all().all()
-    else:
-        assert np.isclose(distances_normalized_calculated, distances_normalized, rtol=1e-02).all()
+    for feature in FEATURE_NAMES['distances']:
+
+        if np.isnan(distances.iloc[0, 0]):
+            assert np.isnan(
+                distances_normalized_calculated[feature][0]
+            ) and np.isnan(
+                distances_normalized[feature][0]
+            )
+        else:
+            assert np.isclose(
+                distances_normalized_calculated[feature][0],
+                distances_normalized[feature][0],
+                rtol=1e-04
+            )
 
 
 @pytest.mark.parametrize('moments, moments_normalized', [
