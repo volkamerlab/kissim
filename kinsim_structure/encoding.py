@@ -337,7 +337,7 @@ class Fingerprint:
 
     def _normalize_physicochemical_bits(self):
 
-        if self.physicochemical:
+        if self.physicochemical is not None:
 
             # Make a copy of DataFrame
             normalized = self.physicochemical.copy()
@@ -365,7 +365,7 @@ class Fingerprint:
 
     def _normalize_distances_bits(self):
 
-        if self.distances:
+        if self.distances is not None:
 
             # Make a copy of DataFrame
             normalized = self.distances.copy()
@@ -396,7 +396,7 @@ class Fingerprint:
 
     def _normalize_moments_bits(self):
 
-        if self.moments:
+        if self.moments is not None:
             return self.moments  # TODO Add actual code here
 
         else:
