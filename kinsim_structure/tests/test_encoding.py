@@ -158,7 +158,7 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
             assert np.isclose(
                 physicochemical_normalized_calculated[feature][0],
                 physicochemical_normalized[feature][0],
-                rtol=1e-04
+                rtol=1e-03
             )
 
 
@@ -181,10 +181,10 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
         pd.DataFrame(
             [
                 [
-                    DISTANCE_CUTOFF['distance_to_centroid'],
-                    DISTANCE_CUTOFF['distance_to_hinge_region'],
-                    DISTANCE_CUTOFF['distance_to_dfg_region'],
-                    DISTANCE_CUTOFF['distance_to_front_pocket']
+                    DISTANCE_CUTOFFS['distance_to_centroid'],
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'],
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'],
+                    DISTANCE_CUTOFFS['distance_to_front_pocket']
                 ]
             ],
             columns=FEATURE_NAMES['distances']
@@ -242,7 +242,7 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
             assert np.isclose(
                 distances_normalized_calculated[feature][0],
                 distances_normalized[feature][0],
-                rtol=1e-04
+                rtol=1e-03
             )
 
 
