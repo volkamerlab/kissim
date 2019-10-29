@@ -10,7 +10,7 @@ import pytest
 
 from Bio.PDB import Vector
 
-from kinsim_structure.encoding import Fingerprint, DISTANCE_CUTOFF
+from kinsim_structure.encoding import Fingerprint, DISTANCE_CUTOFFS, MOMENT_CUTOFFS
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PhysicoChemicalFeatures, SpatialFeatures
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SideChainOrientationFeature
@@ -250,7 +250,25 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
     (
         pd.DataFrame(
             [
-                [2, 2, 2]
+                [1, 1, 1]
+            ],
+            columns=FEATURE_NAMES['moments']
+        ),
+        pd.DataFrame(
+            [
+                [0.0707, 0.1890, 0.2146]
+            ],
+            columns=FEATURE_NAMES['moments']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [
+                    MOMENT_CUTOFFS['moment1'],
+                    MOMENT_CUTOFFS['moment2'],
+                    MOMENT_CUTOFFS['moment3']
+                ]
             ],
             columns=FEATURE_NAMES['moments']
         ),
@@ -284,14 +302,20 @@ def test_fingerprint_normalize_moments_bits(moments, moments_normalized):
 
     moments_normalized_calculated = fingerprint._normalize_moments_bits()
 
-    if np.isnan(moments.iloc[0, 0]):
-        assert np.isnan(
-            moments_normalized_calculated
-        ).all().all() and np.isnan(
-            moments_normalized
-        ).all().all()
-    else:
-        assert np.isclose(moments_normalized_calculated, moments_normalized, rtol=1e-02).all()
+    for feature in FEATURE_NAMES['moments']:
+
+        if np.isnan(moments.iloc[0, 0]):
+            assert np.isnan(
+                moments_normalized_calculated[feature][0]
+            ) and np.isnan(
+                moments_normalized[feature][0]
+            )
+        else:
+            assert np.isclose(
+                moments_normalized_calculated[feature][0],
+                moments_normalized[feature][0],
+                rtol=1e-03
+            )
 
 
 @pytest.mark.parametrize('distances, moments', [
