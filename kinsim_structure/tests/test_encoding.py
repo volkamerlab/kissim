@@ -102,13 +102,13 @@ def test_fingerprint_from_molecule(mol2_filename, pdb_filename, chain_id):
     (
         pd.DataFrame(
             [
-                [3, 3, 2, 1, 1, 1, 180, 1]
+                [2, 1, 1, 0, 0, 0, 90, 0.8]
             ],
             columns=FEATURE_NAMES['physicochemical']
         ),
         pd.DataFrame(
             [
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                [0.5, 0.3333, 0.5, 0.5, 0.0, 0.0, 0.5, 0.8]
             ],
             columns=FEATURE_NAMES['physicochemical']
         )
@@ -146,14 +146,20 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
 
     physicochemical_normalized_calculated = fingerprint._normalize_physicochemical_bits()
 
-    if np.isnan(physicochemical.iloc[0, 0]):
-        assert np.isnan(
-            physicochemical_normalized_calculated
-        ).all().all() and np.isnan(
-            physicochemical_normalized
-        ).all().all()
-    else:
-        assert np.isclose(physicochemical_normalized_calculated, physicochemical_normalized, rtol=1e-02).all()
+    for feature in FEATURE_NAMES['physicochemical']:
+
+        if np.isnan(physicochemical.iloc[0, 0]):
+            assert np.isnan(
+                physicochemical_normalized_calculated[feature][0]
+            ) and np.isnan(
+                physicochemical_normalized[feature][0]
+            )
+        else:
+            assert np.isclose(
+                physicochemical_normalized_calculated[feature][0],
+                physicochemical_normalized[feature][0],
+                rtol=1e-04
+            )
 
 
 @pytest.mark.parametrize('distances, distances_normalized', [
@@ -239,7 +245,7 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
         ),
         pd.DataFrame(
             [
-                [1.0, 1.0, 1.0, 1.0]
+                [1.0, 1.0, 1.0]
             ],
             columns=FEATURE_NAMES['moments']
         )
