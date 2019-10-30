@@ -22,27 +22,24 @@ from kinsim_structure.auxiliary import center_of_mass, split_klifs_code
 
 logger = logging.getLogger(__name__)
 
-
-FEATURE_NAMES = [
-    'size',
-    'hbd',
-    'hba',
-    'charge',
-    'aromatic',
-    'aliphatic',
-    'sca',
-    'exposure',
-    'distance_to_centroid',
-    'distance_to_hinge_region',
-    'distance_to_dfg_region',
-    'distance_to_front_pocket'
-]
-
 ANCHOR_RESIDUES = {
     'hinge_region': [16, 47, 80],
     'dfg_region': [19, 24, 81],
     'front_pocket': [6, 48, 75]
 }  # Are the same as in Eva's implementation
+
+DISTANCE_CUTOFFS = {  # 99% percentile of all distances
+    'distance_to_centroid': (3.05, 21.38),
+    'distance_to_hinge_region': (4.10, 23.07),
+    'distance_to_dfg_region': (4.62, 26.69),
+    'distance_to_front_pocket': (5.46, 23.55)
+}
+
+MOMENT_CUTOFFS = {  # 99% percentile of all moments
+    'moment1': (11.68, 14.14),
+    'moment2': (3.29, 5.29),
+    'moment3': (-1.47, 4.66)
+}
 
 # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
 HINGE_KLIFS_IDS = [46, 47, 48]
@@ -148,9 +145,20 @@ N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid
 
 class Fingerprint:
     """
-    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined
+    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined  # TODO Update docstring
     kinase binding site of 85 pre-aligned residues.
 
+    Attributes
+    ----------
+    molecule_code : str
+        Molecule code as defined by KLIFS in mol2 file.
+    fingerprint_type1 : pandas.DataFrame
+        Fingerprint type 1.
+    fingerprint_type2 : dict of pandas.DataFrame
+        Fingerprint type 2.
+
+    Notes
+    -----
     Physicochemical features:
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
@@ -173,24 +181,62 @@ class Fingerprint:
            = 680 bit fingerprint
       (ii) 12 spatial features, i.e. first three moments for each of the 4 distance distributions over 85 residues
            = 12 bit fingerprint
-
-    Attributes
-    ----------
-    molecule_code : str
-        Molecule code as defined by KLIFS in mol2 file.
-    fingerprint_type1 : pandas.DataFrame
-        Fingerprint type 1.
-    fingerprint_type2 : dict of pandas.DataFrame
-        Fingerprint type 2.
     """
 
     def __init__(self):
 
         self.molecule_code = None
-        self.fingerprint_type1 = None
-        self.fingerprint_type2 = None
-        self.fingerprint_type1_normalized = None
-        self.fingerprint_type1_normalized = None
+
+        self.fingerprint = {
+            'physicochemical': None,
+            'distances': None,
+            'moments': None
+        }
+        self.fingerprint_normalized = {
+            'physicochemical': None,
+            'distances': None,
+            'moments': None
+        }
+
+    @property
+    def physicochemical(self):
+        return self.fingerprint['physicochemical']
+
+    @property
+    def distances(self):
+        return self.fingerprint['distances']
+
+    @property
+    def moments(self):
+        return self.fingerprint['moments']
+
+    @property
+    def physicochemical_distances(self):
+        return self._get_fingerprint('physicochemical_distances', normalized=False)
+
+    @property
+    def physicochemical_moments(self):
+        return self._get_fingerprint('physicochemical_moments', normalized=False)
+
+    @property
+    def physicochemical_normalized(self):
+        return self.fingerprint_normalized['physicochemical']
+
+    @property
+    def distances_normalized(self):
+        return self.fingerprint_normalized['distances']
+
+    @property
+    def moments_normalized(self):
+        return self.fingerprint_normalized['moments']
+
+    @property
+    def physicochemical_distances_normalized(self):
+        return self._get_fingerprint('physicochemical_distances', normalized=True)
+
+    @property
+    def physicochemical_moments_normalized(self):
+        return self._get_fingerprint('physicochemical_moments', normalized=True)
 
     def from_metadata_entry(self, klifs_metadata_entry):
         """
@@ -230,55 +276,140 @@ class Fingerprint:
         spatial_features = SpatialFeatures()
         spatial_features.from_molecule(molecule)
 
-        self.fingerprint_type1 = self._get_fingerprint_type1(physicochemical_features, spatial_features)
-        self.fingerprint_type2 = self._get_fingerprint_type2()
-        self.fingerprint_type1_normalized = self._normalize_fingerprint_type1()
-        self.fingerprint_type2_normalized = self._normalize_fingerprint_type2()
+        self.fingerprint['physicochemical'] = physicochemical_features.features
+        self.fingerprint['distances'] = spatial_features.features
+        self.fingerprint['moments'] = self._calc_moments(spatial_features.features)
 
-    @staticmethod
-    def _get_fingerprint_type1(physicochemical_features, spatial_features):
+        self.fingerprint_normalized['physicochemical'] = self._normalize_physicochemical_bits()
+        self.fingerprint_normalized['distances'] = self._normalize_distances_bits()
+        self.fingerprint_normalized['moments'] = self._normalize_moments_bits()
 
-        features = pd.concat(
-            [
-                physicochemical_features.features[FEATURE_NAMES[:8]],
-                spatial_features.features[FEATURE_NAMES[8:]]
-            ],
-            axis=1
-        ).copy()
+    def _get_fingerprint(self, fingerprint_type, normalized=True):
+        """
+        Get fingerprint containing both physicochemical and spatial bits (available types: distances or moments).
 
-        # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
-        empty_df = pd.DataFrame([], index=range(1, 86))
-        features = pd.concat([empty_df, features], axis=1)
+        Parameters
+        ----------
+        fingerprint_type : str
+            Type of fingerprint, i.e. fingerprint with physicochemical and either distances or moments bits
+            (physicochemical + distances or physicochemical + moments).
+        normalized : bool
+            Normalized or non-normalized form of fingerprint (default: normalized).
 
-        # Set all None to nan
-        features.fillna(value=pd.np.nan, inplace=True)
+        Returns
+        -------
+        dict of pandas.DataFrames
+            Fingerprint containing physicochemical and spatial bits.
+        """
 
-        return features
+        fingerprint_types = 'physicochemical_distances physicochemical_moments'.split()
 
-    def _get_fingerprint_type2(self):
+        if fingerprint_type == 'physicochemical_distances':
 
-        if self.fingerprint_type1 is not None:
+            if normalized:
+                return {
+                    'physicochemical': self.physicochemical_normalized,
+                    'distances': self.distances_normalized
+                }
+            else:
+                return {
+                    'physicochemical': self.physicochemical,
+                    'distances': self.distances
+                }
 
-            physicochemical_bits = self.fingerprint_type1[FEATURE_NAMES[:8]]
-            spatial_bits = self.fingerprint_type1[FEATURE_NAMES[8:]]
+        elif fingerprint_type == 'physicochemical_moments':
 
-            moments = self._calc_moments(spatial_bits)
+            if normalized:
+                return {
+                    'physicochemical': self.physicochemical_normalized,
+                    'moments': self.moments_normalized
+                }
+            else:
+                return {
+                    'physicochemical': self.physicochemical,
+                    'moments': self.moments
+                }
+        else:
+            raise ValueError(f'Fingerprint type unknown. Please choose from {", ".join(fingerprint_types)}.')
 
-            return {
-                'physchem': physicochemical_bits,
-                'moments': moments
-            }
+    def _normalize_physicochemical_bits(self):
+        """
+        Normalize physicochemical bits.
 
-    def _normalize_fingerprint_type1(self):
+        Returns
+        -------
+        pandas.DataFrame
+            8 physicochemical features (columns) for 85 residues (rows).
+        """
 
-        if self.fingerprint_type1 is not None:
+        if self.physicochemical is not None:
 
-            normalized_physchem = self._normalize_physicochemical_bits()
-            normalized_distances = self._normalize_distances_bits()
+            # Make a copy of DataFrame
+            normalized = self.physicochemical.copy()
 
-            normalized = pd.concat(
-                [normalized_physchem, normalized_distances],
-                axis=1
+            # Normalize size
+            normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
+
+            # Normalize pharmacophoric features: HBD, HBA and charge
+            normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
+            normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
+            normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
+
+            # No normalization needed for aromatic and aliphatic features which are already 0 or 1
+
+            # Normalize side chain orientation
+            normalized['sco'] = normalized['sco'].apply(lambda x: x / 180.0)
+
+            # No normalization needed for exposure feature which is already between 0 and 1
+
+            return normalized
+
+        else:
+            return None
+
+    def _normalize_distances_bits(self):
+        """
+        Normalize distances bits.
+
+        Returns
+        -------
+        pandas.DataFrame
+            4 distance features (columns) for 85 residues (rows).
+        """
+
+        if self.distances is not None:
+
+            # Make a copy of DataFrame
+            normalized = self.distances.copy()
+
+            # Normalize using cutoffs defined for each reference point
+            normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_centroid'][0],
+                    DISTANCE_CUTOFFS['distance_to_centroid'][1]
+                )
+            )
+            normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'][0],
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'][1]
+                )
+            )
+            normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'][0],
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'][1]
+                )
+            )
+            normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_front_pocket'][0],
+                    DISTANCE_CUTOFFS['distance_to_front_pocket'][1]
+                )
             )
 
             return normalized
@@ -286,88 +417,94 @@ class Fingerprint:
         else:
             return None
 
-    def _normalize_fingerprint_type2(self):
+    def _normalize_moments_bits(self):
+        """
+        Normalize moments bits.
 
-        if self.fingerprint_type2 is not None:
+        Returns
+        -------
+        pandas.DataFrame
+            3 moment features (columns) for 4 distance distributions residues (rows).
+        """
 
-            normalized_physchem = self.fingerprint_type1_normalized[FEATURE_NAMES[:8]]
-            normalized_moments = self.fingerprint_type2['moments']  # TODO no normalization is done here, change this?
+        if self.moments is not None:
 
-            normalized = {
-                'physchem': normalized_physchem,
-                'moments': normalized_moments
-            }
+            # Make a copy of DataFrame
+            normalized = self.moments.copy()
+
+            # Normalize using cutoffs defined for each moment
+            normalized['moment1'] = normalized['moment1'].apply(
+                lambda x: self._normalize(
+                    x,
+                    MOMENT_CUTOFFS['moment1'][0],
+                    MOMENT_CUTOFFS['moment1'][1]
+                )
+            )
+            normalized['moment2'] = normalized['moment2'].apply(
+                lambda x: self._normalize(
+                    x,
+                    MOMENT_CUTOFFS['moment2'][0],
+                    MOMENT_CUTOFFS['moment2'][1]
+                )
+            )
+            normalized['moment3'] = normalized['moment3'].apply(
+                lambda x: self._normalize(
+                    x,
+                    MOMENT_CUTOFFS['moment3'][0],
+                    MOMENT_CUTOFFS['moment3'][1]
+                )
+            )
 
             return normalized
 
         else:
             return None
 
-    def _normalize_physicochemical_bits(self):
+    @staticmethod
+    def _normalize(value, minimum, maximum):
+        """
+        Normalize a value using minimum-maximum normalization. Values equal or lower / greater than the minimum /
+        maximum value are set to 0.0 / 1.0.
 
-        # Make a copy of DataFrame
-        normalized = self.fingerprint_type1[FEATURE_NAMES[:8]].copy()
+        Parameters
+        ----------
+        value : float or int
+            Value to be normalized.
+        minimum : float or int
+            Minimum value for normalization, values equal or greater than this minimum are set to 0.0.
+        maximum : float or int
+            Maximum value for normalization, values equal or greater than this maximum are set to 1.0.
 
-        # Normalize size
-        normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
+        Returns
+        -------
+        float
+            Normalized value.
+        """
 
-        # Normalize pharmacophoric features
-        normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
-        normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
-        normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
-        normalized['aromatic'] = normalized['hba'].apply(lambda x: x / 1.0)
-        normalized['aliphatic'] = normalized['hba'].apply(lambda x: x / 1.0)
-
-        # Normalize side chain angle
-        normalized['sca'] = normalized['sca'].apply(lambda x: x / 180.0)
-
-        # Normalize exposure
-        normalized['exposure'] = normalized['exposure'].apply(lambda x: x / 1)
-
-        return normalized
-
-    def _normalize_distances_bits(self):
-
-        # Make a copy of DataFrame
-        normalized = self.fingerprint_type1[FEATURE_NAMES[8:]].copy()
-
-        # Normalize distances
-        distance_normalizer = 35.0
-
-        normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-        normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-        normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-        normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-            lambda x: x / distance_normalizer if x <= distance_normalizer or np.isnan(x) else 1.0
-        )
-
-        if not (normalized.iloc[:, 1:12].fillna(0) <= 1).any().any():
-            raise ValueError(f'Normalization failed for {self.molecule_code}: Values greater 1!')
-
-        return normalized
-
-    def _normalize_moments_bits(self):
-
-        return self.fingerprint_type2['moments']
+        if minimum <= value <= maximum :
+            return (value - minimum) / float(maximum - minimum)
+        elif value < minimum:
+            return 0.0
+        elif value > maximum:
+            return 1.0
+        elif np.isnan(value):
+            return np.nan
+        else:
+            raise ValueError(f'Unexpected value to be normalized: {value}')
 
     @staticmethod
     def _calc_moments(distances):
         """
         Calculate first, second, and third moment (mean, standard deviation, and skewness) for a distance distribution.
+
         Parameters
         ----------
         distances : pandas.DataFrame
-            Distance distribution, i.e. distances from reference point to all representatives (points)
+            Distance distribution, i.e. distances (rows) from reference point (columns) to all representatives/points.
         Returns
         -------
         pandas.DataFrame
-            First, second, and third moment of distance distribution.
+            First, second, and third moment (column) of distance distribution (row).
         """
 
         # Get first, second, and third moment (mean, standard deviation, and skewness) for a distance distribution
@@ -386,10 +523,7 @@ class Fingerprint:
                 index=distances.columns.tolist()
             )
         else:
-            # In case there is only one data point.
-            # However, this should not be possible due to restrictions in get_shape function.
-            logger.info(f'Only one data point available for moment calculation, thus write None to moments.')
-            m1, m2, m3 = pd.np.nan, pd.np.nan, pd.np.nan
+            raise ValueError(f'No data available to calculate moments.')
 
         # Store all moments in DataFrame
         moments = pd.concat([m1, m2, m3], axis=1)
@@ -411,7 +545,7 @@ class PhysicoChemicalFeatures:
     Attributes
     ----------
     features : pandas.DataFrame
-        6 features (columns) for 85 residues (rows).
+        8 features (columns) for 85 residues (rows).
     """
 
     def __init__(self):
