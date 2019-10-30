@@ -177,6 +177,42 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
 
 
 
+
+def _get_values_without_nan(values1, values2):
+    """
+    Get two value lists with all positions removed where one list or both lists contain nan values.
+
+    Parameters
+    ----------
+    values1 : list or pandas.Series
+        Value list (same length as values2).
+    values2 : list or pandas.Series
+        Value list (same length as values1).
+
+    Returns
+    -------
+    dict
+        Values without nan positions and values coverage (coverage of non nan values).
+    """
+
+    if len(values1) != len(values2):
+        raise ValueError(f'Nan removal failed: Values lists are not of same length.')
+
+    # Merge both fingerprints to array in order to remove positions with nan values
+    values = np.array([values1, values2])
+
+    # Remove nan positions (shall not be compared)
+    values_reduced = values[:, ~np.any(np.isnan(values), axis=0)]
+
+    # Get number of bits that can be compared (after nan bits removal)
+    coverage = values_reduced.shape[0] / float(values.shape[1])
+
+    return {
+        'values': values_reduced,
+        'coverage': coverage
+    }
+
+
 def _euclidean_distance(values1, values2):
     """
     Calculate Euclidean distance between two value lists of same length.

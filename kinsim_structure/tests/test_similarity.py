@@ -55,6 +55,20 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
 
 
 
+
+@pytest.mark.parametrize('values1, values2, values_reduced, coverage', [
+    ([0, 0, np.nan, 1], [4, 3, 1, np.nan], [[0, 0], [4, 3]], 0.5),
+    ([0, 0, np.nan], [4, 3, np.nan], [[0, 0], [4, 3]], 0.6667),
+    ([0, 0], [4, 3], [[0, 0], [4, 3]], 1.0)
+])
+def test_get_values_without_nan(values1, values2, values_reduced, coverage):
+
+    values_reduced_calculated = _get_values_without_nan(values1, values2)
+
+    assert np.isclose(values_reduced_calculated['coverage'], coverage, rtol=1e-04)
+    assert np.isclose(values_reduced_calculated['values'], values_reduced, rtol=1e-04).all()
+
+
 @pytest.mark.parametrize('values1, values2, distance', [
     ([0, 0], [4, 3], 2.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
