@@ -166,13 +166,13 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
     (
         pd.DataFrame(
             [
-                [10, 10, 10, 10]
+                [1, 1, 1, 1]
             ],
             columns=FEATURE_NAMES['distances']
         ),
         pd.DataFrame(
             [
-                [0.4677, 0.4335, 0.3747, 0.4246]
+                [0.0, 0.0, 0.0, 0.0]
             ],
             columns=FEATURE_NAMES['distances']
         )
@@ -181,10 +181,43 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
         pd.DataFrame(
             [
                 [
-                    DISTANCE_CUTOFFS['distance_to_centroid'],
-                    DISTANCE_CUTOFFS['distance_to_hinge_region'],
-                    DISTANCE_CUTOFFS['distance_to_dfg_region'],
-                    DISTANCE_CUTOFFS['distance_to_front_pocket']
+                    DISTANCE_CUTOFFS['distance_to_centroid'][0],
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'][0],
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'][0],
+                    DISTANCE_CUTOFFS['distance_to_front_pocket'][0]
+                ]
+            ],
+            columns=FEATURE_NAMES['distances']
+        ),
+        pd.DataFrame(
+            [
+                [0.0, 0.0, 0.0, 0.0]
+            ],
+            columns=FEATURE_NAMES['distances']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [10, 10, 10, 10]
+            ],
+            columns=FEATURE_NAMES['distances']
+        ),
+        pd.DataFrame(
+            [
+                [0.3792, 0.3110, 0.2438, 0.2510]
+            ],
+            columns=FEATURE_NAMES['distances']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [
+                    DISTANCE_CUTOFFS['distance_to_centroid'][1],
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'][1],
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'][1],
+                    DISTANCE_CUTOFFS['distance_to_front_pocket'][1]
                 ]
             ],
             columns=FEATURE_NAMES['distances']
@@ -196,7 +229,20 @@ def test_fingerprint_normalize_physicochemical_bits(physicochemical, physicochem
             columns=FEATURE_NAMES['distances']
         )
     ),
-
+    (
+        pd.DataFrame(
+            [
+                [30, 30, 30, 30]
+            ],
+            columns=FEATURE_NAMES['distances']
+        ),
+        pd.DataFrame(
+            [
+                [1.0, 1.0, 1.0, 1.0]
+            ],
+            columns=FEATURE_NAMES['distances']
+        )
+    ),
     (
         pd.DataFrame(
             [
@@ -250,13 +296,13 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
     (
         pd.DataFrame(
             [
-                [1, 1, 1]
+                [11, 3, -2]
             ],
             columns=FEATURE_NAMES['moments']
         ),
         pd.DataFrame(
             [
-                [0.0707, 0.1890, 0.2146]
+                [0.0, 0.0, 0.0]
             ],
             columns=FEATURE_NAMES['moments']
         )
@@ -265,10 +311,56 @@ def test_fingerprint_normalize_distances_bits(distances, distances_normalized):
         pd.DataFrame(
             [
                 [
-                    MOMENT_CUTOFFS['moment1'],
-                    MOMENT_CUTOFFS['moment2'],
-                    MOMENT_CUTOFFS['moment3']
+                    MOMENT_CUTOFFS['moment1'][0],
+                    MOMENT_CUTOFFS['moment2'][0],
+                    MOMENT_CUTOFFS['moment3'][0]
                 ]
+            ],
+            columns=FEATURE_NAMES['moments']
+        ),
+        pd.DataFrame(
+            [
+                [0.0, 0.0, 0.0]
+            ],
+            columns=FEATURE_NAMES['moments']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [12, 4, 1]
+            ],
+            columns=FEATURE_NAMES['moments']
+        ),
+        pd.DataFrame(
+            [
+                [0.1301, 0.355, 0.4030]
+            ],
+            columns=FEATURE_NAMES['moments']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [
+                    MOMENT_CUTOFFS['moment1'][1],
+                    MOMENT_CUTOFFS['moment2'][1],
+                    MOMENT_CUTOFFS['moment3'][1]
+                ]
+            ],
+            columns=FEATURE_NAMES['moments']
+        ),
+        pd.DataFrame(
+            [
+                [1.0, 1.0, 1.0]
+            ],
+            columns=FEATURE_NAMES['moments']
+        )
+    ),
+    (
+        pd.DataFrame(
+            [
+                [15, 6, 5]
             ],
             columns=FEATURE_NAMES['moments']
         ),
@@ -341,15 +433,16 @@ def test_fingerprint_calc_moments(distances, moments):
     assert np.isclose(moments_calculated.moment3[0], moments.moment3[0], rtol=1e-02)
 
 
-@pytest.mark.parametrize('value, cutoff, value_normalized', [
-    (0.00, 20.00, 0.00),
-    (10.00, 20.00, 0.50),
-    (20.00, 20.00, 1.00),
-    (21.00, 20.00, 1.00),
-    (np.nan, 20.00, np.nan)
+@pytest.mark.parametrize('value, minimum, maximum, value_normalized', [
+    (1.00, 2.00, 3.00, 0.00),
+    (2.00, 2.00, 3.00, 0.00),
+    (2.50, 2.00, 3.00, 0.50),
+    (3.00, 2.00, 3.00, 1.00),
+    (4.00, 2.00, 3.00, 1.00),
+    (np.nan, 2.00, 3.00, np.nan)
 
 ])
-def test_fingerprint_normalize(value, cutoff, value_normalized):
+def test_fingerprint_normalize(value, minimum, maximum, value_normalized):
     """
     Test value normalization.
 
@@ -357,14 +450,16 @@ def test_fingerprint_normalize(value, cutoff, value_normalized):
     ----------
     value : float or int
             Value to be normalized.
-    cutoff : float or int
-        Cutoff for normalization (maximum), values equal or greater than cutoff are set to 1.0.
+    minimum : float or int
+        Minimum value for normalization, values equal or greater than this minimum are set to 0.0.
+    maximum : float or int
+        Maximum value for normalization, values equal or greater than this maximum are set to 1.0.
     value_normalized : float
         Normalized value.
     """
 
     fingerprint = Fingerprint()
-    value_normalized_calculated = fingerprint._normalize(value, cutoff)
+    value_normalized_calculated = fingerprint._normalize(value, minimum, maximum)
 
     if np.isnan(value):
         assert np.isnan(value_normalized_calculated) and np.isnan(value_normalized)
