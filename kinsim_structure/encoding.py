@@ -145,7 +145,7 @@ N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid
 
 class Fingerprint:
     """
-    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined
+    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined  # TODO Update docstring
     kinase binding site of 85 pre-aligned residues.
 
     Attributes
@@ -384,16 +384,32 @@ class Fingerprint:
 
             # Normalize using cutoffs defined for each reference point
             normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
-                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_centroid'])
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_centroid'][0],
+                    DISTANCE_CUTOFFS['distance_to_centroid'][1]
+                )
             )
             normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
-                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_hinge_region'])
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'][0],
+                    DISTANCE_CUTOFFS['distance_to_hinge_region'][1]
+                )
             )
             normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
-                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_dfg_region'])
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'][0],
+                    DISTANCE_CUTOFFS['distance_to_dfg_region'][1]
+                )
             )
             normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
-                lambda x: self._normalize(x, DISTANCE_CUTOFFS['distance_to_front_pocket'])
+                lambda x: self._normalize(
+                    x,
+                    DISTANCE_CUTOFFS['distance_to_front_pocket'][0],
+                    DISTANCE_CUTOFFS['distance_to_front_pocket'][1]
+                )
             )
 
             return normalized
@@ -418,13 +434,25 @@ class Fingerprint:
 
             # Normalize using cutoffs defined for each moment
             normalized['moment1'] = normalized['moment1'].apply(
-                lambda x: self._normalize(x, MOMENT_CUTOFFS['moment1'])
+                lambda x: self._normalize(
+                    x,
+                    MOMENT_CUTOFFS['moment1'][0],
+                    MOMENT_CUTOFFS['moment1'][1]
+                )
             )
             normalized['moment2'] = normalized['moment2'].apply(
-                lambda x: self._normalize(x, MOMENT_CUTOFFS['moment2'])
+                lambda x: self._normalize(
+                    x,
+                    MOMENT_CUTOFFS['moment2'][0],
+                    MOMENT_CUTOFFS['moment2'][1]
+                )
             )
             normalized['moment3'] = normalized['moment3'].apply(
-                lambda x: self._normalize(x, MOMENT_CUTOFFS['moment3'])
+                lambda x: self._normalize(
+                    x,
+                    MOMENT_CUTOFFS['moment3'][0],
+                    MOMENT_CUTOFFS['moment3'][1]
+                )
             )
 
             return normalized
@@ -433,16 +461,19 @@ class Fingerprint:
             return None
 
     @staticmethod
-    def _normalize(value, cutoff):
+    def _normalize(value, minimum, maximum):
         """
-        Normalize a value using a cutoff value (values equal or greater than the cutoff are set to 1.0).
+        Normalize a value using minimum-maximum normalization. Values equal or lower / greater than the minimum /
+        maximum value are set to 0.0 / 1.0.
 
         Parameters
         ----------
         value : float or int
             Value to be normalized.
-        cutoff : float or int
-            Cutoff for normalization (maximum), values equal or greater than cutoff are set to 1.0.
+        minimum : float or int
+            Minimum value for normalization, values equal or greater than this minimum are set to 0.0.
+        maximum : float or int
+            Maximum value for normalization, values equal or greater than this maximum are set to 1.0.
 
         Returns
         -------
@@ -450,10 +481,16 @@ class Fingerprint:
             Normalized value.
         """
 
-        if value <= cutoff or np.isnan(value):
-            return value / float(cutoff)
-        else:
+        if minimum <= value <= maximum :
+            return (value - minimum) / float(maximum - minimum)
+        elif value < minimum:
+            return 0.0
+        elif value > maximum:
             return 1.0
+        elif np.isnan(value):
+            return np.nan
+        else:
+            raise ValueError(f'Unexpected value to be normalized: {value}')
 
     @staticmethod
     def _calc_moments(distances):
