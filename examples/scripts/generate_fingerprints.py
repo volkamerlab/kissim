@@ -8,21 +8,26 @@ import datetime
 import multiprocessing
 from pathlib import Path
 import pickle
+import sys
 
 import pandas as pd
 
+sys.path.append('../..')
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import Fingerprint
 
-PATH_TO_DATA = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full'
-PATH_TO_KINSIM = Path('/') / 'home' / 'dominique' / 'Documents' / 'projects' / 'kinsim_structure'
+PATH_TO_KINSIM = Path('.') / '..' / '..'
+PATH_TO_DATA = PATH_TO_KINSIM / 'examples' / 'data'
+
+PATH_TO_RESULTS = PATH_TO_KINSIM / 'examples' / 'results' / 'fingerprints'
+PATH_TO_RESULTS.mkdir(parents=True, exist_ok=True)
 
 # Set file and console logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
-    filename=PATH_TO_KINSIM / 'results' / 'fingerprints' / 'generate_fingerprints.log',
+    filename=PATH_TO_RESULTS / 'generate_fingerprints.log',
     filemode='w',
     level=logging.INFO
 )
@@ -92,15 +97,13 @@ def main():
     logger.info(start)
 
     # Get metadata entries
-    klifs_metadata = load_metadata(PATH_TO_KINSIM / 'data' / 'postprocessed' / 'klifs_metadata_postprocessed.csv')
+    klifs_metadata = load_metadata(PATH_TO_DATA / 'postprocessed' / 'klifs_metadata_postprocessed.csv')
 
     # Calculate fingerprints
     fingerprints_list = get_fingerprints(klifs_metadata)
 
     # Save fingerprints
-    path_to_fingerprints = PATH_TO_KINSIM / 'results' / 'fingerprints'
-    path_to_fingerprints.mkdir(parents=True, exist_ok=True)
-    with open(path_to_fingerprints / 'fingerprints.p', 'wb') as f:
+    with open(PATH_TO_RESULTS / 'fingerprints.p', 'wb') as f:
         pickle.dump(fingerprints_list, f)
 
     # Get end time of script
