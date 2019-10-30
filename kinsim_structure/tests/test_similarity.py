@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from kinsim_structure.similarity import calculate_similarity
+from kinsim_structure.similarity import _euclidean_distance, _get_values_without_nan, calculate_similarity, _calc_feature_distance
 
 
 @pytest.mark.parametrize('fingerprint1, fingerprint2, measure, score, coverage', [
@@ -54,6 +54,30 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
     assert calculate_similarity(fingerprint1, fingerprint2, measure='ballester') == (score, coverage)
 
 
+@pytest.mark.parametrize('feature_values1, feature_values2, distance_measure, distance', [
+    ([0, 0], [4, 3], 'euclidean', 2.5),
+    (pd.Series([0, 0]), pd.Series([4, 3]), 'euclidean', 2.5),
+    (pd.Series([0, 0, np.nan]), pd.Series([4, 3, 1]), 'euclidean', 2.5)
+])
+def test_calc_feature_distance(feature_values1, feature_values2, distance_measure, distance):
+    """
+    Test distance calculation for two value (feature) lists.
+
+    Parameters
+    ----------
+    feature_values1 : list or pandas.Series
+        Value list (same length as values2).
+    feature_values2 : list or pandas.Series
+        Value list (same length as values1).
+    distance_measure : str
+        Distance measure.
+    distance : float
+        Distance between two value lists.
+    """
+
+    distance_calculated = _calc_feature_distance(feature_values1, feature_values2, distance_measure)
+
+    assert np.isclose(distance_calculated, distance, rtol=1e-04)
 
 
 @pytest.mark.parametrize('values1, values2, values_reduced, coverage', [

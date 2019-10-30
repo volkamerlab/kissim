@@ -178,6 +178,40 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
 
 
 
+def _calc_feature_distance(feature_values1, feature_values2, distance_measure):
+    """
+    Calculate distance between two value lists (describing each the same feature).
+
+    Parameters
+    ----------
+    feature_values1 : list or pandas.Series
+        Value list (same length as values2).
+    feature_values2 : list or pandas.Series
+        Value list (same length as values1).
+    distance_measure : str
+        Distance measure.
+
+    Returns
+    -------
+    float
+        Distance between two value lists (describing each the same feature).
+    """
+
+    similarity_measures = 'euclidean'.split()
+
+    # Get feature values without nan positions
+    values_reduced = _get_values_without_nan(feature_values1, feature_values2)
+
+    # Get distance
+    if distance_measure == 'euclidean':
+        return _euclidean_distance(
+            values_reduced['values'][0],
+            values_reduced['values'][1]
+        )
+    else:
+        raise ValueError(f'Similarity measure unknown. Choose from: {", ".join(similarity_measures)}')
+
+
 def _extract_feature(fingerprint, feature_type):
     """
     Extract a feature from a fingerprint.
