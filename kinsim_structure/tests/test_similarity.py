@@ -52,3 +52,27 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
     """
 
     assert calculate_similarity(fingerprint1, fingerprint2, measure='ballester') == (score, coverage)
+
+
+
+@pytest.mark.parametrize('values1, values2, distance', [
+    ([0, 0], [4, 3], 2.5),
+    (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
+])
+def test_euclidean_distance(values1, values2, distance):
+    """
+    Test Euclidean distance calculation.
+
+    Parameters
+    ----------
+    values1 : list or pandas.Series
+        Value list (same length as values2).
+    values2 : list or pandas.Series
+        Value list (same length as values1).
+    distance : float
+        Euclidean distance between two value lists.
+    """
+
+    score_calculated = _euclidean_distance(values1, values2)
+
+    assert np.isclose(score_calculated, distance, rtol=1e-04)

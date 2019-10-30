@@ -174,3 +174,29 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
 
     else:
         raise ValueError(f'Please choose a similarity measure: {", ".join(measures)}')
+
+
+
+def _euclidean_distance(values1, values2):
+    """
+    Calculate Euclidean distance between two value lists of same length.
+
+    Parameters
+    ----------
+    values1 : list or pandas.Series
+        Value list (same length as values2).
+    values2 : list or pandas.Series
+        Value list (same length as values1).
+
+    Returns
+    -------
+    float
+        Euclidean distance between two value lists.
+    """
+
+    if len(values1) != len(values2):
+        raise ValueError(f'Distance calculation failed: Values lists are not of same length.')
+
+    d = 1 / len(values1) * distance.euclidean(values1, values2)
+
+    return d
