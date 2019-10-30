@@ -145,42 +145,46 @@ N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid
 
 class Fingerprint:
     """
-    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined  # TODO Update docstring
-    kinase binding site of 85 pre-aligned residues.
+    Kinase pocket is defined by 85 pre-aligned residues in KLIFS, which are described each with 8 physicochemical and
+    4 distance features. Two kinase pocket fingerprints are available consisting of (i) physicochemical and distance
+    features or (ii) physicochemical and moment features (describing the distance distributions).
 
     Attributes
     ----------
     molecule_code : str
         Molecule code as defined by KLIFS in mol2 file.
-    fingerprint_type1 : pandas.DataFrame
-        Fingerprint type 1.
-    fingerprint_type2 : dict of pandas.DataFrame
-        Fingerprint type 2.
+    fingerprint : dict of pandas.DataFrame
+        Fingerprint, consisting of physicochemical, distance and moment features.
+    fingerprint_normalized : dict of pandas.DataFrame
+        Normalized fingerprint, consisting of physicochemical, distance and moment features.
 
     Notes
     -----
-    Physicochemical features:
+    PHYSICOCHEMICAL features (85 x 8 matrix):
+
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
-    - Side chain angle
+    - Side chain orientation
     - Half sphere exposure
 
-    Spatial features:
-    Distance of each residue to 4 reference points:
-    - Binding site centroid
-    - Hinge region
-    - DFG region
-    - Front pocket
+    SPATIAL features:
 
-    Two fingerprint types are offered:
-    - Fingeprint type 1:
-      8 physicochemical and 4 spatial (distance) features (columns) for 85 residues (rows)
-      = 1020 bit fingerprint.
-    - Fingerprint type 2 consisting of two parts:
-      (i)  8 physicochemical features (columns) for 85 residues (rows)
-           = 680 bit fingerprint
-      (ii) 12 spatial features, i.e. first three moments for each of the 4 distance distributions over 85 residues
-           = 12 bit fingerprint
+    - Distance of each residue to 4 reference points (85 x 4 matrix):
+      - Binding site centroid
+      - Hinge region
+      - DFG region
+      - Front pocket
+    - Moments for distance distributions for the 4 reference points (4 x 3 matrix):
+      - Moment 1: Mean
+      - Moment 2: Standard deviation
+      - Moment 3: Skewness (cube root)
+
+    Two fingerprint types are offered (see property functions):
+    - physicochemical_distances fingerprint:
+      8 physicochemical and 4 distance features for 85 residues (1020 bit fingerprint).
+    - physicochemical_moments fingerprint:
+      8 physicochemical features for 85 residues (680 bit fingerprint) and 12 spatial features (12 bit fingerprint),
+      i.e. first three moments for each of the 4 distance distributions over 85 residues.
     """
 
     def __init__(self):
