@@ -178,6 +178,36 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
 
 
 
+def _extract_feature(fingerprint, feature_type):
+    """
+    Extract a feature from a fingerprint.
+
+    Parameters
+    ----------
+    fingerprint : dict of pandas.DataFrame
+        Fingerprint, i.e. physicochemical, distance and moment features.
+    feature_type : str
+        Name of feature type.
+
+    Returns
+    -------
+    pd.Series
+        Feature bits for a given feature type.
+    """
+
+    if feature_type not in FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances'] + FEATURE_NAMES['moments']:
+        raise ValueError(f'Feature could not be extracted: {feature_type}')
+
+    feature = None
+
+    for feature_category, feature_types in FEATURE_NAMES.items():
+
+        if feature_type in feature_types:
+            feature = fingerprint[feature_category][feature_type]
+
+    return feature
+
+
 def _get_values_without_nan(values1, values2):
     """
     Get two value lists with all positions removed where one list or both lists contain nan values.
