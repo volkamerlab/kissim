@@ -177,6 +177,62 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
 
 
 
+def _calc_feature_distances(
+        fingerprint1,
+        fingerprint2,
+        distance_measure='euclidean',
+        normalized=True
+):
+    """
+    Calculate distance between two fingerprints.
+
+    Parameters
+    ----------
+    fingerprint1 : encoding.Fingerprint
+        Fingerprint 1.
+    fingerprint2 : encoding.Fingerprint
+        Fingerprint 2.
+    distance_measure : str
+        Type of distance measure.
+    normalized : bool
+        Normalized (default) or non-normalized fingerprints.
+
+    Returns
+    -------
+
+    """
+
+    if normalized:
+        f1 = fingerprint1.fingerprint
+        f2 = fingerprint2.fingerprint
+    else:
+        f1 = fingerprint1.fingerprint_normalized
+        f2 = fingerprint2.fingerprint_normalized
+
+    distances = {
+        'physicochemical': [],
+        'distances': [],
+        'moments': []
+    }
+
+    for feature_category in distances.keys():
+
+        distances_feature_category = []
+
+        for feature_type in FEATURE_NAMES[feature_category]:
+
+            distances_feature_category.append(
+                _calc_feature_distance(
+                    f1[feature_category][feature_type],
+                    f2[feature_category][feature_type],
+                    distance_measure
+                )
+            )
+
+        distances[feature_category] = distances_feature_category
+
+    return distances
+
 
 def _calc_feature_distance(feature_values1, feature_values2, distance_measure):
     """
