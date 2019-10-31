@@ -176,6 +176,60 @@ def calculate_similarity(fingerprint1, fingerprint2, measure='euklidean'):
         raise ValueError(f'Please choose a similarity measure: {", ".join(measures)}')
 
 
+def _calc_fingerprint_distance(
+    feature_distances,
+    feature_name_physicochemical='physicochemical',
+    feature_name_spatial='moments',
+    feature_weights=None
+):
+    """
+
+    Parameters
+    ----------
+    feature_distances : dict of list
+        xxx
+    feature_name_physicochemical : str
+        xxx
+    feature_name_spatial : str
+        xxx
+    feature_weights : dict of list
+        xxx
+
+    Returns
+    -------
+    float
+        Fingerprint distance.
+    """
+
+    feature_weights_default = {
+        'physicochemical': [1.0] * 8,
+        'distances': [1.0] * 4,
+        'moments': [1.0] * 3
+    }
+
+    if feature_weights:
+        feature_weights = feature_weights_default
+    else:
+        if not list(feature_weights.keys()) == list(feature_weights_default.keys()):
+            raise ValueError(f'Keys in feature_weights dict are wrong. '
+                             f'Parameter needs to be in the following form: {feature_weights_default}')
+        elif not [len(value) for key, value in feature_weights.items()] == [8, 4, 3]:
+            raise ValueError(f'Lists in feature_weights are of wrong length. '
+                             f'Parameter needs to be in the following form: {feature_weights_default}')
+        else:
+            pass
+
+    # Select features
+    selected_distances = feature_distances[feature_name_physicochemical] + feature_distances[feature_name_spatial]
+    selected_distances = pd.Series(selected_distances)
+
+    # Select feature weights
+    selected_weights = feature_weights[feature_name_physicochemical] + feature_weights[feature_name_spatial]
+    selected_weights = pd.Series(selected_weights)
+    selected_weights = selected_weights / selected_weights.sum()  # Scale sum of all feature weights to 1
+
+    return (selected_distances * selected_weights).sum()
+
 
 def _calc_feature_distances(
         fingerprint1,

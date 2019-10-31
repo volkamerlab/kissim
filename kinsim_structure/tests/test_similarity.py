@@ -2,11 +2,17 @@
 Unit and regression test for kinsim_structure.similarity functions.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from kinsim_structure.similarity import _euclidean_distance, _get_values_without_nan, calculate_similarity, _calc_feature_distance
+from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kinsim_structure.encoding import Fingerprint
+from kinsim_structure.similarity import _euclidean_distance, _get_values_without_nan
+from kinsim_structure.similarity import calculate_similarity, _calc_feature_distance, _calc_feature_distances
+from kinsim_structure.similarity import _calc_fingerprint_distance
 
 
 @pytest.mark.parametrize('fingerprint1, fingerprint2, measure, score, coverage', [
@@ -54,6 +60,24 @@ def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, covera
     assert calculate_similarity(fingerprint1, fingerprint2, measure='ballester') == (score, coverage)
 
 
+@pytest.mark.parametrize('feature_distances, feature_name_physicochemical, feature_name_spatial, feature_weights, distance', [
+    (
+        {'physicochemical': [0.1] * 8, 'distances': [0.1] * 4, 'moments': [0.2] * 3},
+        'physicochemical',
+        'moments',
+        None,
+        0.1273
+    ),
+    (
+        {'physicochemical': [0.1] * 8, 'distances': [0.1] * 4, 'moments': [0.2] * 3},
+        'physicochemical',
+        'moments',
+        {'physicochemical': [2] * 8, 'distances': [0.1] * 4, 'moments': [1] * 3},
+        1
+    )
+])
+def test_calc_fingerprint_distance(feature_distances, feature_name_physicochemical, feature_name_spatial, feature_weights, distance):
+    pass
 
 
 @pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids', [
