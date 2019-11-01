@@ -16,6 +16,12 @@ from kinsim_structure.encoding import FEATURE_NAMES
 
 logger = logging.getLogger(__name__)
 
+FEATURE_DISTANCES_FORMAT = {
+    'physicochemical': [None]*8,
+    'distances': [None]*4,
+    'moments': [None]*3
+}
+
 
 def get_fingerprint_type1_similarity(pair, measure='ballester', weight=0.5):
     """
@@ -231,182 +237,185 @@ def _calc_fingerprint_distance(
     return (selected_distances * selected_weights).sum()
 
 
-def _calc_feature_distances(
-        fingerprint1,
-        fingerprint2,
-        distance_measure='euclidean',
-        normalized=True
-):
+class FeatureDistancesGenerator:
     """
-    Calculate distance between two fingerprints.
-
-    Parameters
-    ----------
-    fingerprint1 : encoding.Fingerprint
-        Fingerprint 1.
-    fingerprint2 : encoding.Fingerprint
-        Fingerprint 2.
-    distance_measure : str
-        Type of distance measure.
-    normalized : bool
-        Normalized (default) or non-normalized fingerprints.
-
-    Returns
-    -------
 
     """
 
-    if normalized:
-        f1 = fingerprint1.fingerprint
-        f2 = fingerprint2.fingerprint
-    else:
-        f1 = fingerprint1.fingerprint_normalized
-        f2 = fingerprint2.fingerprint_normalized
+    def __init__(self):
 
-    distances = {
-        'physicochemical': [],
-        'distances': [],
-        'moments': []
-    }
+        self.molecule_codes = None
+        self.data = {
+            'physicochemical': [],
+            'distances': [],
+            'moments': []
+        }
 
-    for feature_category in distances.keys():
+    def from_fingerprint_pair(self, fingerprint1, fingerprint2, distance_measure='euclidean', normalized=True):
+        """
+        Calculate distance between two fingerprints for each feature.
 
-        distances_feature_category = []
+        Parameters
+        ----------
+        fingerprint1 : encoding.Fingerprint
+            Fingerprint 1.
+        fingerprint2 : encoding.Fingerprint
+            Fingerprint 2.
+        distance_measure : str
+            Type of distance measure.
+        normalized : bool
+            Normalized (default) or non-normalized fingerprints.
+        """
 
-        for feature_type in FEATURE_NAMES[feature_category]:
+        self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
 
-            distances_feature_category.append(
-                _calc_feature_distance(
-                    f1[feature_category][feature_type],
-                    f2[feature_category][feature_type],
-                    distance_measure
+        if normalized:
+            f1 = fingerprint1.fingerprint
+            f2 = fingerprint2.fingerprint
+        else:
+            f1 = fingerprint1.fingerprint_normalized
+            f2 = fingerprint2.fingerprint_normalized
+
+        for feature_type in self.data.keys():
+
+            distances_feature_category = []
+
+            for feature_type in FEATURE_NAMES[feature_type]:
+
+                distances_feature_category.append(
+                    self._calc_feature_distance(
+                        f1[feature_type][feature_type],
+                        f2[feature_type][feature_type],
+                        distance_measure
+                    )
                 )
+
+            self.data[feature_type] = distances_feature_category
+
+    def _calc_feature_distance(self, feature_values1, feature_values2, distance_measure='euclidean'):
+        """
+        Calculate distance between two value lists (describing each the same feature).
+
+        Parameters
+        ----------
+        feature_values1 : list or pandas.Series
+            Value list (same length as values2).
+        feature_values2 : list or pandas.Series
+            Value list (same length as values1).
+        distance_measure : str
+            Distance measure.
+
+        Returns
+        -------
+        float
+            Distance between two value lists (describing each the same feature).
+        """
+
+        if isinstance(feature_values1, list):
+            feature_values1 = pd.Series(feature_values1)
+        if isinstance(feature_values2, list):
+            feature_values2 = pd.Series(feature_values2)
+
+        distance_measures = 'euclidean'.split()
+
+        # Get feature values without nan positions
+        values_reduced = self._get_values_without_nan(feature_values1, feature_values2)
+
+        # Get distance
+        if distance_measure == 'euclidean':
+            return self._euclidean_distance(
+                values_reduced['values'][0],
+                values_reduced['values'][1]
             )
+        else:
+            raise ValueError(f'Similarity measure unknown. Choose from: {", ".join(distance_measures)}')
 
-        distances[feature_category] = distances_feature_category
+    @staticmethod
+    def _extract_feature(fingerprint, feature_type):
+        """
+        Extract a feature from a fingerprint.
 
-    return distances
+        Parameters
+        ----------
+        fingerprint : dict of pandas.DataFrame
+            Fingerprint, i.e. physicochemical, distance and moment features.
+        feature_type : str
+            Name of feature type.
 
+        Returns
+        -------
+        pd.Series
+            Feature bits for a given feature type.
+        """
 
-def _calc_feature_distance(feature_values1, feature_values2, distance_measure):
-    """
-    Calculate distance between two value lists (describing each the same feature).
+        if feature_type not in FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances'] + FEATURE_NAMES['moments']:
+            raise ValueError(f'Feature could not be extracted: {feature_type}')
 
-    Parameters
-    ----------
-    feature_values1 : list or pandas.Series
-        Value list (same length as values2).
-    feature_values2 : list or pandas.Series
-        Value list (same length as values1).
-    distance_measure : str
-        Distance measure.
+        feature = None
 
-    Returns
-    -------
-    float
-        Distance between two value lists (describing each the same feature).
-    """
+        for feature_category, feature_types in FEATURE_NAMES.items():
 
-    similarity_measures = 'euclidean'.split()
+            if feature_type in feature_types:
+                feature = fingerprint[feature_category][feature_type]
 
-    # Get feature values without nan positions
-    values_reduced = _get_values_without_nan(feature_values1, feature_values2)
+        return feature
 
-    # Get distance
-    if distance_measure == 'euclidean':
-        return _euclidean_distance(
-            values_reduced['values'][0],
-            values_reduced['values'][1]
-        )
-    else:
-        raise ValueError(f'Similarity measure unknown. Choose from: {", ".join(similarity_measures)}')
+    @staticmethod
+    def _get_values_without_nan(values1, values2):
+        """
+        Get two value lists with all positions removed where one list or both lists contain nan values.
 
+        Parameters
+        ----------
+        values1 : list or pandas.Series
+            Value list (same length as values2).
+        values2 : list or pandas.Series
+            Value list (same length as values1).
 
-def _extract_feature(fingerprint, feature_type):
-    """
-    Extract a feature from a fingerprint.
+        Returns
+        -------
+        dict
+            Values without nan positions and values coverage (coverage of non nan values).
+        """
 
-    Parameters
-    ----------
-    fingerprint : dict of pandas.DataFrame
-        Fingerprint, i.e. physicochemical, distance and moment features.
-    feature_type : str
-        Name of feature type.
+        if len(values1) != len(values2):
+            raise ValueError(f'Nan removal failed: Values lists are not of same length.')
 
-    Returns
-    -------
-    pd.Series
-        Feature bits for a given feature type.
-    """
+        # Merge both fingerprints to array in order to remove positions with nan values
+        values = np.array([values1, values2])
 
-    if feature_type not in FEATURE_NAMES['physicochemical'] + FEATURE_NAMES['distances'] + FEATURE_NAMES['moments']:
-        raise ValueError(f'Feature could not be extracted: {feature_type}')
+        # Remove nan positions (shall not be compared)
+        values_reduced = values[:, ~np.any(np.isnan(values), axis=0)]
 
-    feature = None
+        # Get number of bits that can be compared (after nan bits removal)
+        coverage = values_reduced.shape[0] / float(values.shape[1])
 
-    for feature_category, feature_types in FEATURE_NAMES.items():
+        return {
+            'values': values_reduced,
+            'coverage': coverage
+        }
 
-        if feature_type in feature_types:
-            feature = fingerprint[feature_category][feature_type]
+    @staticmethod
+    def _euclidean_distance(values1, values2):
+        """
+        Calculate Euclidean distance between two value lists of same length.
 
-    return feature
+        Parameters
+        ----------
+        values1 : list or pandas.Series
+            Value list (same length as values2).
+        values2 : list or pandas.Series
+            Value list (same length as values1).
 
+        Returns
+        -------
+        float
+            Euclidean distance between two value lists.
+        """
 
-def _get_values_without_nan(values1, values2):
-    """
-    Get two value lists with all positions removed where one list or both lists contain nan values.
+        if len(values1) != len(values2):
+            raise ValueError(f'Distance calculation failed: Values lists are not of same length.')
 
-    Parameters
-    ----------
-    values1 : list or pandas.Series
-        Value list (same length as values2).
-    values2 : list or pandas.Series
-        Value list (same length as values1).
+        d = 1 / len(values1) * distance.euclidean(values1, values2)
 
-    Returns
-    -------
-    dict
-        Values without nan positions and values coverage (coverage of non nan values).
-    """
-
-    if len(values1) != len(values2):
-        raise ValueError(f'Nan removal failed: Values lists are not of same length.')
-
-    # Merge both fingerprints to array in order to remove positions with nan values
-    values = np.array([values1, values2])
-
-    # Remove nan positions (shall not be compared)
-    values_reduced = values[:, ~np.any(np.isnan(values), axis=0)]
-
-    # Get number of bits that can be compared (after nan bits removal)
-    coverage = values_reduced.shape[0] / float(values.shape[1])
-
-    return {
-        'values': values_reduced,
-        'coverage': coverage
-    }
-
-
-def _euclidean_distance(values1, values2):
-    """
-    Calculate Euclidean distance between two value lists of same length.
-
-    Parameters
-    ----------
-    values1 : list or pandas.Series
-        Value list (same length as values2).
-    values2 : list or pandas.Series
-        Value list (same length as values1).
-
-    Returns
-    -------
-    float
-        Euclidean distance between two value lists.
-    """
-
-    if len(values1) != len(values2):
-        raise ValueError(f'Distance calculation failed: Values lists are not of same length.')
-
-    d = 1 / len(values1) * distance.euclidean(values1, values2)
-
-    return d
+        return d
