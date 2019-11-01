@@ -10,9 +10,7 @@ import pytest
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import Fingerprint
-from kinsim_structure.similarity import _euclidean_distance, _get_values_without_nan
-from kinsim_structure.similarity import calculate_similarity, _calc_feature_distance, _calc_feature_distances
-from kinsim_structure.similarity import _calc_fingerprint_distance
+from kinsim_structure.similarity import FeatureDistancesGenerator
 
 
 @pytest.mark.parametrize('fingerprint1, fingerprint2, measure, score, coverage', [
@@ -38,7 +36,7 @@ from kinsim_structure.similarity import _calc_fingerprint_distance
         0.75
     )
 ])
-def test_calculate_similarity(fingerprint1, fingerprint2, measure, score, coverage):
+def ttest_calculate_similarity(fingerprint1, fingerprint2, measure, score, coverage):
     """
     Test pairwise fingerprint similarity (similarity score and bit coverage) calculation given a defined measure.
 
@@ -87,7 +85,7 @@ def test_calc_fingerprint_distance(feature_distances, feature_name_physicochemic
         ['A', 'B']
     )
 ])
-def test_calc_feature_distances(mol2_filenames, pdb_filenames, chain_ids):
+def test_featuredistancesgenerator_from_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids):
     """
     Test data type and dimensions of feature distances between two fingerprints.
 
@@ -122,7 +120,8 @@ def test_calc_feature_distances(mol2_filenames, pdb_filenames, chain_ids):
     fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
 
     # Get feature distances and check if format is correct
-    feature_distances = _calc_feature_distances(
+    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances = feature_distances_generator.from_fingerprint_pair(
         fingerprint1=fingerprint1,
         fingerprint2=fingerprint2,
         distance_measure='euclidean',
@@ -138,7 +137,7 @@ def test_calc_feature_distances(mol2_filenames, pdb_filenames, chain_ids):
     (pd.Series([0, 0]), pd.Series([4, 3]), 'euclidean', 2.5),
     (pd.Series([0, 0, np.nan]), pd.Series([4, 3, 1]), 'euclidean', 2.5)
 ])
-def test_calc_feature_distance(feature_values1, feature_values2, distance_measure, distance):
+def test_featuredistancesgenerator_calc_feature_distance(feature_values1, feature_values2, distance_measure, distance):
     """
     Test distance calculation for two value (feature) lists.
 
@@ -154,7 +153,12 @@ def test_calc_feature_distance(feature_values1, feature_values2, distance_measur
         Distance between two value lists.
     """
 
-    distance_calculated = _calc_feature_distance(feature_values1, feature_values2, distance_measure)
+    feature_distances_generator = FeatureDistancesGenerator()
+    distance_calculated = feature_distances_generator._calc_feature_distance(
+        feature_values1,
+        feature_values2,
+        distance_measure
+    )
 
     assert np.isclose(distance_calculated, distance, rtol=1e-04)
 
@@ -164,9 +168,20 @@ def test_calc_feature_distance(feature_values1, feature_values2, distance_measur
     ([0, 0, np.nan], [4, 3, np.nan], [[0, 0], [4, 3]], 0.6667),
     ([0, 0], [4, 3], [[0, 0], [4, 3]], 1.0)
 ])
-def test_get_values_without_nan(values1, values2, values_reduced, coverage):
+def test_featuredistancesgenerator_get_values_without_nan(values1, values2, values_reduced, coverage):
+    """
+    # TODO
 
-    values_reduced_calculated = _get_values_without_nan(values1, values2)
+    Parameters
+    ----------
+    values1
+    values2
+    values_reduced
+    coverage
+    """
+
+    feature_distances_generator = FeatureDistancesGenerator()
+    values_reduced_calculated = feature_distances_generator._get_values_without_nan(values1, values2)
 
     assert np.isclose(values_reduced_calculated['coverage'], coverage, rtol=1e-04)
     assert np.isclose(values_reduced_calculated['values'], values_reduced, rtol=1e-04).all()
@@ -176,7 +191,7 @@ def test_get_values_without_nan(values1, values2, values_reduced, coverage):
     ([0, 0], [4, 3], 2.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
 ])
-def test_euclidean_distance(values1, values2, distance):
+def test_featuredistancesgenerator_euclidean_distance(values1, values2, distance):
     """
     Test Euclidean distance calculation.
 
@@ -190,6 +205,7 @@ def test_euclidean_distance(values1, values2, distance):
         Euclidean distance between two value lists.
     """
 
-    score_calculated = _euclidean_distance(values1, values2)
+    feature_distances_generator = FeatureDistancesGenerator()
+    score_calculated = feature_distances_generator._euclidean_distance(values1, values2)
 
     assert np.isclose(score_calculated, distance, rtol=1e-04)
