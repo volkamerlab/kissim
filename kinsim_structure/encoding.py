@@ -25,8 +25,7 @@ logger = logging.getLogger(__name__)
 FEATURE_NAMES = {
     'physicochemical': 'size hbd hba charge aromatic aliphatic sco exposure'.split(),
     'distances': 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split(),
-    'moments': 'moment1 moment2 moment3'.split(),
-    'klifs_ids': list(range(1, 86))
+    'moments': 'moment1 moment2 moment3'.split()
 }
 
 ANCHOR_RESIDUES = {

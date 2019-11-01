@@ -44,13 +44,15 @@ def test_fingerprint_from_molecule(mol2_filename, pdb_filename, chain_id):
     fingerprint = Fingerprint()
     fingerprint.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
 
+    klifs_ids = list(range(1, 86))
+
     # Non-normalized
     assert fingerprint.physicochemical.shape == (85, 8)
-    assert list(fingerprint.physicochemical.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.physicochemical.index) == klifs_ids
     assert list(fingerprint.physicochemical.columns) == FEATURE_NAMES['physicochemical']
 
     assert fingerprint.distances.shape == (85, 4)
-    assert list(fingerprint.distances.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.distances.index) == klifs_ids
     assert list(fingerprint.distances.columns) == FEATURE_NAMES['distances']
 
     assert fingerprint.moments.shape == (4, 3)
@@ -62,11 +64,11 @@ def test_fingerprint_from_molecule(mol2_filename, pdb_filename, chain_id):
 
     # Normalized
     assert fingerprint.physicochemical_normalized.shape == (85, 8)
-    assert list(fingerprint.physicochemical_normalized.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.physicochemical_normalized.index) == klifs_ids
     assert list(fingerprint.physicochemical_normalized.columns) == FEATURE_NAMES['physicochemical']
 
     assert fingerprint.distances.shape == (85, 4)
-    assert list(fingerprint.distances_normalized.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.distances_normalized.index) == klifs_ids
     assert list(fingerprint.distances_normalized.columns) == FEATURE_NAMES['distances']
 
     assert fingerprint.moments.shape == (4, 3)
