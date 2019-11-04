@@ -293,10 +293,7 @@ class FeatureDistancesGenerator:
                 bit_number = len(fingerprint_pair[feature_type][feature_name])
 
                 # Get bit coverage
-                if feature_type is not 'moments':
-                    bit_coverage = round(bit_number / 85.0, 2)
-                else:
-                    bit_coverage = round(bit_number / 4.0, 2)
+                bit_coverage = self._get_bit_coverage(feature_type, bit_number)
 
                 # Save feature data to fingerprint data
                 distances.append([feature_type, feature_name, distance, bit_coverage, bit_number])
@@ -305,6 +302,46 @@ class FeatureDistancesGenerator:
             distances,
             columns='feature_type feature_name distance bit_coverage bit_number'.split()
         )
+
+    @staticmethod
+    def _get_bit_coverage(feature_type, bit_number):
+        """
+        Get bit coverage for a given feature type.
+
+        Parameters
+        ----------
+        feature_type : str
+            Feature type: physicochemical, distances or moments.
+        bit_number : int
+            Number of feature bits used for distance calculation.
+
+        Returns
+        -------
+        float
+            Bit coverage describing the percentage of bits used for distance calculation.
+        """
+
+        if feature_type not in FEATURE_NAMES.keys():
+            raise ValueError(f'Feature type unknown. Choose from: {", ".join(list(FEATURE_NAMES.keys()))}.')
+
+        bit_number_moments = 4.0
+        bit_number_other = 85.0
+
+        if feature_type is 'moments':
+
+            if 0 <= bit_number <= bit_number_moments:
+                return round(bit_number / bit_number_moments, 2)
+            else:
+                raise ValueError(f'Unexcepted number of bits for {feature_type}: '
+                                 f'Is {bit_number}, but must be between 0 and {int(bit_number_moments)}.')
+
+        else:
+
+            if 0 <= bit_number <= bit_number_other:
+                return round(bit_number / bit_number_other, 2)
+            else:
+                raise ValueError(f'Unexcepted number of bits for {feature_type}: '
+                                 f'Is {bit_number}, but must be between 0 and {int(bit_number_other)}.')
 
     def _calc_feature_distance(self, feature_pair, distance_measure='euclidean'):
         """

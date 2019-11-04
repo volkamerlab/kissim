@@ -20,7 +20,7 @@ from kinsim_structure.similarity import FeatureDistancesGenerator
         ['A', 'B']
     )
 ])
-def test_from_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids):
+def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids):
     """
     Test data type and dimensions of feature distances between two fingerprints.
 
@@ -56,15 +56,43 @@ def test_from_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids):
 
     # Get feature distances and check if format is correct
     feature_distances_generator = FeatureDistancesGenerator()
-    feature_distances = feature_distances_generator.from_fingerprint_pair(
+    feature_distances_generator.from_fingerprints(
         fingerprint1=fingerprint1,
         fingerprint2=fingerprint2,
         distance_measure='euclidean',
         normalized=True
     )
 
-    assert list(feature_distances.keys()) == 'physicochemical distances moments'.split()
-    assert [len(value) for key, value in feature_distances.items()] == [8, 4, 3]
+    feature_distances = feature_distances_generator.data
+
+    assert all(feature_distances.feature_type.unique() == list(FEATURE_NAMES.keys()))
+    #assert [len(value) for key, value in feature_distances.items()] == [8, 4, 3]
+
+
+@pytest.mark.parametrize('feature_type, bit_number, bit_coverage', [
+    ('moments', 4, 1.0),
+    ('moments', 2, 0.5),
+    ('moments', 0, 0.0),
+    ('physicochemical', 50, 0.59),
+    ('distances', 1, 0.01)
+])
+def test_get_bit_coverage(feature_type, bit_number, bit_coverage):
+
+    feature_distances_generator = FeatureDistancesGenerator()
+    bit_coverage_calculated = feature_distances_generator._get_bit_coverage(feature_type, bit_number)
+
+    assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-02)  # Coverage has two decimals
+
+
+@pytest.mark.parametrize('feature_type, bit_number', [
+    ('xxx', 1),  # Feature type unknown
+    ('moments', 5)  # Too many bits
+])
+def test_get_bit_coverage_valueerror(feature_type, bit_number):
+
+    with pytest.raises(ValueError):
+        feature_distances_generator = FeatureDistancesGenerator()
+        feature_distances_generator._get_bit_coverage(feature_type, bit_number)
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure, distance', [
