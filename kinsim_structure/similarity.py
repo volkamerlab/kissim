@@ -253,8 +253,8 @@ class FeatureDistances:
     molecule_codes : list of str
         Codes of both molecules represented by the fingerprints.
     data : pandas.DataFrame
-        Distances between two fingerprints for each of their features, including information on feature bit coverage and
-        bit number, in order to assess how reliable the feature distance is.
+        Distances between two fingerprints for each of their features, plus details on feature type, feature,
+        feature bit coverage, and feature bit number.
     """
 
     def __init__(self):
@@ -274,6 +274,12 @@ class FeatureDistances:
             Fingerprint 2.
         distance_measure : str
             Type of distance measure.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, and feature bit number.
         """
 
         self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
