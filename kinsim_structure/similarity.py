@@ -243,7 +243,7 @@ class FingerprintDistancesGenerator:
     """
 
 
-class FeatureDistancesGenerator:
+class FeatureDistances:
     """
     Distances between two fingerprints for each of their features, including information on feature bit coverage and
     bit number, in order to assess how reliable the feature distance is.

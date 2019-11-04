@@ -10,7 +10,7 @@ import pytest
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
-from kinsim_structure.similarity import FeatureDistancesGenerator
+from kinsim_structure.similarity import FeatureDistances
 
 
 @pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids, feature_type_dimension', [
@@ -56,16 +56,14 @@ def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids, feature_typ
     fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
 
     # Get feature distances and check if format is correct
-    feature_distances_generator = FeatureDistancesGenerator()
-    feature_distances_generator.from_fingerprints(
+    feature_distances = FeatureDistances()
+    feature_distances.from_fingerprints(
         fingerprint1=fingerprint1,
         fingerprint2=fingerprint2,
         distance_measure='euclidean'
     )
 
-    feature_distances = feature_distances_generator.data
-
-    feature_type_dimension_calculated = feature_distances.groupby(by='feature_type', sort=False).size()
+    feature_type_dimension_calculated = feature_distances.data.groupby(by='feature_type', sort=False).size()
 
     assert all(feature_type_dimension_calculated == feature_type_dimension)
 
@@ -91,7 +89,7 @@ def test_get_bit_coverage(feature_type, bit_number, bit_coverage):
         Bit coverage describing the percentage of bits used for distance calculation.
     """
 
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     bit_coverage_calculated = feature_distances_generator._get_bit_coverage(feature_type, bit_number)
 
     assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-02)  # Coverage has two decimals
@@ -114,7 +112,7 @@ def test_get_bit_coverage_valueerror(feature_type, bit_number):
     """
 
     with pytest.raises(ValueError):
-        feature_distances_generator = FeatureDistancesGenerator()
+        feature_distances_generator = FeatureDistances()
         feature_distances_generator._get_bit_coverage(feature_type, bit_number)
 
 
@@ -136,7 +134,7 @@ def test_calc_feature_distance(feature_pair, distance_measure, distance):
         Distance between two value lists.
     """
 
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     distance_calculated = feature_distances_generator._calc_feature_distance(
         feature_pair,
         distance_measure
@@ -165,7 +163,7 @@ def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
     """
 
     with pytest.raises(TypeError):
-        feature_distance_generator = FeatureDistancesGenerator()
+        feature_distance_generator = FeatureDistances()
         feature_distance_generator._calc_feature_distance(feature_pair, distance_measure)
 
 
@@ -186,7 +184,7 @@ def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
     """
 
     with pytest.raises(ValueError):
-        feature_distance_generator = FeatureDistancesGenerator()
+        feature_distance_generator = FeatureDistances()
         feature_distance_generator._calc_feature_distance(feature_pair, distance_measure)
 
 
@@ -235,7 +233,7 @@ def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bi
     fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
 
     # Fingerprint pair
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     pair = feature_distances_generator._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
 
     # Correct feature type keys?
@@ -274,7 +272,7 @@ def test_euclidean_distance(values1, values2, distance):
         Euclidean distance between two value lists.
     """
 
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     score_calculated = feature_distances_generator._euclidean_distance(values1, values2)
 
     assert np.isclose(score_calculated, distance, rtol=1e-04)
