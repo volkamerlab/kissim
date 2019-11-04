@@ -132,16 +132,20 @@ def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bi
     feature_distances_generator = FeatureDistancesGenerator()
     pair = feature_distances_generator._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
 
+    # Correct feature type keys?
     assert pair.keys() == FEATURE_NAMES.keys()
 
     for feature_type in pair.keys():
 
+        # Correct feature names per feature type?
         assert list(pair[feature_type].keys()) == FEATURE_NAMES[feature_type]
 
         for feature_name in pair[feature_type].keys():
 
+            # Correct DataFrame column names?
             assert list(pair[feature_type][feature_name].columns) == 'fingerprint1 fingerprint2'.split()
 
+            # Correct number of bits for one example feature?
             if (feature_type == 'physicochemical') and (feature_name) == 'size':
                 assert len(pair[feature_type][feature_name]) == n_bits_wo_nan_size
 
