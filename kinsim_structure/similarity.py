@@ -239,19 +239,24 @@ def _calc_fingerprint_distance(
 
 class FeatureDistancesGenerator:
     """
+    Distances between two fingerprints for each of their features, including information on feature bit coverage and
+    bit number, in order to assess how reliable the feature distance is.
 
+    Attributes
+    ----------
+    molecule_codes : list of str
+        Codes of both molecules represented by the fingerprints.
+    data : pandas.DataFrame
+        Distances between two fingerprints for each of their features, including information on feature bit coverage and
+        bit number, in order to assess how reliable the feature distance is.
     """
 
     def __init__(self):
 
         self.molecule_codes = None
-        self.data = {
-            'physicochemical': [],
-            'distances': [],
-            'moments': []
-        }
+        self.data = None
 
-    def from_fingerprint_pair(self, fingerprint1, fingerprint2, distance_measure='euclidean', normalized=True):
+    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='euclidean', normalized=True):
         """
         Calculate distance between two fingerprints for each feature.
 
@@ -269,32 +274,37 @@ class FeatureDistancesGenerator:
 
         self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
 
-        if normalized:
-            f1 = fingerprint1.fingerprint_normalized
-            f2 = fingerprint2.fingerprint_normalized
-        else:
-            f1 = fingerprint1.fingerprint
-            f2 = fingerprint2.fingerprint
+        # Get fingerprint pair
+        fingerprint_pair = self._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized)
 
+        distances = []
 
         for feature_type in FEATURE_NAMES.keys():
 
-            distances = []
+            for feature_name in FEATURE_NAMES[feature_type]:
 
-            for feature_name in FEATURE_NAMES[feature_type].keys():
-
-                distances.append(
-                    self._calc_feature_distance(
-                        f1[feature_type][feature_name],
-                        f2[feature_type][feature_name],
+                # Get feature distance
+                distance = self._calc_feature_distance(
+                        fingerprint_pair[feature_type][feature_name],
                         distance_measure
                     )
-                )
 
-            distances = pd.Series()
-            distances.name = feature_type
+                # Get number of feature bits without any NaN value
+                bit_number = len(fingerprint_pair[feature_type][feature_name])
 
-            self.data[feature_type] = distances
+                # Get bit coverage
+                if feature_type is not 'moments':
+                    bit_coverage = round(bit_number / 85.0, 2)
+                else:
+                    bit_coverage = round(bit_number / 4.0, 2)
+
+                # Save feature data to fingerprint data
+                distances.append([feature_type, feature_name, distance, bit_coverage, bit_number])
+
+        self.data = pd.DataFrame(
+            distances,
+            columns='feature_type feature_name distance bit_coverage bit_number'.split()
+        )
 
     def _calc_feature_distance(self, feature_pair, distance_measure='euclidean'):
         """
