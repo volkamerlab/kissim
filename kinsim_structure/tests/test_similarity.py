@@ -10,7 +10,7 @@ import pytest
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import Fingerprint
-from kinsim_structure.similarity import FeatureDistancesGenerator
+from kinsim_structure.similarity import FeatureDistances
 
 
 @pytest.mark.parametrize('fingerprint1, fingerprint2, measure, score, coverage', [
@@ -120,7 +120,7 @@ def test_featuredistancesgenerator_from_fingerprint_pair(mol2_filenames, pdb_fil
     fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
 
     # Get feature distances and check if format is correct
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     feature_distances = feature_distances_generator.from_fingerprint_pair(
         fingerprint1=fingerprint1,
         fingerprint2=fingerprint2,
@@ -153,7 +153,7 @@ def test_featuredistancesgenerator_calc_feature_distance(feature_values1, featur
         Distance between two value lists.
     """
 
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     distance_calculated = feature_distances_generator._calc_feature_distance(
         feature_values1,
         feature_values2,
@@ -180,7 +180,7 @@ def test_featuredistancesgenerator_get_values_without_nan(values1, values2, valu
     coverage
     """
 
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     values_reduced_calculated = feature_distances_generator._get_values_without_nan(values1, values2)
 
     assert np.isclose(values_reduced_calculated['coverage'], coverage, rtol=1e-04)
@@ -205,7 +205,7 @@ def test_featuredistancesgenerator_euclidean_distance(values1, values2, distance
         Euclidean distance between two value lists.
     """
 
-    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator = FeatureDistances()
     score_calculated = feature_distances_generator._euclidean_distance(values1, values2)
 
     assert np.isclose(score_calculated, distance, rtol=1e-04)
