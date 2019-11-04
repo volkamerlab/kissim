@@ -472,3 +472,29 @@ class FeatureDistances:
         else:
             d = 1 / len(values1) * distance.euclidean(values1, values2)
             return d
+
+    @staticmethod
+    def _cityblock_distance(values1, values2):
+        """
+        Calculate cityblock distance between two value lists of same length.
+
+        Parameters
+        ----------
+        values1 : list or pandas.Series
+            Value list (same length as values2).
+        values2 : list or pandas.Series
+            Value list (same length as values1).
+
+        Returns
+        -------
+        float
+            Euclidean distance between two value lists.
+        """
+
+        if len(values1) != len(values2):
+            raise ValueError(f'Distance calculation failed: Values lists are not of same length.')
+        elif len(values1) == 0:
+            return np.nan
+        else:
+            d = 1 / len(values1) * distance.cityblock(values1, values2)
+            return d
