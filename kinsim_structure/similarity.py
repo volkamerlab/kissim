@@ -337,16 +337,23 @@ class FeatureDistancesGenerator:
     @staticmethod
     def _extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True):
         """
-        # TODO
+        For each feature, get both fingerprint bits without NaN positions.
+
         Parameters
         ----------
-        fingerprint1
-        fingerprint2
-        normalized
+        fingerprint1 : encoding.Fingerprint
+            Fingerprint 1.
+        fingerprint2 : encoding.Fingerprint
+            Fingerprint 2.
+        normalized : bool
+            Normalized (default) or non-normalized fingerprints.
 
         Returns
         -------
-
+        dict of dict of pandas.DataFrame
+            For each feature type, i.e. physicochemical, distances, and moments (dict) and for each corresponding
+            feature, i.e. size, HBD, HDA, ... for physicochemical feature type (dict), non-NaN bits from both
+            fingerprints (pandas.DataFrame).
         """
 
         if normalized:
