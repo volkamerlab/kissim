@@ -237,6 +237,12 @@ def _calc_fingerprint_distance(
     return (selected_distances * selected_weights).sum()
 
 
+class FingerprintDistancesGenerator:
+    """
+
+    """
+
+
 class FeatureDistancesGenerator:
     """
     Distances between two fingerprints for each of their features, including information on feature bit coverage and
@@ -256,7 +262,7 @@ class FeatureDistancesGenerator:
         self.molecule_codes = None
         self.data = None
 
-    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='euclidean', normalized=True):
+    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='euclidean'):
         """
         Calculate distance between two fingerprints for each feature.
 
@@ -268,14 +274,12 @@ class FeatureDistancesGenerator:
             Fingerprint 2.
         distance_measure : str
             Type of distance measure.
-        normalized : bool
-            Normalized (default) or non-normalized fingerprints.
         """
 
         self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
 
-        # Get fingerprint pair
-        fingerprint_pair = self._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized)
+        # Get fingerprint pair (normalized fingerprints only)
+        fingerprint_pair = self._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
 
         distances = []
 

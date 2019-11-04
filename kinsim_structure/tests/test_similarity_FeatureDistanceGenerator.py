@@ -13,14 +13,15 @@ from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.similarity import FeatureDistancesGenerator
 
 
-@pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids', [
+@pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids, feature_type_dimension', [
     (
         ['ABL1/2g2i_chainA/pocket.mol2', 'AAK1/4wsq_altA_chainB/pocket.mol2'],
         ['2g2i.cif', '4wsq.cif'],
-        ['A', 'B']
+        ['A', 'B'],
+        pd.Series([8, 4, 3], index='physicochemical distances moments'.split())
     )
 ])
-def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids):
+def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids, feature_type_dimension):
     """
     Test data type and dimensions of feature distances between two fingerprints.
 
@@ -59,14 +60,14 @@ def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids):
     feature_distances_generator.from_fingerprints(
         fingerprint1=fingerprint1,
         fingerprint2=fingerprint2,
-        distance_measure='euclidean',
-        normalized=True
+        distance_measure='euclidean'
     )
 
     feature_distances = feature_distances_generator.data
 
-    assert all(feature_distances.feature_type.unique() == list(FEATURE_NAMES.keys()))
-    #assert [len(value) for key, value in feature_distances.items()] == [8, 4, 3]
+    feature_type_dimension_calculated = feature_distances.groupby(by='feature_type', sort=False).size()
+
+    assert all(feature_type_dimension_calculated == feature_type_dimension)
 
 
 @pytest.mark.parametrize('feature_type, bit_number, bit_coverage', [
