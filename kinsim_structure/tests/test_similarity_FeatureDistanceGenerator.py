@@ -78,6 +78,18 @@ def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids, feature_typ
     ('distances', 1, 0.01)
 ])
 def test_get_bit_coverage(feature_type, bit_number, bit_coverage):
+    """
+    Test bit coverage calculation.
+
+    Parameters
+    ----------
+    feature_type : str
+        Feature type: physicochemical, distances or moments.
+    bit_number : int
+        Number of feature bits used for distance calculation.
+    bit_coverage : float
+        Bit coverage describing the percentage of bits used for distance calculation.
+    """
 
     feature_distances_generator = FeatureDistancesGenerator()
     bit_coverage_calculated = feature_distances_generator._get_bit_coverage(feature_type, bit_number)
@@ -90,6 +102,16 @@ def test_get_bit_coverage(feature_type, bit_number, bit_coverage):
     ('moments', 5)  # Too many bits
 ])
 def test_get_bit_coverage_valueerror(feature_type, bit_number):
+    """
+    Test exceptions for bit coverage calculation.
+
+    Parameters
+    ----------
+    feature_type : str
+        Feature type: physicochemical, distances or moments.
+    bit_number : int
+        Number of feature bits used for distance calculation.
+    """
 
     with pytest.raises(ValueError):
         feature_distances_generator = FeatureDistancesGenerator()
@@ -131,6 +153,16 @@ def test_calc_feature_distance(feature_pair, distance_measure, distance):
     ('feature_pair', 'euclidean')  # Feature pair is not pandas.DataFrame
 ])
 def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
+    """
+    Test TypeError exceptions in distance calculation for two value (feature) lists.
+
+    Parameters
+    ----------
+    feature_pair : pandas.DataFrame
+        Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
+    distance_measure : str
+        Distance measure.
+    """
 
     with pytest.raises(TypeError):
         feature_distance_generator = FeatureDistancesGenerator()
@@ -142,6 +174,16 @@ def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
     (pd.DataFrame([[1, 2, 1], [1, 2, 1]]), 'euclidean')  # Feature pair has more than two columns
 ])
 def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
+    """
+    Test ValueError exceptions in distance calculation for two value (feature) lists.
+
+    Parameters
+    ----------
+    feature_pair : pandas.DataFrame
+        Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
+    distance_measure : str
+        Distance measure.
+    """
 
     with pytest.raises(ValueError):
         feature_distance_generator = FeatureDistancesGenerator()
@@ -157,6 +199,20 @@ def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
     )
 ])
 def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bits_wo_nan_size):
+    """
+    Test extracting fingerprint pairs for each feature.
+
+    Parameters
+    ----------
+    mol2_filenames : list of str
+        Paths to two mol2 files.
+    pdb_filenames : list of str
+        Paths to two cif files.
+    chain_ids : list of str
+        Two chain IDs.
+    n_bits_wo_nan_size : int
+        Number of bits after removing all positions with any NaN value for size feature.
+    """
 
     # Fingerprint 1
     mol2_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[0]
@@ -196,32 +252,8 @@ def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bi
             assert list(pair[feature_type][feature_name].columns) == 'fingerprint1 fingerprint2'.split()
 
             # Correct number of bits for one example feature?
-            if (feature_type == 'physicochemical') and (feature_name) == 'size':
+            if (feature_type == 'physicochemical') and (feature_name == 'size'):
                 assert len(pair[feature_type][feature_name]) == n_bits_wo_nan_size
-
-
-@pytest.mark.parametrize('values1, values2, values_reduced, coverage', [
-    ([0, 0, np.nan, 1], [4, 3, 1, np.nan], [[0, 0], [4, 3]], 0.5),
-    ([0, 0, np.nan], [4, 3, np.nan], [[0, 0], [4, 3]], 0.6667),
-    ([0, 0], [4, 3], [[0, 0], [4, 3]], 1.0)
-])
-def test_get_values_without_nan(values1, values2, values_reduced, coverage):
-    """
-    # TODO
-
-    Parameters
-    ----------
-    values1
-    values2
-    values_reduced
-    coverage
-    """
-
-    feature_distances_generator = FeatureDistancesGenerator()
-    values_reduced_calculated = feature_distances_generator._get_values_without_nan(values1, values2)
-
-    assert np.isclose(values_reduced_calculated['coverage'], coverage, rtol=1e-04)
-    assert np.isclose(values_reduced_calculated['values'], values_reduced, rtol=1e-04).all()
 
 
 @pytest.mark.parametrize('values1, values2, distance', [
