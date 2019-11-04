@@ -23,6 +23,195 @@ FEATURE_DISTANCES_FORMAT = {
 }
 
 
+class FingerprintDistance:
+
+    def __init__(self):
+        self.molecule_codes = None
+        self.data = None
+
+    def from_feature_distances(self, feature_distances, feature_weights=None):
+        """
+        Get fingerprint distance.
+
+        Parameters
+        ----------
+        feature_distances : similarity.FeatureDistances
+            Feature distances.
+        feature_weights : (dict of float or int) or (dict of list of float or int) or None
+            (a) Dictionary of weight (value) per feature type (key), i.e. physicochemical, distances, moments).
+            (b) Dictionary of weights for each feature: Dict keys are feature types (physicochemical, distances, moments)
+            and dict values are list of float/int describing weights for each feature
+            (physicochemical: 8 features, distances: 4 features, moments: 3 values).
+            All floats must sum up to 1.0.
+
+        Returns
+        -------
+        float
+            Fingerprint distance.
+        """
+
+        self.molecule_codes = feature_distances.molecule_codes
+        feature_distances = feature_distances.data
+
+        feature_distances = self._add_weight_column(feature_distances, feature_weights)
+
+        fingerprint_distance = (feature_distances.distance * feature_distances.weights).sum()
+
+        self.data = fingerprint_distance
+
+    def _add_weight_column(self, feature_distances, feature_weights=None):
+        """
+        Add feature weights to feature distance details (each feature type OR feature can be set individually).
+
+        Parameters
+        ----------
+        feature_distances : pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, and feature bit number.
+        feature_weights : (dict of float or int) or (dict of list of float or int) or None
+            (a) Dictionary of weight (value) per feature type (key), i.e. physicochemical, distances, moments).
+            (b) Dictionary of weights for each feature: Dict keys are feature types (physicochemical, distances, moments)
+            and dict values are list of float/int describing weights for each feature
+            (physicochemical: 8 features, distances: 4 features, moments: 3 values).
+            All floats must sum up to 1.0.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, feature bit number, AND feature weights.
+
+        """
+
+        if feature_weights is None:
+            return self._add_weight_per_feature_type(feature_distances, feature_weights)
+
+        elif all([isinstance(i, (float, int)) for i in feature_weights.values()]):
+            return self._add_weight_per_feature_type(feature_distances, feature_weights)
+
+        elif all([isinstance(i, list) for i in feature_weights.values()]):
+            return self._add_weight_per_feature(feature_distances, feature_weights)
+
+        else:
+            raise ValueError(f'Unknown input for which no exception is implemented. '
+                             f'Please check docstring for details on input formats.')
+
+    @staticmethod
+    def _add_weight_per_feature_type(feature_distances, feature_weights=None):
+        """
+        Add feature weights to feature distance details (each feature type can be set individually).
+
+        Parameters
+        ----------
+        feature_distances : pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, and feature bit number.
+        feature_weights : (dict of float or int) or None
+            Dictionary of weight (value) per feature type (key), i.e. physicochemical, distances, moments).
+            All floats must sum up to 1.0.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, feature bit number, AND feature weights.
+        """
+
+        if feature_weights is None:
+
+            feature_weights = {
+                'physicochemical': 0.5,
+                'distances': 0.5,
+                'moments': 0.0
+            }
+
+        else:
+
+            # Check if input weights have correct form
+            weights_sum = sum(feature_weights.values())
+
+            if weights_sum != 1.0:
+                raise ValueError(f'Sum of all weights must be one, but is {weights_sum}.')
+
+        # Cast weight values to float
+        for feature_type, weight in feature_weights.items():
+
+            if isinstance(feature_weights[feature_type], int):
+                feature_weights[feature_type] = float(feature_weights[feature_type])
+
+        # Set weights per feature
+        weights = []
+
+        for feature_type, group in feature_distances.groupby(by='feature_type', sort=False):
+            weights.extend([feature_weights[feature_type] / len(group.distance)] * len(group.distance))
+
+        # Add weights to DataFrame
+        feature_distances['weights'] = weights
+
+        return feature_distances
+
+    @staticmethod
+    def _add_weight_per_feature(feature_distances, feature_weights=None):
+        """
+        Add feature weights to feature distance details (each feature can be set individually).
+
+        Parameters
+        ----------
+        feature_distances : pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, and feature bit number.
+        feature_weights : (dict of list of float or int) or None
+            Dictionary of weights for each feature: Dict keys are feature types (physicochemical, distances, moments)
+            and dict values are list of float/int describing weights for each feature
+            (physicochemical: 8 features, distances: 4 features, moments: 3 values).
+            All floats must sum up to 1.0.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, feature bit number, AND feature weights.
+        """
+
+        if feature_weights is None:
+
+            feature_weights = {
+                'physicochemical': [0.0625] * 8,
+                'distances': [0.125] * 4,
+                'moments': [0.0] * 3
+            }
+
+        else:
+
+            # Check if input weights are set to known feature types with needed number of weights
+            if not all([feature_type in FEATURE_DISTANCES_FORMAT.keys() for feature_type in feature_weights.keys()]):
+                raise ValueError(f'Feature weights (dict) have unknown feature types (keys). '
+                                 f'Set the following feature types: '
+                                 f'{", ".join(list(FEATURE_DISTANCES_FORMAT.keys()))}.')
+
+            for feature_type, weights in feature_weights.items():
+                if len(weights) != len(FEATURE_DISTANCES_FORMAT[feature_type]):
+                    raise ValueError(f'Feature type "{feature_type}" has {len(weights)} weights, '
+                                     f'but needs {len(FEATURE_DISTANCES_FORMAT[feature_type])} weights.')
+
+            # Check if input weights have correct form
+            weights_sum = sum([sum(i) for i in feature_weights.values()])
+
+            if weights_sum != 1.0:
+                raise ValueError(f'Sum of all weights must be one, but is {weights_sum}.')
+
+        # Get weights as list and cast values to float
+        weights = []
+
+        for feature_type, weight in feature_weights.items():
+            weights.extend([float(i) for i in feature_weights[feature_type]])
+
+        # Add weights to DataFrame
+        feature_distances['weights'] = weights
+
+        return feature_distances
+
+
 class FeatureDistances:
     """
     Distances between two fingerprints for each of their features, including information on feature bit coverage and
