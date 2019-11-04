@@ -9,73 +9,8 @@ import pandas as pd
 import pytest
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.encoding import Fingerprint
+from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.similarity import FeatureDistancesGenerator
-
-
-@pytest.mark.parametrize('fingerprint1, fingerprint2, measure, score, coverage', [
-    (
-        pd.DataFrame([[1, 2], [3, 0]]),
-        pd.DataFrame([[1, 1], [1, 1]]),
-        'ballester',
-        0.5,
-        1.0
-    ),
-    (
-        pd.DataFrame([[1, 2], [3, None]]),
-        pd.DataFrame([[1, 1], [1, None]]),
-        'ballester',
-        0.5,
-        0.75
-    ),
-    (
-        pd.DataFrame([[1, 2], [3, np.nan]]),
-        pd.DataFrame([[1, 1], [1, np.nan]]),
-        'ballester',
-        0.5,
-        0.75
-    )
-])
-def ttest_calculate_similarity(fingerprint1, fingerprint2, measure, score, coverage):
-    """
-    Test pairwise fingerprint similarity (similarity score and bit coverage) calculation given a defined measure.
-
-    Parameters
-    ----------
-    fingerprint1 : pandas.DataFrame (or 1D array-like)
-        Fingerprint for molecule.
-    fingerprint2 : pandas.DataFrame (or 1D array-like)
-        Fingerprint for molecule.
-    measure : str
-        Similarity measurement method:
-         - ballester (inverse of the translated and scaled Manhattan distance)
-    score : float
-        Similarity score.
-    coverage : float
-         Coverage (ratio of bits used for similarity score).
-    """
-
-    assert calculate_similarity(fingerprint1, fingerprint2, measure='ballester') == (score, coverage)
-
-
-@pytest.mark.parametrize('feature_distances, feature_name_physicochemical, feature_name_spatial, feature_weights, distance', [
-    (
-        {'physicochemical': [0.1] * 8, 'distances': [0.1] * 4, 'moments': [0.2] * 3},
-        'physicochemical',
-        'moments',
-        None,
-        0.1273
-    ),
-    (
-        {'physicochemical': [0.1] * 8, 'distances': [0.1] * 4, 'moments': [0.2] * 3},
-        'physicochemical',
-        'moments',
-        {'physicochemical': [2] * 8, 'distances': [0.1] * 4, 'moments': [1] * 3},
-        1
-    )
-])
-def test_calc_fingerprint_distance(feature_distances, feature_name_physicochemical, feature_name_spatial, feature_weights, distance):
-    pass
 
 
 @pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids', [
@@ -85,7 +20,7 @@ def test_calc_fingerprint_distance(feature_distances, feature_name_physicochemic
         ['A', 'B']
     )
 ])
-def test_featuredistancesgenerator_from_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids):
+def test_from_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids):
     """
     Test data type and dimensions of feature distances between two fingerprints.
 
@@ -137,7 +72,7 @@ def test_featuredistancesgenerator_from_fingerprint_pair(mol2_filenames, pdb_fil
     (pd.Series([0, 0]), pd.Series([4, 3]), 'euclidean', 2.5),
     (pd.Series([0, 0, np.nan]), pd.Series([4, 3, 1]), 'euclidean', 2.5)
 ])
-def test_featuredistancesgenerator_calc_feature_distance(feature_values1, feature_values2, distance_measure, distance):
+def test_calc_feature_distance(feature_values1, feature_values2, distance_measure, distance):
     """
     Test distance calculation for two value (feature) lists.
 
@@ -163,12 +98,60 @@ def test_featuredistancesgenerator_calc_feature_distance(feature_values1, featur
     assert np.isclose(distance_calculated, distance, rtol=1e-04)
 
 
+@pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids, n_bits_wo_nan_size', [
+    (
+        ['ABL1/2g2i_chainA/pocket.mol2', 'AAK1/4wsq_altA_chainB/pocket.mol2'],
+        ['2g2i.cif', '4wsq.cif'],
+        ['A', 'B'],
+        82
+    )
+])
+def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bits_wo_nan_size):
+
+    # Fingerprint 1
+    mol2_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[0]
+    pdb_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filenames[0]
+
+    klifs_molecule_loader1 = KlifsMoleculeLoader(mol2_path=mol2_path1)
+    pdb_chain_loader1 = PdbChainLoader(pdb_path=pdb_path1, chain_id=chain_ids[0])
+
+    fingerprint1 = Fingerprint()
+    fingerprint1.from_molecule(klifs_molecule_loader1.molecule, pdb_chain_loader1.chain)
+
+    # Fingerprint 2
+    mol2_path2 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[1]
+    pdb_path2 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filenames[1]
+
+    klifs_molecule_loader2 = KlifsMoleculeLoader(mol2_path=mol2_path2)
+    pdb_chain_loader2 = PdbChainLoader(pdb_path=pdb_path2, chain_id=chain_ids[1])
+
+    fingerprint2 = Fingerprint()
+    fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
+
+    # Fingerprint pair
+    feature_distances_generator = FeatureDistancesGenerator()
+    pair = feature_distances_generator._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
+
+    assert pair.keys() == FEATURE_NAMES.keys()
+
+    for feature_type in pair.keys():
+
+        assert list(pair[feature_type].keys()) == FEATURE_NAMES[feature_type]
+
+        for feature_name in pair[feature_type].keys():
+
+            assert list(pair[feature_type][feature_name].columns) == 'fingerprint1 fingerprint2'.split()
+
+            if (feature_type == 'physicochemical') and (feature_name) == 'size':
+                assert len(pair[feature_type][feature_name]) == n_bits_wo_nan_size
+
+
 @pytest.mark.parametrize('values1, values2, values_reduced, coverage', [
     ([0, 0, np.nan, 1], [4, 3, 1, np.nan], [[0, 0], [4, 3]], 0.5),
     ([0, 0, np.nan], [4, 3, np.nan], [[0, 0], [4, 3]], 0.6667),
     ([0, 0], [4, 3], [[0, 0], [4, 3]], 1.0)
 ])
-def test_featuredistancesgenerator_get_values_without_nan(values1, values2, values_reduced, coverage):
+def test_get_values_without_nan(values1, values2, values_reduced, coverage):
     """
     # TODO
 
@@ -191,7 +174,7 @@ def test_featuredistancesgenerator_get_values_without_nan(values1, values2, valu
     ([0, 0], [4, 3], 2.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
 ])
-def test_featuredistancesgenerator_euclidean_distance(values1, values2, distance):
+def test_euclidean_distance(values1, values2, distance):
     """
     Test Euclidean distance calculation.
 
