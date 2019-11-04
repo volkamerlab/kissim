@@ -296,16 +296,14 @@ class FeatureDistancesGenerator:
 
             self.data[feature_type] = distances
 
-    def _calc_feature_distance(self, feature_name, feature_values, distance_measure='euclidean'):
+    def _calc_feature_distance(self, feature_pair, distance_measure='euclidean'):
         """
         Calculate distance between two value lists (describing each the same feature).
 
         Parameters
         ----------
-        feature_name : str
-            xxx
-        feature_values : pandas.DataFrame
-            xxx
+        feature_pair : pandas.DataFrame
+            Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
         distance_measure : str
             Distance measure.
 
@@ -317,22 +315,35 @@ class FeatureDistancesGenerator:
 
         distance_measures = 'euclidean'.split()
 
-        feature_distance = {
-            'feature_name': feature_name,
-            'distance': np.nan,
-            'coverage': len(feature_values) / 85.0
-        }
+        if not isinstance(distance_measure, str):
+            raise TypeError(f'Parameter "distance_measure" must be of type str, but is {type(distance_measure)}.')
 
-        # Get distance
-        if distance_measure == 'euclidean':
-            feature_distance['distance'] = self._euclidean_distance(
-                feature_values.fingerprint1,
-                feature_values.fingerprint2
-            )
-        else:
+        if distance_measure not in distance_measures:
             raise ValueError(f'Distance measure unknown. Choose from: {", ".join(distance_measures)}')
 
-        return feature_distance
+        if not isinstance(feature_pair, pd.DataFrame):
+            raise TypeError(f'Parameter "feature_pair" must be of type pandas.DataFrame, but is {type(feature_pair)}.')
+
+        if feature_pair.shape[1] != 2:
+            raise ValueError(f'Parameter "feature_pair" must be pandas.DataFrame with two columns, '
+                             f'but has {feature_pair.shape[1]} columns.')
+
+        # Set feature distance to NaN if no bits available for distance calculation
+        if len(feature_pair) == 0:
+            return np.nan
+
+        # In case there are still NaN positions, remove bit positions containing any NaN value
+        feature_pair.dropna(how='any', axis=0, inplace=True)
+
+        # Get feature distance
+        if distance_measure == 'euclidean':
+            return self._euclidean_distance(
+                feature_pair.iloc[:, 0],  # Fingerprint 1
+                feature_pair.iloc[:, 1]  # Fingerprint 2
+            )
+
+        else:
+            raise ValueError(f'Distance measure unknown. Choose from: {", ".join(distance_measures)}')
 
     @staticmethod
     def _extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True):

@@ -67,21 +67,18 @@ def test_from_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids):
     assert [len(value) for key, value in feature_distances.items()] == [8, 4, 3]
 
 
-@pytest.mark.parametrize('feature_values1, feature_values2, distance_measure, distance', [
-    ([0, 0], [4, 3], 'euclidean', 2.5),
-    (pd.Series([0, 0]), pd.Series([4, 3]), 'euclidean', 2.5),
-    (pd.Series([0, 0, np.nan]), pd.Series([4, 3, 1]), 'euclidean', 2.5)
+@pytest.mark.parametrize('feature_pair, distance_measure, distance', [
+    (pd.DataFrame([[4, 0], [0, 3]], columns=['a', 'b']), 'euclidean', 2.5),
+    (pd.DataFrame([], columns=['a', 'b']), 'euclidean', np.nan)
 ])
-def test_calc_feature_distance(feature_values1, feature_values2, distance_measure, distance):
+def test_calc_feature_distance(feature_pair, distance_measure, distance):
     """
     Test distance calculation for two value (feature) lists.
 
     Parameters
     ----------
-    feature_values1 : list or pandas.Series
-        Value list (same length as values2).
-    feature_values2 : list or pandas.Series
-        Value list (same length as values1).
+    feature_pair : pandas.DataFrame
+        Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
         Distance measure.
     distance : float
@@ -90,12 +87,36 @@ def test_calc_feature_distance(feature_values1, feature_values2, distance_measur
 
     feature_distances_generator = FeatureDistancesGenerator()
     distance_calculated = feature_distances_generator._calc_feature_distance(
-        feature_values1,
-        feature_values2,
+        feature_pair,
         distance_measure
     )
 
-    assert np.isclose(distance_calculated, distance, rtol=1e-04)
+    if np.isnan(distance):
+        assert np.isnan(distance_calculated)
+    else:
+        assert np.isclose(distance_calculated, distance, rtol=1e-04)
+
+
+@pytest.mark.parametrize('feature_pair, distance_measure', [
+    (pd.DataFrame([[1, 2], [1, 2]]), None),  # Distance measure is not str
+    ('feature_pair', 'euclidean')  # Feature pair is not pandas.DataFrame
+])
+def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
+
+    with pytest.raises(TypeError):
+        feature_distance_generator = FeatureDistancesGenerator()
+        feature_distance_generator._calc_feature_distance(feature_pair, distance_measure)
+
+
+@pytest.mark.parametrize('feature_pair, distance_measure', [
+    (pd.DataFrame([[1, 2], [1, 2]]), 'xxx'),  # Distance measure is not implemented
+    (pd.DataFrame([[1, 2, 1], [1, 2, 1]]), 'euclidean')  # Feature pair has more than two columns
+])
+def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
+
+    with pytest.raises(ValueError):
+        feature_distance_generator = FeatureDistancesGenerator()
+        feature_distance_generator._calc_feature_distance(feature_pair, distance_measure)
 
 
 @pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids, n_bits_wo_nan_size', [
