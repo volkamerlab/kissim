@@ -90,7 +90,8 @@ class FingerprintDistance:
             return self._add_weight_per_feature_type(feature_distances, feature_weights)
 
         elif all([isinstance(i, list) for i in feature_weights.values()]):
-            return self._add_weight_per_feature(feature_distances, feature_weights)
+            feature_weights = self._format_weight_per_feature(feature_weights)
+            return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
         else:
             raise ValueError(f'Unknown input for which no exception is implemented. '
@@ -151,65 +152,70 @@ class FingerprintDistance:
         return feature_distances
 
     @staticmethod
-    def _add_weight_per_feature(feature_distances, feature_weights=None):
+    def _format_weight_per_feature(feature_weights=None):
         """
         Add feature weights to two fingerprints' feature distance details (each feature can be set individually).
 
         Parameters
         ----------
-        feature_distances : pandas.DataFrame
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, and feature bit number.
-        feature_weights : (dict of list of float or int) or None
-            Dictionary of weights for each feature: Dict keys are feature types (physicochemical, distances, moments)
-            and dict values are list of float/int describing weights for each feature
-            (physicochemical: 8 features, distances: 4 features, moments: 3 values).
-            All floats must sum up to 1.0.
+        feature_weights : dict of float or None
+            Weights per feature which need to sum up to 1.0.
+            Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
+            distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+            Default feature weights (None) are set equally distributed to 1/15 (15 feature in total).
 
         Returns
         -------
         pandas.DataFrame
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, feature bit number, AND feature weights.
+            Feature weights: 15 rows (features) and 2 columns (feature name, weight).
         """
+
+        equal_weights = 1.0 / 15
+
+        feature_weights_default = {
+            'size': equal_weights,
+            'hbd': equal_weights,
+            'hba': equal_weights,
+            'charge': equal_weights,
+            'aromatic': equal_weights,
+            'aliphatic': equal_weights,
+            'sco': equal_weights,
+            'exposure': equal_weights,
+            'distance_to_centroid': equal_weights,
+            'distance_to_hinge_region': equal_weights,
+            'distance_to_dfg_region': equal_weights,
+            'distance_to_front_pocket': equal_weights,
+            'moment1': equal_weights,
+            'moment2': equal_weights,
+            'moment3': equal_weights
+        }
 
         if feature_weights is None:
 
-            feature_weights = {
-                'physicochemical': [0.0625] * 8,
-                'distances': [0.125] * 4,
-                'moments': [0.0] * 3
-            }
+            feature_weights = feature_weights_default
 
         else:
 
-            # Check if input weights are set to known feature types with needed number of weights
-            if not all([feature_type in FEATURE_DISTANCES_FORMAT.keys() for feature_type in feature_weights.keys()]):
-                raise ValueError(f'Feature weights (dict) have unknown feature types (keys). '
-                                 f'Set the following feature types: '
-                                 f'{", ".join(list(FEATURE_DISTANCES_FORMAT.keys()))}.')
+            # Check if feature weight keys are correct
+            if not feature_weights.keys() == feature_weights_default.keys():
+                raise ValueError(f'Feature weights contain unknown or missing feature(s). Set the following features: '
+                                 f'{", ".join(list(feature_weights_default.keys()))}.')
 
-            for feature_type, weights in feature_weights.items():
-                if len(weights) != len(FEATURE_DISTANCES_FORMAT[feature_type]):
-                    raise ValueError(f'Feature type "{feature_type}" has {len(weights)} weights, '
-                                     f'but needs {len(FEATURE_DISTANCES_FORMAT[feature_type])} weights.')
+            # Check if feature weight values are correct (cast int to float)
+            for feature_name, weight in feature_weights.items():
+                if not isinstance(weight, float):
+                    raise TypeError(f'Weight for feature "{feature_name}" must be float, but is {type(weight)}.')
 
-            # Check if input weights have correct form
-            weights_sum = sum([sum(i) for i in feature_weights.values()])
-
-            if weights_sum != 1.0:
-                raise ValueError(f'Sum of all weights must be one, but is {weights_sum}.')
+            # Check if sum of weights is 1.0
+            if sum(feature_weights.values()) != 1.0:
+                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_weights.values())}.')
 
         # Get weights as list and cast values to float
-        weights = []
+        feature_weights = pd.DataFrame.from_dict(feature_weights, orient='index', columns=['weight'])
+        feature_weights['feature_name'] = feature_weights.index
+        feature_weights.reset_index(inplace=True, drop=True)
 
-        for feature_type, weight in feature_weights.items():
-            weights.extend([float(i) for i in feature_weights[feature_type]])
-
-        # Add weights to DataFrame
-        feature_distances['weights'] = weights
-
-        return feature_distances
+        return feature_weights
 
 
 class FeatureDistances:
