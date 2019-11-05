@@ -84,20 +84,27 @@ class FingerprintDistance:
         """
 
         if feature_weights is None:
+
             feature_weights = self._format_weight_per_feature_type(feature_weights)
             return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
-        elif all([isinstance(i, (float, int)) for i in feature_weights.values()]):
-            feature_weights = self._format_weight_per_feature_type(feature_weights)
-            return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
+        elif isinstance(feature_weights, dict):
 
-        elif all([isinstance(i, list) for i in feature_weights.values()]):
-            feature_weights = self._format_weight_per_feature(feature_weights)
-            return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
+            # Try to figure out if input feature weights are per feature or feature type
+
+            if len(feature_weights) <= 3:
+
+                feature_weights = self._format_weight_per_feature_type(feature_weights)
+                return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
+
+            else:
+
+                feature_weights = self._format_weight_per_feature(feature_weights)
+                return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
         else:
-            raise ValueError(f'Unknown input for which no exception is implemented. '
-                             f'Please check docstring for details on input formats.')
+
+            raise TypeError(f'Data type of "feature_weights" parameter must be dict, but is {type(feature_weights)}.')
 
     @staticmethod
     def _format_weight_per_feature_type(feature_type_weights=None):
@@ -131,6 +138,11 @@ class FingerprintDistance:
             feature_type_weights = feature_type_weights_default
 
         else:
+
+            # Check data type of feature weights
+            if not isinstance(feature_type_weights, dict):
+                raise TypeError(f'Data type of "feature_weights" parameter must be dict, but is '
+                                f'{type(feature_type_weights)}.')
 
             # Check if feature weight keys are correct
             if not feature_type_weights.keys() == feature_type_weights_default.keys():
@@ -208,6 +220,11 @@ class FingerprintDistance:
             feature_weights = feature_weights_default
 
         else:
+
+            # Check data type of feature weights
+            if not isinstance(feature_weights, dict):
+                raise TypeError(f'Data type of "feature_weights" parameter must be dict, but is '
+                                f'{type(feature_weights)}.')
 
             # Check if feature weight keys are correct
             if not feature_weights.keys() == feature_weights_default.keys():
