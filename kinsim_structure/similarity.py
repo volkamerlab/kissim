@@ -9,7 +9,6 @@ Handles the primary functions for the structural kinase fingerprint comparison.
 import datetime
 import logging
 from multiprocessing import cpu_count, Pool
-import pickle
 
 from itertools import combinations, repeat
 import numpy as np
