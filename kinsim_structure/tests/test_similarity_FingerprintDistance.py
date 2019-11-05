@@ -1,14 +1,71 @@
 """
-Unit and regression test for kinsim_structure.similarity functions.
+Unit and regression test for kinsim_structure.similarity.FeatureDistances methods.
 """
-
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from kinsim_structure.similarity import FingerprintDistance
+from kinsim_structure.similarity import FeatureDistances, FingerprintDistance
+
+
+@pytest.mark.parametrize('feature_distances, feature_weights, molecule_codes, distance, coverage', [
+    (
+        pd.DataFrame(
+            [
+                'physicochemical physicochemical physicochemical physicochemical physicochemical physicochemical '
+                'physicochemical physicochemical distances distances distances distances moments moments '
+                'moments'.split(),
+                'size hbd hba charge aromatic aliphatic sco exposure distance_to_centroid distance_to_hinge_region '
+                'distance_to_dfg_region distance_to_front_pocket moment1 moment2 moment3'.split(),
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 4, 4, 4]
+            ],
+            index='feature_type feature_name distance bit_coverage bit_number'.split()
+        ).transpose(),
+        {
+            'size': 0.0,
+            'hbd': 0.0,
+            'hba': 0.0,
+            'charge': 0.0,
+            'aromatic': 0.0,
+            'aliphatic': 0.0,
+            'sco': 0.25,
+            'exposure': 0.25,
+            'distance_to_centroid': 0.0,
+            'distance_to_hinge_region': 0.0,
+            'distance_to_dfg_region': 0.0,
+            'distance_to_front_pocket': 0.25,
+            'moment1': 0.0,
+            'moment2': 0.0,
+            'moment3': 0.25
+        },
+        ['molecule1', 'molecule2'],
+        0.5,
+        0.75
+    )
+])
+def test_from_feature_distances(feature_distances, feature_weights, molecule_codes, distance, coverage):
+
+    # Set feature distances object
+    feature_distances_object = FeatureDistances()
+    feature_distances_object.molecule_codes = molecule_codes
+    feature_distances_object.data = feature_distances
+
+    print(feature_distances_object.molecule_codes)
+
+    # Calculate fingerprint distance
+    fingerprint_distance = FingerprintDistance()
+    fingerprint_distance.from_feature_distances(feature_distances_object, feature_weights)
+
+    # Test class attributes
+    print(fingerprint_distance.molecule_codes)
+
+    assert fingerprint_distance.molecule_codes == molecule_codes
+    assert fingerprint_distance.feature_weights.equals(pd.Series(feature_weights).reset_index(drop=True))
+    assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
+    assert np.isclose(fingerprint_distance.coverage, coverage, rtol=1e-04)
 
 
 @pytest.mark.parametrize('feature_weights', [
@@ -21,7 +78,7 @@ def test_add_weight_column_typeerror(feature_weights):
 
     Parameters
     ----------
-    feature_weights : not dict or not None
+    feature_weights : list or str
         Any non-dictionary and non-None input.
     """
 
@@ -50,7 +107,7 @@ def test_add_weight_column_typeerror(feature_weights):
     (
         None,
         (15, 6),
-        0.0293
+        0.0
     ),
     (
         {
@@ -87,7 +144,7 @@ def test_add_weight_column_typeerror(feature_weights):
 def test_add_weight_column(feature_weights, shape, weight_std):
     """
     Test if feature weights are added correctly to feature distance DataFrame.
-    
+
     Parameters
     ----------
     feature_weights : dict of float or None
@@ -176,7 +233,7 @@ def test_format_weight_per_feature_type_typeerror(feature_type_weights):
         fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
 
 
-@pytest.mark.parametrize('feature_type_weights, feature_weights, weight_column_dtype, feature_name_column_dtype, shape', [
+@pytest.mark.parametrize('feature_type_weights, feature_weights, column_dtypes, shape', [
     (
         {
             'physicochemical': 0.0,
@@ -200,12 +257,11 @@ def test_format_weight_per_feature_type_typeerror(feature_type_weights):
             'moment2': 0.0,
             'moment3': 0.0
         },
-        'float64',
-        'object',
+        ['float64', 'object'],
         (15, 2)
     )
 ])
-def test_format_weight_per_feature_type(feature_type_weights, feature_weights, weight_column_dtype, feature_name_column_dtype, shape):
+def test_format_weight_per_feature_type(feature_type_weights, feature_weights, column_dtypes, shape):
     """
     Test formatting of weights per feature type (weights need to be equally distributed between all features in feature
     type and transformed into a DataFrame).
@@ -221,10 +277,8 @@ def test_format_weight_per_feature_type(feature_type_weights, feature_weights, w
         Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
         distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
         Default feature weights (None) are set equally distributed to 1/15 (15 feature in total).
-    weight_column_dtype : str
-        Data type of weight returned DataFrame column.
-    feature_name_column_dtype : str
-        Data type of feature_name returned DataFrame column.
+    column_dtypes : list of str
+        Data type of weight and feature_name column in returned DataFrame.
     shape : tuple
         Dimension of returned DataFrame.
     """
@@ -232,8 +286,8 @@ def test_format_weight_per_feature_type(feature_type_weights, feature_weights, w
     fingerprint_distance = FingerprintDistance()
     feature_weights_calculated = fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
 
-    assert feature_weights_calculated.dtypes.weight == weight_column_dtype
-    assert feature_weights_calculated.dtypes.feature_name == feature_name_column_dtype
+    assert feature_weights_calculated.dtypes.weight == column_dtypes[0]
+    assert feature_weights_calculated.dtypes.feature_name == column_dtypes[1]
     assert feature_weights_calculated.shape == shape
 
     weights_calculated = feature_weights_calculated.weight

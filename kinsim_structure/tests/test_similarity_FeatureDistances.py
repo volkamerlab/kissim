@@ -1,5 +1,5 @@
 """
-Unit and regression test for kinsim_structure.similarity functions.
+Unit and regression test for kinsim_structure.similarity.FeatureDistances methods.
 """
 
 from pathlib import Path
