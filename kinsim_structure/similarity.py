@@ -6,8 +6,12 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the structural kinase fingerprint comparison.
 """
 
+import datetime
 import logging
+from multiprocessing import cpu_count, Pool
+import pickle
 
+from itertools import combinations, repeat
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
@@ -15,6 +19,296 @@ from scipy.spatial import distance
 from kinsim_structure.encoding import FEATURE_NAMES
 
 logger = logging.getLogger(__name__)
+
+
+class AllAgainstAllComparison:
+
+    def __init__(self):
+
+        self.distance_measure = None
+        self.feature_weights = None
+        self.molecule_codes = None
+        self.feature_distances = None
+        self.fingerprint_distances = None
+
+    def from_fingerprints(self, fingerprints, distance_measure, feature_weights):
+
+        # Get start time of script
+        start = datetime.datetime.now()
+        print(start)
+
+        # Remove empty fingerprints
+        fingerprints = self._remove_empty_fingerprints(fingerprints)
+
+        # Set class attributes
+        self.distance_measure = distance_measure
+        self.feature_weights = feature_weights
+        self.molecule_codes = list(fingerprints.keys())
+
+        # Get fingerprint pairs (molecule code pairs)
+        pairs = self._get_fingerprint_pairs(fingerprints)
+
+        # Calculate pairwise feature distances
+        self.feature_distances = self._get_pairwise_feature_distances(
+            self._calculate_pair_feature_distances,
+            pairs,
+            fingerprints,
+            self.distance_measure
+        )
+
+        # Calculate pairwise fingerprint distances
+        self.fingerprint_distances = self._get_pairwise_fingerprint_distances(
+            self._calculate_pair_fingerprint_distance,
+            self.feature_distances,
+            self.feature_weights
+        )
+
+        # Cast both attributes to DataFrames
+        self.feature_distances = pd.DataFrame(
+            [[i.molecule_codes[0], i.molecule_codes[1], i] for i in self.feature_distances],
+            columns='molecule1 molecule2 feature_distances'.split()
+        )
+
+        self.fingerprint_distances = pd.DataFrame(
+            [[i.molecule_codes[0], i.molecule_codes[1], i] for i in self.fingerprint_distances],
+            columns='molecule1 molecule2 fingerprint_distance'.split()
+        )
+
+        # Get end time of script
+        end = datetime.datetime.now()
+        print(end)
+
+        logger.info(start)
+        logger.info(end)
+
+    def get_structure_distance_matrix(self, fill=False):
+
+        structure_distance_matrix = pd.DataFrame(
+            [],
+            columns=self.molecule_codes,
+            index=self.molecule_codes
+        )
+
+        # Set calculated values
+        for index, row in self.fingerprint_distances.iterrows():
+            structure_distance_matrix.loc[row.molecule1, row.molecule2] = row.fingerprint_distance.distance
+
+            if fill:
+                structure_distance_matrix.loc[row.molecule2, row.molecule1] = row.fingerprint_distance.distance
+
+        # Set values on matrix diagonal
+        for molecule_code in self.molecule_codes:
+            structure_distance_matrix.loc[molecule_code, molecule_code] = 0.0
+
+        return structure_distance_matrix
+
+    def get_kinase_distance_matrix(self, fill=False):
+        pass
+
+    def add_kinase_pair_to_fingerprint_distances(self):
+        """
+        Add two columns to fingerprint distances DataFrame for kinase 1 name and kinase 2 name.
+
+        Returns
+        -------
+        pandas.DataFrame
+            xxx
+        """
+
+        fingerprint_distances_per_kinase_pair = self.fingerprint_distances.copy()
+
+        fingerprint_distances_per_kinase_pair['kinase1'] = [
+            i.split('/')[1].split('_')[0] for i in fingerprint_distances_per_kinase_pair.molecule1
+        ]
+        fingerprint_distances_per_kinase_pair['kinase2'] = [
+            i.split('/')[1].split('_')[0] for i in fingerprint_distances_per_kinase_pair.molecule2
+        ]
+
+        return fingerprint_distances_per_kinase_pair
+
+    def get_kinase_pair_distance_groups(self):
+        """
+        Get distance groups (distributions) for each kinase pair.
+
+        Returns
+        -------
+        pandas.core.groupby.generic.DataFrameGroupBy
+            xxx
+        """
+
+        fingerprint_distances_per_kinase_pair = self.add_kinase_pair_to_fingerprint_distances()
+
+        fingerprint_distances_per_kinase_pair.fingerprint_distance = [
+            i.distance for i in fingerprint_distances_per_kinase_pair.fingerprint_distance
+        ]
+
+        return fingerprint_distances_per_kinase_pair.groupby(
+            by=['kinase1', 'kinase2'],
+            sort=False
+        )
+
+    def get_kinase_pair_distance_value(self, by='minimum'):
+        """
+
+        Parameters
+        ----------
+        by
+
+        Returns
+        -------
+        pandas.DataFrame
+            xxx
+        """
+
+        by_terms = 'minimum mean'.split()
+
+        if by not in by_terms:
+            raise KeyError(f'Xxx.')
+
+        kinase_pair_distance_groups = self.get_kinase_pair_distance_groups()
+
+        if by == 'minimum':
+            return kinase_pair_distance_groups.min()
+
+        else:
+            return
+
+    @staticmethod
+    def _get_pairwise_fingerprint_distances(calculate_pair_fingerprint_distance, feature_distances, feature_weights):
+
+        logger.info(f'Calculate pairwise fingerprint distances...')
+
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Apply function to each chunk in list
+        fingerprint_distances_list = pool.starmap(
+            calculate_pair_fingerprint_distance,
+            zip(feature_distances, repeat(feature_weights))
+        )
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of fingerprint distances: {len(fingerprint_distances_list)}')
+
+        return fingerprint_distances_list
+
+    @staticmethod
+    def _get_pairwise_feature_distances(calculate_pair_feature_distances, pairs, fingerprints, distance_measure):
+
+        logger.info(f'Calculate pairwise feature distances...')
+
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Apply function to each chunk in list
+        feature_distances_list = pool.starmap(
+            calculate_pair_feature_distances,
+            zip(pairs, repeat(fingerprints), repeat(distance_measure))
+        )
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of feature distances: {len(feature_distances_list)}')
+
+        return feature_distances_list
+
+    @staticmethod
+    def _calculate_pair_feature_distances(pair, fingerprints, distance_measure):
+        """
+        Calculate the feature distances for one fingerprint pair.
+
+        Parameters
+        ----------
+        fingerprints
+        pair
+        distance_measure
+
+        Returns
+        -------
+
+        """
+
+        fingerprint1 = fingerprints[pair[0]]
+        fingerprint2 = fingerprints[pair[1]]
+
+        feature_distances = FeatureDistances()
+        feature_distances.from_fingerprints(fingerprint1, fingerprint2, distance_measure)
+
+        return feature_distances
+
+    @staticmethod
+    def _calculate_pair_fingerprint_distance(feature_distances, feature_weights):
+        """
+        Calculate the fingerprint distance for one fingerprint pair.
+
+        Parameters
+        ----------
+        feature_distances
+        feature_weights
+
+        Returns
+        -------
+
+        """
+
+        fingerprint_distance = FingerprintDistance()
+        fingerprint_distance.from_feature_distances(feature_distances, feature_weights)
+
+        return fingerprint_distance
+
+    @staticmethod
+    def _get_fingerprint_pairs(fingerprints):
+
+        pairs = []
+
+        for i, j in combinations(fingerprints.keys(), 2):
+
+            if i and j:
+                pairs.append([i, j])
+
+            else:
+                if i is None:
+                    logger.info(f'Empty fingerprint: {i}')
+                elif j is None:
+                    logger.info(f'Empty fingerprint: {j}')
+
+        logger.info(f'Number of pairs: {len(pairs)}')
+
+        return pairs
+
+    @staticmethod
+    def _remove_empty_fingerprints(fingerprints):
+
+        # Get molecule codes for empty fingerprints
+        empty_molecule_codes = []
+
+        for molecule_code, fingerprint in fingerprints.items():
+
+            if not fingerprint:
+                empty_molecule_codes.append(molecule_code)
+
+        # Delete empty fingerprints from dict
+        for empty in empty_molecule_codes:
+            del fingerprints[empty]
+
+        logger.info(f'Number of empty fingerprints: {len(empty_molecule_codes)}')
+        logger.info(f'Number of non-empty fingerprints: {len(fingerprints)}')
+        logger.info(f'Empty fingerprint molecule codes: {", ".join(empty_molecule_codes)}')
+
+        return fingerprints
 
 
 class FingerprintDistance:
