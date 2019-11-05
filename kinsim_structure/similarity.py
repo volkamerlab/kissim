@@ -107,7 +107,7 @@ class FingerprintDistance:
 
         Parameters
         ----------
-        feature_type_weights : dict of float or None (3 items)
+        feature_type_weights : dict of float (3 items) or None
             Weights per feature type which need to sum up to 1.0.
             Feature types to be set are: physicochemical, distances, and moments.
             Default feature weights (None) are set equally distributed to 1/3 (3 feature types in total).
@@ -171,7 +171,7 @@ class FingerprintDistance:
 
         Parameters
         ----------
-        feature_weights : dict of float or None (15 items)
+        feature_weights : dict of float (15 items) or None
             Weights per feature which need to sum up to 1.0.
             Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
             distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.

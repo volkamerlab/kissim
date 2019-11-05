@@ -11,7 +11,7 @@ import pytest
 from kinsim_structure.similarity import FingerprintDistance
 
 
-@pytest.mark.parametrize('feature_weights', [
+@pytest.mark.parametrize('feature_type_weights', [
     ({'physicochemical': 0.1}),  # Features missing
     ({'physicochemical': 0.1, 'xxx': 0.1}),  # Unknown feature
     ({
@@ -20,14 +20,24 @@ from kinsim_structure.similarity import FingerprintDistance
         'moments': 0.5
     }),  # Weights do not sum up to 1.0
 ])
-def test_format_weight_per_feature_type_valueerror(feature_weights):
+def test_format_weight_per_feature_type_valueerror(feature_type_weights):
+    """
+    Test if incorrect input feature type weights raise ValueError.
+
+    Parameters
+    ----------
+    feature_type_weights : dict of float
+        Dictionary does not fulfill one or more of these conditions:
+        Weights per feature which need to sum up to 1.0.
+        Feature types to be set are: physicochemical, distances, and moments.
+    """
 
     with pytest.raises(ValueError):
         fingerprint_distance = FingerprintDistance()
-        fingerprint_distance._format_weight_per_feature_type(feature_weights)
+        fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
 
 
-@pytest.mark.parametrize('feature_weights', [
+@pytest.mark.parametrize('feature_type_weights', [
     ({
         'physicochemical': 'bla',
         'distances': 0.5,
@@ -39,11 +49,20 @@ def test_format_weight_per_feature_type_valueerror(feature_weights):
         'moments': 0
     }),  # Weight value is not float
 ])
-def test_format_weight_per_feature_type_typeerror(feature_weights):
+def test_format_weight_per_feature_type_typeerror(feature_type_weights):
+    """
+    Test if incorrect input feature type weights raise TypeError.
+
+    Parameters
+    ----------
+    feature_type_weights : dict of float
+        Feature types to be set are: physicochemical, distances, and moments.
+        Set dictionary values to data type other than float.
+    """
 
     with pytest.raises(TypeError):
         fingerprint_distance = FingerprintDistance()
-        fingerprint_distance._format_weight_per_feature_type(feature_weights)
+        fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
 
 
 @pytest.mark.parametrize('feature_type_weights, feature_weights, weight_column_dtype, feature_name_column_dtype, shape', [
@@ -76,6 +95,28 @@ def test_format_weight_per_feature_type_typeerror(feature_weights):
     )
 ])
 def test_format_weight_per_feature_type(feature_type_weights, feature_weights, weight_column_dtype, feature_name_column_dtype, shape):
+    """
+    Test formatting of weights per feature type (weights need to be equally distributed between all features in feature
+    type and transformed into a DataFrame).
+
+    Parameters
+    ----------
+    feature_type_weights : dict of float (3 items) or None
+        Weights per feature type which need to sum up to 1.0.
+        Feature types to be set are: physicochemical, distances, and moments.
+        Default feature weights (None) are set equally distributed to 1/3 (3 feature types in total).
+    feature_weights : dict of float (15 items) or None
+        Weights per feature which need to sum up to 1.0.
+        Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
+        distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+        Default feature weights (None) are set equally distributed to 1/15 (15 feature in total).
+    weight_column_dtype : str
+        Data type of weight returned DataFrame column.
+    feature_name_column_dtype : str
+        Data type of feature_name returned DataFrame column.
+    shape : tuple
+        Dimension of returned DataFrame.
+    """
 
     fingerprint_distance = FingerprintDistance()
     feature_weights_calculated = fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
@@ -112,6 +153,17 @@ def test_format_weight_per_feature_type(feature_type_weights, feature_weights, w
     }),  # Weights do not sum up to 1.0
 ])
 def test_format_weight_per_feature_valueerror(feature_weights):
+    """
+    Test if incorrect input feature weights raise ValueError.
+
+    Parameters
+    ----------
+    feature_weights : dict of floats
+        Dictionary does not fulfill one or more of these conditions:
+        Weights per feature which need to sum up to 1.0.
+        Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
+        distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+    """
 
     with pytest.raises(ValueError):
         fingerprint_distance = FingerprintDistance()
@@ -155,6 +207,16 @@ def test_format_weight_per_feature_valueerror(feature_weights):
     }),  # Weight value is not float
 ])
 def test_format_weight_per_feature_typeerror(feature_weights):
+    """
+    Test if incorrect input feature weights raise TypeError.
+
+    Parameters
+    ----------
+    feature_weights : dict of float
+        Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
+        distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+        Set dictionary values to data type other than float.
+    """
 
     with pytest.raises(TypeError):
         fingerprint_distance = FingerprintDistance()
@@ -186,6 +248,23 @@ def test_format_weight_per_feature_typeerror(feature_weights):
     )
 ])
 def test_format_weight_per_feature(feature_weights, weight_column_dtype, feature_name_column_dtype, shape):
+    """
+    Test formatting of weights per feature type (weights need to be transformed into a DataFrame).
+
+    Parameters
+    ----------
+    feature_weights : dict of float or None (15 items)
+        Weights per feature which need to sum up to 1.0.
+        Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
+        distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+        Default feature weights (None) are set equally distributed to 1/15 (15 feature in total).
+    weight_column_dtype : str
+        Data type of weight returned DataFrame column.
+    feature_name_column_dtype : str
+        Data type of feature_name returned DataFrame column.
+    shape : tuple
+        Dimension of returned DataFrame.
+    """
 
     fingerprint_distance = FingerprintDistance()
     feature_weights_calculated = fingerprint_distance._format_weight_per_feature(feature_weights)
