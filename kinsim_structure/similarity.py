@@ -99,7 +99,7 @@ class FingerprintDistance:
     @staticmethod
     def _add_weight_per_feature_type(feature_distances, feature_weights=None):
         """
-        Add feature weights to feature distance details (each feature type can be set individually).
+        Add feature weights to two fingerprints' feature distance details (each feature type can be set individually).
 
         Parameters
         ----------
@@ -153,7 +153,7 @@ class FingerprintDistance:
     @staticmethod
     def _add_weight_per_feature(feature_distances, feature_weights=None):
         """
-        Add feature weights to feature distance details (each feature can be set individually).
+        Add feature weights to two fingerprints' feature distance details (each feature can be set individually).
 
         Parameters
         ----------
@@ -214,8 +214,8 @@ class FingerprintDistance:
 
 class FeatureDistances:
     """
-    Distances between two fingerprints for each of their features, including information on feature bit coverage and
-    bit number, in order to assess how reliable the feature distance is.
+    Distances between two fingerprints for each of their features, plus details on feature type, feature,
+    feature bit coverage, and feature bit number.
 
     Attributes
     ----------
