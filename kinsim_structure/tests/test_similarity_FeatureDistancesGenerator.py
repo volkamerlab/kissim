@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from kinsim_structure.encoding import Fingerprint
+from kinsim_structure.encoding import Fingerprint, FingerprintGenerator
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.similarity import FeatureDistances, FeatureDistancesGenerator
 
@@ -219,16 +219,17 @@ def test_from_fingerprints(
     fingerprints = generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids)
 
     # Fingerprint dictionary and pair names
-    fingerprints = {i.molecule_code: i for i in fingerprints}
+    fingerprint_generator = FingerprintGenerator()
+    fingerprint_generator.data = {i.molecule_code: i for i in fingerprints}
 
     # Test FeatureDistancesGenerator class attributes
-    generator = FeatureDistancesGenerator()
-    generator.from_fingerprints(fingerprints)
+    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
 
     # Test attributes
-    assert generator.distance_measure == distance_measure
-    assert isinstance(generator.data, dict)
+    assert feature_distances_generator.distance_measure == distance_measure
+    assert isinstance(feature_distances_generator.data, dict)
 
     # Test example value from dictionary
-    example_key = list(generator.data.keys())[0]
-    assert isinstance(generator.data[example_key], pd.DataFrame)
+    example_key = list(feature_distances_generator.data.keys())[0]
+    assert isinstance(feature_distances_generator.data[example_key], FeatureDistances)
