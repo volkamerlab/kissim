@@ -270,19 +270,25 @@ class AllAgainstAllComparison:
 
     @staticmethod
     def _get_fingerprint_pairs(fingerprints):
+        """
+        Get all fingerprint pair combinations from dictionary of fingerprints.
+
+        Parameters
+        ----------
+        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+
+        Returns
+        -------
+        list of list of str
+            List of molecule code pairs (list).
+        """
 
         pairs = []
 
         for i, j in combinations(fingerprints.keys(), 2):
 
-            if i and j:
-                pairs.append([i, j])
-
-            else:
-                if i is None:
-                    logger.info(f'Empty fingerprint: {i}')
-                elif j is None:
-                    logger.info(f'Empty fingerprint: {j}')
+            pairs.append([i, j])
 
         logger.info(f'Number of pairs: {len(pairs)}')
 
