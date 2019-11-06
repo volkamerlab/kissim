@@ -13,6 +13,43 @@ from kinsim_structure.encoding import Fingerprint, FEATURE_NAMES
 from kinsim_structure.similarity import FeatureDistances
 
 
+def generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids):
+    """
+    Helper function: Generate multiple fingerprints from files.
+
+    Parameters
+    ----------
+    mol2_filenames : list of str
+        Paths to multiple mol2 files.
+    pdb_filenames : list of str
+        Paths to multiple cif files.
+    chain_ids : list of str
+        Multiple chain IDs.
+
+    Returns
+    -------
+    list of kinsim_structure.encoding.Fingerprint
+        List of fingerprints.
+    """
+
+    # Fingerprints
+    fingerprints = []
+
+    for mol2_filename, pdb_filename, chain_id in zip(mol2_filenames, pdb_filenames, chain_ids):
+        mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
+        pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+
+        klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+        pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+
+        fingerprint = Fingerprint()
+        fingerprint.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+
+        fingerprints.append(fingerprint)
+
+    return fingerprints
+
+
 @pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids, feature_type_dimension', [
     (
         ['ABL1/2g2i_chainA/pocket.mol2', 'AAK1/4wsq_altA_chainB/pocket.mol2'],
@@ -35,31 +72,14 @@ def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids, feature_typ
         Two chain IDs.
     """
 
-    # Fingerprint 1
-    mol2_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[0]
-    pdb_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filenames[0]
-
-    klifs_molecule_loader1 = KlifsMoleculeLoader(mol2_path=mol2_path1)
-    pdb_chain_loader1 = PdbChainLoader(pdb_path=pdb_path1, chain_id=chain_ids[0])
-
-    fingerprint1 = Fingerprint()
-    fingerprint1.from_molecule(klifs_molecule_loader1.molecule, pdb_chain_loader1.chain)
-
-    # Fingerprint 2
-    mol2_path2 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[1]
-    pdb_path2 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filenames[1]
-
-    klifs_molecule_loader2 = KlifsMoleculeLoader(mol2_path=mol2_path2)
-    pdb_chain_loader2 = PdbChainLoader(pdb_path=pdb_path2, chain_id=chain_ids[1])
-
-    fingerprint2 = Fingerprint()
-    fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
+    # Fingerprints
+    fingerprints = generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids)
 
     # Get feature distances and check if format is correct
     feature_distances = FeatureDistances()
     feature_distances.from_fingerprints(
-        fingerprint1=fingerprint1,
-        fingerprint2=fingerprint2,
+        fingerprint1=fingerprints[0],
+        fingerprint2=fingerprints[1],
         distance_measure='euclidean'
     )
 
@@ -212,29 +232,12 @@ def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bi
         Number of bits after removing all positions with any NaN value for size feature.
     """
 
-    # Fingerprint 1
-    mol2_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[0]
-    pdb_path1 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filenames[0]
-
-    klifs_molecule_loader1 = KlifsMoleculeLoader(mol2_path=mol2_path1)
-    pdb_chain_loader1 = PdbChainLoader(pdb_path=pdb_path1, chain_id=chain_ids[0])
-
-    fingerprint1 = Fingerprint()
-    fingerprint1.from_molecule(klifs_molecule_loader1.molecule, pdb_chain_loader1.chain)
-
-    # Fingerprint 2
-    mol2_path2 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filenames[1]
-    pdb_path2 = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filenames[1]
-
-    klifs_molecule_loader2 = KlifsMoleculeLoader(mol2_path=mol2_path2)
-    pdb_chain_loader2 = PdbChainLoader(pdb_path=pdb_path2, chain_id=chain_ids[1])
-
-    fingerprint2 = Fingerprint()
-    fingerprint2.from_molecule(klifs_molecule_loader2.molecule, pdb_chain_loader2.chain)
+    # Fingerprints
+    fingerprints = generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids)
 
     # Fingerprint pair
     feature_distances_generator = FeatureDistances()
-    pair = feature_distances_generator._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
+    pair = feature_distances_generator._extract_fingerprint_pair(fingerprints[0], fingerprints[1], normalized=True)
 
     # Correct feature type keys?
     assert pair.keys() == FEATURE_NAMES.keys()

@@ -718,6 +718,8 @@ class FeatureDistances:
     ----------
     molecule_codes : list of str
         Codes of both molecules represented by the fingerprints.
+    distance_measure : str
+        Type of distance measure, defaults to Euclidean distance.
     data : pandas.DataFrame
         Distances between two fingerprints for each of their features, plus details on feature type, feature,
         feature bit coverage, and feature bit number.
@@ -726,6 +728,7 @@ class FeatureDistances:
     def __init__(self):
 
         self.molecule_codes = None
+        self.distance_measure = None
         self.data = None
 
     def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='euclidean'):
@@ -749,6 +752,7 @@ class FeatureDistances:
         """
 
         self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
+        self.distance_measure = distance_measure
 
         # Get fingerprint pair (normalized fingerprints only)
         fingerprint_pair = self._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
