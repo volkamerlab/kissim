@@ -20,6 +20,196 @@ from kinsim_structure.encoding import FEATURE_NAMES
 logger = logging.getLogger(__name__)
 
 
+class FeatureDistancesGenerator:
+    """
+    All against all comparison for input fingerprints, given a distance measure and feature weighting scheme.
+
+    Attributes
+    ----------
+    distance_measure : str
+        Type of distance measure, defaults to Euclidean distance.
+    data : dict of pandas.DataFrame
+
+    """
+
+    def __init__(self):
+
+        self.distance_measure = None
+        self.data = None
+
+    def from_fingerprints(self, fingerprints, distance_measure='euclidean'):
+
+        # Get start time of script
+        start = datetime.datetime.now()
+        print(start)
+
+        # Remove empty fingerprints
+        fingerprints = self._remove_empty_fingerprints(fingerprints)
+
+        # Set class attributes
+        self.distance_measure = distance_measure
+
+        # Get fingerprint pairs (molecule code pairs)
+        pairs = self._get_fingerprint_pairs(fingerprints)
+
+        # Calculate pairwise feature distances
+        feature_distances_list = self._get_feature_distances_for_pairs(
+            self._calculate_feature_distances_for_pair,
+            pairs,
+            fingerprints,
+            self.distance_measure
+        )
+
+        # Cast both attributes to DataFrames
+        self.data = {
+            (i.molecule_codes[0], i.molecule_codes[1]): i.data for i in feature_distances_list
+        }
+
+        # Get end time of script
+        end = datetime.datetime.now()
+        print(end)
+
+        logger.info(start)
+        logger.info(end)
+
+    @staticmethod
+    def _get_feature_distances_for_pairs(
+            calculate_feature_distances_for_pair, pairs, fingerprints, distance_measure='euclidean'
+    ):
+        """
+        Get feature distances for multiple fingerprint pairs.
+        Method uses parallel computing.
+
+        Parameters
+        ----------
+        calculate_feature_distances_for_pair : method
+            Method calculating feature distances for one fingerprint pair.
+        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+        pairs : list of list of str
+            List of molecule code pairs (list).
+        distance_measure : str
+            Type of distance measure, defaults to Euclidean distance.
+
+        Returns
+        -------
+        list of kinsim_structure.similarity.FeatureDistances
+            List of distances between two fingerprints for each of their features, plus details on feature type,
+            feature, feature bit coverage, and feature bit number.
+        """
+
+        logger.info(f'Calculate pairwise feature distances...')
+
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Apply function to each chunk in list
+        feature_distances_list = pool.starmap(
+            calculate_feature_distances_for_pair,
+            zip(pairs, repeat(fingerprints), repeat(distance_measure))
+        )
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of feature distances: {len(feature_distances_list)}')
+
+        return feature_distances_list
+
+    @staticmethod
+    def _calculate_feature_distances_for_pair(pair, fingerprints, distance_measure='euclidean'):
+        """
+        Calculate the feature distances for one fingerprint pair.
+
+        Parameters
+        ----------
+        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+        pair : list of str
+            Molecule names of molecules encoded by fingerprint pair.
+        distance_measure : str
+            Type of distance measure, defaults to Euclidean distance.
+
+        Returns
+        -------
+        kinsim_structure.similarity.FeatureDistances
+            Distances between two fingerprints for each of their features, plus details on feature type, feature,
+            feature bit coverage, and feature bit number.
+        """
+
+        fingerprint1 = fingerprints[pair[0]]
+        fingerprint2 = fingerprints[pair[1]]
+
+        feature_distances = FeatureDistances()
+        feature_distances.from_fingerprints(fingerprint1, fingerprint2, distance_measure)
+
+        return feature_distances
+
+    @staticmethod
+    def _get_fingerprint_pairs(fingerprints):
+        """
+        Get all fingerprint pair combinations from dictionary of fingerprints.
+
+        Parameters
+        ----------
+        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+
+        Returns
+        -------
+        list of list of str
+            List of molecule code pairs (list).
+        """
+
+        pairs = []
+
+        for i, j in combinations(fingerprints.keys(), 2):
+            pairs.append([i, j])
+
+        logger.info(f'Number of pairs: {len(pairs)}')
+
+        return pairs
+
+    @staticmethod
+    def _remove_empty_fingerprints(fingerprints):
+        """
+        Remove empty fingerprints from dictionary of fingerprints.
+
+        Parameters
+        ----------
+        fingerprints : dict of (kinsim_structure.encoding.Fingerprint or None)
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+
+        Returns
+        -------
+        dict of kinsim_structure.encoding.Fingerprint
+            Dictionary of non-empty fingerprints: Keys are molecule codes and values are fingerprint data.
+        """
+
+        # Get molecule codes for empty fingerprints
+        empty_molecule_codes = []
+
+        for molecule_code, fingerprint in fingerprints.items():
+
+            if not fingerprint:
+                empty_molecule_codes.append(molecule_code)
+                logger.info(f'Empty fingerprint molecule codes: {molecule_code}')
+
+        # Delete empty fingerprints from dict
+        for empty in empty_molecule_codes:
+            del fingerprints[empty]
+
+        logger.info(f'Number of empty fingerprints: {len(empty_molecule_codes)}')
+        logger.info(f'Number of non-empty fingerprints: {len(fingerprints)}')
+
+        return fingerprints
+
+
 class AllAgainstAllComparison:
     """
     All against all comparison for input fingerprints, given a distance measure and feature weighting scheme.
