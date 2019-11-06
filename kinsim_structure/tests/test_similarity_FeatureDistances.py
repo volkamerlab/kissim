@@ -129,7 +129,7 @@ def test_calc_feature_distance(feature_pair, distance_measure, distance):
     feature_pair : pandas.DataFrame
         Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
-        Distance measure.
+        Type of distance measure, defaults to Euclidean distance.
     distance : float
         Distance between two value lists.
     """
@@ -159,7 +159,7 @@ def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
     feature_pair : pandas.DataFrame
         Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
-        Distance measure.
+        Type of distance measure, defaults to Euclidean distance.
     """
 
     with pytest.raises(TypeError):
@@ -180,7 +180,7 @@ def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
     feature_pair : pandas.DataFrame
         Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
-        Distance measure.
+        Type of distance measure, defaults to Euclidean distance.
     """
 
     with pytest.raises(ValueError):
