@@ -6,7 +6,9 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the structural kinase fingerprint encoding.
 """
 
+import datetime
 import logging
+from multiprocessing import cpu_count, Pool
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
@@ -147,6 +149,82 @@ N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid
     'TYR': 6,
     'TRP': 8
 }
+
+
+class FingerprintGenerator:
+
+    def __init__(self):
+
+        self.data = None
+
+    def from_metadata_entry(self, klifs_metadata):
+
+        # Get start time of script
+        start = datetime.datetime.now()
+        print(start)
+
+        logger.info(f'Calculate fingerprints...')
+
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Get KLIFS entries as list
+        entry_list = [j for i, j in klifs_metadata.iterrows()]
+
+        # Apply function to each chunk in list
+        fingerprints_list = pool.map(self._get_fingerprint, entry_list)
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of fingerprints: {len(fingerprints_list)}')
+
+        # Transform to dict
+        self.data = {
+            i.molecule_code: i for i in fingerprints_list
+        }
+
+        # Get end time of script
+        end = datetime.datetime.now()
+        print(end)
+
+        logger.info(start)
+        logger.info(end)
+
+    @staticmethod
+    def _get_fingerprint(klifs_metadata_entry):
+        """
+        Get fingerprint.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        kinsim_structure.similarity.Fingerprint
+            Fingerprint
+        """
+
+        try:
+
+            fingerprint = Fingerprint()
+            fingerprint.from_metadata_entry(klifs_metadata_entry)
+
+            return fingerprint
+
+        except Exception as e:
+
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.error(e)
+
+            return None
 
 
 class Fingerprint:
