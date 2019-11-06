@@ -290,6 +290,19 @@ class AllAgainstAllComparison:
 
     @staticmethod
     def _remove_empty_fingerprints(fingerprints):
+        """
+        Remove empty fingerprints from dictionary of fingerprints.
+
+        Parameters
+        ----------
+        fingerprints : dict of (kinsim_structure.encoding.Fingerprint or None)
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+
+        Returns
+        -------
+        dict of kinsim_structure.encoding.Fingerprint
+            Dictionary of non-empty fingerprints: Keys are molecule codes and values are fingerprint data.
+        """
 
         # Get molecule codes for empty fingerprints
         empty_molecule_codes = []
@@ -298,6 +311,7 @@ class AllAgainstAllComparison:
 
             if not fingerprint:
                 empty_molecule_codes.append(molecule_code)
+                logger.info(f'Empty fingerprint molecule codes: {molecule_code}')
 
         # Delete empty fingerprints from dict
         for empty in empty_molecule_codes:
@@ -305,7 +319,6 @@ class AllAgainstAllComparison:
 
         logger.info(f'Number of empty fingerprints: {len(empty_molecule_codes)}')
         logger.info(f'Number of non-empty fingerprints: {len(fingerprints)}')
-        logger.info(f'Empty fingerprint molecule codes: {", ".join(empty_molecule_codes)}')
 
         return fingerprints
 
