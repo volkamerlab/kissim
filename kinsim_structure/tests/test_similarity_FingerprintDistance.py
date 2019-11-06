@@ -64,8 +64,8 @@ def test_from_feature_distances(feature_distances, feature_weights, molecule_cod
 
     assert fingerprint_distance.molecule_codes == molecule_codes
     assert fingerprint_distance.feature_weights.equals(pd.Series(feature_weights).reset_index(drop=True))
-    assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
-    assert np.isclose(fingerprint_distance.coverage, coverage, rtol=1e-04)
+    assert np.isclose(fingerprint_distance.data.distance, distance, rtol=1e-04)
+    assert np.isclose(fingerprint_distance.data.coverage, coverage, rtol=1e-04)
 
 
 @pytest.mark.parametrize('feature_weights', [

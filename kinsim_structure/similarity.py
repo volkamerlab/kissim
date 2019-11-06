@@ -460,20 +460,20 @@ class FingerprintDistance:
     ----------
     molecule_codes : list of str
         Codes of both molecules represented by the fingerprints.
+    distance_measure : str
+        Type of distance measure, defaults to Euclidean distance.
     feature_weights : dict of floats
         Weights per feature.
-    distance : float
-        Fingerprint distance (weighted per feature).
-    coverage : float
-        Feature bit coverage (weighted per feature).
+    data : pandas.Series
+        Fingerprint distance and coverage (weighted per feature).
     """
 
     def __init__(self):
 
         self.molecule_codes = None
+        self.distance_measure = None
         self.feature_weights = None
-        self.distance = None
-        self.coverage = None
+        self.data = None
 
     def from_feature_distances(self, feature_distances, feature_weights=None):
         """
@@ -502,20 +502,26 @@ class FingerprintDistance:
             Fingerprint distance.
         """
 
+        # Set class attributes
         self.molecule_codes = feature_distances.molecule_codes
+        self.distance_measure = feature_distances.distance_measure
+
+        # Get feature distance data
         feature_distances = feature_distances.data
 
         # Add weights
         feature_distances = self._add_weight_column(feature_distances, feature_weights)
         self.feature_weights = feature_distances.weight
 
-        # Calculate weighted sum of feature distances
+        # Calculate weighted sum of feature distances and feature coverage
         fingerprint_distance = (feature_distances.distance * feature_distances.weight).sum()
-        self.distance = fingerprint_distance
-
-        # Calculate weighted sum of feature coverage
         fingerprint_coverage = (feature_distances.bit_coverage * feature_distances.weight).sum()
-        self.coverage = fingerprint_coverage
+
+        # Set class attribute: data
+        self.data = pd.Series(
+            [fingerprint_distance, fingerprint_coverage],
+            index='distance coverage'.split()
+        )
 
     def _add_weight_column(self, feature_distances, feature_weights=None):
         """
