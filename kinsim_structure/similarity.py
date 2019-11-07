@@ -825,7 +825,7 @@ class FeatureDistances:
     molecule_codes : list of str
         Codes of both molecules represented by the fingerprints.
     distance_measure : str
-        Type of distance measure, defaults to Euclidean distance.
+        Type of distance measure, defaults to scaled Euclidean distance.
     data : pandas.DataFrame
         Distances between two fingerprints for each of their features, plus details on feature type, feature,
         feature bit coverage, and feature bit number.
@@ -837,9 +837,9 @@ class FeatureDistances:
         self.distance_measure = None
         self.data = None
 
-    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='euclidean'):
+    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='scaled_euclidean'):
         """
-        Calculate distance between two fingerprints for each feature.
+        Calculate distance between two fingerprints for each (normalized) feature.
 
         Parameters
         ----------
@@ -848,7 +848,7 @@ class FeatureDistances:
         fingerprint2 : encoding.Fingerprint
             Fingerprint 2.
         distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
+            Type of distance measure, defaults to scaled Euclidean distance.
 
         Returns
         -------
@@ -857,20 +857,21 @@ class FeatureDistances:
             feature bit coverage, and feature bit number.
         """
 
+        # Set class attributes
         self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
         self.distance_measure = distance_measure
 
         # Get fingerprint pair (normalized fingerprints only)
         fingerprint_pair = self._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
 
-        distances = []
+        feature_distances = []
 
         for feature_type in FEATURE_NAMES.keys():
 
             for feature_name in FEATURE_NAMES[feature_type]:
 
                 # Get feature distance
-                distance = self._calc_feature_distance(
+                feature_distance = self._calculate_feature_distance(
                         fingerprint_pair[feature_type][feature_name],
                         distance_measure
                     )
@@ -882,10 +883,11 @@ class FeatureDistances:
                 bit_coverage = self._get_bit_coverage(feature_type, bit_number)
 
                 # Save feature data to fingerprint data
-                distances.append([feature_type, feature_name, distance, bit_coverage, bit_number])
+                feature_distances.append([feature_type, feature_name, feature_distance, bit_coverage, bit_number])
 
+        # Format result and save to class attribute
         self.data = pd.DataFrame(
-            distances,
+            feature_distances,
             columns='feature_type feature_name distance bit_coverage bit_number'.split()
         )
 
@@ -910,6 +912,7 @@ class FeatureDistances:
         if feature_type not in FEATURE_NAMES.keys():
             raise ValueError(f'Feature type unknown. Choose from: {", ".join(list(FEATURE_NAMES.keys()))}.')
 
+        # Define number of bits per feature type
         bit_number_moments = 4.0
         bit_number_other = 85.0
 
@@ -929,7 +932,7 @@ class FeatureDistances:
                 raise ValueError(f'Unexcepted number of bits for {feature_type}: '
                                  f'Is {bit_number}, but must be between 0 and {int(bit_number_other)}.')
 
-    def _calc_feature_distance(self, feature_pair, distance_measure='euclidean'):
+    def _calculate_feature_distance(self, feature_pair, distance_measure='scaled_euclidean'):
         """
         Calculate distance between two value lists (describing each the same feature).
 
@@ -946,14 +949,7 @@ class FeatureDistances:
             Distance between two value lists (describing each the same feature).
         """
 
-        distance_measures = 'euclidean'.split()
-
-        if not isinstance(distance_measure, str):
-            raise TypeError(f'Parameter "distance_measure" must be of type str, but is {type(distance_measure)}.')
-
-        if distance_measure not in distance_measures:
-            raise ValueError(f'Distance measure unknown. Choose from: {", ".join(distance_measures)}')
-
+        # Test if parameter input is correct
         if not isinstance(feature_pair, pd.DataFrame):
             raise TypeError(f'Parameter "feature_pair" must be of type pandas.DataFrame, but is {type(feature_pair)}.')
 
@@ -965,17 +961,24 @@ class FeatureDistances:
         if len(feature_pair) == 0:
             return np.nan
 
-        # In case there are still NaN positions, remove bit positions containing any NaN value
+        # In case there are NaN positions in input, remove bit positions containing any NaN value
         feature_pair.dropna(how='any', axis=0, inplace=True)
 
         # Get feature distance
-        if distance_measure == 'euclidean':
-            return self._euclidean_distance(
+        if distance_measure == 'scaled_euclidean':
+            return self._scaled_euclidean_distance(
+                feature_pair.iloc[:, 0],  # Fingerprint 1
+                feature_pair.iloc[:, 1]  # Fingerprint 2
+            )
+
+        elif distance_measure == 'scaled_cityblock':
+            return self._scaled_cityblock_distance(
                 feature_pair.iloc[:, 0],  # Fingerprint 1
                 feature_pair.iloc[:, 1]  # Fingerprint 2
             )
 
         else:
+            distance_measures = 'scaled_euclidean scaled_cityblock'.split()
             raise ValueError(f'Distance measure unknown. Choose from: {", ".join(distance_measures)}')
 
     @staticmethod
@@ -1030,9 +1033,9 @@ class FeatureDistances:
         return fingerprint_pair
 
     @staticmethod
-    def _euclidean_distance(values1, values2):
+    def _scaled_euclidean_distance(values1, values2):
         """
-        Calculate Euclidean distance between two value lists of same length.
+        Calculate scaled Euclidean distance between two value lists of same length.
 
         Parameters
         ----------
@@ -1044,7 +1047,7 @@ class FeatureDistances:
         Returns
         -------
         float
-            Euclidean distance between two value lists.
+            Scaled Euclidean distance between two value lists.
         """
 
         if len(values1) != len(values2):
@@ -1056,9 +1059,9 @@ class FeatureDistances:
             return d
 
     @staticmethod
-    def _cityblock_distance(values1, values2):
+    def _scaled_cityblock_distance(values1, values2):
         """
-        Calculate cityblock distance between two value lists of same length.
+        Calculate scaled cityblock distance between two value lists of same length.
 
         Parameters
         ----------
@@ -1070,7 +1073,7 @@ class FeatureDistances:
         Returns
         -------
         float
-            Euclidean distance between two value lists.
+            Scaled cityblock distance between two value lists.
         """
 
         if len(values1) != len(values2):

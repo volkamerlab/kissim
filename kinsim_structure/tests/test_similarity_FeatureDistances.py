@@ -80,7 +80,7 @@ def test_from_fingerprints(mol2_filenames, pdb_filenames, chain_ids, feature_typ
     feature_distances.from_fingerprints(
         fingerprint1=fingerprints[0],
         fingerprint2=fingerprints[1],
-        distance_measure='euclidean'
+        distance_measure='scaled_euclidean'
     )
 
     feature_type_dimension_calculated = feature_distances.data.groupby(by='feature_type', sort=False).size()
@@ -137,10 +137,10 @@ def test_get_bit_coverage_valueerror(feature_type, bit_number):
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure, distance', [
-    (pd.DataFrame([[4, 0], [0, 3]], columns=['a', 'b']), 'euclidean', 2.5),
-    (pd.DataFrame([], columns=['a', 'b']), 'euclidean', np.nan)
+    (pd.DataFrame([[4, 0], [0, 3]], columns=['a', 'b']), 'scaled_euclidean', 2.5),
+    (pd.DataFrame([], columns=['a', 'b']), 'scaled_euclidean', np.nan)
 ])
-def test_calc_feature_distance(feature_pair, distance_measure, distance):
+def test_calculate_feature_distance(feature_pair, distance_measure, distance):
     """
     Test distance calculation for two value (feature) lists.
 
@@ -155,7 +155,7 @@ def test_calc_feature_distance(feature_pair, distance_measure, distance):
     """
 
     feature_distances_generator = FeatureDistances()
-    distance_calculated = feature_distances_generator._calc_feature_distance(
+    distance_calculated = feature_distances_generator._calculate_feature_distance(
         feature_pair,
         distance_measure
     )
@@ -167,10 +167,9 @@ def test_calc_feature_distance(feature_pair, distance_measure, distance):
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure', [
-    (pd.DataFrame([[1, 2], [1, 2]]), None),  # Distance measure is not str
-    ('feature_pair', 'euclidean')  # Feature pair is not pandas.DataFrame
+    ('feature_pair', 'scaled_euclidean')  # Feature pair is not pandas.DataFrame
 ])
-def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
+def test_calculate_feature_distance_typeerror(feature_pair, distance_measure):
     """
     Test TypeError exceptions in distance calculation for two value (feature) lists.
 
@@ -184,14 +183,15 @@ def test_calc_feature_distance_typeerror(feature_pair, distance_measure):
 
     with pytest.raises(TypeError):
         feature_distance_generator = FeatureDistances()
-        feature_distance_generator._calc_feature_distance(feature_pair, distance_measure)
+        feature_distance_generator._calculate_feature_distance(feature_pair, distance_measure)
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure', [
     (pd.DataFrame([[1, 2], [1, 2]]), 'xxx'),  # Distance measure is not implemented
-    (pd.DataFrame([[1, 2, 1], [1, 2, 1]]), 'euclidean')  # Feature pair has more than two columns
+    (pd.DataFrame([[1, 2, 1], [1, 2, 1]]), 'scaled_euclidean'),  # Feature pair has more than two columns
+    (pd.DataFrame([[1, 2], [1, 2]]), 11),  # Distance measure is not str
 ])
-def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
+def test_calculate_feature_distance_valueerror(feature_pair, distance_measure):
     """
     Test ValueError exceptions in distance calculation for two value (feature) lists.
 
@@ -205,7 +205,7 @@ def test_calc_feature_distance_valueerror(feature_pair, distance_measure):
 
     with pytest.raises(ValueError):
         feature_distance_generator = FeatureDistances()
-        feature_distance_generator._calc_feature_distance(feature_pair, distance_measure)
+        feature_distance_generator._calculate_feature_distance(feature_pair, distance_measure)
 
 
 @pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids, n_bits_wo_nan_size', [
@@ -261,7 +261,7 @@ def test_extract_fingerprint_pair(mol2_filenames, pdb_filenames, chain_ids, n_bi
     ([0, 0], [4, 3], 2.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
 ])
-def test_euclidean_distance(values1, values2, distance):
+def test_scaled_euclidean_distance(values1, values2, distance):
     """
     Test Euclidean distance calculation.
 
@@ -276,6 +276,30 @@ def test_euclidean_distance(values1, values2, distance):
     """
 
     feature_distances_generator = FeatureDistances()
-    score_calculated = feature_distances_generator._euclidean_distance(values1, values2)
+    score_calculated = feature_distances_generator._scaled_euclidean_distance(values1, values2)
+
+    assert np.isclose(score_calculated, distance, rtol=1e-04)
+
+
+@pytest.mark.parametrize('values1, values2, distance', [
+    ([0, 0], [4, 3], 3.5),
+    (pd.Series([0, 0]), pd.Series([4, 3]), 3.5)
+])
+def test_scaled_cityblock_distance(values1, values2, distance):
+    """
+    Test Euclidean distance calculation.
+
+    Parameters
+    ----------
+    values1 : list or pandas.Series
+        Value list (same length as values2).
+    values2 : list or pandas.Series
+        Value list (same length as values1).
+    distance : float
+        Euclidean distance between two value lists.
+    """
+
+    feature_distances_generator = FeatureDistances()
+    score_calculated = feature_distances_generator._scaled_cityblock_distance(values1, values2)
 
     assert np.isclose(score_calculated, distance, rtol=1e-04)
