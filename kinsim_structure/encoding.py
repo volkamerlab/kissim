@@ -989,7 +989,7 @@ class SideChainOrientationFeature:
 
         self.features = None
         self.features_verbose = None
-        self.molecule_code = None  # Necessary for cgo generation
+        self.molecule_code = None
         self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
 
     def from_molecule(self, molecule, chain):
@@ -1017,6 +1017,8 @@ class SideChainOrientationFeature:
 
         # Get vertex angles (for each residue, vertex angle between aforementioned points)
         vertex_angles = self._get_vertex_angles(pocket_vectors)
+
+        # TODO transform angles to categories
 
         # Store vertex angles
         self.features = vertex_angles
@@ -1202,12 +1204,14 @@ class SideChainOrientationFeature:
 
         # Set side chain centroid
 
-        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
+        # TODO add logging info for all exceptions
+
+        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation  # TODO if 1 and CB use it
             return None
 
         try:  # If standard residue, calculate centroid only if enough side chain atoms available
             if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
-                return None
+                return None  # TODO elif CB available use it
             else:
                 return Vector(center_of_mass(selected_atoms, geometric=True))
 
