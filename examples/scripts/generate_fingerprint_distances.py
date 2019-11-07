@@ -43,12 +43,13 @@ def main():
         'scaledCityblock': 'scaled_cityblock'
     }
     feature_weighting_schemes = {
-        'weights1': {'physicochemical': 1.0, 'distances': 0.0, 'moments': 0.0},
-        'weights2': {'physicochemical': 0.5, 'distances': 0.5, 'moments': 0.0},
-        'weights3': {'physicochemical': 0.0, 'distances': 0.5, 'moments': 0.5},
-        'weights4': {'physicochemical': 0.5, 'distances': 0.0, 'moments': 0.5},
-        'weights5': {'physicochemical': 0.0, 'distances': 1.0, 'moments': 0.0},
-        'weights6': {'physicochemical': 0.0, 'distances': 0.0, 'moments': 1.0},
+        'weights100': {'physicochemical': 1.0, 'distances': 0.0, 'moments': 0.0},
+        'weights010': {'physicochemical': 0.0, 'distances': 1.0, 'moments': 0.0},
+        'weights001': {'physicochemical': 0.0, 'distances': 0.0, 'moments': 1.0},
+        'weights110': {'physicochemical': 0.5, 'distances': 0.5, 'moments': 0.0},
+        'weights101': {'physicochemical': 0.5, 'distances': 0.0, 'moments': 0.5},
+        'weights011': {'physicochemical': 0.0, 'distances': 0.5, 'moments': 0.5},
+        'weights111': {'physicochemical': 1.0 / 3, 'distances': 1.0 / 3, 'moments': 1.0 / 3}
     }
 
     # All against all fingerprint comparison
