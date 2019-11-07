@@ -612,64 +612,6 @@ def test_spatialfeatures_get_reference_points(filename, x_coordinate):
     assert np.isclose(reference_points.centroid.x, x_coordinate, rtol=1e-04)
 
 
-@pytest.mark.parametrize('filename, residue, feature_type, feature', [
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'size', 1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASN', 'size', 2),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ARG', 'size', 3),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'PTR', 'size', 3),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'MSE', 'size', 2),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'size', None),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'hbd', 0),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASN', 'hbd', 1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ARG', 'hbd', 3),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'hbd', None),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'hba', 0),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASN', 'hba', 1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASP', 'hba', 2),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'hba', None),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'charge', 0),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ARG', 'charge', 1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ASP', 'charge', -1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'charge', None),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'aromatic', 0),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'HIS', 'aromatic', 1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'aromatic', None),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ARG', 'aliphatic', 0),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'ALA', 'aliphatic', 1),
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'XXX', 'aliphatic', None)
-
-])
-def test_pharmacophoresizefeatures_from_residue(filename, residue, feature_type, feature):
-    """
-    Test function for retrieval of residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
-    hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
-
-    Parameters
-    ----------
-    filename : str
-        Path to file originating from test data folder.
-    residue : str
-        Three-letter code for residue.
-    feature_type : str
-        Feature type name.
-    feature : int or None
-        Feature value.
-    """
-
-    # Load molecule
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
-
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    molecule = klifs_molecule_loader.molecule
-
-    # Get pharmacophore and size features
-    pharmacophore_size_feature = PharmacophoreSizeFeatures()
-    pharmacophore_size_feature.from_molecule(molecule)
-
-    # Call feature from residue function
-    assert pharmacophore_size_feature.from_residue(residue, feature_type) == feature
-
-
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, res_id_mean, n_pocket_atoms', [
     ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 315.95, 659)
 ])
