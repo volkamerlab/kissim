@@ -561,7 +561,7 @@ class FingerprintDistance:
     molecule_codes : list of str
         Codes of both molecules represented by the fingerprints.
     distance_measure : str
-        Type of distance measure, defaults to Euclidean distance.
+        Type of distance measure, defaults to scaled Euclidean distance.
     feature_weights : dict of floats
         Weights per feature.
     data : pandas.Series
@@ -606,7 +606,7 @@ class FingerprintDistance:
         self.molecule_codes = feature_distances.molecule_codes
         self.distance_measure = feature_distances.distance_measure
 
-        # Get feature distance data
+        # Get feature distances data
         feature_distances = feature_distances.data
 
         # Add weights
@@ -617,7 +617,7 @@ class FingerprintDistance:
         fingerprint_distance = (feature_distances.distance * feature_distances.weight).sum()
         fingerprint_coverage = (feature_distances.bit_coverage * feature_distances.weight).sum()
 
-        # Set class attribute: data
+        # Format results and save to class attribute
         self.data = pd.Series(
             [fingerprint_distance, fingerprint_coverage],
             index='distance coverage'.split()
@@ -651,8 +651,12 @@ class FingerprintDistance:
             feature bit coverage, feature bit number, AND feature weights.
         """
 
+        # The parameter feature_weights can come in three difference formats as described in this method's docstring.
+        # For each of the three formats perform a certain action:
+
         if feature_weights is None:
 
+            # Defaults to equally distributed weights between all features
             feature_weights = self._format_weight_per_feature(feature_weights)
             return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
@@ -662,11 +666,13 @@ class FingerprintDistance:
 
             if len(feature_weights) <= 3:
 
+                # Set weights per feature type
                 feature_weights = self._format_weight_per_feature_type(feature_weights)
                 return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
             else:
 
+                # Set weights per feature
                 feature_weights = self._format_weight_per_feature(feature_weights)
                 return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
@@ -677,7 +683,7 @@ class FingerprintDistance:
     @staticmethod
     def _format_weight_per_feature_type(feature_type_weights=None):
         """
-        Distribute feature type weights equally to features per feature type and format this data to DataFrame
+        Distribute feature type weights equally to features per feature type and format these values as a DataFrame
         with 15 rows (features) and 2 columns (feature name, weight).
 
         Parameters
@@ -693,6 +699,7 @@ class FingerprintDistance:
             Feature weights: 15 rows (features) and 2 columns (feature name, weight).
         """
 
+        # 1. Either set feature weights to default or check if non-default input is correct
         equal_weights = 1.0 / 3
 
         feature_type_weights_default = {
@@ -726,7 +733,7 @@ class FingerprintDistance:
             if sum(feature_type_weights.values()) != 1.0:
                 raise ValueError(f'Sum of all weights must be one, but is {sum(feature_type_weights.values())}.')
 
-        # Equally distribute feature type weight to features in feature type
+        # 2. Distribute feature type weight equally to features in feature type
         feature_weights = {}
 
         for feature_type, feature_names in FEATURE_NAMES.items():
@@ -736,7 +743,7 @@ class FingerprintDistance:
             for feature_name in feature_names:
                 feature_weights[feature_name] = weight_per_feature_in_feature_type
 
-        # Get feature weights as DataFrame with feature names
+        # 3. Get feature weights as DataFrame with feature names
         feature_weights = pd.DataFrame.from_dict(feature_weights, orient='index', columns=['weight'])
         feature_weights['feature_name'] = feature_weights.index
         feature_weights.reset_index(inplace=True, drop=True)
@@ -762,6 +769,7 @@ class FingerprintDistance:
             Feature weights: 15 rows (features) and 2 columns (feature name, weight).
         """
 
+        # 1. Either set feature weights to default or check if non-default input is correct
         equal_weights = 1.0 / 15
 
         feature_weights_default = {
@@ -807,7 +815,7 @@ class FingerprintDistance:
             if sum(feature_weights.values()) != 1.0:
                 raise ValueError(f'Sum of all weights must be one, but is {sum(feature_weights.values())}.')
 
-        # Get feature weights as DataFrame with feature names
+        # 2. Get feature weights as DataFrame with feature names
         feature_weights = pd.DataFrame.from_dict(feature_weights, orient='index', columns=['weight'])
         feature_weights['feature_name'] = feature_weights.index
         feature_weights.reset_index(inplace=True, drop=True)

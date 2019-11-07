@@ -9,7 +9,7 @@ import pytest
 from kinsim_structure.similarity import FeatureDistances, FingerprintDistance
 
 
-@pytest.mark.parametrize('feature_distances, feature_weights, molecule_codes, distance, coverage', [
+@pytest.mark.parametrize('feature_distances_data, molecule_codes, feature_weights, distance, coverage', [
     (
         pd.DataFrame(
             [
@@ -24,6 +24,7 @@ from kinsim_structure.similarity import FeatureDistances, FingerprintDistance
             ],
             index='feature_type feature_name distance bit_coverage bit_number'.split()
         ).transpose(),
+        ['molecule1', 'molecule2'],
         {
             'size': 0.0,
             'hbd': 0.0,
@@ -41,27 +42,22 @@ from kinsim_structure.similarity import FeatureDistances, FingerprintDistance
             'moment2': 0.0,
             'moment3': 0.25
         },
-        ['molecule1', 'molecule2'],
         0.5,
         0.75
     )
 ])
-def test_from_feature_distances(feature_distances, feature_weights, molecule_codes, distance, coverage):
+def test_from_feature_distances(feature_distances_data, molecule_codes, feature_weights, distance, coverage):
 
-    # Set feature distances object
-    feature_distances_object = FeatureDistances()
-    feature_distances_object.molecule_codes = molecule_codes
-    feature_distances_object.data = feature_distances
+    # FeatureDistances (set class attributes manually)
+    feature_distances = FeatureDistances()
+    feature_distances.molecule_codes = molecule_codes
+    feature_distances.data = feature_distances_data
 
-    print(feature_distances_object.molecule_codes)
-
-    # Calculate fingerprint distance
+    # FingerprintDistance
     fingerprint_distance = FingerprintDistance()
-    fingerprint_distance.from_feature_distances(feature_distances_object, feature_weights)
+    fingerprint_distance.from_feature_distances(feature_distances, feature_weights)
 
     # Test class attributes
-    print(fingerprint_distance.molecule_codes)
-
     assert fingerprint_distance.molecule_codes == molecule_codes
     assert fingerprint_distance.feature_weights.equals(pd.Series(feature_weights).reset_index(drop=True))
     assert np.isclose(fingerprint_distance.data.distance, distance, rtol=1e-04)
@@ -82,7 +78,7 @@ def test_add_weight_column_typeerror(feature_weights):
         Any non-dictionary and non-None input.
     """
 
-    feature_distances = pd.DataFrame(
+    feature_distances_data = pd.DataFrame(
         [
             ['physicochemical', 'physicochemical', 'physicochemical', 'physicochemical',
              'physicochemical', 'physicochemical', 'physicochemical', 'physicochemical',
@@ -100,7 +96,7 @@ def test_add_weight_column_typeerror(feature_weights):
 
     with pytest.raises(TypeError):
         fingerprint_distance = FingerprintDistance()
-        fingerprint_distance._add_weight_column(feature_distances, feature_weights)
+        fingerprint_distance._add_weight_column(feature_distances_data, feature_weights)
 
 
 @pytest.mark.parametrize('feature_weights, shape, weight_std', [
@@ -155,7 +151,7 @@ def test_add_weight_column(feature_weights, shape, weight_std):
         Standard deviation of weights in returned DataFrame.
     """
 
-    feature_distances = pd.DataFrame(
+    feature_distances_data = pd.DataFrame(
         [
             ['physicochemical', 'physicochemical', 'physicochemical', 'physicochemical',
              'physicochemical', 'physicochemical', 'physicochemical', 'physicochemical',
@@ -172,7 +168,9 @@ def test_add_weight_column(feature_weights, shape, weight_std):
     ).transpose()
 
     fingerprint_distance = FingerprintDistance()
-    feature_distances_weights_calculated = fingerprint_distance._add_weight_column(feature_distances, feature_weights)
+    feature_distances_weights_calculated = fingerprint_distance._add_weight_column(
+        feature_distances_data, feature_weights
+    )
 
     assert feature_distances_weights_calculated.shape == shape
     assert np.isclose(feature_distances_weights_calculated.weight.std(), weight_std, rtol=1e-03)
@@ -181,11 +179,7 @@ def test_add_weight_column(feature_weights, shape, weight_std):
 @pytest.mark.parametrize('feature_type_weights', [
     ({'physicochemical': 0.1}),  # Features missing
     ({'physicochemical': 0.1, 'xxx': 0.1}),  # Unknown feature
-    ({
-        'physicochemical': 0.5,
-        'distances': 0.5,
-        'moments': 0.5
-    }),  # Weights do not sum up to 1.0
+    ({'physicochemical': 0.5, 'distances': 0.5, 'moments': 0.5}),  # Weights do not sum up to 1.0
 ])
 def test_format_weight_per_feature_type_valueerror(feature_type_weights):
     """
@@ -205,16 +199,8 @@ def test_format_weight_per_feature_type_valueerror(feature_type_weights):
 
 
 @pytest.mark.parametrize('feature_type_weights', [
-    ({
-        'physicochemical': 'bla',
-        'distances': 0.5,
-        'moments': 0.5
-    }),  # Weight value is not float
-    ({
-        'physicochemical': 1,
-        'distances': 0,
-        'moments': 0
-    }),  # Weight value is not float
+    ({'physicochemical': 'bla', 'distances': 0.5, 'moments': 0.5}),  # Weight value is not float
+    ({'physicochemical': 1, 'distances': 0, 'moments': 0}),  # Weight value is not float
     ([0])  # Input is no dict
 ])
 def test_format_weight_per_feature_type_typeerror(feature_type_weights):
@@ -283,16 +269,18 @@ def test_format_weight_per_feature_type(feature_type_weights, feature_weights, c
         Dimension of returned DataFrame.
     """
 
+    # FingerprintDistance
     fingerprint_distance = FingerprintDistance()
     feature_weights_calculated = fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
 
+    # Test data type and dimension
     assert feature_weights_calculated.dtypes.weight == column_dtypes[0]
     assert feature_weights_calculated.dtypes.feature_name == column_dtypes[1]
     assert feature_weights_calculated.shape == shape
 
+    # Test weight values
     weights_calculated = feature_weights_calculated.weight
     weights = pd.Series(list(feature_weights.values()))
-
     assert weights_calculated.equals(weights)
 
 
@@ -432,14 +420,16 @@ def test_format_weight_per_feature(feature_weights, weight_column_dtype, feature
         Dimension of returned DataFrame.
     """
 
+    # FingerprintDistance
     fingerprint_distance = FingerprintDistance()
     feature_weights_calculated = fingerprint_distance._format_weight_per_feature(feature_weights)
 
+    # Test data type and dimension
     assert feature_weights_calculated.dtypes.weight == weight_column_dtype
     assert feature_weights_calculated.dtypes.feature_name == feature_name_column_dtype
     assert feature_weights_calculated.shape == shape
 
+    # Test weight values
     weights_calculated = feature_weights_calculated.weight
     weights = pd.Series(list(feature_weights.values()))
-
     assert weights_calculated.equals(weights)
