@@ -53,40 +53,9 @@ MOMENT_CUTOFFS = {  # 99% percentile of all moments
 HINGE_KLIFS_IDS = [46, 47, 48]
 DFG_KLIFS_IDS = [81, 82, 83]
 
-FEATURE_LOOKUP = {
-    'size': {
-        1.0: 'ALA CYS GLY PRO SER THR VAL'.split(),
-        2.0: 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split(),
-        3.0: 'ARG PHE TRP TYR'.split()
-    },
-    'hbd': {
-        0.0: 'ALA ASP GLU GLY ILE LEU MET PHE PRO VAL'.split(),
-        1.0: 'ASN CYS GLN HIS LYS SER THR TRP TYR'.split(),
-        3.0: 'ARG'.split()
-    },  # Note: it is correct that 2 is missing!
-    'hba': {
-        0.0: 'ALA ARG CYS GLY ILE LEU LYS MET PHE PRO TRP VAL'.split(),
-        1.0: 'ASN GLN HIS SER THR TYR'.split(),
-        2.0: 'ASP GLU'.split()
-    },
-    'charge': {
-        -1.0: 'ASP GLU'.split(),
-        0.0: 'ALA ASN CYS GLN GLY HIS ILE LEU MET PHE PRO SER TRP TYR VAL'.split(),
-        1.0: 'ARG LYS THR'.split()
-    },
-    'aromatic': {
-        0.0: 'ALA ARG ASN ASP CYS GLN GLU GLY ILE LEU LYS MET PRO SER THR VAL'.split(),
-        1.0: 'HIS PHE TRP TYR'.split()
-    },
-    'aliphatic': {
-        0.0: 'ARG ASN ASP GLN GLU GLY HIS LYS PHE SER TRP TYR'.split(),
-        1.0: 'ALA CYS ILE LEU MET PRO THR VAL'.split()
-    }
-}
+SITEALIGN_FEATURES = pd.read_csv(Path(__file__).parent / 'data' / 'sitealign_features.csv', index_col=0)
 
-STANDARD_AA = 'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET PHE PRO SER THR TRP TYR VAL'.split()
-
-MODIFIED_AA_CONVERSION = {
+MODIFIED_RESIDUE_CONVERSION = {
     'CAF': 'CYS',
     'CME': 'CYS',
     'CSS': 'CYS',
@@ -1566,6 +1535,7 @@ class PharmacophoreSizeFeatures:
 
     def __init__(self):
 
+        self.molecule_code = None
         self.features = None
 
     def from_molecule(self, molecule):
@@ -1583,20 +1553,18 @@ class PharmacophoreSizeFeatures:
             Pharmacophoric and size features (columns) for each residue = KLIFS position (rows).
         """
 
-        feature_names = 'size hbd hba charge aromatic aliphatic'.split()
+        self.molecule_code = molecule.code
+
+        print(molecule.df.res_name)
 
         feature_matrix = []
 
-        for feature_name in feature_names:
+        for feature_name in SITEALIGN_FEATURES.columns:
 
             # Select from DataFrame first row per KLIFS position (index) and residue name
             residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
 
-            # Report non-standard residues in molecule
-            non_standard_residues = set(residues) - set(STANDARD_AA)
-            if len(non_standard_residues) > 0:
-                logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
-
+            # Get feature values for each KLIFS position
             features = residues.apply(lambda residue: self.from_residue(residue, feature_name))
             features.rename(feature_name, inplace=True)
 
@@ -1606,8 +1574,7 @@ class PharmacophoreSizeFeatures:
 
         self.features = features
 
-    @staticmethod
-    def from_residue(residue, feature_name):
+    def from_residue(self, residue_name, feature_name):
         """
         Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
         hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
@@ -1615,7 +1582,7 @@ class PharmacophoreSizeFeatures:
 
         Parameters
         ----------
-        residue : str
+        residue_name : str
             Three-letter code for residue.
         feature_name : str
             Feature name.
@@ -1626,24 +1593,33 @@ class PharmacophoreSizeFeatures:
             Residue's size value according to SiteAlign feature encoding.
         """
 
-        if feature_name not in FEATURE_LOOKUP.keys():
+        if feature_name not in SITEALIGN_FEATURES.columns:
             raise KeyError(f'Feature {feature_name} does not exist. '
-                           f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
+                           f'Please choose from: {", ".join(SITEALIGN_FEATURES.columns)}')
 
-        # Manual addition of modified residue(s)
-        if residue in MODIFIED_AA_CONVERSION.keys():
-            residue = MODIFIED_AA_CONVERSION[residue]
+        try:
 
-        # Start with a feature of None
-        result = None
+            feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
 
-        # If residue name is listed in the feature lookup, assign respective feature
-        for feature, residues in FEATURE_LOOKUP[feature_name].items():
+        except KeyError:
 
-            if residue in residues:
-                result = feature
+            if residue_name in MODIFIED_RESIDUE_CONVERSION.keys():
 
-        return result
+                logger.info(f'{self.molecule_code}, {feature_name} feature: '
+                            f'Non-standard amino acid {residue_name} is processed as '
+                            f'{MODIFIED_RESIDUE_CONVERSION[residue_name]}.')
+
+                residue_name = MODIFIED_RESIDUE_CONVERSION[residue_name]
+                feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
+
+            else:
+
+                logger.info(f'{self.molecule_code}, {feature_name} feature: '
+                            f'Non-standard amino acid {residue_name} is set to None.')
+
+                feature_value = None
+
+        return feature_value
 
 
 ########################################################################################################################
