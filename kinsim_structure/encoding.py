@@ -979,7 +979,7 @@ class SideChainOrientationFeature:
         1 feature, i.e. side chain orientation, (column) for 85 residues (rows).
     features_verbose : pandas.DataFrame
         Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
-    code : str
+    molecule_code : str
         KLIFS code.
     vector_pocket_centroid : Bio.PDB.Vector.Vector
         Vector to pocket centroid.
@@ -989,7 +989,7 @@ class SideChainOrientationFeature:
 
         self.features = None
         self.features_verbose = None
-        self.code = None  # Necessary for cgo generation
+        self.molecule_code = None  # Necessary for cgo generation
         self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
 
     def from_molecule(self, molecule, chain):
@@ -1007,7 +1007,7 @@ class SideChainOrientationFeature:
             Chain from PDB file.
         """
 
-        self.code = molecule.code
+        self.molecule_code = molecule.code
 
         # Get pocket residues
         pocket_residues = self._get_pocket_residues(molecule, chain)
@@ -1256,7 +1256,7 @@ class SideChainOrientationFeature:
         """
 
         # Get molecule and molecule code
-        code = split_klifs_code(self.code)
+        code = split_klifs_code(self.molecule_code)
 
         # Get pocket residues
         pocket_residues_ids = list(self.features_verbose.res_id)
@@ -1340,9 +1340,9 @@ class SideChainOrientationFeature:
 
             )
         # Group all objects to one group
-        lines.append(f'cmd.group("{self.code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
+        lines.append(f'cmd.group("{self.molecule_code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
 
-        cgo_path = Path(output_path) / f'side_chain_orientation_{self.code.split("/")[1]}.py'
+        cgo_path = Path(output_path) / f'side_chain_orientation_{self.molecule_code.split("/")[1]}.py'
         with open(cgo_path, 'w') as f:
             f.write('\n'.join(lines))
 
@@ -1353,7 +1353,7 @@ class SideChainOrientationFeature:
     def show_in_nglviewer(self):
 
         # Get molecule and molecule code
-        code = split_klifs_code(self.code)
+        code = split_klifs_code(self.molecule_code)
 
         pdb_id = code['pdb_id']
         chain = code['chain']
