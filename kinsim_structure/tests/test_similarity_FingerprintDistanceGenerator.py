@@ -32,7 +32,6 @@ def generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids):
         List of fingerprints.
     """
 
-    # Fingerprints
     fingerprints = []
 
     for mol2_filename, pdb_filename, chain_id in zip(mol2_filenames, pdb_filenames, chain_ids):
@@ -58,9 +57,9 @@ def generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids):
     )
 
 ])
-def test_calculate_fingerprint_distance_for_pair(mol2_filenames, pdb_filenames, chain_ids):
+def test_get_fingerprint_distance(mol2_filenames, pdb_filenames, chain_ids):
     """
-    Test if return type is instance of FingerprintDistance class.
+    Test if return type is FingerprintDistance class instance.
 
     Parameters
     ----------
@@ -81,7 +80,7 @@ def test_calculate_fingerprint_distance_for_pair(mol2_filenames, pdb_filenames, 
 
     # Test
     fingerprint_distance_generator = FingerprintDistanceGenerator()
-    fingerprint_distance_calculated = fingerprint_distance_generator._calculate_fingerprint_distance_for_pair(
+    fingerprint_distance_calculated = fingerprint_distance_generator._get_fingerprint_distance(
         feature_distances
     )
 
@@ -96,9 +95,9 @@ def test_calculate_fingerprint_distance_for_pair(mol2_filenames, pdb_filenames, 
     )
 
 ])
-def test_get_fingerprint_distances_for_pairs(mol2_filenames, pdb_filenames, chain_ids):
+def test_get_fingerprint_distance_from_list(mol2_filenames, pdb_filenames, chain_ids):
     """
-    Test if return type is instance of list of FeatureDistance class.
+    Test if return type is instance of list of FeatureDistance class instances.
 
     Parameters
     ----------
@@ -124,8 +123,8 @@ def test_get_fingerprint_distances_for_pairs(mol2_filenames, pdb_filenames, chai
 
     # Test
     fingerprint_distance_generator = FingerprintDistanceGenerator()
-    fingerprint_distance_list = fingerprint_distance_generator._get_fingerprint_distances_for_pairs(
-        fingerprint_distance_generator._calculate_fingerprint_distance_for_pair, feature_distances_list
+    fingerprint_distance_list = fingerprint_distance_generator._get_fingerprint_distance_from_list(
+        fingerprint_distance_generator._get_fingerprint_distance, feature_distances_list
     )
 
     assert isinstance(fingerprint_distance_list, list)
@@ -163,7 +162,7 @@ def test_from_feature_distances_generator(
         mol2_filenames, pdb_filenames, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names
 ):
     """
-    Test AllAgainstAllComparison class attributes.
+    Test FingerprintDistanceGenerator class attributes.
 
     Parameters
     ----------
@@ -247,12 +246,107 @@ def test_from_feature_distances_generator(
 ])
 def test_get_structure_distance_matrix(molecule_codes, data, fill, structure_distance_matrix):
 
-    # Data Preparation
+    # Set dummy FingerprintDistanceGenerator class attributes
     fingerprint_distance_generator = FingerprintDistanceGenerator()
     fingerprint_distance_generator.molecule_codes = molecule_codes
     fingerprint_distance_generator.data = data
 
     # Test generation of structure distance matrix
     structure_distance_matrix_calculated = fingerprint_distance_generator.get_structure_distance_matrix(fill)
+
+    assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
+
+
+@pytest.mark.parametrize('molecule_codes, kinase_names, data, by, fill, structure_distance_matrix', [
+    (
+        'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+        'kinase1 kinase2'.split(),
+        pd.DataFrame(
+            [
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
+                ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
+            ],
+            columns='molecule_code_1 molecule_code_2 distance coverage'.split()
+        ),
+        'minimum',
+        False,
+        pd.DataFrame(
+            [[0.5, 0.75], [np.nan, 0.0]],
+            columns='kinase1 kinase2'.split(),
+            index='kinase1 kinase2'.split()
+        )
+    ),  # Minimum
+    (
+        'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+        'kinase1 kinase2'.split(),
+        pd.DataFrame(
+            [
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
+                ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
+            ],
+            columns='molecule_code_1 molecule_code_2 distance coverage'.split()
+        ),
+        'minimum',
+        True,
+        pd.DataFrame(
+            [[0.5, 0.75], [0.75, 0.0]],
+            columns='kinase1 kinase2'.split(),
+            index='kinase1 kinase2'.split()
+            )
+    ),  # Fill=True
+    (
+        'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+        'kinase1 kinase2'.split(),
+        pd.DataFrame(
+            [
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
+                ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
+            ],
+            columns='molecule_code_1 molecule_code_2 distance coverage'.split()
+        ),
+        'maximum',
+        False,
+        pd.DataFrame(
+            [[0.5, 1.0], [np.nan, 0.0]],
+            columns='kinase1 kinase2'.split(),
+            index='kinase1 kinase2'.split()
+        )
+    ),  # Maximum
+    (
+        'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+        'kinase1 kinase2'.split(),
+        pd.DataFrame(
+            [
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
+                ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
+                ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
+            ],
+            columns='molecule_code_1 molecule_code_2 distance coverage'.split()
+        ),
+        'mean',
+        False,
+        pd.DataFrame(
+            [[0.5, 0.875], [np.nan, 0.0]],
+            columns='kinase1 kinase2'.split(),
+            index='kinase1 kinase2'.split()
+        )
+    ),  # Minimum
+])
+def test_get_kinase_distance_matrix(molecule_codes, kinase_names, data, by, fill, structure_distance_matrix):
+
+    # Set dummy FingerprintDistanceGenerator class attributes
+    fingerprint_distance_generator = FingerprintDistanceGenerator()
+    fingerprint_distance_generator.molecule_codes = molecule_codes
+    fingerprint_distance_generator.kinase_names = kinase_names
+    fingerprint_distance_generator.data = data
+
+    # Test generation of structure distance matrix
+    structure_distance_matrix_calculated = fingerprint_distance_generator.get_kinase_distance_matrix(
+        by,
+        fill
+    )
 
     assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
