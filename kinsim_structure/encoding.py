@@ -53,34 +53,34 @@ MOMENT_CUTOFFS = {  # 99% percentile of all moments
 HINGE_KLIFS_IDS = [46, 47, 48]
 DFG_KLIFS_IDS = [81, 82, 83]
 
-FEATURE_LOOKUP = {  # TODO cast to float
+FEATURE_LOOKUP = {
     'size': {
-        1: 'ALA CYS GLY PRO SER THR VAL'.split(),
-        2: 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split(),
-        3: 'ARG PHE TRP TYR'.split()
+        1.0: 'ALA CYS GLY PRO SER THR VAL'.split(),
+        2.0: 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split(),
+        3.0: 'ARG PHE TRP TYR'.split()
     },
     'hbd': {
-        0: 'ALA ASP GLU GLY ILE LEU MET PHE PRO VAL'.split(),
-        1: 'ASN CYS GLN HIS LYS SER THR TRP TYR'.split(),
-        3: 'ARG'.split()
+        0.0: 'ALA ASP GLU GLY ILE LEU MET PHE PRO VAL'.split(),
+        1.0: 'ASN CYS GLN HIS LYS SER THR TRP TYR'.split(),
+        3.0: 'ARG'.split()
     },  # Note: it is correct that 2 is missing!
     'hba': {
-        0: 'ALA ARG CYS GLY ILE LEU LYS MET PHE PRO TRP VAL'.split(),
-        1: 'ASN GLN HIS SER THR TYR'.split(),
-        2: 'ASP GLU'.split()
+        0.0: 'ALA ARG CYS GLY ILE LEU LYS MET PHE PRO TRP VAL'.split(),
+        1.0: 'ASN GLN HIS SER THR TYR'.split(),
+        2.0: 'ASP GLU'.split()
     },
     'charge': {
-        -1: 'ASP GLU'.split(),
-        0: 'ALA ASN CYS GLN GLY HIS ILE LEU MET PHE PRO SER TRP TYR VAL'.split(),
-        1: 'ARG LYS THR'.split()
+        -1.0: 'ASP GLU'.split(),
+        0.0: 'ALA ASN CYS GLN GLY HIS ILE LEU MET PHE PRO SER TRP TYR VAL'.split(),
+        1.0: 'ARG LYS THR'.split()
     },
     'aromatic': {
-        0: 'ALA ARG ASN ASP CYS GLN GLU GLY ILE LEU LYS MET PRO SER THR VAL'.split(),
-        1: 'HIS PHE TRP TYR'.split()
+        0.0: 'ALA ARG ASN ASP CYS GLN GLU GLY ILE LEU LYS MET PRO SER THR VAL'.split(),
+        1.0: 'HIS PHE TRP TYR'.split()
     },
     'aliphatic': {
-        0: 'ARG ASN ASP GLN GLU GLY HIS LYS PHE SER TRP TYR'.split(),
-        1: 'ALA CYS ILE LEU MET PRO THR VAL'.split()
+        0.0: 'ARG ASN ASP GLN GLU GLY HIS LYS PHE SER TRP TYR'.split(),
+        1.0: 'ALA CYS ILE LEU MET PRO THR VAL'.split()
     }
 }
 
