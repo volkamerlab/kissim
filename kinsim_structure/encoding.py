@@ -6,7 +6,9 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the structural kinase fingerprint encoding.
 """
 
+import datetime
 import logging
+from multiprocessing import cpu_count, Pool
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
 from Bio.PDB import calc_angle
@@ -21,6 +23,12 @@ from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.auxiliary import center_of_mass, split_klifs_code
 
 logger = logging.getLogger(__name__)
+
+FEATURE_NAMES = {
+    'physicochemical': 'size hbd hba charge aromatic aliphatic sco exposure'.split(),
+    'distances': 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split(),
+    'moments': 'moment1 moment2 moment3'.split()
+}
 
 ANCHOR_RESIDUES = {
     'hinge_region': [16, 47, 80],
@@ -45,7 +53,7 @@ MOMENT_CUTOFFS = {  # 99% percentile of all moments
 HINGE_KLIFS_IDS = [46, 47, 48]
 DFG_KLIFS_IDS = [81, 82, 83]
 
-FEATURE_LOOKUP = {
+FEATURE_LOOKUP = {  # TODO cast to float
     'size': {
         1: 'ALA CYS GLY PRO SER THR VAL'.split(),
         2: 'ASN ASP GLN GLU HIS ILE LEU LYS MET'.split(),
@@ -143,44 +151,123 @@ N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid
 }
 
 
+class FingerprintGenerator:
+
+    def __init__(self):
+
+        self.data = None
+
+    def from_metadata_entry(self, klifs_metadata):
+
+        # Get start time of script
+        start = datetime.datetime.now()
+        print(start)
+
+        logger.info(f'Calculate fingerprints...')
+
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Get KLIFS entries as list
+        entry_list = [j for i, j in klifs_metadata.iterrows()]
+
+        # Apply function to each chunk in list
+        fingerprints_list = pool.map(self._get_fingerprint, entry_list)
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of fingerprints: {len(fingerprints_list)}')
+
+        # Transform to dict
+        self.data = {
+            i.molecule_code: i for i in fingerprints_list
+        }
+
+        # Get end time of script
+        end = datetime.datetime.now()
+        print(end)
+
+        logger.info(start)
+        logger.info(end)
+
+    @staticmethod
+    def _get_fingerprint(klifs_metadata_entry):
+        """
+        Get fingerprint.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        kinsim_structure.similarity.Fingerprint
+            Fingerprint
+        """
+
+        try:
+
+            fingerprint = Fingerprint()
+            fingerprint.from_metadata_entry(klifs_metadata_entry)
+
+            return fingerprint
+
+        except Exception as e:
+
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.error(e)
+
+            return None
+
+
 class Fingerprint:
     """
-    Kinase fingerprint with 8 physicochemical and 4 spatial features for each residue in the KLIFS-defined  # TODO Update docstring
-    kinase binding site of 85 pre-aligned residues.
+    Kinase pocket is defined by 85 pre-aligned residues in KLIFS, which are described each with (i) 8 physicochemical
+    and (ii) 4 distance features as well as (iii) the first three moments of aforementioned feature distance
+    distributions. Fingerprints can consist of all or a subset of these three feature types.
+
 
     Attributes
     ----------
     molecule_code : str
         Molecule code as defined by KLIFS in mol2 file.
-    fingerprint_type1 : pandas.DataFrame
-        Fingerprint type 1.
-    fingerprint_type2 : dict of pandas.DataFrame
-        Fingerprint type 2.
+    fingerprint : dict of pandas.DataFrame
+        Fingerprint, consisting of physicochemical, distance and moment features.
+    fingerprint_normalized : dict of pandas.DataFrame
+        Normalized fingerprint, consisting of physicochemical, distance and moment features.
 
     Notes
     -----
-    Physicochemical features:
+    PHYSICOCHEMICAL features (85 x 8 matrix = 680 bits):
+
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
-    - Side chain angle
+    - Side chain orientation
     - Half sphere exposure
 
-    Spatial features:
-    Distance of each residue to 4 reference points:
-    - Binding site centroid
-    - Hinge region
-    - DFG region
-    - Front pocket
+    SPATIAL features:
 
-    Two fingerprint types are offered:
-    - Fingeprint type 1:
-      8 physicochemical and 4 spatial (distance) features (columns) for 85 residues (rows)
-      = 1020 bit fingerprint.
-    - Fingerprint type 2 consisting of two parts:
-      (i)  8 physicochemical features (columns) for 85 residues (rows)
-           = 680 bit fingerprint
-      (ii) 12 spatial features, i.e. first three moments for each of the 4 distance distributions over 85 residues
-           = 12 bit fingerprint
+    - DISTANCE of each residue to 4 reference points (85 x 4 matrix = 340 bits):
+      - Binding site centroid
+      - Hinge region
+      - DFG region
+      - Front pocket
+    - MOMENTS for distance distributions for the 4 reference points (4 x 3 matrix = 12 bits):
+      - Moment 1: Mean
+      - Moment 2: Standard deviation
+      - Moment 3: Skewness (cube root)
+
+    The terminology used for the feature hierarchy is the following:
+    Feature category, e.g. spatial or physicochemical
+    - Feature type, e.g. distance or physicochemical
+      - Feature, e.g. distance to centroid or size
     """
 
     def __init__(self):
@@ -539,7 +626,7 @@ class PhysicoChemicalFeatures:
     Physicochemical properties:
     - Size
     - Pharmacophoric features: Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
-    - Side chain angle
+    - Side chain orientation
     - Half sphere exposure
 
     Attributes
@@ -1320,7 +1407,7 @@ class SideChainOrientationFeature:
             'pocket_centroid': [0, 0, 1]
         }
 
-        # Show side chain angle feature per residue
+        # Show side chain orientation feature per residue
         for index, row in self.features_verbose.iterrows():
 
             res_id = row.res_id
@@ -1354,7 +1441,7 @@ class ExposureFeature:
     Attributes
     ----------
     features : pandas.DataFrame
-        1 features (columns) for 85 residues (rows).
+        1 feature (columns) for 85 residues (rows).
     """
 
     def __init__(self):
@@ -1496,11 +1583,11 @@ class PharmacophoreSizeFeatures:
             Pharmacophoric and size features (columns) for each residue = KLIFS position (rows).
         """
 
-        feature_types = 'size hbd hba charge aromatic aliphatic'.split()
+        feature_names = 'size hbd hba charge aromatic aliphatic'.split()
 
         feature_matrix = []
 
-        for feature_type in feature_types:
+        for feature_name in feature_names:
 
             # Select from DataFrame first row per KLIFS position (index) and residue name
             residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
@@ -1510,8 +1597,8 @@ class PharmacophoreSizeFeatures:
             if len(non_standard_residues) > 0:
                 logger.info(f'Non-standard amino acid in {molecule.code}: {non_standard_residues}')
 
-            features = residues.apply(lambda residue: self.from_residue(residue, feature_type))
-            features.rename(feature_type, inplace=True)
+            features = residues.apply(lambda residue: self.from_residue(residue, feature_name))
+            features.rename(feature_name, inplace=True)
 
             feature_matrix.append(features)
 
@@ -1520,7 +1607,7 @@ class PharmacophoreSizeFeatures:
         self.features = features
 
     @staticmethod
-    def from_residue(residue, feature_type):
+    def from_residue(residue, feature_name):
         """
         Get feature value for residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
         hydrogen bond acceptors, charge features, aromatic features or aliphatic features)
@@ -1530,8 +1617,8 @@ class PharmacophoreSizeFeatures:
         ----------
         residue : str
             Three-letter code for residue.
-        feature_type : str
-            Feature type name.
+        feature_name : str
+            Feature name.
 
         Returns
         -------
@@ -1539,8 +1626,8 @@ class PharmacophoreSizeFeatures:
             Residue's size value according to SiteAlign feature encoding.
         """
 
-        if feature_type not in FEATURE_LOOKUP.keys():
-            raise KeyError(f'Feature {feature_type} does not exist. '
+        if feature_name not in FEATURE_LOOKUP.keys():
+            raise KeyError(f'Feature {feature_name} does not exist. '
                            f'Please choose from: {", ".join(FEATURE_LOOKUP.keys())}')
 
         # Manual addition of modified residue(s)
@@ -1551,7 +1638,7 @@ class PharmacophoreSizeFeatures:
         result = None
 
         # If residue name is listed in the feature lookup, assign respective feature
-        for feature, residues in FEATURE_LOOKUP[feature_type].items():
+        for feature, residues in FEATURE_LOOKUP[feature_name].items():
 
             if residue in residues:
                 result = feature

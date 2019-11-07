@@ -10,18 +10,11 @@ import pytest
 
 from Bio.PDB import Vector
 
-from kinsim_structure.encoding import Fingerprint, DISTANCE_CUTOFFS, MOMENT_CUTOFFS
+from kinsim_structure.encoding import Fingerprint, DISTANCE_CUTOFFS, MOMENT_CUTOFFS, FEATURE_NAMES
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PhysicoChemicalFeatures, SpatialFeatures
 from kinsim_structure.encoding import PharmacophoreSizeFeatures, SideChainOrientationFeature
 from kinsim_structure.encoding import ObsoleteSideChainAngleFeature
-
-FEATURE_NAMES = {
-    'physicochemical': 'size hbd hba charge aromatic aliphatic sco exposure'.split(),
-    'distances': 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split(),
-    'moments': 'moment1 moment2 moment3'.split(),
-    'klifs_ids': list(range(1, 86))
-}
 
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
@@ -51,13 +44,15 @@ def test_fingerprint_from_molecule(mol2_filename, pdb_filename, chain_id):
     fingerprint = Fingerprint()
     fingerprint.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
 
+    klifs_ids = list(range(1, 86))
+
     # Non-normalized
     assert fingerprint.physicochemical.shape == (85, 8)
-    assert list(fingerprint.physicochemical.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.physicochemical.index) == klifs_ids
     assert list(fingerprint.physicochemical.columns) == FEATURE_NAMES['physicochemical']
 
     assert fingerprint.distances.shape == (85, 4)
-    assert list(fingerprint.distances.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.distances.index) == klifs_ids
     assert list(fingerprint.distances.columns) == FEATURE_NAMES['distances']
 
     assert fingerprint.moments.shape == (4, 3)
@@ -69,11 +64,11 @@ def test_fingerprint_from_molecule(mol2_filename, pdb_filename, chain_id):
 
     # Normalized
     assert fingerprint.physicochemical_normalized.shape == (85, 8)
-    assert list(fingerprint.physicochemical_normalized.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.physicochemical_normalized.index) == klifs_ids
     assert list(fingerprint.physicochemical_normalized.columns) == FEATURE_NAMES['physicochemical']
 
     assert fingerprint.distances.shape == (85, 4)
-    assert list(fingerprint.distances_normalized.index) == FEATURE_NAMES['klifs_ids']
+    assert list(fingerprint.distances_normalized.index) == klifs_ids
     assert list(fingerprint.distances_normalized.columns) == FEATURE_NAMES['distances']
 
     assert fingerprint.moments.shape == (4, 3)
