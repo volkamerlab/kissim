@@ -136,7 +136,7 @@ class FingerprintDistanceGenerator:
             coverage.
         """
 
-        # Get start time of script
+        # Get start time of computation
         start = datetime.datetime.now()
         logger.info(f'Calculate pairwise fingerprint distances...')
 
@@ -157,7 +157,7 @@ class FingerprintDistanceGenerator:
         pool.close()
         pool.join()
 
-        # Get end time of script
+        # Get end time of computation
         logger.info(f'Number of fingerprint distances: {len(fingerprint_distances_list)}')
         end = datetime.datetime.now()
 
@@ -344,12 +344,12 @@ class FingerprintDistanceGenerator:
 class FeatureDistancesGenerator:
     """
     Generate feature distances for multiple fingerprint pairs, given a distance measure.
-    Uses parallel processing of fingerprint pairs.
+    Uses parallel computing of fingerprint pairs.
 
     Attributes
     ----------
     distance_measure : str
-        Type of distance measure, defaults to Euclidean distance.
+        Type of distance measure, defaults to scaled Euclidean distance.
     molecule_codes : list of str
         Unique molecule codes associated with all fingerprints (sorted alphabetically).
     kinase_names : list of str
@@ -357,7 +357,7 @@ class FeatureDistancesGenerator:
     data : dict of kinsim_structure.similarity.FeatureDistances
         Dictionary of distances between two fingerprints for each of their features, plus details on feature type,
         feature, feature bit coverage, and feature bit number. Dictionary key is molecule code tuple associated with
-         fingerprint pair.
+        fingerprint pair.
     """
 
     def __init__(self):
@@ -367,7 +367,7 @@ class FeatureDistancesGenerator:
         self.kinase_names = None
         self.data = None
 
-    def from_fingerprint_generator(self, fingerprints_generator, distance_measure='euclidean'):
+    def from_fingerprint_generator(self, fingerprints_generator, distance_measure='scaled_euclidean'):
         """
         Calculate feature distances for all possible fingerprint pair combinations, given a distance measure.
 
@@ -376,12 +376,8 @@ class FeatureDistancesGenerator:
         fingerprints_generator : kinsim_structure.encoding.FingerprintsGenerator
             Multiple fingerprints.
         distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
+            Type of distance measure, defaults to scaled Euclidean distance.
         """
-
-        # Get start time of script
-        start = datetime.datetime.now()
-        print(start)
 
         # Remove empty fingerprints
         fingerprints = self._remove_empty_fingerprints(fingerprints_generator.data)
@@ -395,8 +391,8 @@ class FeatureDistancesGenerator:
         pairs = self._get_fingerprint_pairs(fingerprints)
 
         # Calculate pairwise feature distances
-        feature_distances_list = self._get_feature_distances_for_pairs(
-            self._calculate_feature_distances_for_pair,
+        feature_distances_list = self._get_feature_distances_from_list(
+            self._get_feature_distances,
             pairs,
             fingerprints,
             self.distance_measure
@@ -407,16 +403,9 @@ class FeatureDistancesGenerator:
             (i.molecule_codes[0], i.molecule_codes[1]): i for i in feature_distances_list
         }
 
-        # Get end time of script
-        end = datetime.datetime.now()
-        print(end)
-
-        logger.info(start)
-        logger.info(end)
-
     @staticmethod
-    def _get_feature_distances_for_pairs(
-            calculate_feature_distances_for_pair, pairs, fingerprints, distance_measure='euclidean'
+    def _get_feature_distances_from_list(
+            method_get_feature_distances, pairs, fingerprints, distance_measure='scaled_euclidean'
     ):
         """
         Get feature distances for multiple fingerprint pairs.
@@ -424,14 +413,14 @@ class FeatureDistancesGenerator:
 
         Parameters
         ----------
-        calculate_feature_distances_for_pair : method
+        method_get_feature_distances : method
             Method calculating feature distances for one fingerprint pair.
         fingerprints : dict of kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
         pairs : list of list of str
             List of molecule code pairs (list).
         distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
+            Type of distance measure, defaults to scaled Euclidean distance.
 
         Returns
         -------
@@ -440,6 +429,8 @@ class FeatureDistancesGenerator:
             feature, feature bit coverage, and feature bit number.
         """
 
+        # Get start time of computation
+        start = datetime.datetime.now()
         logger.info(f'Calculate pairwise feature distances...')
 
         # Number of CPUs on machine
@@ -451,7 +442,7 @@ class FeatureDistancesGenerator:
 
         # Apply function to each chunk in list
         feature_distances_list = pool.starmap(
-            calculate_feature_distances_for_pair,
+            method_get_feature_distances,
             zip(pairs, repeat(fingerprints), repeat(distance_measure))
         )
 
@@ -459,12 +450,17 @@ class FeatureDistancesGenerator:
         pool.close()
         pool.join()
 
+        # Get end time of script
         logger.info(f'Number of feature distances: {len(feature_distances_list)}')
+        end = datetime.datetime.now()
+
+        logger.info(start)
+        logger.info(end)
 
         return feature_distances_list
 
     @staticmethod
-    def _calculate_feature_distances_for_pair(pair, fingerprints, distance_measure='euclidean'):
+    def _get_feature_distances(pair, fingerprints, distance_measure='scaled_euclidean'):
         """
         Calculate the feature distances for one fingerprint pair.
 
@@ -475,7 +471,7 @@ class FeatureDistancesGenerator:
         pair : list of str
             Molecule names of molecules encoded by fingerprint pair.
         distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
+            Type of distance measure, defaults to scaled Euclidean distance.
 
         Returns
         -------

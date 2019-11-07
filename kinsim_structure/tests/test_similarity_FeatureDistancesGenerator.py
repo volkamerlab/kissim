@@ -102,7 +102,7 @@ def test_get_fingerprint_pairs(fingerprints, pairs):
     )
 
 ])
-def test_calculate_feature_distances_for_pair(mol2_filenames, pdb_filenames, chain_ids):
+def test_get_feature_distances(mol2_filenames, pdb_filenames, chain_ids):
     """
     Test if return type is instance of FeatureDistance class.
 
@@ -125,7 +125,7 @@ def test_calculate_feature_distances_for_pair(mol2_filenames, pdb_filenames, cha
 
     # Test feature distance calculation
     generator = FeatureDistancesGenerator()
-    feature_distances_calculated = generator._calculate_feature_distances_for_pair(pair, fingerprints)
+    feature_distances_calculated = generator._get_feature_distances(pair, fingerprints)
 
     assert isinstance(feature_distances_calculated, FeatureDistances)
 
@@ -138,7 +138,7 @@ def test_calculate_feature_distances_for_pair(mol2_filenames, pdb_filenames, cha
     )
 
 ])
-def test_get_feature_distances_for_pairs(mol2_filenames, pdb_filenames, chain_ids):
+def test_get_feature_distances_from_list(mol2_filenames, pdb_filenames, chain_ids):
     """
     Test if return type is instance of list of FeatureDistance class.
 
@@ -162,8 +162,8 @@ def test_get_feature_distances_for_pairs(mol2_filenames, pdb_filenames, chain_id
     generator = FeatureDistancesGenerator()
     pairs = generator._get_fingerprint_pairs(fingerprints)
 
-    feature_distances_list = generator._get_feature_distances_for_pairs(
-        generator._calculate_feature_distances_for_pair, pairs, fingerprints
+    feature_distances_list = generator._get_feature_distances_from_list(
+        generator._get_feature_distances, pairs, fingerprints
     )
 
     assert isinstance(feature_distances_list, list)
