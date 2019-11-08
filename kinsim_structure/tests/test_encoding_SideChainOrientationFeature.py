@@ -90,9 +90,12 @@ def test_get_ca(pdb_filename, chain_id, residue_id, ca):
 
 
 @pytest.mark.parametrize('pdb_filename, chain_id, residue_id, side_chain_centroid', [
-    ('5i35.cif', 'A', 336, [65.77, 23.74, 21.13]),  # Residue has enough side chain atoms for centroid calculation
+    (),  # Residue is GLY
+    (),  # Residue is ALA with CB
+    (),  # Residue is ALA without CB
+    ('5i35.cif', 'A', 336, [65.77, 23.74, 21.13]),  # Standard residue has enough side chain atoms
     ('5i35.cif', 'A', 337, None),  # Residue has <= 1 side chain atoms
-    ('5i35.cif', 'A', 357, [59.72, 14.73, 22.72]),  # Non-standard amino acid
+    ('5i35.cif', 'A', 357, [59.72, 14.73, 22.72]),  # Non-standard residue with enough side chain atoms
     ('5l4q.cif', 'A', 57, [-27.53, 0.05, -41.01]),  # Side chain containing H atoms
     ('5l4q.cif', 'A', 130, None)  # Side chain with too many missing residues
 ])
