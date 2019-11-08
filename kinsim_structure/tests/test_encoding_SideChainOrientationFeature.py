@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from Bio.PDB import Vector
+import pandas as pd
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import SideChainOrientationFeature
@@ -258,11 +259,87 @@ def test_get_vertex_angles(mol2_filename, pdb_filename, chain_id, angles_mean):
     pocket_vectors = feature._get_pocket_vectors(pocket_residues)
     angles_calculated = feature._get_vertex_angles(pocket_vectors)
 
-    assert list(angles_calculated.columns) == ['sco']
+    assert list(angles_calculated.columns) == ['vertex_angle']
 
     # Calculate and test mean of all angles (excluding NaN values)
-    angles_mean_calculated = angles_calculated.sco.mean()
+    angles_mean_calculated = angles_calculated.vertex_angle.mean()
     assert np.isclose(angles_mean_calculated, angles_mean, rtol=1e-03)
+
+
+@pytest.mark.parametrize('vertex_angles', [
+    pd.DataFrame([0.0]*85, index=range(1, 86), columns=['sco'])  # Wrong column
+])
+def test_get_categories_valueerror(vertex_angles):
+    """
+    Test if exception are raised.
+
+    Parameters
+    ----------
+    vertex_angles : pandas.DataFrame
+        Vertex angles (column) for up to 85 residues (rows).
+    """
+
+    with pytest.raises(ValueError):
+        feature = SideChainOrientationFeature()
+        feature._get_categories(vertex_angles)
+
+
+@pytest.mark.parametrize('vertex_angles, categories', [
+    (
+        pd.DataFrame([0.0]*85, index=range(1, 86), columns=['vertex_angle']),
+        pd.DataFrame([0.0]*85, index=range(1, 86), columns=['sco']),
+    )
+])
+def test_get_categories(vertex_angles, categories):
+    """
+    Test transformation of vertex angles to categories (for side chain orientation).
+
+    Parameters
+    ----------
+    vertex_angles : pandas.DataFrame
+        Vertex angles (column) for up to 85 residues (rows).
+    categories : pandas.DataFrame
+        Side chain orientation categories (column) for up to 85 residues (rows).
+    """
+
+    feature = SideChainOrientationFeature()
+    categories_calculated = feature._get_categories(vertex_angles)
+
+    assert categories_calculated.equals(categories)
+
+
+@pytest.mark.parametrize('vertex_angle, category', [
+    (0.0, 0.0),
+    (1.0, 0.0),
+    (45.0, 0.0),
+    (46.0, 1.0),
+    (90.0, 1.0),
+    (91.0, 2.0),
+    (180.0, 2.0),
+    (np.nan, np.nan)
+])
+def test_get_category_from_vertex_angle(vertex_angle, category):
+    """
+    Test tranformation of vertex angle to category (for side chain orientation).
+
+    Parameters
+    ----------
+    vertex_angle : float
+        Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket centroid. Ranges between
+        0.0 and 180.0.
+    category : float
+        Side chain orientation towards pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards
+        (category 2.0).
+    """
+
+    feature = SideChainOrientationFeature()
+    category_calculated = feature._get_category_from_vertex_angle(vertex_angle)
+
+    if not np.isnan(vertex_angle):
+        assert isinstance(category_calculated, float)
+        assert category_calculated == category
+    else:
+        assert np.isnan(category_calculated)
 
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
@@ -294,7 +371,7 @@ def test_from_molecule(mol2_filename, pdb_filename, chain_id):
 
     # Check column names
     features_columns = ['sco']
-    features_verbose_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid', 'sco']
+    features_verbose_columns = 'klifs_id res_id res_name ca side_chain_centroid pocket_centroid vertex_angle sco'.split()
 
     # Test column names
     assert list(feature.features.columns) == features_columns

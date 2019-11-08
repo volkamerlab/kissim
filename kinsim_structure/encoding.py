@@ -975,21 +975,21 @@ class SideChainOrientationFeature:
 
     Attributes
     ----------
+    molecule_code : str
+        KLIFS code.
     features : pandas.DataFrame
         1 feature, i.e. side chain orientation, (column) for 85 residues (rows).
     features_verbose : pandas.DataFrame
         Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
-    molecule_code : str
-        KLIFS code.
     vector_pocket_centroid : Bio.PDB.Vector.Vector
         Vector to pocket centroid.
     """
 
     def __init__(self):
 
+        self.molecule_code = None
         self.features = None
         self.features_verbose = None
-        self.molecule_code = None
         self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
 
     def from_molecule(self, molecule, chain):
@@ -1018,12 +1018,13 @@ class SideChainOrientationFeature:
         # Get vertex angles (for each residue, vertex angle between aforementioned points)
         vertex_angles = self._get_vertex_angles(pocket_vectors)
 
-        # TODO transform angles to categories
+        # Transform vertex angles into categories
+        categories = self._get_categories(vertex_angles)
 
-        # Store vertex angles
-        self.features = vertex_angles
-        # Store vertex angles plus vectors and metadata
-        self.features_verbose = pd.concat([pocket_vectors, vertex_angles], axis=1)
+        # Store categories
+        self.features = categories
+        # Store categories, vertex angles plus vectors and metadata
+        self.features_verbose = pd.concat([pocket_vectors, vertex_angles, categories], axis=1)
 
     @staticmethod
     def _get_pocket_residues(molecule, chain):
@@ -1108,7 +1109,7 @@ class SideChainOrientationFeature:
     def _get_vertex_angles(pocket_vectors):
         """
         Get vertex angles for residues' side chain orientations to the molecule (pocket) centroid.
-        Side chain orientation of a residue is defined by the angle formed by (i) the residue's CB atom,
+        Side chain orientation of a residue is defined by the vertex_angle formed by (i) the residue's CB atom,
         (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms),
         whereby the CA atom forms the vertex.
 
@@ -1121,34 +1122,97 @@ class SideChainOrientationFeature:
         Returns
         -------
         pandas.DataFrame
-            Side chain orientation feature (column) for 85 residues (rows).
+            Vertex angles (column) for up to 85 residues (rows).
         """
 
-        side_chain_orientation = []
+        vertex_angles = []
 
         for index, row in pocket_vectors.iterrows():
 
-            # If all three vectors available, calculate angle - otherwise set angle to None
+            # If all three vectors available, calculate vertex_angle - otherwise set vertex_angle to None
 
             if row.ca and row.side_chain_centroid and row.pocket_centroid:
-                # Calculate vertex angle: CA atom is vertex
-                angle = np.degrees(
+                # Calculate vertex vertex_angle: CA atom is vertex
+                vertex_angle = np.degrees(
                     calc_angle(
                         row.side_chain_centroid, row.ca, row.pocket_centroid
                     )
                 )
-                side_chain_orientation.append(angle.round(2))
+                vertex_angles.append(vertex_angle.round(2))
             else:
-                side_chain_orientation.append(None)
+                vertex_angles.append(None)
 
         # Cast to DataFrame
-        side_chain_orientation = pd.DataFrame(
-            side_chain_orientation,
+        vertex_angles = pd.DataFrame(
+            vertex_angles,
             index=pocket_vectors.klifs_id,
+            columns=['vertex_angle']
+        )
+
+        return vertex_angles
+
+    def _get_categories(self, vertex_angles):
+        """
+        Get side chain orientation category for pocket residues based on their side chain orientation vertex angles.
+        The side chain orientation towards the pocket is described with the following three categories:
+        Inwards (0.0), intermediate (1.0), and outwards (2.0).
+
+        Parameters
+        ----------
+        vertex_angles : pandas.DataFrame
+            Vertex angles (column) for up to 85 residues (rows).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation categories (column) for up to 85 residues (rows).
+        """
+
+        if 'vertex_angle' not in vertex_angles.columns:
+            raise ValueError('Input DataFrame needs column with name "vertex_angle".')
+
+        categories = [
+            self._get_category_from_vertex_angle(vertex_angle) for vertex_angle in vertex_angles.vertex_angle
+        ]
+
+        # Cast from Series to DataFrame and set column name for feature
+        categories = pd.DataFrame(
+            categories,
+            index=vertex_angles.index,
             columns=['sco']
         )
 
-        return side_chain_orientation
+        return categories
+
+    def _get_category_from_vertex_angle(self, vertex_angle):
+        """
+        Transform a given vertex angle into a category value, which defines the side chain orientation towards the
+        pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards (category 2.0).
+
+        Parameters
+        ----------
+        vertex_angle : float
+            Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket centroid. Ranges between
+            0.0 and 180.0.
+
+        Returns
+        -------
+        float
+            Side chain orientation towards pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards
+            (category 2.0).
+        """
+
+        if 0.0 <= vertex_angle <= 45.0:  # Inwards
+            return 0.0
+        elif 45.0 < vertex_angle <= 90.0:  # Intermediate
+            return 1.0
+        elif 90.0 < vertex_angle <= 180.0:  # Outwards
+            return 2.0
+        elif np.isnan(vertex_angle):
+            return np.nan
+        else:
+            raise ValueError(f'Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. '
+                             f'Only values between 0.0 and 180.0 allowed.')
 
     @staticmethod
     def _get_ca(residue):
