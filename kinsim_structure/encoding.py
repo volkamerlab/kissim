@@ -1297,8 +1297,7 @@ class SideChainOrientationFeature:
             raise ValueError(f'Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. '
                              f'Only values between 0.0 and 180.0 allowed.')
 
-    @staticmethod
-    def _get_ca(residue):
+    def _get_ca(self, residue):
         """
         Get residue's CA atom.
 
@@ -1316,15 +1315,21 @@ class SideChainOrientationFeature:
         atom_names = [atoms.fullname for atoms in residue.get_atoms()]
 
         # Set CA atom
+        residue_exception = None
+
         if 'CA' in atom_names:
             vector_ca = residue['CA'].get_vector()
         else:
             vector_ca = None
+            residue_exception = 'None'
 
-        return vector_ca
+        if residue_exception:
+            logger.info(f'{self.molecule_code}: SCO: CA for '
+                        f'residue {residue.get_resname()}, {residue.id} is: {residue_exception}.')
 
-    @staticmethod
-    def _get_side_chain_centroid(residue):
+        return vector_ca  # TODO return exception info 
+
+    def _get_side_chain_centroid(self, residue):
         """
         Get residue's side chain centroid.
 
@@ -1350,20 +1355,50 @@ class SideChainOrientationFeature:
         ]
 
         # Set side chain centroid
+        residue_exception = None
 
-        # TODO add logging info for all exceptions
+        if residue.get_resname() == 'GLY':  # TODO KeyError if non-standard amino acid!
+            side_chain_centroid = None
+            residue_exception = 'GLY - None'
 
-        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation  # TODO if 1 and CB use it
-            return None
+        elif residue.get_resname() == 'ALA':
 
-        try:  # If standard residue, calculate centroid only if enough side chain atoms available
-            if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
-                return None  # TODO elif CB available use it
+            try:
+                side_chain_centroid = residue['CB'].get_vector()
+            except KeyError:
+                side_chain_centroid = None
+                residue_exception = 'ALA - None'
+
+        # Standard residues other than GLY and ALA
+        elif (residue.id[0] == ' ') and (residue.get_resname() not in ['GLY', 'ALA']):
+
+            if len(selected_atoms) >= N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
+                side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
+
             else:
-                return Vector(center_of_mass(selected_atoms, geometric=True))
+                try:
+                    side_chain_centroid = residue['CB'].get_vector()
+                    residue_exception = 'Standard - CB atom'
+                except KeyError:
+                    side_chain_centroid = None
+                    residue_exception = 'Standard - None'
 
-        except KeyError:  # If non-standard residue, use whatever side chain atoms available
-            return Vector(center_of_mass(selected_atoms, geometric=True))
+        # Non-standard residues
+        else:
+
+            if len(selected_atoms) > 0:
+                side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
+                residue_exception = f'Non-standard - centroid of {len(selected_atoms)} atoms'
+            else:
+                side_chain_centroid = None
+                residue_exception = 'Non-standard - None'
+
+        if residue_exception:
+            logger.info(f'{self.molecule_code}: SCO: Side chain centroid for '
+                        f'residue {residue.get_resname()}, {residue.id} with {len(selected_atoms)} atoms is: '
+                        f'{residue_exception}.')
+
+        return side_chain_centroid  # TODO return exception info
 
     @staticmethod
     def _get_pocket_centroid(pocket_residues):
@@ -1393,9 +1428,9 @@ class SideChainOrientationFeature:
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
         except ValueError:
-            return None
+            return None  # TODO return exception info
 
-    def save_cgo_side_chain_orientation(self, output_path):
+    def save_as_cgo(self, output_path):
         """
         Save CA atom, side chain centroid and pocket centroid as spheres and label CA atom with side chain orientation
         vertex angle value to PyMol cgo file.
