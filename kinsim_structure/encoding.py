@@ -487,17 +487,17 @@ class Fingerprint:
             normalized = self.physicochemical.copy()
 
             # Normalize size
-            normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
+            normalized['size'] = normalized['size'].apply(lambda x: (x - 1.0) / 2.0)
 
             # Normalize pharmacophoric features: HBD, HBA and charge
             normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
             normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
-            normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
+            normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1.0) / 2.0)
 
             # No normalization needed for aromatic and aliphatic features which are already 0 or 1
 
             # Normalize side chain orientation
-            normalized['sco'] = normalized['sco'].apply(lambda x: x / 180.0)
+            normalized['sco'] = normalized['sco'].apply(lambda x: x / 2.0)
 
             # No normalization needed for exposure feature which is already between 0 and 1
 
