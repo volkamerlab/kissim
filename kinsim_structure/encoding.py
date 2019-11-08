@@ -196,6 +196,89 @@ class FingerprintGenerator:
             return None
 
 
+class SideChainOrientationGenerator:
+
+    def __init__(self):
+
+        self.data = None
+
+    def from_metadata_entry(self, klifs_metadata):
+
+        # Get start time of script
+        start = datetime.datetime.now()
+        print(start)
+
+        logger.info(f'Calculate fingerprints...')
+
+        # Number of CPUs on machine
+        #num_cores = cpu_count() - 1
+        num_cores = 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Get KLIFS entries as list
+        entry_list = [j for i, j in klifs_metadata.iterrows()]
+
+        # Apply function to each chunk in list
+        fingerprints_list = pool.map(self._get_sco, entry_list)
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of fingerprints: {len(fingerprints_list)}')
+
+        # Transform to dict
+        self.data = {
+            i.molecule_code: i for i in fingerprints_list
+        }
+
+        # Get end time of script
+        end = datetime.datetime.now()
+        print(end)
+
+        logger.info(start)
+        logger.info(end)
+
+    @staticmethod
+    def _get_sco(klifs_metadata_entry):
+        """
+        Get side chain orientation.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        kinsim_structure.similarity.SideChainOrientationFeature
+            Side chain orientation.
+        """
+
+        try:
+
+            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+            molecule = klifs_molecule_loader.molecule
+
+            pdb_chain_loader = PdbChainLoader(klifs_metadata_entry)
+            chain = pdb_chain_loader.chain
+
+            feature = SideChainOrientationFeature()
+            feature.from_molecule(molecule, chain)
+
+            return feature
+
+        except Exception as e:
+
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.error(e)
+
+            return None
+
+
 class Fingerprint:
     """
     Kinase pocket is defined by 85 pre-aligned residues in KLIFS, which are described each with (i) 8 physicochemical
