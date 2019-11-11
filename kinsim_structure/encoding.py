@@ -1413,8 +1413,7 @@ class SideChainOrientationFeature:
 
         return side_chain_centroid  # TODO return exception info
 
-    @staticmethod
-    def _get_pocket_centroid(pocket_residues):
+    def _get_pocket_centroid(self, pocket_residues):
         """
         Get centroid of pocket CA atoms.
 
@@ -1430,17 +1429,27 @@ class SideChainOrientationFeature:
             Pocket centroid.
         """
 
+        # Initialize list for all CA atoms in pocket
         ca_vectors = []
 
-        for residue in pocket_residues.pocket_residues:  # TODO Exception for non-standard residues
+        # Log missing CA atoms
+        ca_atoms_missing = []
+
+        for residue in pocket_residues.pocket_residues:
             try:
                 ca_vectors.append(residue['CA'])
             except KeyError:
-                pass
+                ca_atoms_missing.append(residue)
+
+        if len(ca_atoms_missing) > 0:
+            logger.info(f'{self.molecule_code}: SideChainOrientationFeature: '
+                        f'{len(ca_atoms_missing)} missing CA atoms for pocket centroid calculation: {ca_atoms_missing}')
 
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
         except ValueError:
+            logger.info(f'{self.molecule_code}: SideChainOrientationFeature: '
+                        f'Pocket centroid cannot be calculated. {len(ca_vectors)} CA atoms available.')
             return None
 
     def save_as_cgo(self, output_path):
