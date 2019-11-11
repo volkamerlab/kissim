@@ -1350,48 +1350,54 @@ class SideChainOrientationFeature:
         ]
 
         # Set side chain centroid
-        residue_exception = None
+        exception = None
 
-        if residue.get_resname() == 'GLY':  # TODO KeyError if non-standard amino acid!
-            side_chain_centroid = None
-            residue_exception = 'GLY - None'
+        if residue.id[0] == ' ':  # Standard residues
 
-        elif residue.get_resname() == 'ALA':
+            if residue.get_resname() == 'GLY':
+                # GLY residue
 
-            try:
-                side_chain_centroid = residue['CB'].get_vector()
-            except KeyError:
                 side_chain_centroid = None
-                residue_exception = 'ALA - None'
+                exception = 'GLY - None'
 
-        # Standard residues other than GLY and ALA
-        elif (residue.id[0] == ' ') and (residue.get_resname() not in ['GLY', 'ALA']):
+            elif residue.get_resname() == 'ALA':
+                # ALA residue
 
-            if len(selected_atoms) >= N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
+                try:
+                    side_chain_centroid = residue['CB'].get_vector()
+                    exception = 'ALA - CB atom'
+                except KeyError:
+                    side_chain_centroid = None
+                    exception = 'ALA - None (no CB atom)'
+
+            elif len(selected_atoms) >= N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
+                # Other standard residues with enough side chain atoms
+
                 side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
 
             else:
+                # Other standard residues with too few side chain atoms
+
                 try:
                     side_chain_centroid = residue['CB'].get_vector()
-                    residue_exception = 'Standard - CB atom'
+                    exception = 'Standard residue - CB atom'
                 except KeyError:
                     side_chain_centroid = None
-                    residue_exception = 'Standard - None'
+                    exception = 'Standard residue - None'
 
-        # Non-standard residues
-        else:
+        else:  # Non-standard residues
 
             if len(selected_atoms) > 0:
                 side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
-                residue_exception = f'Non-standard - centroid of {len(selected_atoms)} atoms'
+                exception = f'Non-standard residue - centroid of {len(selected_atoms)} atoms'
             else:
                 side_chain_centroid = None
-                residue_exception = 'Non-standard - None'
+                exception = 'Non-standard - None'
 
-        if residue_exception:
+        if exception:
             logger.info(f'{self.molecule_code}: SCO: Side chain centroid for '
                         f'residue {residue.get_resname()}, {residue.id} with {len(selected_atoms)} atoms is: '
-                        f'{residue_exception}.')
+                        f'{exception}.')
 
         return side_chain_centroid  # TODO return exception info
 

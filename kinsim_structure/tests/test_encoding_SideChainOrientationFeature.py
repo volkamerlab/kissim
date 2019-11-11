@@ -90,14 +90,15 @@ def test_get_ca(pdb_filename, chain_id, residue_id, ca):
 
 
 @pytest.mark.parametrize('pdb_filename, chain_id, residue_id, side_chain_centroid', [
-    (),  # Residue is GLY
-    (),  # Residue is ALA with CB
-    (),  # Residue is ALA without CB
-    ('5i35.cif', 'A', 336, [65.77, 23.74, 21.13]),  # Standard residue has enough side chain atoms
-    ('5i35.cif', 'A', 337, None),  # Residue has <= 1 side chain atoms
-    ('5i35.cif', 'A', 357, [59.72, 14.73, 22.72]),  # Non-standard residue with enough side chain atoms
+    ('5i35.cif', 'A', 272, None),  # Residue is GLY
+    ('5i35.cif', 'A', 337, [63.66, 26.90, 23.41]),  # Residue is ALA with CB
+    ('4jik.cif', 'A', 19, None),  # Residue is ALA without CB
+    ('5i35.cif', 'A', 336, [65.77, 23.74, 21.13]),  # Standard residue side chain with enough atoms
+    ('5l4q.cif', 'A', 130, [-15.11, -1.78, -18.79]),  # Standard residue side chain with too few atoms but CB atom
+    ('4jik.cif', 'A', 51, None),  # Standard residue side chain with too few atoms and no CB atom
+    ('5i35.cif', 'A', 357, [59.72, 14.73, 22.72]),  # Non-standard residue side chain with enough atoms (>0)
+    #('xxxx.cif', 'X', 0, None),  # Non-standard residue side chain with no atoms
     ('5l4q.cif', 'A', 57, [-27.53, 0.05, -41.01]),  # Side chain containing H atoms
-    ('5l4q.cif', 'A', 130, None)  # Side chain with too many missing residues
 ])
 def test_get_side_chain_centroid(pdb_filename, chain_id, residue_id, side_chain_centroid):
     """
@@ -128,7 +129,6 @@ def test_get_side_chain_centroid(pdb_filename, chain_id, residue_id, side_chain_
 
     feature = SideChainOrientationFeature()
     side_chain_centroid_calculated = feature._get_side_chain_centroid(residue)
-    print(side_chain_centroid_calculated)
 
     if side_chain_centroid_calculated and side_chain_centroid:
         # Check only x coordinate
