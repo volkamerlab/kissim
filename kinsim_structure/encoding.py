@@ -1138,7 +1138,19 @@ class SideChainOrientationFeature:
         pocket_residues.set_index('klifs_id', drop=False, inplace=True)
 
         # Select residues from chain based on PDB residue IDs and add to DataFrame
-        pocket_residues['pocket_residues'] = [chain[res_id] for res_id in pocket_residues.res_id]
+        pocket_residues_list = []
+
+        for residue_id in pocket_residues.res_id:
+
+            try:  # Standard amino acids
+                pocket_residue = chain[residue_id]
+
+            except KeyError:  # Non-standard amino acid
+                pocket_residue = [i for i in chain.get_list() if i.get_id()[1] == residue_id][0]
+
+            pocket_residues_list.append(pocket_residue)
+
+        pocket_residues['pocket_residues'] = pocket_residues_list
 
         return pocket_residues
 
@@ -1420,7 +1432,7 @@ class SideChainOrientationFeature:
 
         ca_vectors = []
 
-        for residue in pocket_residues.pocket_residues: # TODO Exception for non-standard residues
+        for residue in pocket_residues.pocket_residues:  # TODO Exception for non-standard residues
             try:
                 ca_vectors.append(residue['CA'])
             except KeyError:
