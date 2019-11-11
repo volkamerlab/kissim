@@ -1297,7 +1297,8 @@ class SideChainOrientationFeature:
             raise ValueError(f'Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. '
                              f'Only values between 0.0 and 180.0 allowed.')
 
-    def _get_ca(self, residue):
+    @staticmethod
+    def _get_ca(residue):
         """
         Get residue's CA atom.
 
@@ -1315,19 +1316,13 @@ class SideChainOrientationFeature:
         atom_names = [atoms.fullname for atoms in residue.get_atoms()]
 
         # Set CA atom
-        residue_exception = None
 
         if 'CA' in atom_names:
             vector_ca = residue['CA'].get_vector()
         else:
             vector_ca = None
-            residue_exception = 'None'
 
-        if residue_exception:
-            logger.info(f'{self.molecule_code}: SCO: CA for '
-                        f'residue {residue.get_resname()}, {residue.id} is: {residue_exception}.')
-
-        return vector_ca  # TODO return exception info 
+        return vector_ca
 
     def _get_side_chain_centroid(self, residue):
         """
@@ -1428,7 +1423,7 @@ class SideChainOrientationFeature:
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
         except ValueError:
-            return None  # TODO return exception info
+            return None
 
     def save_as_cgo(self, output_path):
         """
