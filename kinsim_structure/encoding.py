@@ -1317,7 +1317,7 @@ class SideChainOrientationFeature:
 
         # Set CA atom
 
-        if 'CA' in atom_names:
+        if 'CA' in atom_names:  # TODO Exception for non-standard residues
             vector_ca = residue['CA'].get_vector()
         else:
             vector_ca = None
@@ -1420,7 +1420,7 @@ class SideChainOrientationFeature:
 
         ca_vectors = []
 
-        for residue in pocket_residues.pocket_residues:
+        for residue in pocket_residues.pocket_residues: # TODO Exception for non-standard residues
             try:
                 ca_vectors.append(residue['CA'])
             except KeyError:
