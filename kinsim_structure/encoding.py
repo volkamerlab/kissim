@@ -1309,8 +1309,7 @@ class SideChainOrientationFeature:
             raise ValueError(f'Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. '
                              f'Only values between 0.0 and 180.0 allowed.')
 
-    @staticmethod
-    def _get_ca(residue):
+    def _get_ca(self, residue):
         """
         Get residue's CA atom.
 
@@ -1329,9 +1328,10 @@ class SideChainOrientationFeature:
 
         # Set CA atom
 
-        if 'CA' in atom_names:  # TODO Exception for non-standard residues
+        if 'CA' in atom_names:
             vector_ca = residue['CA'].get_vector()
         else:
+            logger.info(f'{self.molecule_code}: SCO: CA atom: Missing in {residue}.')
             vector_ca = None
 
         return vector_ca
@@ -1404,7 +1404,7 @@ class SideChainOrientationFeature:
                 exception = f'Non-standard residue - centroid of {len(selected_atoms)} atoms'
             else:
                 side_chain_centroid = None
-                exception = 'Non-standard - None'
+                exception = 'Non-standard residue - None'
 
         if exception:
             logger.info(f'{self.molecule_code}: SCO: Side chain centroid for '
@@ -1442,14 +1442,14 @@ class SideChainOrientationFeature:
                 ca_atoms_missing.append(residue)
 
         if len(ca_atoms_missing) > 0:
-            logger.info(f'{self.molecule_code}: SideChainOrientationFeature: '
-                        f'{len(ca_atoms_missing)} missing CA atoms for pocket centroid calculation: {ca_atoms_missing}')
+            logger.info(f'{self.molecule_code}: SCO: Pocket centroid:'
+                        f'{len(ca_atoms_missing)} missing CA atoms: {ca_atoms_missing}')
 
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
         except ValueError:
-            logger.info(f'{self.molecule_code}: SideChainOrientationFeature: '
-                        f'Pocket centroid cannot be calculated. {len(ca_vectors)} CA atoms available.')
+            logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
+                        f'Cannot be calculated. {len(ca_vectors)} CA atoms available.')
             return None
 
     def save_as_cgo(self, output_path):
