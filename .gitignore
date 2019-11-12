@@ -118,3 +118,5 @@ ENV/
 
 # PyCharm
 .idea/
+
+examples/results/side_chain_orientation/side_chain_orientations\.p
