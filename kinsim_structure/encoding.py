@@ -11,6 +11,7 @@ import logging
 from multiprocessing import cpu_count, Pool
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
+from Bio.PDB.Chain import Chain
 from Bio.PDB import calc_angle
 import nglview as nv
 import numpy as np
@@ -211,8 +212,8 @@ class SideChainOrientationGenerator:
         logger.info(f'Calculate fingerprints...')
 
         # Number of CPUs on machine
-        #num_cores = cpu_count() - 1
-        num_cores = 1
+        num_cores = cpu_count() - 1
+        #num_cores = 1
         logger.info(f'Number of cores used: {num_cores}')
 
         # Create pool with `num_processes` processes
@@ -1096,7 +1097,7 @@ class SideChainOrientationFeature:
         pocket_residues = self._get_pocket_residues(molecule, chain)
 
         # Get vectors (for each residue CA atoms, side chain centroid, pocket centroid)
-        pocket_vectors = self._get_pocket_vectors(pocket_residues)
+        pocket_vectors = self._get_pocket_vectors(pocket_residues, chain)
 
         # Get vertex angles (for each residue, vertex angle between aforementioned points)
         vertex_angles = self._get_vertex_angles(pocket_vectors)
@@ -1154,7 +1155,7 @@ class SideChainOrientationFeature:
 
         return pocket_residues
 
-    def _get_pocket_vectors(self, pocket_residues):
+    def _get_pocket_vectors(self, pocket_residues, chain):
         """
         Get vectors to CA, residue side chain centroid, and pocket centroid.
 
@@ -1163,6 +1164,8 @@ class SideChainOrientationFeature:
         pocket_residues : pandas.DataFrame
             Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
             name (columns) for all pocket residues (rows).
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
 
         Returns
         -------
@@ -1182,7 +1185,7 @@ class SideChainOrientationFeature:
         for residue in pocket_residues.pocket_residues:
 
             vector_ca = self._get_ca(residue)
-            vector_side_chain_centroid = self._get_side_chain_centroid(residue)
+            vector_side_chain_centroid = self._get_side_chain_centroid(residue, chain)
 
             data.append([vector_ca, vector_side_chain_centroid, self.vector_pocket_centroid])
 
@@ -1336,7 +1339,7 @@ class SideChainOrientationFeature:
 
         return vector_ca
 
-    def _get_side_chain_centroid(self, residue):
+    def _get_side_chain_centroid(self, residue, chain):
         """
         Get residue's side chain centroid.
 
@@ -1344,6 +1347,8 @@ class SideChainOrientationFeature:
         ----------
         residue : Bio.PDB.Residue.Residue
             Residue.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
 
         Returns
         -------
@@ -1361,57 +1366,68 @@ class SideChainOrientationFeature:
             (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
         ]
 
+        n_atoms = len(selected_atoms)
+
         # Set side chain centroid
         exception = None
 
         if residue.id[0] == ' ':  # Standard residues
 
-            if residue.get_resname() == 'GLY':
-                # GLY residue
+            n_atoms_cutoff = N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]
 
-                side_chain_centroid = None
-                exception = 'GLY - None'
+            if residue.get_resname() == 'GLY':  # GLY residue
 
-            elif residue.get_resname() == 'ALA':
-                # ALA residue
+                side_chain_centroid = self._get_pcb_from_residue(residue, chain)
+
+                if side_chain_centroid is None:
+                    exception = 'GLY - None'
+
+            elif residue.get_resname() == 'ALA':  # ALA residue
 
                 try:
                     side_chain_centroid = residue['CB'].get_vector()
-                    exception = 'ALA - CB atom'
-                except KeyError:
-                    side_chain_centroid = None
-                    exception = 'ALA - None (no CB atom)'
 
-            elif len(selected_atoms) >= N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
-                # Other standard residues with enough side chain atoms
+                except KeyError:
+                    side_chain_centroid = self._get_pcb_from_residue(residue, chain)
+
+                    if side_chain_centroid is not None:
+                        exception = 'ALA - pCB atom'
+                    else:
+                        exception = 'ALA - None'
+
+            elif n_atoms >= n_atoms_cutoff:  # Other standard residues with enough side chain atoms
 
                 side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
 
-            else:
-                # Other standard residues with too few side chain atoms
+            else:  # Other standard residues with too few side chain atoms
 
                 try:
                     side_chain_centroid = residue['CB'].get_vector()
-                    exception = 'Standard residue - CB atom'
+                    exception = f'Standard residue - CB atom, only {n_atoms}/{n_atoms_cutoff} residues'
+
                 except KeyError:
-                    side_chain_centroid = None
-                    exception = 'Standard residue - None'
+                    side_chain_centroid = self._get_pcb_from_residue(residue, chain)
+
+                    if side_chain_centroid is not None:
+                        exception = f'Standard residue - pCB atom, only {n_atoms}/{n_atoms_cutoff} residues'
+                    else:
+                        exception = f'Standard residue - None, only {n_atoms}/{n_atoms_cutoff} residues'
 
         else:  # Non-standard residues
 
-            if len(selected_atoms) > 0:
+            if n_atoms > 0:
                 side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
-                exception = f'Non-standard residue - centroid of {len(selected_atoms)} atoms'
+                exception = f'Non-standard residue - centroid of {n_atoms} atoms'
             else:
                 side_chain_centroid = None
                 exception = 'Non-standard residue - None'
 
         if exception:
             logger.info(f'{self.molecule_code}: SCO: Side chain centroid for '
-                        f'residue {residue.get_resname()}, {residue.id} with {len(selected_atoms)} atoms is: '
+                        f'residue {residue.get_resname()}, {residue.id} with {n_atoms} atoms is: '
                         f'{exception}.')
 
-        return side_chain_centroid  # TODO return exception info
+        return side_chain_centroid
 
     def _get_pocket_centroid(self, pocket_residues):
         """
@@ -1451,6 +1467,85 @@ class SideChainOrientationFeature:
             logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
                         f'Cannot be calculated. {len(ca_vectors)} CA atoms available.')
             return None
+
+    @staticmethod
+    def _get_pcb_from_gly(residue):
+        """
+        Get pseudo-CB atom coordinate for GLY residue.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Pseudo-CB atom vector for GLY centered at CA atom (= pseudo-CB atom coordinate).
+        """
+
+        if residue.get_resname() == 'GLY':
+
+            # Get pseudo-CB for GLY (vector centered at origin)
+            chain = Chain(id='X')  # Set up chain instance
+            pcb = HSExposureCB(chain)._get_gly_cb_vector(residue)
+
+            if pcb is None:
+                return None
+
+            else:
+                # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
+                ca = residue['CA'].get_vector()
+                ca_pcb = ca + pcb
+                return ca_pcb
+
+        else:
+            raise ValueError(f'Residue must be GLY, but is {residue.get_resname()}.')
+
+    def _get_pcb_from_residue(self, residue, chain):
+        """
+        Get pseudo-CB atom coordinate for non-GLY residue.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Pseudo-CB atom vector for residue centered at CA atom (= pseudo-CB atom coordinate).
+        """
+
+        if residue.get_resname() == 'GLY':
+            return self._get_pcb_from_gly(residue)
+
+        else:
+
+            # Get residue before and after input residue (if not available return None)
+            try:
+                # Non-standard residues will throw KeyError here but I am ok with not considering those cases, since
+                # hetero residues are not always enumerated correctly
+                # (sometimes non-standard residues are named e.g. "_180" in PDB files)
+                residue_before = chain[residue.id[1] - 1]
+                residue_after = chain[residue.id[1] + 1]
+
+            except KeyError:  # If residue before or after do not exist
+                return None
+
+            # Get pseudo-CB for non-GLY residue
+            pcb = HSExposureCA(Chain(id='X'))._get_cb(residue_before, residue, residue_after)
+
+            if pcb is None:  # If one or more of the three residues have no CA
+                return None
+
+            else:
+                # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
+                ca = residue['CA'].get_vector()
+                ca_pcb = ca + pcb[0]
+                return ca_pcb
 
     def save_as_cgo(self, output_path):
         """
