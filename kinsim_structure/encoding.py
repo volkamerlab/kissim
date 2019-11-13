@@ -706,7 +706,7 @@ class PhysicoChemicalFeatures:
         side_chain_orientation.from_molecule(molecule, chain)
 
         exposure = ExposureFeature()
-        exposure.from_molecule(molecule, chain, radius=12.0, verbose=False)
+        exposure.from_molecule(molecule, chain, radius=12.0)
 
         # Concatenate all physicochemical features
         physicochemical_features = pd.concat(
