@@ -621,11 +621,11 @@ class Fingerprint:
             Normalized value.
         """
 
-        if minimum <= value <= maximum :
+        if minimum < value < maximum:
             return (value - minimum) / float(maximum - minimum)
-        elif value < minimum:
+        elif value <= minimum:
             return 0.0
-        elif value > maximum:
+        elif value >= maximum:
             return 1.0
         elif np.isnan(value):
             return np.nan
