@@ -1079,7 +1079,7 @@ class SideChainOrientationFeature:
         """
         Get side chain orientation for each residue in a molecule (pocket).
         Side chain orientation of a residue is defined by the vertex angle formed by (i) the residue's CA atom,
-        (ii) the residue's side chain centroid,  and (iii) the pocket centroid (calculated based on its CA atoms),
+        (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms),
         whereby the CA atom forms the vertex.
 
         Parameters
@@ -1442,8 +1442,8 @@ class SideChainOrientationFeature:
                 ca_atoms_missing.append(residue)
 
         if len(ca_atoms_missing) > 0:
-            logger.info(f'{self.molecule_code}: SCO: Pocket centroid:'
-                        f'{len(ca_atoms_missing)} missing CA atoms: {ca_atoms_missing}')
+            logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
+                        f'{len(ca_atoms_missing)} missing CA atom(s): {ca_atoms_missing}')
 
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
