@@ -11,6 +11,7 @@ import logging
 from multiprocessing import cpu_count, Pool
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Selection, Vector
+from Bio.PDB.Chain import Chain
 from Bio.PDB import calc_angle
 import nglview as nv
 import numpy as np
@@ -187,6 +188,89 @@ class FingerprintGenerator:
             fingerprint.from_metadata_entry(klifs_metadata_entry)
 
             return fingerprint
+
+        except Exception as e:
+
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.error(e)
+
+            return None
+
+
+class SideChainOrientationGenerator:
+
+    def __init__(self):
+
+        self.data = None
+
+    def from_metadata_entry(self, klifs_metadata):
+
+        # Get start time of script
+        start = datetime.datetime.now()
+        print(start)
+
+        logger.info(f'Calculate fingerprints...')
+
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        #num_cores = 1
+        logger.info(f'Number of cores used: {num_cores}')
+
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
+
+        # Get KLIFS entries as list
+        entry_list = [j for i, j in klifs_metadata.iterrows()]
+
+        # Apply function to each chunk in list
+        fingerprints_list = pool.map(self._get_sco, entry_list)
+
+        # Close and join pool
+        pool.close()
+        pool.join()
+
+        logger.info(f'Number of fingerprints: {len(fingerprints_list)}')
+
+        # Transform to dict
+        self.data = {
+            i.molecule_code: i for i in fingerprints_list
+        }
+
+        # Get end time of script
+        end = datetime.datetime.now()
+        print(end)
+
+        logger.info(start)
+        logger.info(end)
+
+    @staticmethod
+    def _get_sco(klifs_metadata_entry):
+        """
+        Get side chain orientation.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+
+        Returns
+        -------
+        kinsim_structure.similarity.SideChainOrientationFeature
+            Side chain orientation.
+        """
+
+        try:
+
+            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+            molecule = klifs_molecule_loader.molecule
+
+            pdb_chain_loader = PdbChainLoader(klifs_metadata_entry)
+            chain = pdb_chain_loader.chain
+
+            feature = SideChainOrientationFeature()
+            feature.from_molecule(molecule, chain)
+
+            return feature
 
         except Exception as e:
 
@@ -404,17 +488,17 @@ class Fingerprint:
             normalized = self.physicochemical.copy()
 
             # Normalize size
-            normalized['size'] = normalized['size'].apply(lambda x: (x - 1) / 2.0)
+            normalized['size'] = normalized['size'].apply(lambda x: (x - 1.0) / 2.0)
 
             # Normalize pharmacophoric features: HBD, HBA and charge
             normalized['hbd'] = normalized['hbd'].apply(lambda x: x / 3.0)
             normalized['hba'] = normalized['hba'].apply(lambda x: x / 2.0)
-            normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1) / 2.0)
+            normalized['charge'] = normalized['charge'].apply(lambda x: (x + 1.0) / 2.0)
 
             # No normalization needed for aromatic and aliphatic features which are already 0 or 1
 
             # Normalize side chain orientation
-            normalized['sco'] = normalized['sco'].apply(lambda x: x / 180.0)
+            normalized['sco'] = normalized['sco'].apply(lambda x: x / 2.0)
 
             # No normalization needed for exposure feature which is already between 0 and 1
 
@@ -975,28 +1059,28 @@ class SideChainOrientationFeature:
 
     Attributes
     ----------
+    molecule_code : str
+        KLIFS code.
     features : pandas.DataFrame
         1 feature, i.e. side chain orientation, (column) for 85 residues (rows).
     features_verbose : pandas.DataFrame
         Feature, Ca, Cb, and centroid vectors as well as metadata information (columns) for 85 residues (row).
-    code : str
-        KLIFS code.
     vector_pocket_centroid : Bio.PDB.Vector.Vector
         Vector to pocket centroid.
     """
 
     def __init__(self):
 
+        self.molecule_code = None
         self.features = None
         self.features_verbose = None
-        self.code = None  # Necessary for cgo generation
         self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
 
     def from_molecule(self, molecule, chain):
         """
         Get side chain orientation for each residue in a molecule (pocket).
         Side chain orientation of a residue is defined by the vertex angle formed by (i) the residue's CA atom,
-        (ii) the residue's side chain centroid,  and (iii) the pocket centroid (calculated based on its CA atoms),
+        (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms),
         whereby the CA atom forms the vertex.
 
         Parameters
@@ -1007,21 +1091,24 @@ class SideChainOrientationFeature:
             Chain from PDB file.
         """
 
-        self.code = molecule.code
+        self.molecule_code = molecule.code
 
         # Get pocket residues
         pocket_residues = self._get_pocket_residues(molecule, chain)
 
         # Get vectors (for each residue CA atoms, side chain centroid, pocket centroid)
-        pocket_vectors = self._get_pocket_vectors(pocket_residues)
+        pocket_vectors = self._get_pocket_vectors(pocket_residues, chain)
 
         # Get vertex angles (for each residue, vertex angle between aforementioned points)
         vertex_angles = self._get_vertex_angles(pocket_vectors)
 
-        # Store vertex angles
-        self.features = vertex_angles
-        # Store vertex angles plus vectors and metadata
-        self.features_verbose = pd.concat([pocket_vectors, vertex_angles], axis=1)
+        # Transform vertex angles into categories
+        categories = self._get_categories(vertex_angles)
+
+        # Store categories
+        self.features = categories
+        # Store categories, vertex angles plus vectors and metadata
+        self.features_verbose = pd.concat([pocket_vectors, vertex_angles, categories], axis=1)
 
     @staticmethod
     def _get_pocket_residues(molecule, chain):
@@ -1052,11 +1139,23 @@ class SideChainOrientationFeature:
         pocket_residues.set_index('klifs_id', drop=False, inplace=True)
 
         # Select residues from chain based on PDB residue IDs and add to DataFrame
-        pocket_residues['pocket_residues'] = [chain[res_id] for res_id in pocket_residues.res_id]
+        pocket_residues_list = []
+
+        for residue_id in pocket_residues.res_id:
+
+            try:  # Standard amino acids
+                pocket_residue = chain[residue_id]
+
+            except KeyError:  # Non-standard amino acid
+                pocket_residue = [i for i in chain.get_list() if i.get_id()[1] == residue_id][0]
+
+            pocket_residues_list.append(pocket_residue)
+
+        pocket_residues['pocket_residues'] = pocket_residues_list
 
         return pocket_residues
 
-    def _get_pocket_vectors(self, pocket_residues):
+    def _get_pocket_vectors(self, pocket_residues, chain):
         """
         Get vectors to CA, residue side chain centroid, and pocket centroid.
 
@@ -1065,6 +1164,8 @@ class SideChainOrientationFeature:
         pocket_residues : pandas.DataFrame
             Pocket residues: Bio.PDB.Residue.Residue plus metadata, i.e. KLIFS residue ID, PDB residue ID, and residue
             name (columns) for all pocket residues (rows).
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
 
         Returns
         -------
@@ -1084,7 +1185,7 @@ class SideChainOrientationFeature:
         for residue in pocket_residues.pocket_residues:
 
             vector_ca = self._get_ca(residue)
-            vector_side_chain_centroid = self._get_side_chain_centroid(residue)
+            vector_side_chain_centroid = self._get_side_chain_centroid(residue, chain)
 
             data.append([vector_ca, vector_side_chain_centroid, self.vector_pocket_centroid])
 
@@ -1106,7 +1207,7 @@ class SideChainOrientationFeature:
     def _get_vertex_angles(pocket_vectors):
         """
         Get vertex angles for residues' side chain orientations to the molecule (pocket) centroid.
-        Side chain orientation of a residue is defined by the angle formed by (i) the residue's CB atom,
+        Side chain orientation of a residue is defined by the vertex_angle formed by (i) the residue's CB atom,
         (ii) the residue's side chain centroid, and (iii) the pocket centroid (calculated based on its CA atoms),
         whereby the CA atom forms the vertex.
 
@@ -1119,37 +1220,99 @@ class SideChainOrientationFeature:
         Returns
         -------
         pandas.DataFrame
-            Side chain orientation feature (column) for 85 residues (rows).
+            Vertex angles (column) for up to 85 residues (rows).
         """
 
-        side_chain_orientation = []
+        vertex_angles = []
 
         for index, row in pocket_vectors.iterrows():
 
-            # If all three vectors available, calculate angle - otherwise set angle to None
+            # If all three vectors available, calculate vertex_angle - otherwise set vertex_angle to None
 
             if row.ca and row.side_chain_centroid and row.pocket_centroid:
-                # Calculate vertex angle: CA atom is vertex
-                angle = np.degrees(
+                # Calculate vertex vertex_angle: CA atom is vertex
+                vertex_angle = np.degrees(
                     calc_angle(
                         row.side_chain_centroid, row.ca, row.pocket_centroid
                     )
                 )
-                side_chain_orientation.append(angle.round(2))
+                vertex_angles.append(vertex_angle.round(2))
             else:
-                side_chain_orientation.append(None)
+                vertex_angles.append(None)
 
         # Cast to DataFrame
-        side_chain_orientation = pd.DataFrame(
-            side_chain_orientation,
+        vertex_angles = pd.DataFrame(
+            vertex_angles,
             index=pocket_vectors.klifs_id,
+            columns=['vertex_angle']
+        )
+
+        return vertex_angles
+
+    def _get_categories(self, vertex_angles):
+        """
+        Get side chain orientation category for pocket residues based on their side chain orientation vertex angles.
+        The side chain orientation towards the pocket is described with the following three categories:
+        Inwards (0.0), intermediate (1.0), and outwards (2.0).
+
+        Parameters
+        ----------
+        vertex_angles : pandas.DataFrame
+            Vertex angles (column) for up to 85 residues (rows).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation categories (column) for up to 85 residues (rows).
+        """
+
+        if 'vertex_angle' not in vertex_angles.columns:
+            raise ValueError('Input DataFrame needs column with name "vertex_angle".')
+
+        categories = [
+            self._get_category_from_vertex_angle(vertex_angle) for vertex_angle in vertex_angles.vertex_angle
+        ]
+
+        # Cast from Series to DataFrame and set column name for feature
+        categories = pd.DataFrame(
+            categories,
+            index=vertex_angles.index,
             columns=['sco']
         )
 
-        return side_chain_orientation
+        return categories
 
-    @staticmethod
-    def _get_ca(residue):
+    def _get_category_from_vertex_angle(self, vertex_angle):
+        """
+        Transform a given vertex angle into a category value, which defines the side chain orientation towards the
+        pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards (category 2.0).
+
+        Parameters
+        ----------
+        vertex_angle : float
+            Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket centroid. Ranges between
+            0.0 and 180.0.
+
+        Returns
+        -------
+        float
+            Side chain orientation towards pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards
+            (category 2.0).
+        """
+
+        if 0.0 <= vertex_angle <= 45.0:  # Inwards
+            return 0.0
+        elif 45.0 < vertex_angle <= 90.0:  # Intermediate
+            return 1.0
+        elif 90.0 < vertex_angle <= 180.0:  # Outwards
+            return 2.0
+        elif np.isnan(vertex_angle):
+            return np.nan
+        else:
+            raise ValueError(f'Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. '
+                             f'Only values between 0.0 and 180.0 allowed.')
+
+    def _get_ca(self, residue):
         """
         Get residue's CA atom.
 
@@ -1167,15 +1330,16 @@ class SideChainOrientationFeature:
         atom_names = [atoms.fullname for atoms in residue.get_atoms()]
 
         # Set CA atom
+
         if 'CA' in atom_names:
             vector_ca = residue['CA'].get_vector()
         else:
+            logger.info(f'{self.molecule_code}: SCO: CA atom: Missing in {residue}.')
             vector_ca = None
 
         return vector_ca
 
-    @staticmethod
-    def _get_side_chain_centroid(residue):
+    def _get_side_chain_centroid(self, residue, chain):
         """
         Get residue's side chain centroid.
 
@@ -1183,6 +1347,8 @@ class SideChainOrientationFeature:
         ----------
         residue : Bio.PDB.Residue.Residue
             Residue.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
 
         Returns
         -------
@@ -1200,22 +1366,70 @@ class SideChainOrientationFeature:
             (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
         ]
 
+        n_atoms = len(selected_atoms)
+
         # Set side chain centroid
+        exception = None
 
-        if len(selected_atoms) <= 1:  # Too few side chain atoms for centroid calculation
-            return None
+        if residue.id[0] == ' ':  # Standard residues
 
-        try:  # If standard residue, calculate centroid only if enough side chain atoms available
-            if len(selected_atoms) < N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]:
-                return None
+            n_atoms_cutoff = N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]
+
+            if residue.get_resname() == 'GLY':  # GLY residue
+
+                side_chain_centroid = self._get_pcb_from_residue(residue, chain)
+
+                if side_chain_centroid is None:
+                    exception = 'GLY - None'
+
+            elif residue.get_resname() == 'ALA':  # ALA residue
+
+                try:
+                    side_chain_centroid = residue['CB'].get_vector()
+
+                except KeyError:
+                    side_chain_centroid = self._get_pcb_from_residue(residue, chain)
+
+                    if side_chain_centroid is not None:
+                        exception = 'ALA - pCB atom'
+                    else:
+                        exception = 'ALA - None'
+
+            elif n_atoms >= n_atoms_cutoff:  # Other standard residues with enough side chain atoms
+
+                side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
+
+            else:  # Other standard residues with too few side chain atoms
+
+                try:
+                    side_chain_centroid = residue['CB'].get_vector()
+                    exception = f'Standard residue - CB atom, only {n_atoms}/{n_atoms_cutoff} residues'
+
+                except KeyError:
+                    side_chain_centroid = self._get_pcb_from_residue(residue, chain)
+
+                    if side_chain_centroid is not None:
+                        exception = f'Standard residue - pCB atom, only {n_atoms}/{n_atoms_cutoff} residues'
+                    else:
+                        exception = f'Standard residue - None, only {n_atoms}/{n_atoms_cutoff} residues'
+
+        else:  # Non-standard residues
+
+            if n_atoms > 0:
+                side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
+                exception = f'Non-standard residue - centroid of {n_atoms} atoms'
             else:
-                return Vector(center_of_mass(selected_atoms, geometric=True))
+                side_chain_centroid = None
+                exception = 'Non-standard residue - None'
 
-        except KeyError:  # If non-standard residue, use whatever side chain atoms available
-            return Vector(center_of_mass(selected_atoms, geometric=True))
+        if exception:
+            logger.info(f'{self.molecule_code}: SCO: Side chain centroid for '
+                        f'residue {residue.get_resname()}, {residue.id} with {n_atoms} atoms is: '
+                        f'{exception}.')
 
-    @staticmethod
-    def _get_pocket_centroid(pocket_residues):
+        return side_chain_centroid
+
+    def _get_pocket_centroid(self, pocket_residues):
         """
         Get centroid of pocket CA atoms.
 
@@ -1231,20 +1445,109 @@ class SideChainOrientationFeature:
             Pocket centroid.
         """
 
+        # Initialize list for all CA atoms in pocket
         ca_vectors = []
+
+        # Log missing CA atoms
+        ca_atoms_missing = []
 
         for residue in pocket_residues.pocket_residues:
             try:
                 ca_vectors.append(residue['CA'])
             except KeyError:
-                pass
+                ca_atoms_missing.append(residue)
+
+        if len(ca_atoms_missing) > 0:
+            logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
+                        f'{len(ca_atoms_missing)} missing CA atom(s): {ca_atoms_missing}')
 
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
         except ValueError:
+            logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
+                        f'Cannot be calculated. {len(ca_vectors)} CA atoms available.')
             return None
 
-    def save_cgo_side_chain_orientation(self, output_path):
+    @staticmethod
+    def _get_pcb_from_gly(residue):
+        """
+        Get pseudo-CB atom coordinate for GLY residue.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Pseudo-CB atom vector for GLY centered at CA atom (= pseudo-CB atom coordinate).
+        """
+
+        if residue.get_resname() == 'GLY':
+
+            # Get pseudo-CB for GLY (vector centered at origin)
+            chain = Chain(id='X')  # Set up chain instance
+            pcb = HSExposureCB(chain)._get_gly_cb_vector(residue)
+
+            if pcb is None:
+                return None
+
+            else:
+                # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
+                ca = residue['CA'].get_vector()
+                ca_pcb = ca + pcb
+                return ca_pcb
+
+        else:
+            raise ValueError(f'Residue must be GLY, but is {residue.get_resname()}.')
+
+    def _get_pcb_from_residue(self, residue, chain):
+        """
+        Get pseudo-CB atom coordinate for non-GLY residue.
+
+        Parameters
+        ----------
+        residue : Bio.PDB.Residue.Residue
+            Residue.
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+
+        Returns
+        -------
+        Bio.PDB.vectors.Vector or None
+            Pseudo-CB atom vector for residue centered at CA atom (= pseudo-CB atom coordinate).
+        """
+
+        if residue.get_resname() == 'GLY':
+            return self._get_pcb_from_gly(residue)
+
+        else:
+
+            # Get residue before and after input residue (if not available return None)
+            try:
+                # Non-standard residues will throw KeyError here but I am ok with not considering those cases, since
+                # hetero residues are not always enumerated correctly
+                # (sometimes non-standard residues are named e.g. "_180" in PDB files)
+                residue_before = chain[residue.id[1] - 1]
+                residue_after = chain[residue.id[1] + 1]
+
+            except KeyError:  # If residue before or after do not exist
+                return None
+
+            # Get pseudo-CB for non-GLY residue
+            pcb = HSExposureCA(Chain(id='X'))._get_cb(residue_before, residue, residue_after)
+
+            if pcb is None:  # If one or more of the three residues have no CA
+                return None
+
+            else:
+                # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
+                ca = residue['CA'].get_vector()
+                ca_pcb = ca + pcb[0]
+                return ca_pcb
+
+    def save_as_cgo(self, output_path):
         """
         Save CA atom, side chain centroid and pocket centroid as spheres and label CA atom with side chain orientation
         vertex angle value to PyMol cgo file.
@@ -1256,7 +1559,7 @@ class SideChainOrientationFeature:
         """
 
         # Get molecule and molecule code
-        code = split_klifs_code(self.code)
+        code = split_klifs_code(self.molecule_code)
 
         # Get pocket residues
         pocket_residues_ids = list(self.features_verbose.res_id)
@@ -1340,9 +1643,9 @@ class SideChainOrientationFeature:
 
             )
         # Group all objects to one group
-        lines.append(f'cmd.group("{self.code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
+        lines.append(f'cmd.group("{self.molecule_code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
 
-        cgo_path = Path(output_path) / f'side_chain_orientation_{self.code.split("/")[1]}.py'
+        cgo_path = Path(output_path) / f'side_chain_orientation_{self.molecule_code.split("/")[1]}.py'
         with open(cgo_path, 'w') as f:
             f.write('\n'.join(lines))
 
@@ -1353,7 +1656,7 @@ class SideChainOrientationFeature:
     def show_in_nglviewer(self):
 
         # Get molecule and molecule code
-        code = split_klifs_code(self.code)
+        code = split_klifs_code(self.molecule_code)
 
         pdb_id = code['pdb_id']
         chain = code['chain']
