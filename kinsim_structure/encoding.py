@@ -44,7 +44,7 @@ MODIFIED_RESIDUE_CONVERSION = {
     'PTR': 'TYR'
 }
 
-EXPOSURE_RADIUS = 13.0
+EXPOSURE_RADIUS = 12.0
 
 N_HEAVY_ATOMS = {
     'GLY': 0,
@@ -706,7 +706,7 @@ class PhysicoChemicalFeatures:
         side_chain_orientation.from_molecule(molecule, chain)
 
         exposure = ExposureFeature()
-        exposure.from_molecule(molecule, chain)
+        exposure.from_molecule(molecule, chain, radius=12.0, verbose=False)
 
         # Concatenate all physicochemical features
         physicochemical_features = pd.concat(
@@ -1709,13 +1709,19 @@ class ExposureFeature:
     ----------
     features : pandas.DataFrame
         1 feature (columns) for 85 residues (rows).
+
+    References
+    ----------
+    Hamelryck, "An Amino Acid Has Two Sides: ANew 2D Measure Provides a Different View of Solvent Exposure",
+    PROTEINS: Structure, Function, and Bioinformatics 59:38–48 (2005).
     """
 
     def __init__(self):
 
         self.features = None
+        self.features_verbose = None
 
-    def from_molecule(self, molecule, chain, verbose=False):
+    def from_molecule(self, molecule, chain, radius=12.0):
         """
         Get exposure for each residue of a molecule.
 
@@ -1725,16 +1731,12 @@ class ExposureFeature:
             Content of mol2 or pdb file as BioPandas object.
         chain : Bio.PDB.Chain.Chain
             Chain from PDB file.
-        verbose : bool
-            Either return exposure only (default) or additional info on HSExposureCA and HSExposureCB values.
+        radius : float
+            Sphere radius to be used for half sphere exposure calculation.
         """
 
-        # Calculate exposure values
-        exposures_cb = self.get_exposure_by_method(chain, method='HSExposureCB')
-        exposures_ca = self.get_exposure_by_method(chain, method='HSExposureCA')
-
-        # Join both exposures calculations
-        exposures_both = exposures_ca.join(exposures_cb, how='outer')
+        # Get exposure data for all molecule's residues calculated based on HSExposureCA and HSExposureCB
+        exposures_molecule = self.get_molecule_exposures(chain, radius)
 
         # Get residues IDs belonging to KLIFS binding site
         klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
@@ -1743,7 +1745,7 @@ class ExposureFeature:
 
         # Keep only KLIFS residues
         # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
-        exposures = klifs_res_ids.join(exposures_both, how='left')
+        exposures = klifs_res_ids.join(exposures_molecule, how='left')
 
         # Set index (from residue IDs) to KLIFS IDs
         exposures.set_index('klifs_id', inplace=True, drop=True)
@@ -1754,17 +1756,42 @@ class ExposureFeature:
             axis=1
         )
 
-        if not verbose:
-            self.features = pd.DataFrame(
-                exposures.exposure,
-                index=exposures.exposure.index,
-                columns=['exposure']
-            )
-        else:
-            self.features = exposures
+        self.features = pd.DataFrame(
+            exposures.exposure,
+            index=exposures.exposure.index,
+            columns=['exposure']
+        )
+        self.features_verbose = exposures
+
+    def get_molecule_exposures(self, chain, radius=12.0):
+        """
+        Get half sphere exposure calculation based on CB and CA atoms for full molecule.
+
+        Parameters
+        ----------
+        chain : Bio.PDB.Chain.Chain
+            Chain from PDB file.
+        radius : float
+            Sphere radius to be used for half sphere exposure calculation.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Half sphere exposure data for both HSExposureCA and HSExposureCB calculation (columns for both methods
+            each: up, down, angle CB-CA-pCB, and exposure ratio) for each molecule residue (index: residue ID).
+        """
+
+        # Calculate exposure values
+        exposures_cb = self.get_molecule_exposure_by_method(chain, radius, method='HSExposureCB')
+        exposures_ca = self.get_molecule_exposure_by_method(chain, radius, method='HSExposureCA')
+
+        # Join both exposures calculations
+        exposures_both = exposures_ca.join(exposures_cb, how='outer')
+
+        return exposures_both
 
     @staticmethod
-    def get_exposure_by_method(chain, method='HSExposureCB'):
+    def get_molecule_exposure_by_method(chain, radius=12.0, method='HSExposureCB'):
         """
         Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
 
@@ -1772,40 +1799,41 @@ class ExposureFeature:
         ----------
         chain : Bio.PDB.Chain.Chain
             Chain from PDB file.
+        radius : float
+            Sphere radius to be used for half sphere exposure calculation.
         method : str
             Half sphere exposure method name: HSExposureCA or HSExposureCB.
 
-        References
-        ----------
-        Read on HSExposure module here: https://biopython.org/DIST/docs/api/Bio.PDB.HSExposure-pysrc.html
+        Returns
+        -------
+        pandas.DataFrame
+            Half sphere exposure data (columns: up, down, angle CB-CA-pCB, and exposure ratio) for each molecule
+            residue (index: residue ID).
         """
 
         methods = 'HSExposureCB HSExposureCA'.split()
 
         # Calculate exposure values
         if method == methods[0]:
-            exposures = HSExposureCB(chain, EXPOSURE_RADIUS)
+            exposures = HSExposureCB(chain, radius)
         elif method == methods[1]:
-            exposures = HSExposureCA(chain, EXPOSURE_RADIUS)
+            exposures = HSExposureCA(chain, radius)
         else:
             raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
 
         # Define column names
         up = f'{method[-2:].lower()}_up'
         down = f'{method[-2:].lower()}_down'
-        angle = f'{method[-2:].lower()}_angle_Ca-Cb_Ca-pCb'
+        angle = f'{method[-2:].lower()}_angle_CB-CA-pCB'
         exposure = f'{method[-2:].lower()}_exposure'
 
         # Transform into DataFrame
         exposures = pd.DataFrame(
             exposures.property_dict,
-            index=[up, down, angle]
+            index=[up, down, angle],
+            dtype=float
         ).transpose()
         exposures.index = [i[1][1] for i in exposures.index]
-
-        # Check that exposures are floats (important for subsequent division)
-        if (exposures[up].dtype != 'float64') | (exposures[down].dtype != 'float64'):
-            raise TypeError(f'Wrong dtype, float64 needed!')
 
         # Calculate exposure value: up / (up + down)
         exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
