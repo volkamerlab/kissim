@@ -77,13 +77,13 @@ def test_from_molecule(mol2_filename, pdb_filename, chain_id):
     (
         pd.DataFrame(
             [
-                [3, 3, 2, 1, 1, 1, 180, 1]
+                [3.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             ],
             columns=FEATURE_NAMES['physicochemical']
         ),
         pd.DataFrame(
             [
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0]
             ],
             columns=FEATURE_NAMES['physicochemical']
         )
@@ -91,13 +91,13 @@ def test_from_molecule(mol2_filename, pdb_filename, chain_id):
     (
         pd.DataFrame(
             [
-                [2, 1, 1, 0, 0, 0, 90, 0.8]
+                [2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 2.0, 0.8]
             ],
             columns=FEATURE_NAMES['physicochemical']
         ),
         pd.DataFrame(
             [
-                [0.5, 0.3333, 0.5, 0.5, 0.0, 0.0, 0.5, 0.8]
+                [0.5, 0.3333, 0.5, 0.5, 0.0, 0.0, 1.0, 0.8]
             ],
             columns=FEATURE_NAMES['physicochemical']
         )

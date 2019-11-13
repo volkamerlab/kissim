@@ -151,7 +151,7 @@ def test_get_fingerprint_distance_from_list(mol2_filenames, pdb_filenames, chain
                 'B',
                 'B'
             ],
-            'euclidean',
+            'scaled_euclidean',
             None,
             ['HUMAN/AAK1_4wsq_altA_chainB', 'HUMAN/ABL1_2g2i_chainA'],
             ['AAK1', 'ABL1']

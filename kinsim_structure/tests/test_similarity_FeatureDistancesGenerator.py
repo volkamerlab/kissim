@@ -190,7 +190,7 @@ def test_get_feature_distances_from_list(mol2_filenames, pdb_filenames, chain_id
                 'B',
                 'B'
             ],
-            'euclidean',
+            'scaled_euclidean',
             None,
             ['HUMAN/ABL1_2g2i_chainA', 'HUMAN/AAK1_4wsq_altA_chainB'],
             ['AAK1', 'ABL1']
