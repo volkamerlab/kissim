@@ -117,12 +117,28 @@ DFG_KLIFS_IDS = [81, 82, 83]
 
 
 class FingerprintGenerator:
+    """
+    Generate fingerprints for multiple molecules. Uses parallel computing of fingerprint pairs.
+
+    Attributes
+    ----------
+    data : dict of kinsim_structure.encoding.Fingerprint
+        Fingerprints for multiple molecules.
+    """
 
     def __init__(self):
 
         self.data = None
 
-    def from_metadata_entry(self, klifs_metadata):
+    def from_metadata(self, klifs_metadata):
+        """
+        Generate fingerprints for multiple molecules described in KLIFS metadata.
+
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            Metadata (columns) for KLIFS molecules (rows).
+        """
 
         # Get start time of script
         start = datetime.datetime.now()
@@ -193,12 +209,28 @@ class FingerprintGenerator:
 
 
 class SideChainOrientationGenerator:
+    """
+    Generate side chain orientations for multiple molecules. Uses parallel computing of fingerprint pairs.
+
+    Attributes
+    ----------
+    data : dict of kinsim_structure.encoding.SideChainOrientationFeature
+        Fingerprints for multiple molecules.
+    """
 
     def __init__(self):
 
         self.data = None
 
-    def from_metadata_entry(self, klifs_metadata):
+    def from_metadata(self, klifs_metadata):
+        """
+        Generate side chain orientation features for multiple molecules described in KLIFS metadata.
+
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            Metadata (columns) for KLIFS molecules (rows).
+        """
 
         # Get start time of script
         start = datetime.datetime.now()
@@ -208,7 +240,6 @@ class SideChainOrientationGenerator:
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
-        #num_cores = 1
         logger.info(f'Number of cores used: {num_cores}')
 
         # Create pool with `num_processes` processes
@@ -1880,8 +1911,6 @@ class PharmacophoreSizeFeatures:
         """
 
         self.molecule_code = molecule.code
-
-        print(molecule.df.res_name)
 
         feature_matrix = []
 
