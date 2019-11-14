@@ -17,6 +17,15 @@ from kinsim_structure.auxiliary import KlifsMoleculeLoader, get_klifs_regions
 logger = logging.getLogger(__name__)
 
 
+class KlifsMetadataLoader:
+
+    def __init__(self):
+        self.data = None
+
+    def from_file(self, klifs_overview_file, klifs_export_file, remove_subpocket_columns=True):
+        pass
+
+
 def get_klifs_metadata_from_files(klifs_overview_file, klifs_export_file, remove_subpocket_columns=True):
     """
     Get KLIFS metadata as DataFrame.
