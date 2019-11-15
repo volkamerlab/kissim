@@ -43,16 +43,11 @@ class KlifsMetadataLoader:
         Returns
         -------
         pandas.DataFrame
-            DataFrame containing merged metadate from both input KLIFS tables.
+            DataFrame containing merged metadata from both input KLIFS tables.
         """
-
-        # Load KLIFS files
-        # - `overview.csv` (KLIFS alignment metadata) and
-        # - `KLIFS_export.csv` (structural metadata on PDB files)
 
         klifs_overview = self._from_klifs_overview_file(Path(klifs_overview_file))
         klifs_export = self._from_klifs_export_file(Path(klifs_export_file))
-
         klifs_metadata = self._merge_files(klifs_overview, klifs_export)
 
         # Remove subpocket columns
@@ -61,31 +56,24 @@ class KlifsMetadataLoader:
 
         self.data = klifs_metadata
 
-    @staticmethod
-    def _from_klifs_overview_file(klifs_overview_file):
+    def _from_klifs_export_file(self, klifs_export_file):
+        """
+        Read KLIFS_export.csv file from KLIFS database download as DataFrame and unify format with overview.csv format.
 
-        klifs_overview = pd.read_csv(Path(klifs_overview_file))
+        Parameters
+        ----------
+        klifs_export_file : pathlib.Path or str
+            Path to KLIFS_export.csv file from KLIFS database download.
 
-        klifs_overview.rename(
-            columns={
-                'pdb': 'pdb_id',
-                'alt': 'alternate_model',
-                'orthosteric_PDB': 'ligand_orthosteric_pdb_id',
-                'allosteric_PDB': 'ligand_allosteric_pdb_id',
-            },
-            inplace=True
-        )
-
-        # Unify column 'alternate model'
-        klifs_overview.alternate_model.replace(' ', '-', inplace=True)
-
-        return klifs_overview
-
-    @staticmethod
-    def _from_klifs_export_file(klifs_export_file):
+        Returns
+        -------
+        pandas.DataFrame
+            Data loaded and formatted: KLIFS_export.csv file from KLIFS database download.
+        """
 
         klifs_export = pd.read_csv(Path(klifs_export_file))
 
+        # Unify column names with column names in overview.csv
         klifs_export.rename(
             columns={
                 'NAME': 'kinase',
@@ -105,24 +93,93 @@ class KlifsMetadataLoader:
             inplace=True
         )
 
-        # Unify column 'kinase'
-        # If kinase names in brackets, extract only this and remove the rest
-        # Example: 'CSNK2A1 (CK2a1)' results in 'CK2a1'
-        klifs_export.kinase = klifs_export.kinase.apply(lambda x: x[x.find('(') + 1:x.find(')')] if '(' in x else x)
+        # Unify column 'kinase': Sometime several kinase names are available, e.g. "EPHA7 (EphA7)"
+        # Column "kinase": Retain only first kinase name, e.g. EPHA7
+        # Column "kinase_all": Save all kinase names as list, e.g. [EPHA7, EphA7]
+        kinase_names = [self._format_kinase_name(i) for i in klifs_export.kinase]
+        klifs_export.kinase = [i[0] for i in kinase_names]
+        klifs_export['kinase_all'] = kinase_names
 
         return klifs_export
 
     @staticmethod
-    def _merge_files(klifs_overview, klifs_export):
+    def _from_klifs_overview_file(klifs_overview_file):
+        """
+        Read overview.csv file from KLIFS database download as DataFrame and unify format with KLIFS_export.csv format.
 
-        # Both tables contain some columns with the same information, i.e.:
-        # - Species
-        # - Kinase
-        # - PDB ID
-        # - Chain
-        # - Alternate model (alternate conformation)
-        # - Orthosteric ligand PDB ID
-        # - Allosteric ligand PDB ID
+        Parameters
+        ----------
+        klifs_overview_file : pathlib.Path or str
+            Path to overview.csv file from KLIFS database download.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Data loaded and formatted: overview.csv file from KLIFS database download.
+        """
+
+        klifs_overview = pd.read_csv(Path(klifs_overview_file))
+
+        # Unify column names with column names in KLIFS_export.csv
+        klifs_overview.rename(
+            columns={
+                'pdb': 'pdb_id',
+                'alt': 'alternate_model',
+                'orthosteric_PDB': 'ligand_orthosteric_pdb_id',
+                'allosteric_PDB': 'ligand_allosteric_pdb_id',
+            },
+            inplace=True
+        )
+
+        # Unify column 'alternate model' with corresponding column in KLIFS_export.csv
+        klifs_overview.alternate_model.replace(' ', '-', inplace=True)
+
+        return klifs_overview
+
+    @staticmethod
+    def _format_kinase_name(kinase_name):
+        """
+        Format kinase name(s): One or multiple kinase names (additional names in brackets) are formated to list of
+        kinase names.
+
+        Examples:
+        Input: "EPHA7 (EphA7)", output: ["EPHA7", "EphA7"].
+        Input: "ITK", output: ["ITK"].
+
+        Parameters
+        ----------
+        kinase_name : str
+            String, here kinase name(s).
+
+        Returns
+        -------
+        List of str
+            List of strings, here list of kinase name(s).
+        """
+
+        kinase_name = kinase_name.replace('(', '')
+        kinase_name = kinase_name.replace(')', '')
+        kinase_name = kinase_name.replace(',', '')
+        kinase_name = kinase_name.split()
+
+        return kinase_name
+
+    @staticmethod
+    def _merge_files(klifs_export, klifs_overview):
+        """
+
+        Parameters
+        ----------
+        klifs_export : pandas.DataFrame
+            Data contained in KLIFS_export.csv file from KLIFS database download.
+        klifs_overview : pandas.DataFrame
+            Data contained in overview.csv file from KLIFS database download.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Merged data contained in overview.csv and KLIFS_export.csv files from KLIFS database download.
+        """
 
         # Check if PDB IDs occur in one file but not the other
         not_in_export = klifs_export[~klifs_export.pdb_id.isin(klifs_overview.pdb_id)]
@@ -132,31 +189,48 @@ class KlifsMetadataLoader:
             raise ValueError(f'Number of PDBs in overview but not in export table: {not_in_export.size}.\n')
         if not_in_overview.size > 0:
             raise (f'Number of PDBs in export but not in overview table: {not_in_overview.size}.'
-                   f'PDB codes are probably updated because structures are deprecated')
+                   f'PDB codes are probably updated because structures are deprecated.')
 
-        # Merge on mutual columns
+        # Merge on mutual columns:
+        # Species, kinase, PDB ID, chain, alternate model, orthosteric and allosteric ligand PDB ID
+
+        mutual_columns = [
+            'species',
+            'pdb_id',
+            'chain',
+            'alternate_model'
+        ]
+
         klifs_metadata = klifs_export.merge(
             right=klifs_overview,
-            how='outer',
-            on=['species',
-                'kinase',
-                'pdb_id',
-                'chain',
-                'alternate_model',
-                'ligand_orthosteric_pdb_id',
-                'ligand_allosteric_pdb_id']
+            how='inner',
+            on=mutual_columns
         )
 
-        if not klifs_overview.shape[0] == klifs_export.shape[0] == klifs_metadata.shape[0]:
-            raise ValueError(f'Output table has incorrect number of rows:'
-                             f'KLIFS overview table has shape: {klifs_overview.shape}'
-                             f'KLIFS export table has shape: {klifs_export.shape}'
-                             f'KLIFS merged table has shape: {klifs_metadata.shape}')
+        klifs_metadata.drop(
+            columns=['ligand_orthosteric_pdb_id_y', 'ligand_allosteric_pdb_id_y', 'kinase_y'],
+            inplace=True
+        )
+
+        klifs_metadata.rename(
+            columns={
+                'ligand_orthosteric_pdb_id_x': 'ligand_orthosteric_pdb_id',
+                'ligand_allosteric_pdb_id_x': 'ligand_allosteric_pdb_id',
+                'kinase_x': 'kinase'
+            },
+            inplace=True
+        )
 
         if not (klifs_overview.shape[1] + klifs_export.shape[1] - 7) == klifs_metadata.shape[1]:
-            raise ValueError(f'Output table has incorrect number of columns'
-                             f'KLIFS overview table has shape: {klifs_overview.shape}'
-                             f'KLIFS export table has shape: {klifs_export.shape}'
+            raise ValueError(f'Output table has incorrect number of columns\n'
+                             f'KLIFS overview table has shape: {klifs_overview.shape}\n'
+                             f'KLIFS export table has shape: {klifs_export.shape}\n'
+                             f'KLIFS merged table has shape: {klifs_metadata.shape}')
+
+        if not klifs_overview.shape[0] == klifs_export.shape[0] == klifs_metadata.shape[0]:
+            raise ValueError(f'Output table has incorrect number of rows:\n'
+                             f'KLIFS overview table has shape: {klifs_overview.shape}\n'
+                             f'KLIFS export table has shape: {klifs_export.shape}\n'
                              f'KLIFS merged table has shape: {klifs_metadata.shape}')
 
         return klifs_metadata
