@@ -274,263 +274,203 @@ class KlifsMetadataLoader:
 class KlifsMetadataFilter:
 
     def __init__(self):
+
         self.unfiltered = None
         self.filtered = None
-        self.filtering_statistics = None
+        self.filtering_statistics = pd.DataFrame(
+            [],
+            columns=['filtering_step', 'n_filtered', 'n_remained']
+        )
 
     def from_klifs_metadata(self, klifs_metadata):
-        pass
 
-    def get_species(klifs_metadata, species='Human'):
+        self.unfiltered = klifs_metadata
+        self.filtered = klifs_metadata
+
+        # Add filtering statistics
+        filtering_step = 'Unfiltered'
+        n_filtered = 0
+        n_remained = len(self.unfiltered)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
+
+        # Perform filtering steps
+        self._get_species(species='Human')
+        self._get_dfg(dfg='in')
+        self._get_unique_kinase_pdbid_pair()
+
+    def _add_filtering_statistics(self, filtering_step, n_filtered, n_remained):
+        """
+        Add filtering step data to filtering statistics (class attribute).
+
+        Parameters
+        ----------
+        filtering_step : str
+            Name of filtering step
+        n_filtered : int
+            Number of filtered rows (structures).
+        n_remained : int
+            Number of remaining rows (structures).
+        """
+
+        self.filtering_statistics = self.filtering_statistics.append(
+            {
+                'filtering_step': filtering_step,
+                'n_filtered': n_filtered,
+                'n_remained': n_remained
+            },
+            ignore_index=True
+        )
+
+    def _get_species(self, species='Human'):
         """
         Filter KLIFS dataset by species.
 
         Parameters
         ----------
-        klifs_metadata : pandas.DataFrame
-            DataFrame containing merged metadate from both input KLIFS tables.
         species : str
             String for species name.
-
-        Returns
-        -------
-        pandas.DataFrame
-            DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
         """
 
-        klifs_metadata_filtered = klifs_metadata.copy()
+        klifs_metadata = self.filtered.copy()
 
-        # Select species
-        if species in klifs_metadata_filtered.species.unique():
-            klifs_metadata_filtered.drop(
-                klifs_metadata_filtered[klifs_metadata_filtered.species != species].index,
-                inplace=True
-            )
-        else:
+        if species not in klifs_metadata.species.unique():
             raise ValueError(f'Species {species} not in species list: '
-                             f'{", ".join(klifs_metadata_filtered.species.unique())}')
+                             f'{", ".join(klifs_metadata.species.unique())}')
 
-        return klifs_metadata_filtered
+        indices_to_be_dropped = klifs_metadata[klifs_metadata.species != species].index
 
-
-def get_klifs_metadata_from_files(klifs_overview_file, klifs_export_file, remove_subpocket_columns=True):
-    """
-    Get KLIFS metadata as DataFrame.
-    
-    1. Load KLIFS download files ...
-    2. Unify column names and column cell formatting.
-    3. Merge into one DataFrame.
-    4. Optional: Remove subpocket columns.
-    
-    Parameters
-    ----------
-    klifs_overview_file : str or pathlib.Path
-        Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
-    klifs_export_file : str or pathlib.Path
-        Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
-    remove_subpocket_columns : bool
-        Remove subpocket columns by default.
-    
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    """
-    
-    # Load KLIFS files 
-    # - `overview.csv` (KLIFS alignment metadata) and 
-    # - `KLIFS_export.csv` (structural metadata on PDB files)
-    klifs_overview = pd.read_csv(Path(klifs_overview_file))
-    klifs_export = pd.read_csv(Path(klifs_export_file))
-    
-    # Both tables contain some columns with the same information, such as:
-    # - Species
-    # - Kinase
-    # - PDB ID
-    # - Chain
-    # - Alternate model (alternate conformation)
-    # - Orthosteric ligand PDB ID
-    # - Allosteric ligand PDB ID
-    
-    klifs_overview.rename(
-        columns={
-            'pdb': 'pdb_id',
-            'alt': 'alternate_model',
-            'orthosteric_PDB': 'ligand_orthosteric_pdb_id',
-            'allosteric_PDB': 'ligand_allosteric_pdb_id',
-        },
-        inplace=True
-        )
-
-    klifs_export.rename(
-        columns={
-            'NAME': 'kinase',
-            'FAMILY': 'family',
-            'GROUPS': 'groups',
-            'PDB': 'pdb_id',
-            'CHAIN': 'chain',
-            'ALTERNATE_MODEL': 'alternate_model',
-            'SPECIES': 'species',
-            'LIGAND': 'ligand_orthosteric_name',
-            'PDB_IDENTIFIER': 'ligand_orthosteric_pdb_id',
-            'ALLOSTERIC_NAME': 'ligand_allosteric_name',
-            'ALLOSTERIC_PDB': 'ligand_allosteric_pdb_id',
-            'DFG': 'dfg',
-            'AC_HELIX': 'ac_helix',
-        },
-        inplace=True
-    )
-    
-    # Check if PDB IDs occur in one file but not the other
-    not_in_export = klifs_export[~klifs_export.pdb_id.isin(klifs_overview.pdb_id)]
-    not_in_overview = klifs_overview[~klifs_overview.pdb_id.isin(klifs_export.pdb_id)]
-    
-    if not_in_export.size > 0:
-        raise ValueError(f'Number of PDBs in overview but not in export table: {not_in_export.size}.\n')
-    if not_in_overview.size > 0:
-        raise(f'Number of PDBs in export but not in overview table: {not_in_overview.size}.'
-              f'PDB codes are probably updated because structures are deprecated')
-    
-    # Unify column 'alternate model'
-    klifs_overview.alternate_model.replace(' ', '-', inplace=True)
-    
-    # Unify column 'kinase'
-    # If kinase names in brackets, extract only this and remove the rest
-    # Example: 'CSNK2A1 (CK2a1)' results in 'CK2a1'
-    klifs_export.kinase = klifs_export.kinase.apply(lambda x: x[x.find('(')+1:x.find(')')] if '(' in x else x)
-    
-    # Merge on mutual columns
-    klifs_metadata = klifs_export.merge(
-        right=klifs_overview,
-        how='outer',
-        on=['species',
-            'kinase',
-            'pdb_id',
-            'chain',
-            'alternate_model',
-            'ligand_orthosteric_pdb_id',
-            'ligand_allosteric_pdb_id']
-    )
-    
-    if not klifs_overview.shape[0] == klifs_export.shape[0] == klifs_metadata.shape[0]:
-        raise ValueError(f'Output table has incorrect number of rows:'
-                         f'KLIFS overview table has shape: {klifs_overview.shape}'
-                         f'KLIFS export table has shape: {klifs_export.shape}'
-                         f'KLIFS merged table has shape: {klifs_metadata.shape}')
-    
-    if not (klifs_overview.shape[1] + klifs_export.shape[1] - 7) == klifs_metadata.shape[1]:
-        raise ValueError(f'Output table has incorrect number of columns'
-                         f'KLIFS overview table has shape: {klifs_overview.shape}'
-                         f'KLIFS export table has shape: {klifs_export.shape}'
-                         f'KLIFS merged table has shape: {klifs_metadata.shape}')
-        
-    # Remove subpocket columns
-    if remove_subpocket_columns:
-        klifs_metadata.drop(labels=klifs_metadata.columns[21:], axis=1, inplace=True)
-        
-    return klifs_metadata
-
-
-def get_species(klifs_metadata, species='Human'):
-    """
-    Filter KLIFS dataset by species.
-
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    species : str
-        String for species name.
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
-    """
-
-    klifs_metadata_filtered = klifs_metadata.copy()
-
-    # Select species
-    if species in klifs_metadata_filtered.species.unique():
-        klifs_metadata_filtered.drop(
-            klifs_metadata_filtered[klifs_metadata_filtered.species != species].index,
+        klifs_metadata.drop(
+            indices_to_be_dropped,
             inplace=True
         )
-    else:
-        raise ValueError(f'Species {species} not in species list: '
-                         f'{", ".join(klifs_metadata_filtered.species.unique())}')
 
-    return klifs_metadata_filtered
+        # Add filtering statistics
+        filtering_step = f'Only {species}'
+        n_filtered = len(indices_to_be_dropped)
+        n_remained = len(klifs_metadata)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
 
+        self.filtered = klifs_metadata
 
-def get_dfg(klifs_metadata, dfg='in'):
-    """
-    Filter KLIFS dataset by DFG region position.
+    def _get_dfg(self, dfg='in'):
+        """
+        Filter KLIFS dataset by DFG region position.
 
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    dfg : str
-        String for DFG region position.
+        Parameters
+        ----------
+        dfg : str
+            String for DFG region position.
+        """
 
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
-    """
+        klifs_metadata = self.filtered.copy()
 
-    klifs_metadata_filtered = klifs_metadata.copy()
+        if dfg not in klifs_metadata.dfg.unique():
+            raise ValueError(f'DFG {dfg} not in DFG list: '
+                             f'{", ".join(klifs_metadata.dfg.unique())}')
 
-    # Select DFG conformation
-    if dfg in klifs_metadata_filtered.dfg.unique():
-        klifs_metadata_filtered.drop(
-            klifs_metadata_filtered[klifs_metadata_filtered.dfg != dfg].index,
+        indices_to_be_dropped = klifs_metadata[klifs_metadata.dfg != dfg].index
+
+        klifs_metadata.drop(
+            indices_to_be_dropped,
             inplace=True
         )
-    else:
-        raise ValueError(f'DFG position {dfg} not in DFG list: {", ".join(klifs_metadata_filtered.dfg.unique())}')
 
-    return klifs_metadata_filtered
+        # Add filtering statistics
+        filtering_step = f'Only DFG {dfg}'
+        n_filtered = len(indices_to_be_dropped)
+        n_remained = len(klifs_metadata)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
 
+        self.filtered = klifs_metadata
 
-def get_unique_pdbid_per_kinase(klifs_metadata):
-    """
-    Filter KLIFS dataset by keeping only the KLIFS entry per kinase-PDB ID combination with the best quality score.
-    
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-        
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
-    """
-    
-    klifs_metadata_filtered = klifs_metadata.copy()
-        
-    # For each kinase and PDB IDs with multiple KLIFS entries (structures),
-    # select entry with the best quality score
+    def _get_resolution(self, resolution=4):
+        """
+        Filter KLIFS dataset by structures with a resolution value lower or equal to given value.
 
-    # Sort by kinase, PDB ID and quality score
-    # (so that for multiple equal kinase-pdb_id combos, highest quality score will come first)
-    klifs_metadata_filtered.sort_values(
-        by=['kinase', 'pdb_id', 'qualityscore'],
-        ascending=[True, True, False],
-        inplace=True
-    )
-    # Drop duplicate kinase-pdb_id combos and keep only first (with highest quality score)
-    klifs_metadata_filtered.drop_duplicates(
-        subset=['kinase', 'pdb_id'],
-        keep='first',
-        inplace=True
-    )
-    # Reset DataFrame indices
-    klifs_metadata_filtered.reset_index(inplace=True)
+        Parameters
+        ----------
+        resolution : int
+            Maximum resolution value.
+        """
 
-    return klifs_metadata_filtered
+        klifs_metadata = self.filtered.copy()
+
+        indices_to_be_dropped = klifs_metadata[klifs_metadata.resolution > resolution].index
+
+        klifs_metadata.drop(
+            indices_to_be_dropped,
+            inplace=True
+        )
+
+        # Add filtering statistics
+        filtering_step = f'Only resolution <= {resolution}'
+        n_filtered = len(indices_to_be_dropped)
+        n_remained = len(klifs_metadata)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
+
+        self.filtered = klifs_metadata
+
+    def _get_qualityscore(self, qualityscore=4):
+        """
+        Filter KLIFS dataset by structures with a KLIFS quality score higher or equal to given value.
+
+        Parameters
+        ----------
+        qualityscore : int
+            Minimum KLIFS quality score value.
+        """
+
+        klifs_metadata = self.filtered.copy()
+
+        indices_to_be_dropped = klifs_metadata[klifs_metadata.qualityscore < qualityscore].index
+
+        klifs_metadata.drop(
+            indices_to_be_dropped,
+            inplace=True
+        )
+
+        # Add filtering statistics
+        filtering_step = f'Only resolution >= {qualityscore}'
+        n_filtered = len(indices_to_be_dropped)
+        n_remained = len(klifs_metadata)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
+
+        self.filtered = klifs_metadata
+
+    def _get_unique_kinase_pdbid_pair(self):
+        """
+        Filter KLIFS dataset by keeping only the KLIFS entry per kinase-PDB ID combination with the best quality score.
+        """
+
+        klifs_metadata = self.filtered.copy()
+
+        # For each kinase and PDB IDs with multiple KLIFS entries (structures),
+        # select entry with the best quality score
+
+        # Sort by kinase, PDB ID and quality score
+        # (so that for multiple equal kinase-pdb_id combos, highest quality score will come first)
+        klifs_metadata.sort_values(
+            by=['kinase', 'pdb_id', 'qualityscore'],
+            ascending=[True, True, False],
+            inplace=True
+        )
+        # Drop duplicate kinase-pdb_id combos and keep only first (with highest quality score)
+        klifs_metadata.drop_duplicates(
+            subset=['kinase', 'pdb_id'],
+            keep='first',
+            inplace=True
+        )
+        # Reset DataFrame indices
+        klifs_metadata.reset_index(inplace=True)
+
+        # Add filtering statistics
+        filtering_step = f'Only unique kinase-PDB ID pairs'
+        print(self.filtered.shape)
+        n_filtered = len(self.filtered) - len(klifs_metadata)
+        n_remained = len(klifs_metadata)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
+
+        self.filtered = klifs_metadata
 
 
 def drop_missing_mol2s(klifs_metadata, path_to_data):
