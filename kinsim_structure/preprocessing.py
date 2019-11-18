@@ -22,7 +22,7 @@ class KlifsMetadataLoader:
     def __init__(self):
         self.data = None
 
-    def from_files(self, klifs_overview_file, klifs_export_file, remove_subpocket_columns=True):
+    def from_files(self, klifs_overview_file, klifs_export_file):
         """
         Get KLIFS metadata as DataFrame.
 
@@ -37,8 +37,6 @@ class KlifsMetadataLoader:
             Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
         klifs_export_file : str or pathlib.Path
             Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
-        remove_subpocket_columns : bool
-            Remove subpocket columns by default.
 
         Returns
         -------
@@ -50,11 +48,44 @@ class KlifsMetadataLoader:
         klifs_export = self._from_klifs_export_file(Path(klifs_export_file))
         klifs_metadata = self._merge_files(klifs_overview, klifs_export)
 
-        # Remove subpocket columns
-        if remove_subpocket_columns:
-            klifs_metadata.drop(labels=klifs_metadata.columns[21:], axis=1, inplace=True)
-
         self.data = klifs_metadata
+
+    @property
+    def data_reduced(self):
+        """
+        Reduced number of columns for metadata: structure and kinase information on kinase only.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Metadata without subpocket columns.
+        """
+
+        klifs_metadata = self.data.copy()
+
+        sorted_columns = [
+            'pdb_id',
+            'alternate_model',
+            'chain',
+            'kinase',
+            'kinase_all',
+            'family',
+            'groups',
+            'species',
+            'dfg',
+            'ac_helix',
+            'pocket',
+            'rmsd1',
+            'rmsd2',
+            'qualityscore',
+            'resolution',
+            'missing_residues',
+            'missing_atoms'
+        ]
+
+        klifs_metadata = klifs_metadata[sorted_columns]
+
+        return klifs_metadata
 
     def _from_klifs_export_file(self, klifs_export_file):
         """
@@ -93,12 +124,16 @@ class KlifsMetadataLoader:
             inplace=True
         )
 
-        # Unify column 'kinase': Sometime several kinase names are available, e.g. "EPHA7 (EphA7)"
+        # Unify column 'kinase': Sometimes several kinase names are available, e.g. "EPHA7 (EphA7)"
         # Column "kinase": Retain only first kinase name, e.g. EPHA7
         # Column "kinase_all": Save all kinase names as list, e.g. [EPHA7, EphA7]
         kinase_names = [self._format_kinase_name(i) for i in klifs_export.kinase]
         klifs_export.kinase = [i[0] for i in kinase_names]
-        klifs_export['kinase_all'] = kinase_names
+        klifs_export.insert(
+            loc=1,
+            column='kinase_all',
+            value=kinase_names
+        )
 
         return klifs_export
 
