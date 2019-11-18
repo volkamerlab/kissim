@@ -4,8 +4,6 @@ Unit and regression test for kinsim_structure.similarity.AllAgainstAllComparison
 
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
 import pytest
 
 from kinsim_structure.encoding import Fingerprint, FingerprintGenerator
