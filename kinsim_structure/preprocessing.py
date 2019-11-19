@@ -205,6 +205,7 @@ class KlifsMetadataLoader:
     @staticmethod
     def _merge_files(klifs_export, klifs_overview):
         """
+        Merge data contained in overview.csv and KLIFS_export.csv files from KLIFS database download.
 
         Parameters
         ----------
