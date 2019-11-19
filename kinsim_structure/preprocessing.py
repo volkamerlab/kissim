@@ -309,7 +309,7 @@ class KlifsMetadataFilter:
             columns=['filtering_step', 'n_filtered', 'n_remained']
         )
 
-    def from_klifs_metadata(self, klifs_metadata):
+    def from_klifs_metadata(self, klifs_metadata, path_to_klifs_download):
 
         self.unfiltered = klifs_metadata
         self.filtered = klifs_metadata
@@ -324,6 +324,7 @@ class KlifsMetadataFilter:
         self._get_species(species='Human')
         self._get_dfg(dfg='in')
         self._get_unique_kinase_pdbid_pair()
+        self._get_existing_mol2s(path_to_klifs_download)
 
     def _add_filtering_statistics(self, filtering_step, n_filtered, n_remained):
         """
@@ -464,6 +465,48 @@ class KlifsMetadataFilter:
 
         self.filtered = klifs_metadata
 
+    def _get_existing_mol2s(self, path_to_klifs_download):
+        """
+        Drop entries in KLIFS metadata that have no corresponding pocket and protein mol2 file.
+
+        Parameters
+        ----------
+        path_to_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+        """
+
+        klifs_metadata = self.filtered.copy()
+
+        indices_to_be_dropped = []
+
+        for index, row in klifs_metadata.iterrows():
+
+            # Depending on whether alternate model and chain ID is given build file path:
+            pocket_mol2_path = Path(path_to_klifs_download) / 'KLIFS_download' / row.filepath / 'pocket.mol2'
+            protein_mol2_path = Path(path_to_klifs_download) / 'KLIFS_download' / row.filepath / 'protein.mol2'
+
+            # Not all paths exist - save list with missing paths
+            if not pocket_mol2_path.exists():
+                indices_to_be_dropped.append(index)
+                logger.info(f'Missing pocket.mol2: {pocket_mol2_path}')
+            elif not protein_mol2_path.exists():
+                indices_to_be_dropped.append(index)
+                logger.info(f'Missing protein.mol2: {protein_mol2_path}')
+            else:
+                pass
+
+        klifs_metadata.drop(
+            indices_to_be_dropped,
+            inplace=True
+        )
+
+        # Add filtering statistics
+        filtering_step = f'Only existing mol2 files'
+        n_filtered = len(indices_to_be_dropped)
+        n_remained = len(klifs_metadata)
+        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
+
+        self.filtered = klifs_metadata
     def _get_unique_kinase_pdbid_pair(self):
         """
         Filter KLIFS dataset by keeping only the KLIFS entry per kinase-PDB ID combination with the best quality score.
@@ -498,52 +541,6 @@ class KlifsMetadataFilter:
         self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
 
         self.filtered = klifs_metadata
-
-
-def drop_missing_mol2s(klifs_metadata, path_to_data):
-    """
-    Drop entries in KLIFS metadata that have no corresponding mol2 file.
-
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    path_to_data : str or pathlib.Path
-        Path to directory of KLIFS dataset files.
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing merged metadata from both input KLIFS tables filtered by certain criteria.
-    """
-
-    path_to_data = Path(path_to_data) / 'raw' / 'KLIFS_download'
-
-    klifs_metadata_filtered = klifs_metadata.copy()
-
-    indices = []
-
-    for index, row in klifs_metadata_filtered.iterrows():
-
-        # Depending on whether alternate model and chain ID is given build file path:
-        mol2_path = path_to_data / row.species.upper() / row.kinase
-
-        if row.alternate_model != '-' and row.chain != '-':
-            mol2_path = mol2_path / f'{row.pdb_id}_alt{row.alternate_model}_chain{row.chain}' / 'pocket.mol2'
-        elif row.alternate_model == '-' and row.chain != '-':
-            mol2_path = mol2_path / f'{row.pdb_id}_chain{row.chain}' / 'pocket.mol2'
-        elif row.alternate_model == '-' and row.chain == '-':
-            mol2_path = mol2_path / f'{row.pdb_id}' / 'pocket.mol2'
-        else:
-            raise ValueError(f'{row.alternate_model}, {row.chain}')
-
-        # Not all paths exist - save list with missing paths
-        if not mol2_path.exists():
-            indices.append(index)
-
-    klifs_metadata_filtered.drop(indices, inplace=True)
-
-    return klifs_metadata_filtered
 
 
 def drop_missing_pdbs(klifs_metadata, path_to_data):
