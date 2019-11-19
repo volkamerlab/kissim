@@ -299,6 +299,7 @@ class KlifsMetadataLoader:
 
         return klifs_metadata
 
+
 class KlifsMetadataFilter:
 
     def __init__(self):
@@ -508,6 +509,28 @@ class KlifsMetadataFilter:
         self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
 
         self.filtered = klifs_metadata
+
+    def _download_from_pdb(self, path_to_pdb_download):
+        """
+        Download structure files from the PDB for KLIFS dataset.
+
+        Parameters
+        ----------
+        path_to_pdb_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+        """
+
+        path_to_pdb_download = Path(path_to_pdb_download) / 'PDB_download'
+        path_to_pdb_download.mkdir(parents=True, exist_ok=True)
+
+        pdbfile = PDBList()
+
+        for index, row in self.filtered.iterrows():
+            if not (Path(path_to_pdb_download) / f'{row.pdb_id}.cif').exists():
+                pdbfile.retrieve_pdb_file(row.pdb_id, pdir=path_to_pdb_download)
+            else:
+                continue
+
     def _get_unique_kinase_pdbid_pair(self):
         """
         Filter KLIFS dataset by keeping only the KLIFS entry per kinase-PDB ID combination with the best quality score.
@@ -536,7 +559,6 @@ class KlifsMetadataFilter:
 
         # Add filtering statistics
         filtering_step = f'Only unique kinase-PDB ID pairs'
-        print(self.filtered.shape)
         n_filtered = len(self.filtered) - len(klifs_metadata)
         n_remained = len(klifs_metadata)
         self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
@@ -581,28 +603,7 @@ def drop_missing_pdbs(klifs_metadata, path_to_data):
     return klifs_metadata_filtered
 
 
-def download_from_pdb(klifs_metadata, path_to_data):
-    """
-    Download structure files from the PDB for KLIFS dataset.
 
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    path_to_data : str or pathlib.Path
-        Path to directory of KLIFS dataset files.
-    """
-
-    path_to_data = Path(path_to_data) / 'raw' / 'PDB_download'
-
-    pdbfile = PDBList()
-
-    for index, row in klifs_metadata.iterrows():
-        if not (Path(path_to_data) / f'{row.pdb_id}.cif').exists():
-            print(Path(path_to_data) / f'{row.pdb_id}.cif')
-            pdbfile.retrieve_pdb_file(row.pdb_id, pdir=path_to_data)
-        else:
-            continue
 
 
 def drop_unparsable_pdbs(klifs_metadata, path_to_data):
