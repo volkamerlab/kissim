@@ -46,7 +46,9 @@ class KlifsMetadataLoader:
 
         klifs_overview = self._from_klifs_overview_file(Path(klifs_overview_file))
         klifs_export = self._from_klifs_export_file(Path(klifs_export_file))
+
         klifs_metadata = self._merge_files(klifs_overview, klifs_export)
+        klifs_metadata = self._add_filepaths(klifs_metadata)
 
         self.data = klifs_metadata
 
@@ -80,7 +82,8 @@ class KlifsMetadataLoader:
             'qualityscore',
             'resolution',
             'missing_residues',
-            'missing_atoms'
+            'missing_atoms',
+            'filepath'
         ]
 
         klifs_metadata = klifs_metadata[sorted_columns]
@@ -270,6 +273,30 @@ class KlifsMetadataLoader:
 
         return klifs_metadata
 
+    @staticmethod
+    def _add_filepaths(klifs_metadata):
+
+        filepaths = []
+
+        for index, row in klifs_metadata.iterrows():
+
+            # Depending on whether alternate model and chain ID is given build file path:
+            mol2_path = Path('.') / row.species.upper() / row.kinase
+
+            if row.alternate_model != '-' and row.chain != '-':
+                mol2_path = mol2_path / f'{row.pdb_id}_alt{row.alternate_model}_chain{row.chain}'
+            elif row.alternate_model == '-' and row.chain != '-':
+                mol2_path = mol2_path / f'{row.pdb_id}_chain{row.chain}'
+            elif row.alternate_model == '-' and row.chain == '-':
+                mol2_path = mol2_path / f'{row.pdb_id}'
+            else:
+                raise ValueError(f'Incorrect metadata entry {index}: {row.alternate_model}, {row.chain}')
+
+            filepaths.append(mol2_path)
+
+        klifs_metadata['filepath'] = filepaths
+
+        return klifs_metadata
 
 class KlifsMetadataFilter:
 

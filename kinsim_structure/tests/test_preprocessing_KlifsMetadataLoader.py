@@ -112,7 +112,7 @@ def test_from_files(klifs_overview_file, klifs_export_file):
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    assert klifs_metadata_loader.data.shape == (10469, 34)
+    assert klifs_metadata_loader.data.shape == (10469, 35)
 
 
 @pytest.mark.parametrize('klifs_overview_file, klifs_export_file', [
@@ -143,7 +143,8 @@ def test_data_reduced(klifs_overview_file, klifs_export_file):
             'qualityscore',
             'resolution',
             'missing_residues',
-            'missing_atoms'
+            'missing_atoms',
+            'filepath'
         ]
 
     assert list(klifs_metadata_loader.data_reduced.columns) == metadata_columns
