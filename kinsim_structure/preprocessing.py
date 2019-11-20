@@ -8,9 +8,14 @@ Handles the primary functions for the preprocessing of the KLIFS dataset.
 
 import logging
 from pathlib import Path
+import sys
 
+from biopandas.mol2 import PandasMol2
+from biopandas.pdb import PandasPdb
 from Bio.PDB import PDBList, MMCIFParser
+import numpy as np
 import pandas as pd
+import pymol
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, get_klifs_regions
 
@@ -298,6 +303,214 @@ class KlifsMetadataLoader:
         klifs_metadata['filepath'] = filepaths
 
         return klifs_metadata
+
+
+class Mol2ToPdbConverter:
+
+    def from_klifs_metadata(self, klifs_metadata, path_to_klifs_download):
+        """
+        Convert mol2 file to pdb file and save pdb file locally.
+
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            KLIFS metadata describing the KLIFS dataset.
+        path_to_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+        """
+
+        # Launch PyMol once
+        self._pymol_launch()
+
+        for index, row in klifs_metadata.iterrows():
+            print(index, row.filepath)
+
+            mol2_path = Path(path_to_klifs_download) / 'KLIFS_download' / row.filepath / 'protein.mol2'
+
+            # Set mol2 path
+            mol2_path = self._set_mol2_path(mol2_path)
+
+            # Set pdb path
+            pdb_path = self._set_pdb_path(mol2_path, pdb_path=None)
+
+            # PyMol mol2 to pdb conversion
+            self._pymol_mol2_to_pdb_conversion(mol2_path, pdb_path)
+            self._raise_conversion_error(mol2_path, pdb_path)  # Check if files are equivalent
+
+        self._pymol_quit()
+
+    def from_file(self, mol2_path, pdb_path=None):
+        """
+        Convert mol2 file to pdb file and save pdb file locally.
+
+        Parameters
+        ----------
+        mol2_path : pathlib.Path or str
+            Path to mol2 file.
+        pdb_path : None or pathlib.Path or str
+            Path to pdb file (= converted mol2 file). Directory must exist.
+            Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
+        """
+
+        # Set mol2 path
+        mol2_path = self._set_mol2_path(mol2_path)
+
+        # Set pdb path
+        pdb_path = self._set_pdb_path(mol2_path, pdb_path)
+
+        # PyMol mol2 to pdb conversion
+        self._pymol_launch()
+        self._pymol_mol2_to_pdb_conversion(mol2_path, pdb_path)
+        self._raise_conversion_error(mol2_path, pdb_path)  # Check if files are equivalent
+        self._pymol_quit()
+
+    @staticmethod
+    def _pymol_launch():
+
+        stdin = sys.stdin
+        stdout = sys.stdout
+        stderr = sys.stderr
+
+        pymol.finish_launching(['pymol', '-qc'])
+
+        sys.stdin = stdin
+        sys.stdout = stdout
+        sys.stderr = stderr
+
+    @staticmethod
+    def _pymol_mol2_to_pdb_conversion(mol2_path, pdb_path):
+        """
+        Convert a mol2 file to a pdb file and save locally (using pymol).
+        """
+
+        pymol.cmd.reinitialize()
+        pymol.cmd.load(mol2_path)
+        pymol.cmd.save(pdb_path)
+
+    @staticmethod
+    def _pymol_quit():
+
+        pymol.cmd.quit()
+
+    @staticmethod
+    def _raise_conversion_error(mol2_path, pdb_path):
+        """
+        Raise ValueError if mol2 and pdb file are not equivalent.
+        """
+
+        pmol2 = PandasMol2().read_mol2(
+            str(mol2_path),
+            columns={
+                0: ('atom_id', int),
+                1: ('atom_name', str),
+                2: ('x', float),
+                3: ('y', float),
+                4: ('z', float),
+                5: ('atom_type', str),
+                6: ('subst_id', str),
+                7: ('subst_name', str),
+                8: ('charge', float),
+                9: ('status_bit', str)
+            }
+
+        )
+        ppdb = PandasPdb().read_pdb(str(pdb_path))
+
+        mol2_df = pmol2.df
+        pdb_df = ppdb.df['ATOM']
+
+        # Number of atoms?
+        n_atoms_mol2 = len(mol2_df)
+        n_atoms_pdb = len(pdb_df)
+        if not n_atoms_mol2 == n_atoms_pdb:
+            logger.info(f'{mol2_path}: Unequal number of atoms in mol2 ({n_atoms_mol2}) and pdb ({n_atoms_pdb}) file.')
+
+        # Record name of PDB file is always ATOM (although containing non-standard residues
+        if not set(pdb_df.record_name) == {'ATOM'}:
+            logger.info(f'{mol2_path}: PDB file contains non-ATOM entries.')
+
+        # x, y, and z mean values are the same
+        if not np.isclose(mol2_df.x.mean(), pdb_df.x_coord.mean(), rtol=1e-05):
+            logger.info(f'{mol2_path}: Coordinates are not the same (x means differ).')
+
+        if not np.isclose(mol2_df.y.mean(), pdb_df.y_coord.mean(), rtol=1e-05):
+            logger.info(f'{mol2_path}: Coordinates are not the same (y means differ).')
+
+        if not np.isclose(mol2_df.z.mean(), pdb_df.z_coord.mean(), rtol=1e-05):
+            logger.info(f'{mol2_path}: Coordinates are not the same (z means differ).')
+
+        # Residue ID and name are the same
+        residue_set_mol2 = set(mol2_df.subst_name)
+        pdb_df.residue_number = pdb_df.residue_number.astype(str)
+        residue_set_pdb = set(pdb_df.residue_name + pdb_df.residue_number)
+        residue_set_diff = (residue_set_mol2 - residue_set_pdb)|(residue_set_pdb - residue_set_mol2)
+        if not len(residue_set_diff) == 0:
+            logger.info(f'{mol2_path}: Residue ID and name details differ. '
+                             f'Not in pdb: {(residue_set_mol2 - residue_set_pdb)}. '
+                             f'Not in mol2: {(residue_set_pdb - residue_set_mol2)}.')
+
+    @staticmethod
+    def _set_mol2_path(mol2_path):
+        """
+        Test if input mol2 file exists - and if so, set as class attribute.
+
+        Parameters
+        ----------
+        mol2_path : pathlib.Path or str
+            Path to mol2 file.
+
+        Returns
+        -------
+        pathlib.Path
+            Path to mol2 file.
+        """
+
+        mol2_path = Path(mol2_path)
+
+        if not mol2_path.exists():
+            raise FileNotFoundError(f'File path does not exist: {mol2_path}')
+        if not mol2_path.suffix == '.mol2':
+            raise ValueError(f'Incorrect file suffix: {mol2_path.suffix}, must be mol2.')
+
+        return mol2_path
+
+    @staticmethod
+    def _set_pdb_path(mol2_path, pdb_path):
+        """
+        Test if input pdb file path exists and has a pdb suffix - and if so, set as class attribute.
+
+        Parameters
+        ----------
+        pdb_path : None or pathlib.Path or str
+            Path to pdb file (= converted mol2 file). Directory must exist.
+            Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
+
+        Returns
+        -------
+        pathlib.Path
+            Path to pdb file (= converted mol2 file).
+        """
+
+        # If mol2 path is not set, do not continue to set pdb path (otherwise we cannot convert mol2 to pdb)
+        if mol2_path is None:
+            raise ValueError(f'Set mol2 path (class attribute) first.')
+
+        else:
+            pass
+
+        if pdb_path is None:
+            pdb_path = mol2_path.parent / f'{mol2_path.stem}.pdb'
+
+        else:
+            pdb_path = Path(pdb_path)
+
+            if not pdb_path.parent.exists():
+                raise FileNotFoundError(f'Directory does not exist: {pdb_path}')
+            if not pdb_path.suffix == '.pdb':
+                raise ValueError(f'Missing file name or incorrect file type: {pdb_path}. '
+                                 f'Must have the form: /path/to/existing/directory/filename.pdb')
+
+        return pdb_path
 
 
 class KlifsMetadataFilter:
@@ -630,7 +843,6 @@ def drop_unparsable_pdbs(klifs_metadata, path_to_data):
     pdb_ids_parsing_fails = []
 
     for pdb_id in klifs_metadata_filtered.pdb_id.unique():
-        print(pdb_id)
         try:
             parser = MMCIFParser()
             structure = parser.get_structure(
