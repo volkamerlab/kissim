@@ -12,7 +12,7 @@ from pathlib import Path
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
 from Bio.PDB import MMCIFParser, Selection, Entity
-from IPython.display import display, clear_output, HTML
+#from IPython.display import display, clear_output, HTML
 import pandas as pd
 
 logger = logging.getLogger(__name__)
