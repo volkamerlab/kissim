@@ -8,6 +8,7 @@ Handles the primary functions for the preprocessing of the KLIFS dataset.
 
 import logging
 from pathlib import Path
+import time
 import sys
 
 from biopandas.mol2 import PandasMol2
@@ -414,10 +415,23 @@ class Mol2ToPdbConverter:
             }
 
         )
+
+        # Wait until pdb file is written to disc
+        attempt = 0
+        while attempt <= 10:
+            if pdb_path.exists():
+                break
+            else:
+                if attempt == 10:
+                    logger.info(f'File does not exist: {pdb_path}')
+                else:
+                    time.sleep(1)
+                    attempt += 1
+
         ppdb = PandasPdb().read_pdb(str(pdb_path))
 
         mol2_df = pmol2.df
-        pdb_df = ppdb.df['ATOM']
+        pdb_df = pd.concat([ppdb.df['ATOM'], ppdb.df['HETATM']])
 
         # Number of atoms?
         n_atoms_mol2 = len(mol2_df)
