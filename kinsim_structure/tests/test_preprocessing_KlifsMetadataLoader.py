@@ -118,7 +118,7 @@ def test_from_files(klifs_overview_file, klifs_export_file):
 @pytest.mark.parametrize('klifs_overview_file, klifs_export_file', [
     ('KLIFS_overview.csv', 'KLIFS_export.csv')
 ])
-def test_data_reduced(klifs_overview_file, klifs_export_file):
+def test_data_essential(klifs_overview_file, klifs_export_file):
 
     klifs_overview_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_overview_file
     klifs_export_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_export_file
@@ -147,5 +147,5 @@ def test_data_reduced(klifs_overview_file, klifs_export_file):
             'filepath'
         ]
 
-    assert list(klifs_metadata_loader.data_reduced.columns) == metadata_columns
+    assert list(klifs_metadata_loader.data_essential.columns) == metadata_columns
 

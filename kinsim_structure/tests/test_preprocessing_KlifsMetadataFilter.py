@@ -32,7 +32,7 @@ def test_get_species(klifs_overview_file, klifs_export_file, n_rows):
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    klifs_metadata = klifs_metadata_loader.data_reduced
+    klifs_metadata = klifs_metadata_loader.data_essential
 
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.filtered = klifs_metadata
@@ -64,7 +64,7 @@ def test_get_dfg(klifs_overview_file, klifs_export_file, n_rows):
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    klifs_metadata = klifs_metadata_loader.data_reduced
+    klifs_metadata = klifs_metadata_loader.data_essential
 
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.filtered = klifs_metadata
@@ -96,7 +96,7 @@ def test_get_resolution(klifs_overview_file, klifs_export_file, n_rows):
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    klifs_metadata = klifs_metadata_loader.data_reduced
+    klifs_metadata = klifs_metadata_loader.data_essential
 
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.filtered = klifs_metadata
@@ -128,7 +128,7 @@ def test_get_qualityscore(klifs_overview_file, klifs_export_file, n_rows):
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    klifs_metadata = klifs_metadata_loader.data_reduced
+    klifs_metadata = klifs_metadata_loader.data_essential
 
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.filtered = klifs_metadata
@@ -160,7 +160,7 @@ def test_get_existing_pocket_mol2s(klifs_overview_file, klifs_export_file, n_row
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    klifs_metadata = klifs_metadata_loader.data_reduced
+    klifs_metadata = klifs_metadata_loader.data_essential
 
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.filtered = klifs_metadata
@@ -192,7 +192,7 @@ def test_get_unique_kinase_pdbid_pair(klifs_overview_file, klifs_export_file, n_
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
 
-    klifs_metadata = klifs_metadata_loader.data_reduced
+    klifs_metadata = klifs_metadata_loader.data_essential
 
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.filtered = klifs_metadata
