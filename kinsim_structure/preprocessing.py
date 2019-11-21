@@ -933,22 +933,27 @@ def drop_residue_x(klifs_metadata):
         )
     ]
 
-    klifs_metadata_filtered = klifs_metadata.copy()
+class PdbDownloader:
 
-    for index, row in klifs_metadata_filtered.iterrows():
+    def from_klifs_metadata(self, klifs_metadata, path_pdb_download):
+        """
+        Download structure files from the PDB for KLIFS dataset.
 
-        # If pocket contains residue X
-        if 'X' in row.pocket:
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            KLIFS metadata describing the KLIFS dataset.
+        path_pdb_download : pathlib.Path or str
+            Path to directory of files of PDB download.
+        """
 
-            # Get pocket residue(s) with X
-            pocket = pd.Series(list(row.pocket))
-            pocket_x = pocket[pocket == 'X']
+        path_to_pdb_download = Path(path_pdb_download)
+        path_to_pdb_download.mkdir(parents=True, exist_ok=True)
 
-            # If this residues sits in an important KLIFS region, drop the PDB structure
-            shared_residues = set(pocket_x.index) & set(important_klifs_regions.index)
-            if shared_residues:
-                print(index)
-                klifs_metadata_filtered.drop(index, inplace=True)
-                print(f'Drop PDB ID: {row.pdb_id}')
+        pdbfile = PDBList()
 
-    return klifs_metadata_filtered
+        for index, row in klifs_metadata.iterrows():
+            if not (Path(path_to_pdb_download) / f'{row.pdb_id}.cif').exists():
+                pdbfile.retrieve_pdb_file(row.pdb_id, pdir=path_to_pdb_download)
+            else:
+                logger.info(f'Pdb file could not be downloaded: {row.pdb_id}.')
