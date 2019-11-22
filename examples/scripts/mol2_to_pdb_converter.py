@@ -1,3 +1,11 @@
+"""
+mol2_to_pdb_converter.py
+
+Subpocket-based structural fingerprint for kinase pocket comparison.
+
+Convert mol2 files, which are linked to KLIFS metadata, to pdb files using PyMol.
+"""
+
 import logging
 
 from pathlib import Path
@@ -8,12 +16,13 @@ from kinsim_structure.preprocessing import KlifsMetadataLoader, Mol2ToPdbConvert
 
 PATH_SCRIPT = Path(__name__).parent
 PATH_KLIFS_DOWNLOAD = Path('/home/dominique/Documents/data/kinsim/20191115_full/KLIFS_download')
+FILENAME = 'mol2_to_pdb_converter'
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
-    filename=PATH_SCRIPT / 'mol2_to_pdb_converter.log',
+    filename=PATH_SCRIPT / f'{FILENAME}.log',
     filemode='w',
     level=logging.INFO
 )
