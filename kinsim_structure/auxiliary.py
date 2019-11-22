@@ -12,12 +12,9 @@ from pathlib import Path
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
 from Bio.PDB import MMCIFParser, Selection, Entity
-#from IPython.display import display, clear_output, HTML
 import pandas as pd
 
 logger = logging.getLogger(__name__)
-
-PATH_TO_DATA = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full'
 
 AMINO_ACIDS = pd.DataFrame(
     [
@@ -41,20 +38,6 @@ class MoleculeLoader:
         List of molecule data in the form of BioPandas objects.
     n_molecules : int
         Number of molecules loaded.
-
-    Examples
-    --------
-    >>> from kinsim_structure.auxiliary import MoleculeLoader
-    >>> molecule_path = '/path/to/pdb/or/mol2'
-    >>> molecule_loader = MoleculeLoader()
-    >>> molecule_loader.load_molecule(molecule_path, remove_solvent=True)
-
-    >>> molecules = molecule_loader.molecules  # Contains one or multiple molecule objects
-    >>> molecule1 = molecules[0].df  # Molecule data
-    >>> molecule1_id = molecules[0].code  # Molecule id
-
-    >>> molecules[0].df == molecule_loader.molecules[0]
-    True
     """
 
     def __init__(self, molecule_path, remove_solvent=False):
@@ -277,16 +260,11 @@ class KlifsMoleculeLoader:
         KLIFS metadata describing a pocket entry in the KLIFS dataset.
     """
 
-    def __init__(self, *, mol2_path=None, klifs_metadata_entry=None):
+    def __init__(self, path_klifs_download):
 
-        self.klifs_metadata_path = PATH_TO_DATA / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
-
-        if mol2_path is not None:
-            self.molecule = self.from_file(mol2_path)
-        elif klifs_metadata_entry is not None:
-            self.molecule = self.from_metadata_entry(klifs_metadata_entry)
-        else:
-            self.molecule = None
+        self.path_klifs_download = path_klifs_download
+        self.klifs_metadata_path = path_klifs_download / 'klifs_metadata_unfiltered.csv'
+        self.molecule = None
 
     def from_file(self, mol2_path):
         """
@@ -320,7 +298,7 @@ class KlifsMoleculeLoader:
         # Get molecule
         molecule = self.load_molecule(klifs_metadata_entry, mol2_path)
 
-        return molecule
+        self.molecule = molecule
 
     def from_metadata_entry(self, klifs_metadata_entry):
         """
@@ -353,7 +331,7 @@ class KlifsMoleculeLoader:
         # Get molecule
         molecule = self.load_molecule(klifs_metadata_entry, mol2_path)
 
-        return molecule
+        self.molecule = molecule
 
     @staticmethod
     def load_molecule(klifs_metadata_entry, mol2_path):
@@ -459,8 +437,7 @@ class KlifsMoleculeLoader:
 
         return klifs_metadata_entry
 
-    @staticmethod
-    def file_from_metadata_entry(klifs_metadata_entry):
+    def file_from_metadata_entry(self, klifs_metadata_entry):
         """
         Get the mol2 file path linked to an entry in the KLIFS metadata.
 
@@ -476,22 +453,7 @@ class KlifsMoleculeLoader:
         """
 
         # Depending on whether alternate model and chain ID is given build file path:
-        mol2_path = PATH_TO_DATA / 'raw' / 'KLIFS_download' / klifs_metadata_entry.species.upper() / klifs_metadata_entry.kinase
-
-        pdb_id = klifs_metadata_entry.pdb_id
-        chain = klifs_metadata_entry.chain
-        alternate_model = klifs_metadata_entry.alternate_model
-
-        if alternate_model != '-' and chain != '-':
-            folder_name = f'{pdb_id}_alt{alternate_model}_chain{chain}'
-        elif alternate_model == '-' and chain != '-':
-            folder_name = f'{pdb_id}_chain{chain}'
-        elif alternate_model == '-' and chain == '-':
-            folder_name = f'{pdb_id}'
-        else:
-            raise ValueError(f'{alternate_model}, {chain}')
-
-        mol2_path = mol2_path / folder_name / 'pocket.mol2'
+        mol2_path = self.path_klifs_download / klifs_metadata_entry.filepath / 'pocket.mol2'
 
         # If file does not exist, raise error
         if not mol2_path.exists():
@@ -773,26 +735,26 @@ def get_klifs_regions():
     """
 
     klifs_regions_definitions = {
-        'I': range(1, 3 + 1),
-        'g.I': range(4, 9 + 1),
-        'II': range(10, 13 + 1),
-        'III': range(14, 19 + 1),
+        'I': range(1, 3 + 1),  # β-sheet I
+        'g.l': range(4, 9 + 1),  # G-rich loop
+        'II': range(10, 13 + 1),  # β-sheet II
+        'III': range(14, 19 + 1),  # β-sheet III
         'aC': range(20, 30 + 1),
-        'b.I': range(31, 37 + 1),
-        'IV': range(38, 41 + 1),
-        'V': range(42, 44 + 1),
-        'GK': range(45, 45 + 1),
+        'b.l': range(31, 37 + 1),  # loop connecting aC-helix to IV
+        'IV': range(38, 41 + 1),  # β-sheet IV
+        'V': range(42, 44 + 1),  # β-sheet V
+        'GK': range(45, 45 + 1),  # gatekeeper
         'hinge': range(46, 48 + 1),
-        'linker': range(49, 52 + 1),
+        'linker': range(49, 52 + 1),  # loop connecting the hinge to aD-helix
         'aD': range(53, 59 + 1),
         'aE': range(60, 64 + 1),
-        'VI': range(65, 67 + 1),
-        'c.I': range(68, 75 + 1),
-        'VII': range(76, 78 + 1),
-        'VIII': range(79, 79 + 1),
-        'x': range(80, 80 + 1),
-        'DFG': range(81, 83 + 1),
-        'a.I': range(84, 85 + 1)
+        'VI': range(65, 67 + 1),  # β-sheet VI
+        'c.I': range(68, 75 + 1),  # catalytic loop
+        'VII': range(76, 78 + 1),  # β-sheet VII
+        'VIII': range(79, 79 + 1),  # β-sheet VIII
+        'x': range(80, 80 + 1),  # residue preceding DFG-motif
+        'DFG': range(81, 83 + 1),  # DFG-motif
+        'a.l': range(84, 85 + 1)  # activation loop
     }
 
     klifs_regions = []
@@ -803,23 +765,3 @@ def get_klifs_regions():
     klifs_regions.index = klifs_regions.klifs_id
 
     return klifs_regions
-
-
-def iprint(message):
-    """
-    For jupyter notebooks: print outputs, overwrite previous ones, so it
-    looks like it's constantly updating :)
-
-    Parameters
-    ----------
-    message : str
-        Message to be printed in Jupyter notebook
-
-    References
-    ----------
-    https://github.com/jaimergp/TeachOpenCADD/blob/online-api/talktorials/11_online_apis/11b_online_docking.ipynb
-    """
-
-    clear_output(wait=True)
-    message = message.replace("\n", "<br />")
-    display(HTML(f'<pre>{message}</pre>'))
