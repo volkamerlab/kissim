@@ -896,6 +896,97 @@ class Mol2FormatScreener:
         return structures_irregular
 
 
+class Mol2KlifsToPymolFormatter:
+
+    def __init__(self):
+
+        self.pymol_mol2_path = []
+
+    def from_metadata(self, klifs_metadata, path_klifs_download):
+
+        for index, row in klifs_metadata.iterrows():
+
+            mol2_path = path_klifs_download / row.filepath / 'protein.mol2'
+            self._rewrite_mol2_file(mol2_path)
+
+    def _rewrite_mol2_file(self, mol2_path):
+
+        mol2_path = Path(mol2_path)
+
+        # Load file
+        with open(mol2_path, 'r') as f:
+            lines = f.readlines()
+
+        headers = {
+            '@<TRIPOS>MOLECULE': False,
+            '@<TRIPOS>ATOM': False,
+            '@<TRIPOS>BOND': False,
+            '@<TRIPOS>SUBSTRUCTURE': False
+        }
+
+        lines_new = []
+        unexpected_targets = []
+
+        for line in lines:
+
+            if line.startswith('@<TRIPOS>MOLECULE'):
+                headers['@<TRIPOS>MOLECULE'] = True
+
+            if line.startswith('@<TRIPOS>ATOM'):
+                headers['@<TRIPOS>ATOM'] = True
+
+            if line.startswith('@<TRIPOS>BOND'):
+                headers['@<TRIPOS>BOND'] = True
+
+            if line.startswith('@<TRIPOS>SUBSTRUCTURE'):
+                headers['@<TRIPOS>SUBSTRUCTURE'] = True
+
+            if '_' in line:
+
+                # In what section are we?
+
+                if headers['@<TRIPOS>MOLECULE'] and not headers['@<TRIPOS>ATOM'] and not headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
+
+                    if line.startswith('USER_CHARGES'):
+                        lines_new.append(line)
+                    else:
+                        unexpected_targets.append(line)
+
+                elif headers['@<TRIPOS>MOLECULE'] and headers['@<TRIPOS>ATOM'] and not headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
+
+                    if '_' in line[56:59]:
+                        lines_new.append(line.replace('_', '-'))
+                    else:
+                        unexpected_targets.append(line)
+
+                elif headers['@<TRIPOS>MOLECULE'] and headers['@<TRIPOS>ATOM'] and headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
+
+                    unexpected_targets.append(line)
+
+                else:
+
+                    if '_' in line[7:10]:
+                        lines_new.append(line.replace('_', '-'))
+                    elif line.startswith('# MOE 2012.10 (io_trps.svl 2012.10)'):
+                        lines_new.append(line)
+                    else:
+                        unexpected_targets.append(line)
+            else:
+
+                lines_new.append(line)
+
+            if len(unexpected_targets) > 0:
+
+                raise ValueError(f'Unknown underscores were transformed, please check: {unexpected_targets}')
+
+        # Write new mol2 file
+        pymol_mol2_path = Path(mol2_path).parent / 'protein_pymol.mol2'
+        self.pymol_mol2_path.append(pymol_mol2_path)
+
+        with open(pymol_mol2_path, 'w') as f:
+            f.writelines(lines_new)
+
+
 class Mol2ToPdbConverter:
 
     def from_klifs_metadata(self, klifs_metadata, path_klifs_download):
