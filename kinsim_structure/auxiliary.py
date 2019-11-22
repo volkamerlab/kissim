@@ -151,10 +151,19 @@ class MoleculeLoader:
                 # Some subst_name entries in the KLIFs mol2 files contain underscores.
                 # Examples
                 # - 5YKS: Residues on the N-terminus of (before) the first amino acid, i.e. 3C protease cutting site
-                # - 2J53: Mutated residue
-
+                # - 2J5E: Mutated residue (CYO_797)
                 # Convert these underscores into a minus sign (so that it can still be cast to int)
                 subst_name = subst_name.replace('_', '-')
+
+                # Some subst_name entries in the KLIFS mol2 files (in accordance with the original PDB files)
+                # contain a letter after the residue ID
+                # Examples
+                # - 3HLL: Irregular residue ID (56A, 93B)
+                # Remove letter from end of string
+                try:
+                    int(subst_name[-1])
+                except ValueError:
+                    subst_name = subst_name[:-1]
 
                 # These are elements such as CA or MG
                 if subst_name[:2] == atom_type.upper():
