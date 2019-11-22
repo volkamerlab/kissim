@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import pymol
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader, get_klifs_regions
+from kinsim_structure.auxiliary import MoleculeLoader, KlifsMoleculeLoader, get_klifs_regions, AMINO_ACIDS
 
 logger = logging.getLogger(__name__)
 
@@ -798,6 +798,102 @@ class KlifsMetadataFilter:
         )
 
         self.filtered = klifs_metadata
+
+
+class Mol2FormatScreener:
+
+    def __init__(self, klifs_metadata, path_klifs_download):
+
+        self.klifs_metadata = klifs_metadata.copy()
+        self.path_klifs_download = path_klifs_download
+
+        self.residues_underscored = self._get_structures_with_underscored_residues()
+        self.residues_non_standard = self._get_structures_with_non_standard_residues()
+        self.residues_duplicated_atom_names = self._get_structures_with_duplicated_residue_atom_names()
+
+    def _get_structures_with_underscored_residues(self):
+        """
+
+        """
+
+        structures_irregular = []
+
+        klifs_metadata = self.klifs_metadata.copy()
+
+        for index, row in klifs_metadata.iterrows():
+
+            ml = MoleculeLoader(self.path_klifs_download / row.filepath / 'protein.mol2')
+            molecule = ml.molecules[0].df
+
+            # Get underscored residues
+            residues_irregular = molecule[molecule.res_id < 0].groupby('res_id').first()
+
+            if len(residues_irregular) > 0:
+                residues_irregular.reset_index(inplace=True)
+                residues_irregular['filepath'] = row.filepath
+                residues_irregular = residues_irregular[['filepath', 'res_id', 'res_name', 'subst_name']]
+
+                structures_irregular.append(residues_irregular)
+
+        structures_irregular = pd.concat(structures_irregular)
+
+        return structures_irregular
+
+    def _get_structures_with_non_standard_residues(self):
+        """
+
+        """
+
+        structures_irregular = []
+
+        klifs_metadata = self.klifs_metadata.copy()
+
+        for index, row in klifs_metadata.iterrows():
+
+            ml = MoleculeLoader(self.path_klifs_download / row.filepath / 'protein.mol2')
+            molecule = ml.molecules[0].df
+
+            # Get non-standard residues
+            residues_irregular = molecule[~molecule.res_name.isin(AMINO_ACIDS.aa_three)].groupby('res_id').first()
+
+            if len(residues_irregular) > 0:
+                residues_irregular.reset_index(inplace=True)
+                residues_irregular['filepath'] = row.filepath
+                residues_irregular = residues_irregular[['filepath', 'res_id', 'res_name', 'subst_name']]
+
+                structures_irregular.append(residues_irregular)
+
+        structures_irregular = pd.concat(structures_irregular)
+
+        return structures_irregular
+
+    def _get_structures_with_duplicated_residue_atom_names(self):
+        """
+
+        """
+
+        structures_irregular = []
+
+        klifs_metadata = self.klifs_metadata.copy()
+
+        for index, row in klifs_metadata.iterrows():
+
+            ml = MoleculeLoader(self.path_klifs_download / row.filepath / 'protein.mol2')
+            molecule = ml.molecules[0].df
+
+            # Get duplicated atom names per residue
+            residues_irregular = molecule.groupby(['res_id', 'atom_name']).filter(lambda x: len(x) > 1)
+
+            if len(residues_irregular) > 0:
+                residues_irregular.reset_index(inplace=True)
+                residues_irregular['filepath'] = row.filepath
+                residues_irregular = residues_irregular[['filepath', 'res_id', 'res_name', 'subst_name', 'atom_name']]
+
+                structures_irregular.append(residues_irregular)
+
+        structures_irregular = pd.concat(structures_irregular)
+
+        return structures_irregular
 
 
 class Mol2ToPdbConverter:
