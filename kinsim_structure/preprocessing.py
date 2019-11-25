@@ -349,7 +349,7 @@ class KlifsMetadataFilter:
         self.filtered = None
         self.filtering_statistics = pd.DataFrame(
             [],
-            columns=['filtering_step', 'n_filtered', 'n_remained']
+            columns=['filtering_step', 'n_removed', 'n_retained']
         )
         self.filtered_indices = {}
 
@@ -373,9 +373,9 @@ class KlifsMetadataFilter:
 
         # Add filtering statistics
         filtering_step = 'Unfiltered'
-        n_filtered = 0
-        n_remained = len(self.unfiltered)
-        self._add_filtering_statistics(filtering_step, n_filtered, n_remained)
+        n_removed = 0
+        n_retained = len(self.unfiltered)
+        self._add_filtering_statistics(filtering_step, n_removed, n_retained)
 
         # Perform filtering steps
         self._get_species(species='Human')
@@ -394,7 +394,7 @@ class KlifsMetadataFilter:
         logger.info(f'Number of filtered metadata entries: {len(self.filtered)} '
                     f'representing {len(self.filtered.kinase.unique())} kinases.')
 
-    def _add_filtering_statistics(self, filtering_step, n_filtered, n_remained):
+    def _add_filtering_statistics(self, filtering_step, n_removed, n_retained):
         """
         Add filtering step data to filtering statistics (class attribute).
 
@@ -402,19 +402,19 @@ class KlifsMetadataFilter:
         ----------
         filtering_step : str
             Name of filtering step
-        n_filtered : int
-            Number of filtered rows (structures).
-        n_remained : int
-            Number of remaining rows (structures).
+        n_removed : int
+            Number of removed rows (structures).
+        n_retained : int
+            Number of retained rows (structures).
         """
 
-        logger.info(f'Filtering step: {filtering_step}: {n_filtered} filtered, {n_remained} remained.')
+        logger.info(f'Filtering step: {filtering_step}: {n_removed} removed, {n_retained} retained.')
 
         self.filtering_statistics = self.filtering_statistics.append(
             {
                 'filtering_step': filtering_step,
-                'n_filtered': n_filtered,
-                'n_remained': n_remained
+                'n_removed': n_removed,
+                'n_retained': n_retained
             },
             ignore_index=True
         )
