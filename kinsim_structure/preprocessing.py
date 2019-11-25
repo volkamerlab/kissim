@@ -687,8 +687,8 @@ class KlifsMetadataFilter:
 
         for index, row in klifs_metadata.iterrows():
 
-            ml = KlifsMoleculeLoader(path_klifs_download)
-            ml.from_metadata_entry(klifs_metadata_entry=row)
+            ml = KlifsMoleculeLoader()
+            ml.from_metadata_entry(klifs_metadata_entry=row, path_klifs_download=path_klifs_download)
             molecule = ml.molecule
 
             # Get first entry of each residue ID
