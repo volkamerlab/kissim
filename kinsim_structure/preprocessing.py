@@ -1069,6 +1069,9 @@ class Mol2KlifsToPymolConverter:
 
 
 class Mol2ToPdbConverter:
+    """
+    Convert mol2 file to pdb file and save pdb file locally.
+    """
 
     def from_klifs_metadata(self, klifs_metadata, path_klifs_download):
         """
