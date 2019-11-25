@@ -1117,7 +1117,7 @@ class Mol2ToPdbConverter:
 
             # PyMol mol2 to pdb conversion
             self._pymol_mol2_to_pdb_conversion(mol2_path, pdb_path)
-            self._raise_conversion_error(mol2_path, pdb_path)  # Check if files are equivalent
+            self._report_inconsistent_conversion(mol2_path, pdb_path)  # Check if files are equivalent
 
         self._pymol_quit()
 
@@ -1143,7 +1143,7 @@ class Mol2ToPdbConverter:
         # PyMol mol2 to pdb conversion
         self._pymol_launch()
         self._pymol_mol2_to_pdb_conversion(mol2_path, pdb_path)
-        self._raise_conversion_error(mol2_path, pdb_path)  # Check if files are equivalent
+        self._report_inconsistent_conversion(mol2_path, pdb_path)  # Check if files are equivalent
         self._pymol_quit()
 
     @staticmethod
@@ -1175,9 +1175,9 @@ class Mol2ToPdbConverter:
         pymol.cmd.quit()
 
     @staticmethod
-    def _raise_conversion_error(mol2_path, pdb_path):
+    def _report_inconsistent_conversion(mol2_path, pdb_path):
         """
-        Raise ValueError if mol2 and pdb file are not equivalent.
+        Report inconsistent mol2 and pdb conversion.
         """
 
         klifs_metadata_filepath = '/'.join(mol2_path.parts[-4:-1])  # Mimic filepath column in metadata

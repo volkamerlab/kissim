@@ -136,7 +136,7 @@ def test_set_pdb_path_valueerror(mol2_path_input, pdb_path_input):
         'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'
     )
 ])
-def test_raise_conversion_error(mol2_path, pdb_path):
+def test_report_inconsistent_conversion(mol2_path, pdb_path):
     """
     Test if mol2 and pdb file contain same information.
 
@@ -156,7 +156,7 @@ def test_raise_conversion_error(mol2_path, pdb_path):
     converter.mol2_path = mol2_path
     converter.pdb_path = pdb_path
 
-    assert converter._raise_conversion_error() is None
+    assert converter._report_inconsistent_conversion() is None
 
 
 @pytest.mark.parametrize('mol2_path, pdb_path', [
@@ -185,7 +185,7 @@ def test_raise_conversion_error(mol2_path, pdb_path):
         'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_residue_details.pdb'
     )
 ])
-def test_raise_conversion_error_ValueError(mol2_path, pdb_path):
+def test_report_inconsistent_conversion_ValueError(mol2_path, pdb_path):
     """
     Test if mol2 and pdb file contain same information.
 
@@ -206,7 +206,7 @@ def test_raise_conversion_error_ValueError(mol2_path, pdb_path):
     converter.pdb_path = pdb_path
 
     with pytest.raises(ValueError):
-        converter._raise_conversion_error()
+        converter._report_inconsistent_conversion()
 
 
 @pytest.mark.parametrize('mol2_path_input, pdb_path_input, pdb_path_output', [
