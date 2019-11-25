@@ -1,5 +1,5 @@
 """
-mol2_klifs_to_pymol_formatter.py
+mol2_klifs_to_pymol_converter.py
 
 Subpocket-based structural fingerprint for kinase pocket comparison.
 
@@ -13,11 +13,11 @@ import pickle
 import sys
 
 sys.path.append('../..')
-from kinsim_structure.preprocessing import KlifsMetadataLoader, Mol2KlifsToPymolFormatter
+from kinsim_structure.preprocessing import KlifsMetadataLoader, Mol2KlifsToPymolConverter
 
 PATH_SCRIPT = Path(__name__).parent
 PATH_KLIFS_DOWNLOAD = Path('/home/dominique/Documents/data/kinsim/20191115_full/KLIFS_download')
-FILENAME = 'mol2_klifs_to_pymol_formatter'
+FILENAME = 'mol2_klifs_to_pymol_converter'
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -44,12 +44,12 @@ def main():
     # Screen protein.mol2 file for irregular formats
     klifs_metadata = klifs_metadata_loader.data_essential
     logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
-    mol2_klifs_to_pymol_formatter = Mol2KlifsToPymolFormatter()
-    mol2_klifs_to_pymol_formatter.from_metadata(klifs_metadata, PATH_KLIFS_DOWNLOAD)
+    mol2_klifs_to_pymol_converter = Mol2KlifsToPymolConverter()
+    mol2_klifs_to_pymol_converter.from_metadata(klifs_metadata, PATH_KLIFS_DOWNLOAD)
 
     # Save Mol2FormatScreener object to disc
     with open(PATH_KLIFS_DOWNLOAD.parent / f'{FILENAME}.p', 'wb') as f:
-        pickle.dump(mol2_klifs_to_pymol_formatter, f)
+        pickle.dump(mol2_klifs_to_pymol_converter, f)
 
 
 if __name__ == "__main__":

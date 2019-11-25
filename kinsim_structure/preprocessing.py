@@ -951,13 +951,31 @@ class Mol2FormatScreener:
             self.structures_irregular['residues_duplicated_atom_names'].append(residues_irregular)
 
 
-class Mol2KlifsToPymolFormatter:
+class Mol2KlifsToPymolConverter:
+    """
+    Convert KLIFS mol2 files to PyMol readable mol2 files, i.e. replace underscored with negative residue IDs.
+
+    Attributes
+    ----------
+    pymol_mol2_path : list of str
+        List of PyMol readable mol2 files.
+    """
 
     def __init__(self):
 
         self.pymol_mol2_path = []
 
     def from_metadata(self, klifs_metadata, path_klifs_download):
+        """
+        Convert KLIFS mol2 files to PyMol readable mol2 files, i.e. replace underscored with negative residue IDs.
+
+        Parameters
+        ----------
+        klifs_metadata : pandas.DataFrame
+            KLIFS metadata describing the KLIFS dataset.
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+        """
 
         for index, row in klifs_metadata.iterrows():
 
@@ -965,6 +983,14 @@ class Mol2KlifsToPymolFormatter:
             self._rewrite_mol2_file(mol2_path)
 
     def _rewrite_mol2_file(self, mol2_path):
+        """
+        Convert KLIFS mol2 file to PyMol readable mol2 file, i.e. replace underscored with negative residue IDs.
+
+        Parameters
+        ----------
+        mol2_path : pathlib.Path or str
+            Path to KLIFS mol2 file
+        """
 
         mol2_path = Path(mol2_path)
 
