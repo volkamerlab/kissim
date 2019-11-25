@@ -408,6 +408,8 @@ class KlifsMetadataFilter:
             Number of remaining rows (structures).
         """
 
+        logger.info(f'Filtering step: {filtering_step}: {n_filtered} filtered, {n_remained} remained.')
+
         self.filtering_statistics = self.filtering_statistics.append(
             {
                 'filtering_step': filtering_step,
@@ -560,10 +562,10 @@ class KlifsMetadataFilter:
             # Not all paths exist - save list with missing paths
             if not pocket_mol2_path.exists():
                 indices_to_be_dropped.append(index)
-                logger.info(f'Missing pocket.mol2: {pocket_mol2_path}')
+                logger.info(f'Missing pocket mol2 files: {pocket_mol2_path}')
             elif not protein_mol2_path.exists():
                 indices_to_be_dropped.append(index)
-                logger.info(f'Missing protein.mol2: {protein_mol2_path}')
+                logger.info(f'Missing protein mol2 files: {protein_mol2_path}')
             else:
                 pass
 
@@ -574,7 +576,7 @@ class KlifsMetadataFilter:
 
         # Add filtering statistics
         self._add_filtering_statistics(
-            f'Only existing pocket/protein.mol2 files',
+            f'Only existing pocket/protein mol2 files',
             len(indices_to_be_dropped),
             len(klifs_metadata)
         )
@@ -605,7 +607,7 @@ class KlifsMetadataFilter:
             # Not all paths exist - save list with missing paths
             if not pdb_path.exists():
                 indices_to_be_dropped.append(index)
-                logger.info(f'Missing protein.pdb: {pdb_path}')
+                logger.info(f'Missing protein pdb files: {pdb_path}')
             else:
                 pass
 
@@ -616,7 +618,7 @@ class KlifsMetadataFilter:
 
         # Add filtering statistics
         self._add_filtering_statistics(
-            f'Only existing protein.pdb files',
+            f'Only existing protein pdb files',
             len(indices_to_be_dropped),
             len(klifs_metadata)
         )
@@ -661,7 +663,7 @@ class KlifsMetadataFilter:
 
         # Add filtering statistics
         self._add_filtering_statistics(
-            f'Only parsable protein.pdb files',
+            f'Only parsable protein pdb files',
             len(indices_to_be_dropped),
             len(klifs_metadata)
         )
