@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
-    filename=PATH_SCRIPT / f'{FILENAME}.log',
+    filename=PATH_KLIFS_DOWNLOAD.parent / f'{FILENAME}.log',
     filemode='w',
     level=logging.INFO
 )
@@ -45,10 +45,6 @@ def main():
     klifs_metadata = klifs_metadata_loader.data_essential
     mol2_klifs_to_pymol_converter = Mol2KlifsToPymolConverter()
     mol2_klifs_to_pymol_converter.from_metadata(klifs_metadata, PATH_KLIFS_DOWNLOAD)
-
-    # Save Mol2FormatScreener object to disc
-    with open(PATH_KLIFS_DOWNLOAD.parent / f'{FILENAME}.p', 'wb') as f:
-        pickle.dump(mol2_klifs_to_pymol_converter, f)
 
 
 if __name__ == "__main__":

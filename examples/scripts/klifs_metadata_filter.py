@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
-    filename=PATH_SCRIPT / f'{FILENAME}.log',
+    filename=PATH_KLIFS_DOWNLOAD.parent / f'{FILENAME}.log',
     filemode='w',
     level=logging.INFO
 )
