@@ -801,6 +801,17 @@ class KlifsMetadataFilter:
 
 
 class Mol2FormatScreener:
+    """
+    Screen all structures for irregular residues, i.e. underscored residues, non-standard residues, and residues
+    with duplicated atom names.
+
+    Attributes
+    ----------
+    klifs_metadata : pandas.DataFrame
+        KLIFS metadata describing the KLIFS dataset.
+    path_klifs_download : pathlib.Path or str
+        Path to directory of KLIFS dataset files.
+    """
 
     def __init__(self, klifs_metadata, path_klifs_download):
 
@@ -813,14 +824,24 @@ class Mol2FormatScreener:
 
     def _get_structures_with_underscored_residues(self):
         """
+        Screen structures for underscored residues.
 
+        Returns
+        -------
+        pandas.DataFrame
+            Underscored residues in all structures.
         """
+
+        logger.info(f'Screen structures for underscored residues...')
 
         structures_irregular = []
 
         klifs_metadata = self.klifs_metadata.copy()
 
         for index, row in klifs_metadata.iterrows():
+
+            if index % 1000 == 0:
+                print(f'Progress: {index}/{len(klifs_metadata)}')
 
             ml = MoleculeLoader(self.path_klifs_download / row.filepath / 'protein.mol2')
             molecule = ml.molecules[0].df
@@ -841,14 +862,24 @@ class Mol2FormatScreener:
 
     def _get_structures_with_non_standard_residues(self):
         """
+        Screen structures for non-standard residues.
 
+        Returns
+        -------
+        pandas.DataFrame
+            Non-standard residues in all structures.
         """
+
+        logger.info(f'Screen structures for non-standard residues...')
 
         structures_irregular = []
 
         klifs_metadata = self.klifs_metadata.copy()
 
         for index, row in klifs_metadata.iterrows():
+
+            if index % 1000 == 0:
+                print(f'Progress: {index}/{len(klifs_metadata)}')
 
             ml = MoleculeLoader(self.path_klifs_download / row.filepath / 'protein.mol2')
             molecule = ml.molecules[0].df
@@ -869,14 +900,24 @@ class Mol2FormatScreener:
 
     def _get_structures_with_duplicated_residue_atom_names(self):
         """
+        Screen structures for residues with duplicated atom names.
 
+        Returns
+        -------
+        pandas.DataFrame
+            Residues with duplicated atom names in all structures.
         """
+
+        logger.info(f'Screen structures for residues with duplicated atom names...')
 
         structures_irregular = []
 
         klifs_metadata = self.klifs_metadata.copy()
 
         for index, row in klifs_metadata.iterrows():
+
+            if index % 1000 == 0:
+                print(f'Progress: {index}/{len(klifs_metadata)}')
 
             ml = MoleculeLoader(self.path_klifs_download / row.filepath / 'protein.mol2')
             molecule = ml.molecules[0].df
