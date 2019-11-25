@@ -39,9 +39,8 @@ def main():
         PATH_KLIFS_DOWNLOAD / 'overview.csv',
         PATH_KLIFS_DOWNLOAD / 'KLIFS_export.csv'
     )
-    logger.info(f'Number of metadata entries: {len(klifs_metadata_loader.data_essential)}')
 
-    # Convert protein.mol2 to protein.pdb files
+    # Convert mol2 to pdb files
     converter = Mol2ToPdbConverter()
     converter.from_klifs_metadata(klifs_metadata_loader.data_essential, PATH_KLIFS_DOWNLOAD)
 

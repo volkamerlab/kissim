@@ -364,11 +364,9 @@ class KlifsMetadataFilter:
             KLIFS metadata describing the KLIFS dataset.
         path_klifs_download : pathlib.Path or str
             Path to directory of KLIFS dataset files.
-
-        Returns
-        -------
-
         """
+
+        logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
 
         self.unfiltered = klifs_metadata
         self.filtered = klifs_metadata
@@ -390,6 +388,11 @@ class KlifsMetadataFilter:
         self._get_clean_residue_ids(path_klifs_download)  # Takes time
         self._get_existing_important_klifs_regions()  # Takes time
         self._get_unique_kinase_pdbid_pair()
+
+        logger.info(f'Number of unfiltered metadata entries: {len(self.unfiltered)}, '
+                    f'representing {len(self.unfiltered.kinase.unique())} kinases.')
+        logger.info(f'Number of filtered metadata entries: {len(self.filtered)} '
+                    f'representing {len(self.filtered.kinase.unique())} kinases.')
 
     def _add_filtering_statistics(self, filtering_step, n_filtered, n_remained):
         """
@@ -831,6 +834,8 @@ class Mol2FormatScreener:
             Path to directory of KLIFS dataset files.
         """
 
+        logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
+
         klifs_metadata = klifs_metadata.copy()
 
         self.structures_irregular = {
@@ -977,10 +982,17 @@ class Mol2KlifsToPymolConverter:
             Path to directory of KLIFS dataset files.
         """
 
+        logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
+
         for index, row in klifs_metadata.iterrows():
+
+            if index % 100 == 0:
+                print(f'Progress: {index}/{len(klifs_metadata)}')
 
             mol2_path = path_klifs_download / row.filepath / 'protein.mol2'
             self._rewrite_mol2_file(mol2_path)
+
+        logger.info(f'Number of converted files: {len(self.pymol_mol2_path)}')
 
     def _rewrite_mol2_file(self, mol2_path):
         """
@@ -1085,11 +1097,15 @@ class Mol2ToPdbConverter:
             Path to directory of KLIFS dataset files.
         """
 
+        logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
+
         # Launch PyMol once
         self._pymol_launch()
 
         for index, row in klifs_metadata.iterrows():
-            print(index, row.filepath)
+
+            if index % 100 == 0:
+                print(f'Progress: {index}/{len(klifs_metadata)}')
 
             mol2_path = Path(path_klifs_download) / row.filepath / 'protein.mol2'
 

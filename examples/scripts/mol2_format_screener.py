@@ -44,7 +44,6 @@ def main():
     
     # Screen protein.mol2 file for irregular formats
     klifs_metadata = klifs_metadata_loader.data_essential
-    logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
     mol2_format_screener = Mol2FormatScreener()
     mol2_format_screener.from_metadata(klifs_metadata, PATH_KLIFS_DOWNLOAD)
 

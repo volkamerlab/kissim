@@ -45,11 +45,6 @@ def main():
     klifs_metadata_filter = KlifsMetadataFilter()
     klifs_metadata_filter.from_klifs_metadata(klifs_metadata_loader.data_essential, PATH_KLIFS_DOWNLOAD)
 
-    logger.info(f'Number of unfiltered metadata entries: {len(klifs_metadata_filter.unfiltered)}, '
-                f'representing {len(klifs_metadata_filter.unfiltered.kinase.unique())} kinases.')
-    logger.info(f'Number of filtered metadata entries: {len(klifs_metadata_filter.filtered)} '
-                f'representing {len(klifs_metadata_filter.filtered.kinase.unique())} kinases.')
-
     # Save KlifsMetadataFilter object to disc
     with open(PATH_KLIFS_DOWNLOAD / f'{FILENAME}.p', 'wb') as f:
         pickle.dump(klifs_metadata_filter, f)

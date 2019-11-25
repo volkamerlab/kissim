@@ -43,7 +43,6 @@ def main():
 
     # Screen protein.mol2 file for irregular formats
     klifs_metadata = klifs_metadata_loader.data_essential
-    logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
     mol2_klifs_to_pymol_converter = Mol2KlifsToPymolConverter()
     mol2_klifs_to_pymol_converter.from_metadata(klifs_metadata, PATH_KLIFS_DOWNLOAD)
 
