@@ -555,7 +555,7 @@ class KlifsMetadataFilter:
 
             # Depending on whether alternate model and chain ID is given build file path:
             pocket_mol2_path = Path(path_klifs_download) / row.filepath / 'pocket.mol2'
-            protein_mol2_path = Path(path_klifs_download) / row.filepath / 'protein.mol2'
+            protein_mol2_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
 
             # Not all paths exist - save list with missing paths
             if not pocket_mol2_path.exists():
@@ -600,7 +600,7 @@ class KlifsMetadataFilter:
 
         for index, row in klifs_metadata.iterrows():
 
-            pdb_path = Path(path_klifs_download) / row.filepath / 'protein.pdb'
+            pdb_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.pdb'
 
             # Not all paths exist - save list with missing paths
             if not pdb_path.exists():
@@ -642,7 +642,7 @@ class KlifsMetadataFilter:
 
         for index, row in klifs_metadata.iterrows():
 
-            pdb_path = Path(path_klifs_download) / row.filepath / 'protein.pdb'
+            pdb_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.pdb'
 
             try:
                 parser = PDBParser()
@@ -1107,7 +1107,7 @@ class Mol2ToPdbConverter:
             if index % 100 == 0:
                 print(f'Progress: {index}/{len(klifs_metadata)}')
 
-            mol2_path = Path(path_klifs_download) / row.filepath / 'protein.mol2'
+            mol2_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
 
             # Set mol2 path
             mol2_path = self._set_mol2_path(mol2_path)
