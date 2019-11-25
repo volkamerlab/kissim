@@ -1225,16 +1225,20 @@ class Mol2ToPdbConverter:
 
         # Record name of PDB file is always ATOM (although containing non-standard residues)
         if not set(pdb_df.record_name) == {'ATOM'}:
-            logger.info(f'{klifs_metadata_filepath}: PDB file contains non-ATOM entries.')
+            non_atom_entries = pdb_df[pdb_df.record_name != "ATOM"]
+            logger.info(f'{klifs_metadata_filepath}: '
+                        f'PDB file contains {len(non_atom_entries)} non-ATOM entries '
+                        f'of type {set(non_atom_entries.record_name)}, '
+                        f'affecting residue names: {set(non_atom_entries.residue_name)}.')
 
         # x, y, and z mean values are the same
-        if not np.isclose(mol2_df.x.mean(), pdb_df.x_coord.mean(), rtol=1e-05):
+        if not np.isclose(mol2_df.x.mean(), pdb_df.x_coord.mean(), rtol=1e-03):
             logger.info(f'{klifs_metadata_filepath}: Coordinates are not the same (x means differ).')
 
-        if not np.isclose(mol2_df.y.mean(), pdb_df.y_coord.mean(), rtol=1e-05):
+        if not np.isclose(mol2_df.y.mean(), pdb_df.y_coord.mean(), rtol=1e-03):
             logger.info(f'{klifs_metadata_filepath}: Coordinates are not the same (y means differ).')
 
-        if not np.isclose(mol2_df.z.mean(), pdb_df.z_coord.mean(), rtol=1e-05):
+        if not np.isclose(mol2_df.z.mean(), pdb_df.z_coord.mean(), rtol=1e-03):
             logger.info(f'{klifs_metadata_filepath}: Coordinates are not the same (z means differ).')
 
         # Residue ID and name are the same
