@@ -41,21 +41,15 @@ def main():
         PATH_KLIFS_DOWNLOAD / 'overview.csv',
         PATH_KLIFS_DOWNLOAD / 'KLIFS_export.csv'
     )
-    logger.info(f'Number of metadata entries: {len(klifs_metadata_loader.data_essential)}')
-
+    
     # Screen protein.mol2 file for irregular formats
     klifs_metadata = klifs_metadata_loader.data_essential
-    mol2_format_screener = Mol2FormatScreener(klifs_metadata, PATH_KLIFS_DOWNLOAD)
-
-    logger.info(f'Number of structures with underscored residues: '
-                f'{len(mol2_format_screener.residues_underscored.groupby("filepath"))}')
-    logger.info(f'Number of structures with non-standard residues: '
-                f'{len(mol2_format_screener.residues_non_standard.groupby("filepath"))}')
-    logger.info(f'Number of structures with duplicated residue atom names: '
-                f'{len(mol2_format_screener.residues_duplicated_atom_names.groupby("filepath"))}')
+    logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
+    mol2_format_screener = Mol2FormatScreener()
+    mol2_format_screener.from_metadata(klifs_metadata, PATH_KLIFS_DOWNLOAD)
 
     # Save Mol2FormatScreener object to disc
-    with open(PATH_KLIFS_DOWNLOAD / f'{FILENAME}.p', 'wb') as f:
+    with open(PATH_KLIFS_DOWNLOAD.parent / f'{FILENAME}.p', 'wb') as f:
         pickle.dump(mol2_format_screener, f)
 
 
