@@ -1374,7 +1374,7 @@ class SideChainOrientationFeature:
             Residue's CA vector.
         """
 
-        atom_names = [atoms.fullname for atoms in residue.get_atoms()]
+        atom_names = [atom.name for atom in residue.get_atoms()]
 
         # Set CA atom
 
@@ -1410,7 +1410,7 @@ class SideChainOrientationFeature:
 
         selected_atoms = [
             atom for atom in residue.get_atoms() if
-            (atom.fullname not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
+            (atom.name not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
         ]
 
         n_atoms = len(selected_atoms)
@@ -1418,7 +1418,10 @@ class SideChainOrientationFeature:
         # Set side chain centroid
         exception = None
 
-        if residue.id[0] == ' ':  # Standard residues
+        # Standard residues
+        # Normally residue.id[0] == ' '
+        # but with PyMol converted pdb files some non-standard residues are entered as standard amino acids
+        try:
 
             n_atoms_cutoff = N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]
 
@@ -1460,7 +1463,8 @@ class SideChainOrientationFeature:
                     else:
                         exception = f'Standard residue - None, only {n_atoms}/{n_atoms_cutoff} residues'
 
-        else:  # Non-standard residues
+        # Non-standard residues
+        except KeyError:
 
             if n_atoms > 0:
                 side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
