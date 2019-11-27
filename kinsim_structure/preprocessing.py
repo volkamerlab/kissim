@@ -964,13 +964,14 @@ class Mol2KlifsToPymolConverter:
 
     Attributes
     ----------
-    pymol_mol2_path : list of str
+    pymol_path_mol2 : list of str
         List of PyMol readable mol2 files.
     """
 
     def __init__(self):
 
-        self.pymol_mol2_path = []
+        self.pymol_path_mol2 = []
+        self.converted_lines = pd.DataFrame([], columns=['path_mol2', 'line'])
 
     def from_metadata(self, klifs_metadata, path_klifs_download):
         """
@@ -988,29 +989,41 @@ class Mol2KlifsToPymolConverter:
 
         for index, row in klifs_metadata.iterrows():
 
-            if index % 100 == 0:
-                print(f'Progress: {index}/{len(klifs_metadata)}')
+            path_mol2 = Path(path_klifs_download) / row.filepath / 'protein.mol2'
+            path_mol2_pymol = Path(path_mol2).parent / 'protein_pymol.mol2'
 
-            mol2_path = path_klifs_download / row.filepath / 'protein.mol2'
-            self._rewrite_mol2_file(mol2_path)
+            # Load lines from mol2 file
+            with open(path_mol2, 'r') as f:
+                lines = f.readlines()
 
-        logger.info(f'Number of converted files: {len(self.pymol_mol2_path)}')
+            # Convert lines
+            lines_new = self._convert_mol2(lines, row.filepath)
 
-    def _rewrite_mol2_file(self, mol2_path):
+            # Write new lines to new mol2 file
+            with open(path_mol2_pymol, 'w') as f:
+                f.writelines(lines_new)
+
+            # Add new file path to class attribute
+            self.pymol_path_mol2.append(path_mol2_pymol)
+
+        logger.info(f'Number of converted files: {len(self.pymol_path_mol2)}')
+
+    def _convert_mol2(self, lines_mol2, filepath=None):
         """
         Convert KLIFS mol2 file to PyMol readable mol2 file, i.e. replace underscored with negative residue IDs.
 
         Parameters
         ----------
-        mol2_path : pathlib.Path or str
-            Path to KLIFS mol2 file
+        lines_mol2 : list of str
+            Lines from KLIFS mol2 file.
+        filepath : str
+            Molecule file path name (default None).
+
+        Returns
+        -------
+        list of str
+            Converted lines from KLIFS mol2 file.
         """
-
-        mol2_path = Path(mol2_path)
-
-        # Load file
-        with open(mol2_path, 'r') as f:
-            lines = f.readlines()
 
         headers = {
             '@<TRIPOS>MOLECULE': False,
@@ -1022,7 +1035,7 @@ class Mol2KlifsToPymolConverter:
         lines_new = []
         unexpected_targets = []
 
-        for line in lines:
+        for line in lines_mol2:
 
             if line.startswith('@<TRIPOS>MOLECULE'):
                 headers['@<TRIPOS>MOLECULE'] = True
@@ -1049,8 +1062,12 @@ class Mol2KlifsToPymolConverter:
 
                 elif headers['@<TRIPOS>MOLECULE'] and headers['@<TRIPOS>ATOM'] and not headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
 
-                    if '_' in line[56:59]:
+                    if '_' in line.split()[7]:
                         lines_new.append(line.replace('_', '-'))
+                        self.converted_lines = self.converted_lines.append(
+                            pd.DataFrame([[filepath, line]], columns=['path_mol2', 'line'])
+                        )
+
                     else:
                         unexpected_targets.append(line)
 
@@ -1060,10 +1077,15 @@ class Mol2KlifsToPymolConverter:
 
                 else:
 
-                    if '_' in line[7:10]:
+                    if '_' in line.split()[1]:
                         lines_new.append(line.replace('_', '-'))
+                        self.converted_lines = self.converted_lines.append(
+                            pd.DataFrame([[filepath, line]], columns=['path_mol2', 'line'])
+                        )
+
                     elif line.startswith('# MOE 2012.10 (io_trps.svl 2012.10)'):
                         lines_new.append(line)
+
                     else:
                         unexpected_targets.append(line)
             else:
@@ -1072,11 +1094,9 @@ class Mol2KlifsToPymolConverter:
 
             if len(unexpected_targets) > 0:
 
-                raise ValueError(f'Unknown underscores were transformed, please check: {unexpected_targets}')
+                raise ValueError(f'{path_mol2}: Unknown underscores were transformed, please check: {unexpected_targets}')
 
-        # Write new mol2 file
-        pymol_mol2_path = Path(mol2_path).parent / 'protein_pymol.mol2'
-        self.pymol_mol2_path.append(pymol_mol2_path)
+        return lines_new
 
         with open(pymol_mol2_path, 'w') as f:
             f.writelines(lines_new)
