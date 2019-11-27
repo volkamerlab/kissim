@@ -12,19 +12,27 @@ import pandas as pd
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import SideChainOrientationFeature
 
+PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
-@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, res_id_mean, n_pocket_atoms', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 315.95, 659)
+
+@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
+        'A',
+        315.95,
+        659
+    )
 ])
-def test_get_pocket_residues(mol2_filename, pdb_filename, chain_id, res_id_mean, n_pocket_atoms):
+def test_get_pocket_residues(path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms):
     """
     Test the mean of the pocket's PDB residue IDs and the number of pocket atoms.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -34,34 +42,51 @@ def test_get_pocket_residues(mol2_filename, pdb_filename, chain_id, res_id_mean,
         Number of pocket atoms.
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     feature = SideChainOrientationFeature()
     pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
 
     # Get and test the mean of pocket PDB residue IDs and the number of pocket atoms
     res_id_mean_calculated = pocket_residues.res_id.mean()
-    n_pocket_atoms_calculated = sum([len(residue) for residue in pocket_residues.pocket_residues])
+
+    pocket_atoms = []
+    for residue in pocket_residues.pocket_residues:
+        for atom in residue:
+            if not atom.get_name().startswith('H'):  # Count only non-hydrogen atoms
+                pocket_atoms.append(atom.get_name())
+    n_pocket_atoms_calculated = len(pocket_atoms)
 
     assert np.isclose(res_id_mean_calculated, res_id_mean, rtol=1e-03)
     assert n_pocket_atoms_calculated == n_pocket_atoms
 
 
-@pytest.mark.parametrize('pdb_filename, chain_id, residue_id, ca', [
-    ('2yjr.cif', 'A', 1272, [41.08, 39.79, 10.72]),  # Residue has CA
-    ('2yjr.cif', 'A', 1273, None)  # Residue has no CA
+@pytest.mark.parametrize('path_pdb, chain_id, residue_id, ca', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ALK/2yjr_altA_chainA/protein_pymol.pdb',
+        'A',
+        1272,
+        [5.78, 18.76, 31.15]
+    ),  # Residue has CA
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ALK/2yjr_altA_chainA/protein_pymol.pdb',
+        'A',
+        1273,
+        None
+    )  # Residue has no CA
 ])
-def test_get_ca(pdb_filename, chain_id, residue_id, ca):
+def test_get_ca(path_pdb, chain_id, residue_id, ca):
     """
     Test if CA atom is retrieved correctly from a residue (test if-else cases).
 
     Parameters
     ----------
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -71,9 +96,8 @@ def test_get_ca(pdb_filename, chain_id, residue_id, ca):
         3D coordinates of CA atom.
     """
 
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
-
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     chain = pdb_chain_loader.chain
     residue = chain[residue_id]
@@ -89,17 +113,25 @@ def test_get_ca(pdb_filename, chain_id, residue_id, ca):
         assert ca_calculated == ca
 
 
-@pytest.mark.parametrize('pdb_filename, chain_id, residue_id', [
-    ('5i35.cif', 'A', 337),  # ALA
-    ('5i35.cif', 'A', 357),  # Non-standard residue
+@pytest.mark.parametrize('path_pdb, chain_id, residue_id', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        337
+    ),  # ALA
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        357
+    ),  # Non-standard residue
 ])
-def test_get_pcb_from_gly_valueerror(pdb_filename, chain_id, residue_id):
+def test_get_pcb_from_gly_valueerror(path_pdb, chain_id, residue_id):
     """
     Test exceptions in pseudo-CB calculation for GLY.
 
     Parameters
     ----------
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -107,9 +139,8 @@ def test_get_pcb_from_gly_valueerror(pdb_filename, chain_id, residue_id):
         Residue ID.
     """
 
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
-
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     chain = pdb_chain_loader.chain
     try:
@@ -123,16 +154,21 @@ def test_get_pcb_from_gly_valueerror(pdb_filename, chain_id, residue_id):
         feature._get_pcb_from_gly(residue)
 
 
-@pytest.mark.parametrize('pdb_filename, chain_id, residue_id, ca_pcb', [
-    ('5i35.cif', 'A', 272, np.array([52.24, 30.20, 32.25])),  # GLY
+@pytest.mark.parametrize('path_pdb, chain_id, residue_id, ca_pcb', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        272,
+        np.array([12.22, 8.37, 31.38])
+    ),  # GLY
 ])
-def test_get_pcb_from_gly(pdb_filename, chain_id, residue_id, ca_pcb):
+def test_get_pcb_from_gly(path_pdb, chain_id, residue_id, ca_pcb):
     """
     Test pseudo-CB calculation for GLY.
 
     Parameters
     ----------
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -142,9 +178,8 @@ def test_get_pcb_from_gly(pdb_filename, chain_id, residue_id, ca_pcb):
         Pseudo-CB atom coordinates.
     """
 
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
-
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     chain = pdb_chain_loader.chain
     try:
@@ -159,18 +194,33 @@ def test_get_pcb_from_gly(pdb_filename, chain_id, residue_id, ca_pcb):
     assert np.isclose(ca_pcb_calculated.get_array().mean(), ca_pcb.mean(), rtol=1e-04)
 
 
-@pytest.mark.parametrize('pdb_filename, chain_id, residue_id, ca_pcb', [
-    ('5i35.cif', 'A', 272, np.array([52.24, 30.20, 32.25])),  # GLY
-    ('5i35.cif', 'A', 337, np.array([64.06, 27.13, 23.97])),  # Residue is ALA with CB
-    ('4jik.cif', 'A', 19, None),  # Residue is ALA without CB
+@pytest.mark.parametrize('path_pdb, chain_id, residue_id, ca_pcb', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        272,
+        np.array([12.22, 8.37, 31.38])
+    ),  # GLY
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        337,
+        np.array([4.89, 12.19, 43.60])
+    ),  # Residue with +- residue
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/4jik_chainA/protein_pymol.pdb',
+        'A',
+        19,
+        None
+    ),  # Residue without + residue
 ])
-def test_get_pcb_from_residue(pdb_filename, chain_id, residue_id, ca_pcb):
+def test_get_pcb_from_residue(path_pdb, chain_id, residue_id, ca_pcb):
     """
     Test pseudo-CB calculation for a residue.
 
     Parameters
     ----------
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -180,9 +230,8 @@ def test_get_pcb_from_residue(pdb_filename, chain_id, residue_id, ca_pcb):
         Pseudo-CB atom coordinates.
     """
 
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
-
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     chain = pdb_chain_loader.chain
     try:
@@ -201,27 +250,82 @@ def test_get_pcb_from_residue(pdb_filename, chain_id, residue_id, ca_pcb):
         assert np.isclose(ca_pcb_calculated.get_array().mean(), ca_pcb.mean(), rtol=1e-04)
 
 
-@pytest.mark.parametrize('pdb_filename, chain_id, residue_id, side_chain_centroid', [
-    ('5i35.cif', 'A', 272, [52.24, 30.20, 32.25]),  # GLY with pCB
-    ('3ot8.cif', 'A', 18, None),  # GLY without pCB (missing C and CA)
-    ('5i35.cif', 'A', 337, [63.66, 26.90, 23.41]),  # ALA with CB
-    ('3nlb.cif', 'A', 19, [9.77, -10.47, 10.16]),  # ALA with pCB
-    ('4jik.cif', 'A', 19, None),  # ALA without pCB (missing CA)
-    ('5i35.cif', 'A', 336, [65.77, 23.74, 21.13]),  # Standard residue (side chain) with enough atoms
-    ('5l4q.cif', 'A', 130, [-15.11, -1.78, -18.79]),  # Standard residue with too few atoms but CB atom
-    ('4yhf.cif', 'B', 421, [-2.95, -2.36, -14.49]),  # Standard residue with too few atoms, no CB atom, but pCB atom
-    ('4jik.cif', 'A', 51, None),  # Standard residue with too few atoms and no CB and pCB atom
-    ('5i35.cif', 'A', 357, [59.72, 14.73, 22.72]),  # Non-standard residue with enough atoms (>0)
-    #('xxxx.cif', 'X', 0, None),  # Non-standard residue side chain with no atoms
-    ('5l4q.cif', 'A', 57, [-27.53, 0.05, -41.01]),  # Side chain containing H atoms
+@pytest.mark.parametrize('path_pdb, chain_id, residue_id, side_chain_centroid', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        272,
+        np.array([12.22, 8.37, 31.38])
+    ),  # GLY with pCB
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3ot8_altA_chainA/protein_pymol.pdb',
+        'A',
+        18,
+        None
+    ),  # GLY without pCB (missing C and CA)
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        337,
+        np.array([4.73, 12.85, 43.35])
+    ),  # ALA with CB
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3nlb_chainA/protein_pymol.pdb',
+        'A',
+        19,
+        np.array([5.47, 13.78, 32.29])
+    ),  # ALA with pCB
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/4jik_chainA/protein_pymol.pdb',
+        'A',
+        19,
+        None
+    ),  # ALA without pCB (missing CA)
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        336,
+        np.array([4.48, 15.79, 46.66])
+    ),  # Standard residue (side chain) with enough atoms
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/5l4q_altA_chainA/protein_pymol.pdb',
+        'A',
+        130,
+        np.array([-5.11, 20.31, 49.99])
+    ),  # Standard residue with too few atoms but CB atom
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/BTK/4yhf_altA_chainB/protein_pymol.pdb',
+        'B',
+        412,
+        np.array([3.42, 12.33, 35.24])
+    ),  # Standard residue with too few atoms, no CB atom, but pCB atom
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/4jik_chainA/protein_pymol.pdb',
+        'A',
+        51,
+        None
+    ),  # Standard residue with too few atoms and no CB and pCB atom
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
+        'A',
+        357,
+        np.array([12.94, 22.55, 44.96])
+    ),  # Non-standard residue with enough atoms (>0)
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/5l4q_altA_chainA/protein_pymol.pdb',
+        'A',
+        57,
+        np.array([10.44, 12.84, 31.17])
+    ),  # Side chain containing H atoms
+    # ('some.pdb', 'X', 0, None),  # Non-standard residue side chain with no atoms
 ])
-def test_get_side_chain_centroid(pdb_filename, chain_id, residue_id, side_chain_centroid):
+def test_get_side_chain_centroid(path_pdb, chain_id, residue_id, side_chain_centroid):
     """
     Test if side chain centroid is retrieved correctly from a residue (test if-else cases).
 
     Parameters
     ----------
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -231,9 +335,8 @@ def test_get_side_chain_centroid(pdb_filename, chain_id, residue_id, side_chain_
         3D coordinates of CA atom.
     """
 
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
-
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     chain = pdb_chain_loader.chain
     try:
@@ -246,26 +349,31 @@ def test_get_side_chain_centroid(pdb_filename, chain_id, residue_id, side_chain_
     side_chain_centroid_calculated = feature._get_side_chain_centroid(residue, chain)
     print(side_chain_centroid_calculated)
 
-    if side_chain_centroid_calculated and side_chain_centroid:
+    if side_chain_centroid is not None:
         # Check only x coordinate
-        assert np.isclose(list(side_chain_centroid_calculated)[0], side_chain_centroid[0], rtol=1e-03)
+        assert np.isclose(side_chain_centroid_calculated.get_array().mean(), side_chain_centroid.mean(), rtol=1e-03)
         assert isinstance(side_chain_centroid_calculated, Vector)
     else:
         assert side_chain_centroid_calculated == side_chain_centroid
 
 
-@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, pocket_centroid', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', [-16.21, -32.25, -12.14])
+@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, pocket_centroid', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
+        'A',
+        np.array([0.99, 21.06, 36.70])
+    )
 ])
-def test_get_pocket_centroid(mol2_filename, pdb_filename, chain_id, pocket_centroid):
+def test_get_pocket_centroid(path_mol2, path_pdb, chain_id, pocket_centroid):
     """
     Test pocket centroid calculation.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -273,54 +381,55 @@ def test_get_pocket_centroid(mol2_filename, pdb_filename, chain_id, pocket_centr
         Pocket centroid coordinates.
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     feature = SideChainOrientationFeature()
     pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
     pocket_centroid_calculated = feature._get_pocket_centroid(pocket_residues)
 
-    if pocket_centroid_calculated and pocket_centroid:
-        # Check only x coordinate
-        assert np.isclose(list(pocket_centroid_calculated)[0], pocket_centroid[0], rtol=1e-03)
+    if pocket_centroid is not None:
+        assert np.isclose(pocket_centroid_calculated.get_array().mean(), pocket_centroid.mean(), rtol=1e-03)
         assert isinstance(pocket_centroid_calculated, Vector)
     else:
         assert pocket_centroid_calculated == pocket_centroid
 
 
-@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, x_mean', [
+@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, n_vectors', [
     (
-        'ABL1/2g2i_chainA/pocket.mol2',
-        '2g2i.cif',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
         'A',
-        {'ca': -16.2129, 'side_chain_centroid': -16.2073, 'pocket_centroid': -16.2129}
+        82
     )
 ])
-def test_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, x_mean):
+def test_get_pocket_vectors(path_mol2, path_pdb, chain_id, n_vectors):
     """
-    Test if pocket vectors are calculated correctly (check mean x coordinates of all CA atoms, side chain centroids,
-    and pocket centroid in the pocket), and if returned DataFrame contains correct column names.
+    Test if returned DataFrame for pocket vectors contains correct column names and correct number of vectors
+    (= number of pocket residues).
 
     Parameters
     ----------
-    mol2_filename : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
-    x_mean : dict
-        X coordinates of all CA atoms, side chain centroids, and pocket centroid in the pocket.
+    n_vectors : int
+        Number of vectors (= number of pocket residues)
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     feature = SideChainOrientationFeature()
     pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
@@ -329,37 +438,27 @@ def test_get_pocket_vectors(mol2_filename, pdb_filename, chain_id, x_mean):
     # Test if DataFrame contains correct columns
     pocket_vectors_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid']
     assert list(pocket_vectors.columns) == pocket_vectors_columns
-
-    # Calculate x coordinate mean values for all three vector lists
-    x_mean_calculated = {
-        'ca': pocket_vectors.ca.dropna().apply(lambda x: x.get_array()[0]).mean(),
-        'side_chain_centroid': pocket_vectors.side_chain_centroid.dropna().apply(lambda x: x.get_array()[0]).mean(),
-        'pocket_centroid': pocket_vectors.pocket_centroid.dropna().apply(lambda x: x.get_array()[0]).mean()
-    }
-
-    # Test mean x coordinate of CA atoms
-    assert np.isclose(x_mean_calculated['ca'], x_mean['ca'], rtol=1e-03)
-
-    # Test mean x coordinate of side chain centroid
-    assert np.isclose(x_mean_calculated['side_chain_centroid'], x_mean['side_chain_centroid'], rtol=1e-06)
-
-    # Test mean x coordinate of pocket centroid
-    assert np.isclose(x_mean_calculated['pocket_centroid'], x_mean['pocket_centroid'], rtol=1e-03)
+    assert len(pocket_vectors) == n_vectors
 
 
-@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id, angles_mean', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A', 95.07)
+@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, angles_mean', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2', 
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb', 
+        'A', 
+        95.07
+    )
 ])
-def test_get_vertex_angles(mol2_filename, pdb_filename, chain_id, angles_mean):
+def test_get_vertex_angles(path_mol2, path_pdb, chain_id, angles_mean):
     """
     Test if vertex angles are calculated correctly (check mean angle), and if returned DataFrame contains correct column
     name.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
@@ -367,11 +466,12 @@ def test_get_vertex_angles(mol2_filename, pdb_filename, chain_id, angles_mean):
         Mean of non-None angles.
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     feature = SideChainOrientationFeature()
     pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
@@ -461,29 +561,34 @@ def test_get_category_from_vertex_angle(vertex_angle, category):
         assert np.isnan(category_calculated)
 
 
-@pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
+@pytest.mark.parametrize('path_mol2, path_pdb, chain_id', [
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2', 
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb', 
+        'A'
+    )
 ])
-def test_from_molecule(mol2_filename, pdb_filename, chain_id):
+def test_from_molecule(path_mol2, path_pdb, chain_id):
     """
     Test if SideChainOrientation attributes features and features_verbose contain the correct column names.
     Values are tested already in other test_sidechainorientation_* unit tests.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    pdb_filename : str
+    path_pdb : pathlib.Path
         Path to cif file.
     chain_id : str
         Chain ID.
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     feature = SideChainOrientationFeature()
     feature.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)

@@ -8,9 +8,11 @@ import pytest
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import PhysicoChemicalFeatures
 
+PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
+
 
 @pytest.mark.parametrize('mol2_filename, pdb_filename, chain_id', [
-    ('ABL1/2g2i_chainA/pocket.mol2', '2g2i.cif', 'A')
+    ('HUMAN/ABL1/2g2i_chainA/pocket.mol2', 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb', 'A')
 ])
 def test_from_molecule(mol2_filename, pdb_filename, chain_id):
     """
@@ -26,11 +28,15 @@ def test_from_molecule(mol2_filename, pdb_filename, chain_id):
     chain_id : str
         Chain ID.
     """
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-    pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
+    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / mol2_filename
+    path_pdb = PATH_TEST_DATA / 'KLIFS_download' / pdb_filename
+
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+    pdb_chain_loader = PdbChainLoader()
+    pdb_chain_loader.from_file(path_pdb, chain_id)
 
     physicochemicalfeatures = PhysicoChemicalFeatures()
     physicochemicalfeatures.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)

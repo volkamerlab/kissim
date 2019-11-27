@@ -520,7 +520,7 @@ class FeatureDistancesGenerator:
 
         Parameters
         ----------
-        fingerprints : dict of (kinsim_structure.encoding.Fingerprint or None)
+        fingerprints : dict of kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
 
         Returns
