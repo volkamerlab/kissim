@@ -8,6 +8,8 @@ import pytest
 from kinsim_structure.auxiliary import KlifsMoleculeLoader
 from kinsim_structure.encoding import PharmacophoreSizeFeatures
 
+PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
+
 
 @pytest.mark.parametrize('residue_name, feature_name, feature', [
     ('ALA', 'size', 1),  # Size
@@ -62,27 +64,30 @@ def test_from_residue(residue_name, feature_name, feature):
     assert feature_calculated == feature
 
 
-@pytest.mark.parametrize('filename, molecule_code, shape', [
-    ('AAK1/4wsq_altA_chainB/pocket.mol2', 'HUMAN/AAK1_4wsq_altA_chainB', (85, 6)),
-    ('ABL1/2g2i_chainA/pocket.mol2', 'HUMAN/ABL1_2g2i_chainA', (82, 6))  # Contains not full KLIFS positions
+@pytest.mark.parametrize('mol2_filename, molecule_code, shape', [
+    ('HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2', 'HUMAN/AAK1_4wsq_altA_chainB', (85, 6)),
+    ('HUMAN/ABL1/2g2i_chainA/pocket.mol2', 'HUMAN/ABL1_2g2i_chainA', (82, 6))  # Contains not full KLIFS positions
 
 ])
-def test_pharmacophoresizefeatures_from_residue(filename, molecule_code, shape):
+def test_pharmacophoresizefeatures_from_residue(mol2_filename, molecule_code, shape):
     """
     Test PharmacohpreSizeFeatures class attributes.
 
     Parameters
     ----------
-    filename : str
+    mol2_filename : str
         Path to file originating from test data folder.
     molecule_code : str
         Molecule code as defined by KLIFS in mol2 file.
     """
 
     # Load molecule
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / filename
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
+    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / mol2_filename
 
-    klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
+    klifs_molecule_loader = KlifsMoleculeLoader()
+    klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+
     molecule = klifs_molecule_loader.molecule
 
     # Get pharmacophore and size features

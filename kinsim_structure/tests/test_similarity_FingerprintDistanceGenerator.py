@@ -10,18 +10,21 @@ import pytest
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kinsim_structure.encoding import Fingerprint, FingerprintGenerator
-from kinsim_structure.similarity import FeatureDistances, FingerprintDistance, FeatureDistancesGenerator, FingerprintDistanceGenerator
+from kinsim_structure.similarity import FeatureDistances, FingerprintDistance, \
+    FeatureDistancesGenerator, FingerprintDistanceGenerator
+
+PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
 
-def generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids):
+def generate_fingerprints_from_files(paths_mol2, paths_pdb, chain_ids):
     """
     Helper function: Generate multiple fingerprints from files.
 
     Parameters
     ----------
-    mol2_filenames : list of str
+    paths_mol2 : list of str
         Paths to multiple mol2 files.
-    pdb_filenames : list of str
+    paths_pdb : list of str
         Paths to multiple cif files.
     chain_ids : list of str
         Multiple chain IDs.
@@ -34,12 +37,14 @@ def generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids):
 
     fingerprints = []
 
-    for mol2_filename, pdb_filename, chain_id in zip(mol2_filenames, pdb_filenames, chain_ids):
-        mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_filename
-        pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_filename
+    for path_mol2, path_pdb, chain_id in zip(paths_mol2, paths_pdb, chain_ids):
 
-        klifs_molecule_loader = KlifsMoleculeLoader(mol2_path=mol2_path)
-        pdb_chain_loader = PdbChainLoader(pdb_path=pdb_path, chain_id=chain_id)
+        path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
+
+        klifs_molecule_loader = KlifsMoleculeLoader()
+        klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
+        pdb_chain_loader = PdbChainLoader()
+        pdb_chain_loader.from_file(path_pdb, chain_id)
 
         fingerprint = Fingerprint()
         fingerprint.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
@@ -49,36 +54,45 @@ def generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids):
     return fingerprints
 
 
-@pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids', [
+@pytest.mark.parametrize('path_mol2s, path_pdbs, chain_ids', [
     (
-        ['ABL1/2g2i_chainA/pocket.mol2', 'AAK1/4wsq_altA_chainB/pocket.mol2'],
-        ['2g2i.cif', '4wsq.cif'],
-        ['A', 'B']
+        [
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
+        ],
+        [
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
+        ],
+        [
+            'A',
+            'B'
+        ]
     )
 
 ])
-def test_get_fingerprint_distance(mol2_filenames, pdb_filenames, chain_ids):
+def test_get_fingerprint_distance(path_mol2s, path_pdbs, chain_ids):
     """
     Test if return type is FingerprintDistance class instance.
 
     Parameters
     ----------
-    mol2_filenames : list of str
+    path_mol2s : list of str
         Paths to two mol2 files.
-    pdb_filenames : list of str
+    path_pdbs : list of str
         Paths to two cif files.
     chain_ids : list of str
         Two chain IDs.
     """
 
     # Fingerprints
-    fingerprints = generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids)
+    fingerprints = generate_fingerprints_from_files(path_mol2s, path_pdbs, chain_ids)
 
     # FeatureDistances
     feature_distances = FeatureDistances()
     feature_distances.from_fingerprints(fingerprints[0], fingerprints[1])
 
-    # Test
+    # FingerprintDistanceGenerator
     fingerprint_distance_generator = FingerprintDistanceGenerator()
     fingerprint_distance_calculated = fingerprint_distance_generator._get_fingerprint_distance(
         feature_distances
@@ -87,30 +101,42 @@ def test_get_fingerprint_distance(mol2_filenames, pdb_filenames, chain_ids):
     assert isinstance(fingerprint_distance_calculated, FingerprintDistance)
 
 
-@pytest.mark.parametrize('mol2_filenames, pdb_filenames, chain_ids', [
+@pytest.mark.parametrize('path_mol2s, path_pdbs, chain_ids', [
     (
-        ['ABL1/2g2i_chainA/pocket.mol2', 'AAK1/4wsq_altA_chainB/pocket.mol2', 'AAK1/4wsq_altA_chainB/pocket.mol2'],
-        ['2g2i.cif', '4wsq.cif', '4wsq.cif'],
-        ['A', 'B', 'B']
+        [
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
+        ],
+        [
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
+        ],
+        [
+            'A',
+            'B',
+            'B'
+        ]
     )
 
 ])
-def test_get_fingerprint_distance_from_list(mol2_filenames, pdb_filenames, chain_ids):
+def test_get_fingerprint_distance_from_list(path_mol2s, path_pdbs, chain_ids):
     """
     Test if return type is instance of list of FeatureDistance class instances.
 
     Parameters
     ----------
-    mol2_filenames : list of str
+    path_mol2s : list of str
         Paths to multiple mol2 files.
-    pdb_filenames : list of str
+    path_pdbs : list of str
         Paths to multiple cif files.
     chain_ids : list of str
         Multiple chain IDs.
     """
 
     # Fingerprints
-    fingerprints = generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids)
+    fingerprints = generate_fingerprints_from_files(path_mol2s, path_pdbs, chain_ids)
 
     # FingerprintGenerator
     fingerprint_generator = FingerprintGenerator()
@@ -121,7 +147,7 @@ def test_get_fingerprint_distance_from_list(mol2_filenames, pdb_filenames, chain
     feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
     feature_distances_list = list(feature_distances_generator.data.values())
 
-    # Test
+    # FingerprintDistanceGenerator
     fingerprint_distance_generator = FingerprintDistanceGenerator()
     fingerprint_distance_list = fingerprint_distance_generator._get_fingerprint_distance_from_list(
         fingerprint_distance_generator._get_fingerprint_distance, feature_distances_list
@@ -134,17 +160,17 @@ def test_get_fingerprint_distance_from_list(mol2_filenames, pdb_filenames, chain
 
 
 @pytest.mark.parametrize(
-    'mol2_filenames, pdb_filenames, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names', [
+    'path_mol2s, path_pdbs, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names', [
         (
             [
-                'ABL1/2g2i_chainA/pocket.mol2',
-                'AAK1/4wsq_altA_chainB/pocket.mol2',
-                'AAK1/4wsq_altA_chainB/pocket.mol2'
+                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
             ],
             [
-                '2g2i.cif',
-                '4wsq.cif',
-                '4wsq.cif'
+                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
+                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
+                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
             ],
             [
                 'A',
@@ -159,16 +185,16 @@ def test_get_fingerprint_distance_from_list(mol2_filenames, pdb_filenames, chain
     ]
 )
 def test_from_feature_distances_generator(
-        mol2_filenames, pdb_filenames, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names
+        path_mol2s, path_pdbs, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names
 ):
     """
     Test FingerprintDistanceGenerator class attributes.
 
     Parameters
     ----------
-    mol2_filenames : list of str
+    path_mol2s : list of str
         Paths to multiple mol2 files.
-    pdb_filenames : list of str
+    path_pdbs : list of str
         Paths to multiple cif files.
     chain_ids : list of str
         Multiple chain IDs.
@@ -192,7 +218,7 @@ def test_from_feature_distances_generator(
     """
 
     # Fingerprints
-    fingerprints = generate_fingerprints_from_files(mol2_filenames, pdb_filenames, chain_ids)
+    fingerprints = generate_fingerprints_from_files(path_mol2s, path_pdbs, chain_ids)
 
     # FingerprintGenerator
     fingerprint_generator = FingerprintGenerator()

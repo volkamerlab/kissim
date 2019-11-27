@@ -8,6 +8,8 @@ import pytest
 
 from kinsim_structure.preprocessing import KlifsMetadataLoader
 
+PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
+
 
 @pytest.mark.parametrize('kinase_names_string, kinase_names_list', [
     ('a', ['a']),
@@ -19,6 +21,17 @@ from kinsim_structure.preprocessing import KlifsMetadataLoader
 
 ])
 def test_format_kinase_name(kinase_names_string, kinase_names_list):
+    """
+    Test formatting of kinase name(s): One or multiple kinase names (additional names in brackets) are formated to list
+    of kinase names.
+
+    Parameters
+    ----------
+    kinase_names_string : str
+        String, here kinase name(s).
+    kinase_names_list : list of str
+        List of strings, here list of kinase name(s).
+    """
 
     klifs_metadata_loader = KlifsMetadataLoader()
     kinase_names_list_calculated = klifs_metadata_loader._format_kinase_name(kinase_names_string)
@@ -27,11 +40,22 @@ def test_format_kinase_name(kinase_names_string, kinase_names_list):
 
 
 @pytest.mark.parametrize('klifs_export_file, n_rows', [
-    ('KLIFS_export.csv', 10469)
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'KLIFS_export.csv',
+        10469
+    )
 ])
 def test_from_klifs_export_file(klifs_export_file, n_rows):
+    """
+    Test DataFrame for KLIFS_export.csv file from KLIFS database download.
 
-    klifs_export_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_export_file
+    Parameters
+    ----------
+    klifs_export_file : pathlib.Path or str
+        Path to KLIFS_export.csv file from KLIFS database download.
+    n_rows : int
+        Number of rows in DataFrame for KLIFS_export.csv file from KLIFS database download.
+    """
 
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_export = klifs_metadata_loader._from_klifs_export_file(klifs_export_file)
@@ -58,11 +82,22 @@ def test_from_klifs_export_file(klifs_export_file, n_rows):
 
 
 @pytest.mark.parametrize('klifs_overview_file, n_rows', [
-    ('KLIFS_overview.csv', 10469)
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'overview.csv',
+        10469
+    )
 ])
 def test_from_klifs_overview_file(klifs_overview_file, n_rows):
+    """
+    Test DataFrame for overview.csv file from KLIFS database download.
 
-    klifs_overview_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_overview_file
+    Parameters
+    ----------
+    klifs_overview_file : pathlib.Path or str
+        Path to overview.csv file from KLIFS database download.
+    n_rows : int
+        Number of rows in DataFrame for overview.csv file from KLIFS database download.
+    """
 
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_overview = klifs_metadata_loader._from_klifs_overview_file(klifs_overview_file)
@@ -102,12 +137,22 @@ def test_from_klifs_overview_file(klifs_overview_file, n_rows):
 
 
 @pytest.mark.parametrize('klifs_overview_file, klifs_export_file', [
-    ('KLIFS_overview.csv', 'KLIFS_export.csv')
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'overview.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'KLIFS_export.csv'
+    )
 ])
 def test_from_files(klifs_overview_file, klifs_export_file):
+    """
+    Test shape of KLIFS metadata as DataFrame.
 
-    klifs_overview_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_overview_file
-    klifs_export_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_export_file
+    Parameters
+    ----------
+    klifs_overview_file : pathlib.Path or str
+        Path to overview.csv file from KLIFS database download.
+    klifs_export_file : pathlib.Path or str
+        Path to KLIFS_export.csv file from KLIFS database download.
+    """
 
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)
@@ -116,12 +161,22 @@ def test_from_files(klifs_overview_file, klifs_export_file):
 
 
 @pytest.mark.parametrize('klifs_overview_file, klifs_export_file', [
-    ('KLIFS_overview.csv', 'KLIFS_export.csv')
+    (
+        PATH_TEST_DATA / 'KLIFS_download' / 'overview.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'KLIFS_export.csv'
+    )
 ])
 def test_data_essential(klifs_overview_file, klifs_export_file):
+    """
+    Test class attribute, i.e. column-reduced version of full DataFrame.
 
-    klifs_overview_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_overview_file
-    klifs_export_file = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / klifs_export_file
+    Parameters
+    ----------
+    klifs_overview_file : pathlib.Path or str
+        Path to overview.csv file from KLIFS database download.
+    klifs_export_file : pathlib.Path or str
+        Path to KLIFS_export.csv file from KLIFS database download.
+    """
 
     klifs_metadata_loader = KlifsMetadataLoader()
     klifs_metadata_loader.from_files(klifs_overview_file, klifs_export_file)

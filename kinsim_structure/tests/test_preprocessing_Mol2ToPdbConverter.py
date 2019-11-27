@@ -9,281 +9,369 @@ import pytest
 
 from kinsim_structure.preprocessing import Mol2ToPdbConverter
 
+PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
-@pytest.mark.parametrize('mol2_path', [
-    'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
+
+@pytest.mark.parametrize('path_mol2', [
+    'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
 ])
-def test_set_mol2_path(mol2_path):
+def test_set_path_mol2(path_mol2):
+    """
+    Test if mol2 path is set correctly.
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
+    Parameters
+    ----------
+    path_mol2 : str
+        Path to mol2 file.
+    """
+
+    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
 
     converter = Mol2ToPdbConverter()
 
-    assert mol2_path == converter._set_mol2_path(mol2_path)
+    assert path_mol2 == converter._set_path_mol2(path_mol2)
 
 
-@pytest.mark.parametrize('mol2_path', [
+@pytest.mark.parametrize('path_mol2', [
     'xxx.mol2'
 ])
-def test_set_mol2_path_filenotfounderror(mol2_path):
+def test_set_path_mol2_filenotfounderror(path_mol2):
+    """
+    Test if mol2 path is set correctly (in this case raises error because file does not exist).
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
+    Parameters
+    ----------
+    path_mol2 : str
+        Path to mol2 file.
+    """
+
+    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
 
     with pytest.raises(FileNotFoundError):
         converter = Mol2ToPdbConverter()
-        converter._set_mol2_path(mol2_path)
+        converter._set_path_mol2(path_mol2)
 
 
-@pytest.mark.parametrize('mol2_path', [
-    'PDB_download/2g2i.cif'  # Existing file but no mol2
+@pytest.mark.parametrize('path_mol2', [
+    'HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'  # Existing file but no mol2
 ])
-def test_set_mol2_path_valueerror(mol2_path):
+def test_set_path_mol2_valueerror(path_mol2):
+    """
+    Test if mol2 path is set correctly (in this case raises error because file is no mol2 file).
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
+    Parameters
+    ----------
+    path_mol2 : str
+        Path to mol2 file.
+    """
+
+    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
 
     with pytest.raises(ValueError):
         converter = Mol2ToPdbConverter()
-        converter._set_mol2_path(mol2_path)
+        converter._set_path_mol2(path_mol2)
 
 
-@pytest.mark.parametrize('mol2_path_input, pdb_path_input, pdb_path_output', [
+@pytest.mark.parametrize('path_mol2_input, path_pdb_input, path_pdb_output', [
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        None,
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        None,  # Do not define pdb path - will be set automatically
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
     ),
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb'
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb',  # Define some pdb path
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb'
     )
 ])
-def test_set_pdb_path(mol2_path_input, pdb_path_input, pdb_path_output):
+def test_set_path_pdb(path_mol2_input, path_pdb_input, path_pdb_output):
+    """
+    Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input.
 
-    mol2_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path_input
-    pdb_path_output = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path_output
+    Parameters
+    ----------
+    path_mol2_input : str
+        Path to mol2 file.
+    path_pdb_input : str or None
+        Path to pdb file (None: Automatically set pdb path in same folder as mol2 file)
+    path_pdb_output : pathlib.Path
+        Path to pdb file which is returned from function.
+    """
 
-    if pdb_path_input is not None:
-        pdb_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path_input
+    path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
+    path_pdb_output = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_output
+
+    if path_pdb_input is not None:
+        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     converter = Mol2ToPdbConverter()
-    converter.mol2_path = mol2_path_input
+    converter.path_mol2 = path_mol2_input
 
-    pdb_path_output_calculated = converter._set_pdb_path(pdb_path_input)
+    path_pdb_output_calculated = converter._set_path_pdb(path_mol2_input, path_pdb_input)
 
-    assert pdb_path_output_calculated == pdb_path_output
+    assert path_pdb_output_calculated == path_pdb_output
 
 
-@pytest.mark.parametrize('mol2_path_input, pdb_path_input', [
+@pytest.mark.parametrize('path_mol2_input, path_pdb_input', [
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
         'xxx/pocket.pdb'
     )
 ])
-def test_set_pdb_path_filenotfounderror(mol2_path_input, pdb_path_input):
+def test_set_path_pdb_filenotfounderror(path_mol2_input, path_pdb_input):
+    """
+    Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input (in this case raises error
+    because input pdb path, i.e. directory, does not exist).
 
-    if mol2_path_input is not None:
-        mol2_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path_input
+    Parameters
+    ----------
+    path_mol2_input : str
+        Path to mol2 file.
+    path_pdb_input : str or None
+        Path to pdb file (None: Automatically set pdb path in same folder as mol2 file)
+    """
 
-    if pdb_path_input is not None:
-        pdb_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path_input
+    if path_mol2_input is not None:
+        path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
+
+    if path_pdb_input is not None:
+        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     with pytest.raises(FileNotFoundError):
 
         converter = Mol2ToPdbConverter()
-        converter.mol2_path = mol2_path_input
+        converter.path_mol2 = path_mol2_input
 
-        converter._set_pdb_path(pdb_path_input)
+        converter._set_path_pdb(path_mol2_input, path_pdb_input)
 
 
-@pytest.mark.parametrize('mol2_path_input, pdb_path_input', [
+@pytest.mark.parametrize('path_mol2_input, path_pdb_input', [
     (
         None,
         'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
     ),
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
     ),
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket'
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket'
     ),
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket/'
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket/'
     )
 ])
-def test_set_pdb_path_valueerror(mol2_path_input, pdb_path_input):
+def test_set_path_pdb_valueerror(path_mol2_input, path_pdb_input):
+    """
+    Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input (in this case raises error
+    because input file path incorrect/incomplete).
 
-    if mol2_path_input is not None:
-        mol2_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path_input
+    Parameters
+    ----------
+    path_mol2_input : str
+        Path to mol2 file.
+    path_pdb_input : str or None
+        Path to pdb file (None: Automatically set pdb path in same folder as mol2 file)
+    """
 
-    if pdb_path_input is not None:
-        pdb_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path_input
+    if path_mol2_input is not None:
+        path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
+
+    if path_pdb_input is not None:
+        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     with pytest.raises(ValueError):
 
         converter = Mol2ToPdbConverter()
-        converter.mol2_path = mol2_path_input
+        converter.path_mol2 = path_mol2_input
 
-        converter._set_pdb_path(pdb_path_input)
+        converter._set_path_pdb(path_mol2_input, path_pdb_input)
 
 
-@pytest.mark.parametrize('mol2_path, pdb_path', [
+@pytest.mark.parametrize('path_mol2, path_pdb', [
     (
         'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
         'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'
     )
 ])
-def test_report_inconsistent_conversion(mol2_path, pdb_path):
+def test_report_inconsistent_conversion(path_mol2, path_pdb):
     """
     Test if mol2 and pdb file contain same information.
 
     Parameters
     ----------
-    mol2_path : pathlib.Path or str
+    path_mol2 : pathlib.Path or str
         Path to mol2 file.
-    pdb_path : None or pathlib.Path or str
+    path_pdb : None or pathlib.Path or str
         Path to pdb file (= converted mol2 file). Directory must exist.
         Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path
+    path_mol2 = PATH_TEST_DATA / path_mol2
+    path_pdb = PATH_TEST_DATA / path_pdb
 
     converter = Mol2ToPdbConverter()
-    converter.mol2_path = mol2_path
-    converter.pdb_path = pdb_path
 
-    assert converter._report_inconsistent_conversion() is None
+    assert converter._report_inconsistent_conversion(path_mol2, path_pdb) is None
 
 
-@pytest.mark.parametrize('mol2_path, pdb_path', [
+@pytest.mark.parametrize('path_mol2, path_pdb, inconsistency', [
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_n_atoms.pdb'
+        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        'HUMAN/ADCK3/5i35_chainA/protein_irregular_n_atoms.pdb',
+        pd.DataFrame(
+            [
+                ['HUMAN/ADCK3/5i35_chainA', 'Unequal number of atoms', {'mol2': 6194, 'pdb': 6193}]
+            ],
+            columns=['filepath', 'inconsistency', 'details']
+        )
     ),
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_x_mean.pdb'
+        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        'HUMAN/ADCK3/5i35_chainA/protein_irregular_x_mean.pdb',
+        pd.DataFrame(
+            [
+                ['HUMAN/ADCK3/5i35_chainA', 'Unequal x coordinate mean', -0.14]
+            ],
+            columns=['filepath', 'inconsistency', 'details']
+        )
     ),
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_y_mean.pdb'
+        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        'HUMAN/ADCK3/5i35_chainA/protein_irregular_y_mean.pdb',
+        pd.DataFrame(
+            [
+                ['HUMAN/ADCK3/5i35_chainA', 'Unequal y coordinate mean', -0.15]
+            ],
+            columns=['filepath', 'inconsistency', 'details']
+        )
     ),
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_z_mean.pdb'
+        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        'HUMAN/ADCK3/5i35_chainA/protein_irregular_z_mean.pdb',
+        pd.DataFrame(
+            [
+                ['HUMAN/ADCK3/5i35_chainA', 'Unequal z coordinate mean', -0.14]
+            ],
+            columns=['filepath', 'inconsistency', 'details']
+        )
     ),
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_record_name.pdb'
+        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        'HUMAN/ADCK3/5i35_chainA/protein_irregular_record_name.pdb',
+        pd.DataFrame(
+            [
+                ['HUMAN/ADCK3/5i35_chainA', 'Non-ATOM entries', {'record_name': {'HETATM'}, 'residue_name': {'GLU'}}]
+            ],
+            columns=['filepath', 'inconsistency', 'details']
+        )
     ),
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_incorrect_residue_details.pdb'
+        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        'HUMAN/ADCK3/5i35_chainA/protein_irregular_residue_details.pdb',
+        pd.DataFrame(
+            [
+                ['HUMAN/ADCK3/5i35_chainA', 'Unequal residue ID/name', {'mol2': {'GLU261'}, 'pdb': {'GLU999'}}]
+            ],
+            columns=['filepath', 'inconsistency', 'details']
+        )
     )
 ])
-def test_report_inconsistent_conversion_ValueError(mol2_path, pdb_path):
+def test_report_inconsistent_conversion_valueerror(path_mol2, path_pdb, inconsistency):
     """
     Test if mol2 and pdb file contain same information.
 
     Parameters
     ----------
-    mol2_path : pathlib.Path or str
+    path_mol2 : pathlib.Path or str
         Path to mol2 file.
-    pdb_path : None or pathlib.Path or str
+    path_pdb : None or pathlib.Path or str
         Path to pdb file (= converted mol2 file). Directory must exist.
         Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
     """
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path
+    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
+    path_pdb = PATH_TEST_DATA / 'KLIFS_download' / path_pdb
 
     converter = Mol2ToPdbConverter()
-    converter.mol2_path = mol2_path
-    converter.pdb_path = pdb_path
+    converter._report_inconsistent_conversion(path_mol2, path_pdb)
 
-    with pytest.raises(ValueError):
-        converter._report_inconsistent_conversion()
+    assert converter.inconsistent_conversions.equals(inconsistency)
 
 
-@pytest.mark.parametrize('mol2_path_input, pdb_path_input, pdb_path_output', [
+@pytest.mark.parametrize('path_mol2_input, path_pdb_input, path_pdb_output', [
     (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb',
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
-    ),
-    (
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
         None,
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
+        'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
     )
 ])
-def test_from_file(mol2_path_input, pdb_path_input, pdb_path_output):
+def test_from_file(path_mol2_input, path_pdb_input, path_pdb_output):
     """
     Test if pdb file is created.
 
     Parameters
     ----------
-    mol2_path_input : str
+    path_mol2_input : str
         Path to input mol2 file.
-    pdb_path_input : str
+    path_pdb_input : str
         Path to input pdb file.
-    pdb_path_output : str
+    path_pdb_output : str
         Path to output pdb file.
     """
 
-    mol2_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path_input
-    pdb_path_output = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path_output
+    path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
+    path_pdb_output = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_output
 
-    if pdb_path_input is not None:
-        pdb_path_input = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path_input
+    if path_pdb_input is not None:
+        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     converter = Mol2ToPdbConverter()
-    converter.from_file(mol2_path_input, pdb_path_input)
-
-    # Test class attributes
-    assert converter.mol2_path == mol2_path_input
-    assert converter.pdb_path == pdb_path_output
+    converter.from_file(path_mol2_input, path_pdb_input)
 
     # Test if pdb file exists
-    assert pdb_path_output.exists()
+    assert path_pdb_output.exists()
 
     # Remove pdb file
-    pdb_path_output.unlink()
+    path_pdb_output.unlink()
 
     # Test if pdb file does not exist
-    assert not pdb_path_output.exists()
+    assert not path_pdb_output.exists()
 
 
-@pytest.mark.parametrize('klifs_metadata_entry, path_to_klifs_download, mol2_path, pdb_path', [
+@pytest.mark.parametrize('klifs_metadata, path_klifs_download, path_pdb', [
     (
-            pd.Series(['HUMAN/ADCK3/5i35_chainA'], index=['filepath']),
-            '.',
-            'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-            'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.pdb'
+            pd.DataFrame(['HUMAN/ADCK3/5i35_chainA'], columns=['filepath']),
+            PATH_TEST_DATA / 'KLIFS_download',
+            'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb'
     )
 ])
-def test_from_klifs_metadata_entry(klifs_metadata_entry, path_to_klifs_download, mol2_path, pdb_path):
+def ttest_from_klifs_metadata(klifs_metadata, path_klifs_download, path_pdb):  # TODO PyMol cannot be launched mulitple times...
+    """
+    Test if mol2 to pdb conversion works if KLIFS metadata is given.
 
-    mol2_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / mol2_path
-    pdb_path = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / pdb_path
-    path_to_klifs_download = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data' / path_to_klifs_download
+    Parameters
+    ----------
+    klifs_metadata : pandas.DataFrame
+        KLIFS metadata describing the KLIFS dataset.
+    path_klifs_download : pathlib.Path or str
+        Path to directory of KLIFS dataset files.
+    path_pdb : str
+        Pdb path to converted pdb file.
+    """
+
+    path_pdb = PATH_TEST_DATA / 'KLIFS_download' / path_pdb
 
     converter = Mol2ToPdbConverter()
-    converter.from_klifs_metadata_entry(klifs_metadata_entry, path_to_klifs_download)
-
-    # Test class attributes
-    assert converter.mol2_path == mol2_path
-    assert converter.pdb_path == pdb_path
+    converter.from_klifs_metadata(klifs_metadata, path_klifs_download)
 
     # Test if pdb file exists
-    assert pdb_path.exists()
+    assert path_pdb.exists()
 
     # Remove pdb file
-    pdb_path.unlink()
+    path_pdb.unlink()
 
     # Test if pdb file does not exist
-    assert not pdb_path.exists()
+    assert not path_pdb.exists()
