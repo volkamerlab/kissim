@@ -271,18 +271,11 @@ class KlifsMoleculeLoader:
             KLIFS metadata file path.
         """
 
-        # Cast path to pathlib.Path and check if it exists
-        path_pocket_mol2 = Path(path_pocket_mol2)
-        if not path_pocket_mol2.exists():
-            raise FileNotFoundError(f'File does not exist: {path_pocket_mol2}')
-
         # Get molecule's KLIFS metadata entry from mol2 file
         klifs_metadata_entry = self._metadata_entry_from_file(path_pocket_mol2, path_klifs_metadata)
 
         # Get molecule
-        molecule = self._load_molecule(klifs_metadata_entry, path_pocket_mol2)
-
-        self.molecule = molecule
+        self._load_molecule(klifs_metadata_entry, path_pocket_mol2)
 
     def from_metadata_entry(self, klifs_metadata_entry, path_klifs_download):
         """
@@ -301,20 +294,12 @@ class KlifsMoleculeLoader:
         """
 
         # Get molecule's mol2 file path from KLIFS metadata entry
-        mol2_path = self._file_from_metadata_entry(klifs_metadata_entry, path_klifs_download)
-
-        # Cast path to pathlib.Path and check if it exists
-        mol2_path = Path(mol2_path)
-        if not mol2_path.exists():
-            raise FileNotFoundError(f'File does not exist: {mol2_path}')
+        path_pocket_mol2 = self._file_from_metadata_entry(klifs_metadata_entry, path_klifs_download)
 
         # Get molecule
-        molecule = self._load_molecule(klifs_metadata_entry, mol2_path)
+        self._load_molecule(klifs_metadata_entry, path_pocket_mol2)
 
-        self.molecule = molecule
-
-    @staticmethod
-    def _load_molecule(klifs_metadata_entry, path_pocket_mol2):
+    def _load_molecule(self, klifs_metadata_entry, path_pocket_mol2):
         """
         Load molecule from mol2 file in the form of a biopandas object, containing (i) the molecule code and
         (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns).
@@ -326,12 +311,6 @@ class KlifsMoleculeLoader:
             KLIFS metadata describing a pocket entry in the KLIFS dataset.
         path_pocket_mol2 : pathlib.Path
             KLIFS pocket mol2 file path.
-
-        Returns
-        -------
-        biopandas.mol2.pandas_mol2.PandasMol2
-            BioPandas objects containing metadata and structural data of molecule(s) in mol2 file
-            and KLIFS position ID retrieved from KLIFS metadata.
         """
 
         # Load molecule from mol2 file
@@ -354,7 +333,7 @@ class KlifsMoleculeLoader:
         # Add column for KLIFS position IDs to molecule
         molecule.df['klifs_id'] = klifs_ids_per_atom
 
-        return molecule
+        self.molecule = molecule
 
     @staticmethod
     def _metadata_entry_from_file(path_pocket_mol2, path_klifs_metadata):
@@ -374,11 +353,10 @@ class KlifsMoleculeLoader:
             KLIFS metadata describing a pocket entry in the KLIFS dataset.
         """
 
-        # Load KLIFS metadata
-        klifs_metadata = pd.read_csv(path_klifs_metadata)
-
         # Get metadata from mol2 file path: kinase, PDB ID, alternate model and chain:
         path_pocket_mol2 = Path(path_pocket_mol2)
+        if not path_pocket_mol2.exists():
+            raise FileNotFoundError(f'File does not exist: {path_pocket_mol2}')
 
         # Get kinase
         kinase = list(path_pocket_mol2.parents)[1].stem  # e.g. 'AAK1'
@@ -404,6 +382,9 @@ class KlifsMoleculeLoader:
             chain = chain[0]  # e.g. ['A']
         else:
             chain = '-'  # ['-']
+
+        # Load KLIFS metadata
+        klifs_metadata = pd.read_csv(path_klifs_metadata)
 
         klifs_metadata_entry = klifs_metadata[
             (klifs_metadata.kinase == kinase) &
@@ -439,13 +420,13 @@ class KlifsMoleculeLoader:
         """
 
         # Depending on whether alternate model and chain ID is given build file path:
-        mol2_path = path_klifs_download / klifs_metadata_entry.filepath / 'pocket.mol2'
+        path_pocket_mol2 = path_klifs_download / klifs_metadata_entry.filepath / 'pocket.mol2'
 
         # If file does not exist, raise error
-        if not mol2_path.exists():
-            raise FileNotFoundError(f'File not found: {mol2_path}')
+        if not path_pocket_mol2.exists():
+            raise FileNotFoundError(f'File not found: {path_pocket_mol2}')
 
-        return mol2_path
+        return path_pocket_mol2
 
 
 class PdbChainLoader:
