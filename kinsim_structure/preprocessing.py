@@ -1105,7 +1105,16 @@ class Mol2KlifsToPymolConverter:
 class Mol2ToPdbConverter:
     """
     Convert mol2 file to pdb file and save pdb file locally.
+
+    Attributes
+    ----------
+    inconsistent_conversions : pandas.DataFrame
+        Inconsistencies between mol2 and pdb file, i.e. unequal number of atoms, unequal coordinates,
+        differing residue IDs/names.
     """
+
+    def __init__(self):
+        self.inconsistent_conversions = pd.DataFrame([], columns=['filepath', 'inconsistency', 'details'])
 
     def from_klifs_metadata(self, klifs_metadata, path_klifs_download):
         """
@@ -1129,43 +1138,43 @@ class Mol2ToPdbConverter:
             if index % 100 == 0:
                 print(f'Progress: {index}/{len(klifs_metadata)}')
 
-            mol2_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
+            path_mol2 = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
 
             # Set mol2 path
-            mol2_path = self._set_mol2_path(mol2_path)
+            path_mol2 = self._set_path_mol2(path_mol2)
 
             # Set pdb path
-            pdb_path = self._set_pdb_path(mol2_path, pdb_path=None)
+            path_pdb = self._set_path_pdb(path_mol2, path_pdb=None)
 
             # PyMol mol2 to pdb conversion
-            self._pymol_mol2_to_pdb_conversion(mol2_path, pdb_path)
-            self._report_inconsistent_conversion(mol2_path, pdb_path)  # Check if files are equivalent
+            self._pymol_mol2_to_pdb_conversion(path_mol2, path_pdb)
+            self._report_inconsistent_conversion(path_mol2, path_pdb)  # Check if files are equivalent
 
         self._pymol_quit()
 
-    def from_file(self, mol2_path, pdb_path=None):
+    def from_file(self, path_mol2, path_pdb=None):
         """
         Convert mol2 file to pdb file and save pdb file locally.
 
         Parameters
         ----------
-        mol2_path : pathlib.Path or str
+        path_mol2 : pathlib.Path or str
             Path to mol2 file.
-        pdb_path : None or pathlib.Path or str
+        path_pdb : None or pathlib.Path or str
             Path to pdb file (= converted mol2 file). Directory must exist.
             Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
         """
 
         # Set mol2 path
-        mol2_path = self._set_mol2_path(mol2_path)
+        path_mol2 = self._set_path_mol2(path_mol2)
 
         # Set pdb path
-        pdb_path = self._set_pdb_path(mol2_path, pdb_path)
+        path_pdb = self._set_path_pdb(path_mol2, path_pdb)
 
         # PyMol mol2 to pdb conversion
         self._pymol_launch()
-        self._pymol_mol2_to_pdb_conversion(mol2_path, pdb_path)
-        self._report_inconsistent_conversion(mol2_path, pdb_path)  # Check if files are equivalent
+        self._pymol_mol2_to_pdb_conversion(path_mol2, path_pdb)
+        self._report_inconsistent_conversion(path_mol2, path_pdb)  # Check if files are equivalent
         self._pymol_quit()
 
     @staticmethod
@@ -1182,30 +1191,58 @@ class Mol2ToPdbConverter:
         sys.stderr = stderr
 
     @staticmethod
-    def _pymol_mol2_to_pdb_conversion(mol2_path, pdb_path):
+    def _pymol_mol2_to_pdb_conversion(path_mol2, path_pdb):
         """
         Convert a mol2 file to a pdb file and save locally (using pymol).
         """
 
         pymol.cmd.reinitialize()
-        pymol.cmd.load(mol2_path)
-        pymol.cmd.save(pdb_path)
+        pymol.cmd.load(path_mol2)
+        pymol.cmd.save(path_pdb)
 
     @staticmethod
     def _pymol_quit():
 
         pymol.cmd.quit()
 
-    @staticmethod
-    def _report_inconsistent_conversion(mol2_path, pdb_path):
+    def _report_inconsistent_conversion(self, path_mol2, path_pdb):
         """
         Report inconsistent mol2 and pdb conversion.
         """
 
-        klifs_metadata_filepath = '/'.join(mol2_path.parts[-4:-1])  # Mimic filepath column in metadata
+        klifs_metadata_filepath = '/'.join(path_mol2.parts[-4:-1])  # Mimic filepath column in metadata
 
+        # Wait until pdb file is written to disc and check if it is there
+        attempt = 0
+
+        while attempt <= 10:
+
+            if path_pdb.exists():
+                break
+
+            else:
+
+                if attempt == 10:
+                    self.inconsistent_conversions = self.inconsistent_conversions.append(
+                        pd.DataFrame(
+                            [
+                                [
+                                    klifs_metadata_filepath,
+                                    'Non-existing pdb file',
+                                    path_pdb
+                                ]
+                            ],
+                            columns=['filepath', 'inconsistency', 'details']
+                        )
+                    )
+
+                else:
+                    time.sleep(1)
+                    attempt += 1
+
+        # Load mol2 file
         pmol2 = PandasMol2().read_mol2(
-            str(mol2_path),
+            str(path_mol2),
             columns={
                 0: ('atom_id', int),
                 1: ('atom_name', str),
@@ -1220,67 +1257,129 @@ class Mol2ToPdbConverter:
             }
 
         )
-
-        # Wait until pdb file is written to disc
-        attempt = 0
-        while attempt <= 10:
-            if pdb_path.exists():
-                break
-            else:
-                if attempt == 10:
-                    logger.info(f'{klifs_metadata_filepath}: PDB file does not exist: {pdb_path}')
-                else:
-                    time.sleep(1)
-                    attempt += 1
-
-        ppdb = PandasPdb().read_pdb(str(pdb_path))
-
         mol2_df = pmol2.df
+
+        # Load pdb file
+        ppdb = PandasPdb().read_pdb(str(path_pdb))
         pdb_df = pd.concat([ppdb.df['ATOM'], ppdb.df['HETATM']])
 
         # Number of atoms?
         n_atoms_mol2 = len(mol2_df)
         n_atoms_pdb = len(pdb_df)
+
         if not n_atoms_mol2 == n_atoms_pdb:
-            logger.info(f'{klifs_metadata_filepath}: Unequal number of atoms in mol2 ({n_atoms_mol2}) '
-                        f'and pdb ({n_atoms_pdb}) file.')
+
+            self.inconsistent_conversions = self.inconsistent_conversions.append(
+                pd.DataFrame(
+                    [
+                        [
+                            klifs_metadata_filepath,
+                            'Unequal number of atoms',
+                            {'mol2': n_atoms_mol2, 'pdb': n_atoms_pdb}
+                        ]
+                    ],
+                    columns=['filepath', 'inconsistency', 'details']
+                )
+            )
+
+        else:
+
+            # x, y, and z mean values are the same
+            if not np.isclose(mol2_df.x.mean(), pdb_df.x_coord.mean(), rtol=1e-03):
+
+                self.inconsistent_conversions = self.inconsistent_conversions.append(
+                    pd.DataFrame(
+                        [
+                            [
+                                klifs_metadata_filepath,
+                                'Unequal x coordinate mean',
+                                round(mol2_df.x.mean() - pdb_df.x_coord.mean(), 2)
+                            ]
+                        ],
+                        columns=['filepath', 'inconsistency', 'details']
+                    )
+                )
+
+            if not np.isclose(mol2_df.y.mean(), pdb_df.y_coord.mean(), rtol=1e-03):
+
+                self.inconsistent_conversions = self.inconsistent_conversions.append(
+                    pd.DataFrame(
+                        [
+                            [
+                                klifs_metadata_filepath,
+                                'Unequal y coordinate mean',
+                                round(mol2_df.y.mean() - pdb_df.y_coord.mean(), 2)
+                            ]
+                        ],
+                        columns=['filepath', 'inconsistency', 'details']
+                    )
+                )
+
+            if not np.isclose(mol2_df.z.mean(), pdb_df.z_coord.mean(), rtol=1e-03):
+
+                self.inconsistent_conversions = self.inconsistent_conversions.append(
+                    pd.DataFrame(
+                        [
+                            [
+                                klifs_metadata_filepath,
+                                'Unequal z coordinate mean',
+                                round(mol2_df.z.mean() - pdb_df.z_coord.mean(), 2)
+                            ]
+                        ],
+                        columns=['filepath', 'inconsistency', 'details']
+                    )
+                )
 
         # Record name of PDB file is always ATOM (although containing non-standard residues)
         if not set(pdb_df.record_name) == {'ATOM'}:
+
             non_atom_entries = pdb_df[pdb_df.record_name != "ATOM"]
-            logger.info(f'{klifs_metadata_filepath}: '
-                        f'PDB file contains {len(non_atom_entries)} non-ATOM entries '
-                        f'of type {set(non_atom_entries.record_name)}, '
-                        f'affecting residue names: {set(non_atom_entries.residue_name)}.')
 
-        # x, y, and z mean values are the same
-        if not np.isclose(mol2_df.x.mean(), pdb_df.x_coord.mean(), rtol=1e-03):
-            logger.info(f'{klifs_metadata_filepath}: Coordinates are not the same (x means differ).')
-
-        if not np.isclose(mol2_df.y.mean(), pdb_df.y_coord.mean(), rtol=1e-03):
-            logger.info(f'{klifs_metadata_filepath}: Coordinates are not the same (y means differ).')
-
-        if not np.isclose(mol2_df.z.mean(), pdb_df.z_coord.mean(), rtol=1e-03):
-            logger.info(f'{klifs_metadata_filepath}: Coordinates are not the same (z means differ).')
+            self.inconsistent_conversions = self.inconsistent_conversions.append(
+                pd.DataFrame(
+                    [
+                        [
+                            klifs_metadata_filepath,
+                            'Non-ATOM entries',
+                            {
+                                'record_name': set(non_atom_entries.record_name),
+                                'residue_name': set(non_atom_entries.residue_name)
+                            }
+                        ]
+                    ],
+                    columns=['filepath', 'inconsistency', 'details']
+                )
+            )
 
         # Residue ID and name are the same
         residue_set_mol2 = set(mol2_df.subst_name)
         pdb_df.residue_number = pdb_df.residue_number.astype(str)
         residue_set_pdb = set(pdb_df.residue_name + pdb_df.residue_number)
         residue_set_diff = (residue_set_mol2 - residue_set_pdb)|(residue_set_pdb - residue_set_mol2)
+
         if not len(residue_set_diff) == 0:
-            logger.info(f'{klifs_metadata_filepath}: Residue ID/name differs. '
-                        f'In mol2: {(residue_set_mol2 - residue_set_pdb)}. '
-                        f'In pdb: {(residue_set_pdb - residue_set_mol2)}.')
+
+            self.inconsistent_conversions = self.inconsistent_conversions.append(
+                pd.DataFrame(
+                    [
+                        [
+                            klifs_metadata_filepath,
+                            'Unequal residue ID/name',
+                            {'mol2': (residue_set_mol2 - residue_set_pdb), 'pdb': (residue_set_pdb - residue_set_mol2)}
+                        ]
+                    ],
+                    columns=['filepath', 'inconsistency', 'details']
+                )
+            )
 
     @staticmethod
-    def _set_mol2_path(mol2_path):
+    def _set_path_mol2(path_mol2):
         """
-        Test if input mol2 file exists - and if so, set as class attribute.
+        Test if input mol2 file exists - and if so, return to be set as class attribute.
 
         Parameters
         ----------
-        mol2_path : pathlib.Path or str
+        path_mol2 : pathlib.Path or str
             Path to mol2 file.
 
         Returns
@@ -1289,23 +1388,24 @@ class Mol2ToPdbConverter:
             Path to mol2 file.
         """
 
-        mol2_path = Path(mol2_path)
+        path_mol2 = Path(path_mol2)
 
-        if not mol2_path.exists():
-            raise FileNotFoundError(f'File path does not exist: {mol2_path}')
-        if not mol2_path.suffix == '.mol2':
-            raise ValueError(f'Incorrect file suffix: {mol2_path.suffix}, must be mol2.')
+        if not path_mol2.exists():
+            raise FileNotFoundError(f'File path does not exist: {path_mol2}')
+        if not path_mol2.suffix == '.mol2':
+            raise ValueError(f'Incorrect file suffix: {path_mol2.suffix}, must be mol2.')
 
-        return mol2_path
+        return path_mol2
 
     @staticmethod
-    def _set_pdb_path(mol2_path, pdb_path):
+    def _set_path_pdb(path_mol2, path_pdb):
         """
-        Test if input pdb file path exists and has a pdb suffix - and if so, set as class attribute.
+        Test if input directory for pdb file exists and has a pdb suffix - and if so, return to be set as class
+        attribute.
 
         Parameters
         ----------
-        pdb_path : None or pathlib.Path or str
+        path_pdb : None or pathlib.Path or str
             Path to pdb file (= converted mol2 file). Directory must exist.
             Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
 
@@ -1316,25 +1416,25 @@ class Mol2ToPdbConverter:
         """
 
         # If mol2 path is not set, do not continue to set pdb path (otherwise we cannot convert mol2 to pdb)
-        if mol2_path is None:
+        if path_mol2 is None:
             raise ValueError(f'Set mol2 path (class attribute) first.')
 
         else:
             pass
 
-        if pdb_path is None:
-            pdb_path = mol2_path.parent / f'{mol2_path.stem}.pdb'
+        if path_pdb is None:
+            path_pdb = path_mol2.parent / f'{path_mol2.stem}.pdb'
 
         else:
-            pdb_path = Path(pdb_path)
+            path_pdb = Path(path_pdb)
 
-            if not pdb_path.parent.exists():
-                raise FileNotFoundError(f'Directory does not exist: {pdb_path}')
-            if not pdb_path.suffix == '.pdb':
-                raise ValueError(f'Missing file name or incorrect file type: {pdb_path}. '
+            if not path_pdb.parent.exists():
+                raise FileNotFoundError(f'Directory does not exist: {path_pdb}')
+            if not path_pdb.suffix == '.pdb':
+                raise ValueError(f'Missing file name or incorrect file type: {path_pdb}. '
                                  f'Must have the form: /path/to/existing/directory/filename.pdb')
 
-        return pdb_path
+        return path_pdb
 
 
 class PdbDownloader:
