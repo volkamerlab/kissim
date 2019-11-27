@@ -437,46 +437,34 @@ class PdbChainLoader:
     ----------
     chain : Bio.PDB.Chain.Chain
         Chain from PDB file.
-
-    Parameters
-    ----------
-    klifs_metadata_entry : pandas.Series
-        KLIFS metadata describing a pocket entry in the KLIFS dataset.
     """
 
-    def __init__(self, klifs_metadata_entry=None, pdb_path=None, chain_id=None):
+    def __init__(self):
 
-        if (pdb_path is not None) and (chain_id is not None):
-            self.chain = self.from_file(pdb_path, chain_id)
-        elif klifs_metadata_entry is not None:
-            self.chain = self.from_metadata_entry(klifs_metadata_entry)
-        else:
-            self.chain = None
+        self.chain = None
 
-    def from_metadata_entry(self, klifs_metadata_entry):
+    def from_file(self, path_pdb, chain_id):
+        """
+        Get Biopython chain object from a pdb file path.
 
-        pdb_id = klifs_metadata_entry.pdb_id
-        chain_id = klifs_metadata_entry.chain
+        Parameters
+        ----------
+        path_pdb : pathlib.Path or str
+            Pdb file path.
+        chain_id : str
+            Chain ID.
+        """
 
-        pdb_path = PATH_TO_DATA / 'raw' / 'PDB_download' / f'{pdb_id}.cif'
+        path_pdb = Path(path_pdb)
 
-        chain = self.from_file(pdb_path, chain_id)
-
-        return chain
-
-    @staticmethod
-    def from_file(pdb_path, chain_id):
-
-        pdb_path = Path(pdb_path)
-
-        if not pdb_path.exists():
-            raise IOError(f'PDB file does not exist: {pdb_path}')
+        if not path_pdb.exists():
+            raise IOError(f'PDB file does not exist: {path_pdb}')
 
         # Get structure
-        parser = MMCIFParser(QUIET=True)
+        parser = PDBParser(QUIET=True)
         structure = parser.get_structure(
-            structure_id=pdb_path.stem,
-            filename=pdb_path
+            id=path_pdb.stem,
+            file=path_pdb
         )
 
         # Get alternate model (always use first model)
@@ -485,7 +473,51 @@ class PdbChainLoader:
         # Get pdb chain as denoted in metadata
         chain = model[chain_id]
 
-        return chain
+        self.chain = chain
+
+    def from_metadata_entry(self, klifs_metadata_entry, path_klifs_download):
+        """
+        Get Biopython chain object from a KLIFS metadata entry.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+        """
+
+        path_pdb = self._file_from_metadata_entry(klifs_metadata_entry, path_klifs_download)
+        chain_id = klifs_metadata_entry.chain
+
+        self.from_file(path_pdb, chain_id)
+
+    @staticmethod
+    def _file_from_metadata_entry(klifs_metadata_entry, path_klifs_download):
+        """
+        Get the pdb file path (PyMol readable) linked to an entry in the KLIFS metadata.
+
+        Parameters
+        ----------
+        klifs_metadata_entry : pandas.Series
+            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+
+        Returns
+        -------
+        pathlib.Path
+            KLIFS protein mol2 file path (PyMol readable).
+        """
+
+        # Depending on whether alternate model and chain ID is given build file path:
+        path_pdb = path_klifs_download / klifs_metadata_entry.filepath / 'protein_pymol.pdb'
+
+        # If file does not exist, raise error
+        if not path_pdb.exists():
+            raise FileNotFoundError(f'File not found: {path_pdb}')
+
+        return path_pdb
 
 
 def get_amino_acids_1to3(one_letter_amino_acid):
