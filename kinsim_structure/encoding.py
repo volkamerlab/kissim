@@ -124,13 +124,16 @@ class FingerprintGenerator:
     ----------
     data : dict of kinsim_structure.encoding.Fingerprint
         Fingerprints for multiple molecules.
+    path_klifs_download : pathlib.Path or str
+        Path to directory of KLIFS dataset files.
     """
 
     def __init__(self):
 
         self.data = None
+        self.path_klifs_download = None
 
-    def from_metadata(self, klifs_metadata):
+    def from_metadata(self, klifs_metadata, path_klifs_download):
         """
         Generate fingerprints for multiple molecules described in KLIFS metadata.
 
@@ -145,6 +148,9 @@ class FingerprintGenerator:
         print(start)
 
         logger.info(f'Calculate fingerprints...')
+
+        # Set path to KLIFS download
+        self.path_klifs_download = path_klifs_download
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
@@ -177,8 +183,7 @@ class FingerprintGenerator:
         logger.info(start)
         logger.info(end)
 
-    @staticmethod
-    def _get_fingerprint(klifs_metadata_entry):
+    def _get_fingerprint(self, klifs_metadata_entry):
         """
         Get fingerprint.
 
@@ -196,7 +201,7 @@ class FingerprintGenerator:
         try:
 
             fingerprint = Fingerprint()
-            fingerprint.from_metadata_entry(klifs_metadata_entry)
+            fingerprint.from_metadata_entry(klifs_metadata_entry, self.path_klifs_download)
 
             return fingerprint
 
@@ -216,13 +221,16 @@ class SideChainOrientationGenerator:
     ----------
     data : dict of kinsim_structure.encoding.SideChainOrientationFeature
         Fingerprints for multiple molecules.
+    path_klifs_download : pathlib.Path or str
+        Path to directory of KLIFS dataset files.
     """
 
     def __init__(self):
 
         self.data = None
+        self.path_klifs_download = None
 
-    def from_metadata(self, klifs_metadata):
+    def from_metadata(self, klifs_metadata, path_klifs_download):
         """
         Generate side chain orientation features for multiple molecules described in KLIFS metadata.
 
@@ -230,13 +238,18 @@ class SideChainOrientationGenerator:
         ----------
         klifs_metadata : pandas.DataFrame
             Metadata (columns) for KLIFS molecules (rows).
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
         """
 
         # Get start time of script
         start = datetime.datetime.now()
         print(start)
 
-        logger.info(f'Calculate fingerprints...')
+        logger.info(f'Calculate side chain orientations...')
+
+        # Set path to KLIFS download
+        self.path_klifs_download = path_klifs_download
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
@@ -269,8 +282,7 @@ class SideChainOrientationGenerator:
         logger.info(start)
         logger.info(end)
 
-    @staticmethod
-    def _get_sco(klifs_metadata_entry):
+    def _get_sco(self, klifs_metadata_entry):
         """
         Get side chain orientation.
 
@@ -287,10 +299,12 @@ class SideChainOrientationGenerator:
 
         try:
 
-            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+            klifs_molecule_loader = KlifsMoleculeLoader()
+            klifs_molecule_loader.from_metadata_entry(klifs_metadata_entry, self.path_klifs_download)
             molecule = klifs_molecule_loader.molecule
 
-            pdb_chain_loader = PdbChainLoader(klifs_metadata_entry)
+            pdb_chain_loader = PdbChainLoader()
+            pdb_chain_loader.from_metadata_entry(klifs_metadata_entry, self.path_klifs_download)
             chain = pdb_chain_loader.chain
 
             feature = SideChainOrientationFeature()
@@ -404,7 +418,7 @@ class Fingerprint:
     def physicochemical_moments_normalized(self):
         return self._get_fingerprint('physicochemical_moments', normalized=True)
 
-    def from_metadata_entry(self, klifs_metadata_entry):
+    def from_metadata_entry(self, klifs_metadata_entry, path_klifs_download):
         """
         Get kinase fingerprint from KLIFS metadata entry.
 
@@ -412,12 +426,16 @@ class Fingerprint:
         ----------
         klifs_metadata_entry : pandas.Series
             KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
         """
 
-        klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+        klifs_molecule_loader = KlifsMoleculeLoader()
+        klifs_molecule_loader.from_metadata_entry(klifs_metadata_entry, path_klifs_download)
         molecule = klifs_molecule_loader.molecule
 
-        pdb_chain_loader = PdbChainLoader(klifs_metadata_entry)
+        pdb_chain_loader = PdbChainLoader()
+        pdb_chain_loader.from_metadata_entry(klifs_metadata_entry, path_klifs_download)
         chain = pdb_chain_loader.chain
 
         self.from_molecule(molecule, chain)
@@ -948,7 +966,7 @@ class SpatialFeatures:
         return anchors
 
     @staticmethod
-    def save_cgo_refpoints(klifs_metadata_entry, output_path):
+    def save_cgo_refpoints(klifs_metadata_entry, path_klifs_download, output_path):
         """
         Save CGO PyMol file showing a kinase with anchor residues, reference points and highlighted hinge and DFG
         region.
@@ -957,6 +975,8 @@ class SpatialFeatures:
         ----------
         klifs_metadata_entry : pandas.Series
             KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
         output_path : str or pathlib.Path
             Path to directory where data file should be saved.
         """
@@ -972,11 +992,12 @@ class SpatialFeatures:
         }
 
         # Load molecule from KLIFS metadata entry
-        klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
+        klifs_molecule_loader = KlifsMoleculeLoader()
+        klifs_molecule_loader.from_metadata_entry(klifs_metadata_entry, path_klifs_download)
         molecule = klifs_molecule_loader.molecule
 
         # Path to molecule file
-        mol2_path = klifs_molecule_loader.file_from_metadata_entry(klifs_metadata_entry)
+        path_mol2 = klifs_molecule_loader._file_from_metadata_entry(klifs_metadata_entry, path_klifs_download)
 
         # Output path
         Path(output_path).mkdir(parents=True, exist_ok=True)
@@ -1008,7 +1029,7 @@ class SpatialFeatures:
         lines.append('from pymol.cgo import *\n')
 
         # Load pocket structure
-        lines.append(f'cmd.load("{mol2_path}", "pocket_{molecule.code[6:]}")\n')
+        lines.append(f'cmd.load("{path_mol2}", "pocket_{molecule.code[6:]}")\n')
         lines.append(f'cmd.show("cartoon", "pocket_{molecule.code[6:]}")')
         lines.append(f'cmd.hide("lines", "pocket_{molecule.code[6:]}")')
         lines.append(f'cmd.color("gray", "pocket_{molecule.code[6:]}")\n')
