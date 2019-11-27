@@ -308,18 +308,18 @@ class KlifsMetadataLoader:
         for index, row in klifs_metadata.iterrows():
 
             # Depending on whether alternate model and chain ID is given build file path:
-            mol2_path = Path('.') / row.species.upper() / row.kinase
+            path_mol2 = Path('.') / row.species.upper() / row.kinase
 
             if row.alternate_model != '-' and row.chain != '-':
-                mol2_path = mol2_path / f'{row.pdb_id}_alt{row.alternate_model}_chain{row.chain}'
+                path_mol2 = path_mol2 / f'{row.pdb_id}_alt{row.alternate_model}_chain{row.chain}'
             elif row.alternate_model == '-' and row.chain != '-':
-                mol2_path = mol2_path / f'{row.pdb_id}_chain{row.chain}'
+                path_mol2 = path_mol2 / f'{row.pdb_id}_chain{row.chain}'
             elif row.alternate_model == '-' and row.chain == '-':
-                mol2_path = mol2_path / f'{row.pdb_id}'
+                path_mol2 = path_mol2 / f'{row.pdb_id}'
             else:
                 raise ValueError(f'Incorrect metadata entry {index}: {row.alternate_model}, {row.chain}')
 
-            filepaths.append(mol2_path)
+            filepaths.append(path_mol2)
 
         klifs_metadata['filepath'] = filepaths
 
@@ -556,16 +556,16 @@ class KlifsMetadataFilter:
         for index, row in klifs_metadata.iterrows():
 
             # Depending on whether alternate model and chain ID is given build file path:
-            pocket_mol2_path = Path(path_klifs_download) / row.filepath / 'pocket.mol2'
-            protein_mol2_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
+            pocket_path_mol2 = Path(path_klifs_download) / row.filepath / 'pocket.mol2'
+            protein_path_mol2 = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
 
             # Not all paths exist - save list with missing paths
-            if not pocket_mol2_path.exists():
+            if not pocket_path_mol2.exists():
                 indices_to_be_dropped.append(index)
-                logger.info(f'Missing pocket mol2 files: {pocket_mol2_path}')
-            elif not protein_mol2_path.exists():
+                logger.info(f'Missing pocket mol2 files: {pocket_path_mol2}')
+            elif not protein_path_mol2.exists():
                 indices_to_be_dropped.append(index)
-                logger.info(f'Missing protein mol2 files: {protein_mol2_path}')
+                logger.info(f'Missing protein mol2 files: {protein_path_mol2}')
             else:
                 pass
 
@@ -602,12 +602,12 @@ class KlifsMetadataFilter:
 
         for index, row in klifs_metadata.iterrows():
 
-            pdb_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.pdb'
+            path_pdb = Path(path_klifs_download) / row.filepath / 'protein_pymol.pdb'
 
             # Not all paths exist - save list with missing paths
-            if not pdb_path.exists():
+            if not path_pdb.exists():
                 indices_to_be_dropped.append(index)
-                logger.info(f'Missing protein pdb files: {pdb_path}')
+                logger.info(f'Missing protein pdb files: {path_pdb}')
             else:
                 pass
 
@@ -644,17 +644,17 @@ class KlifsMetadataFilter:
 
         for index, row in klifs_metadata.iterrows():
 
-            pdb_path = Path(path_klifs_download) / row.filepath / 'protein_pymol.pdb'
+            path_pdb = Path(path_klifs_download) / row.filepath / 'protein_pymol.pdb'
 
             try:
                 parser = PDBParser()
                 parser.get_structure(
                     id=index,
-                    file=pdb_path
+                    file=path_pdb
                 )
             except ValueError:
                 indices_to_be_dropped.append(index)
-                logger.info(f'Parsing failed for: {pdb_path}')
+                logger.info(f'Parsing failed for: {path_pdb}')
 
         klifs_metadata.drop(
             indices_to_be_dropped,
@@ -1097,9 +1097,6 @@ class Mol2KlifsToPymolConverter:
                 raise ValueError(f'{path_mol2}: Unknown underscores were transformed, please check: {unexpected_targets}')
 
         return lines_new
-
-        with open(pymol_mol2_path, 'w') as f:
-            f.writelines(lines_new)
 
 
 class Mol2ToPdbConverter:
