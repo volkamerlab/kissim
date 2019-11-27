@@ -1435,29 +1435,3 @@ class Mol2ToPdbConverter:
                                  f'Must have the form: /path/to/existing/directory/filename.pdb')
 
         return path_pdb
-
-
-class PdbDownloader:
-
-    def from_klifs_metadata(self, klifs_metadata, path_pdb_download):
-        """
-        Download structure files from the PDB for KLIFS dataset.
-
-        Parameters
-        ----------
-        klifs_metadata : pandas.DataFrame
-            KLIFS metadata describing the KLIFS dataset.
-        path_pdb_download : pathlib.Path or str
-            Path to directory of files of PDB download.
-        """
-
-        path_to_pdb_download = Path(path_pdb_download)
-        path_to_pdb_download.mkdir(parents=True, exist_ok=True)
-
-        pdbfile = PDBList()
-
-        for index, row in klifs_metadata.iterrows():
-            if not (Path(path_to_pdb_download) / f'{row.pdb_id}.cif').exists():
-                pdbfile.retrieve_pdb_file(row.pdb_id, pdir=path_to_pdb_download)
-            else:
-                logger.info(f'Pdb file could not be downloaded: {row.pdb_id}.')
