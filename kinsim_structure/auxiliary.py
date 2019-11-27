@@ -621,15 +621,15 @@ def get_klifs_residues_mol2topdb(molecule):
     residue_ids = [int(i) for i in molecule.df.res_id.unique()]
 
     # Load PDB file and get residues
-    pdb_path = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
+    path_pdb = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
 
-    if not Path(pdb_path).exists():
-        raise IOError(f'PDB file does not exist: {pdb_path}')
+    if not Path(path_pdb).exists():
+        raise IOError(f'PDB file does not exist: {path_pdb}')
 
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(
         structure_id=code['pdb_id'],
-        filename=pdb_path
+        filename=path_pdb
     )
     model = structure[0]
     chain = model[code['chain']]
