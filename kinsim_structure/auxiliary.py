@@ -11,7 +11,7 @@ from pathlib import Path
 
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
-from Bio.PDB import MMCIFParser, Selection, Entity
+from Bio.PDB import PDBParser, Selection, Entity
 import pandas as pd
 
 logger = logging.getLogger(__name__)
