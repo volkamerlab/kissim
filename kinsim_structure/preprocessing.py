@@ -13,7 +13,7 @@ import sys
 
 from biopandas.mol2 import PandasMol2
 from biopandas.pdb import PandasPdb
-from Bio.PDB import PDBList, PDBParser
+from Bio.PDB import PDBParser
 import numpy as np
 import pandas as pd
 import pymol
@@ -37,7 +37,7 @@ class KlifsMetadataLoader:
     def __init__(self):
         self.data = None
 
-    def from_files(self, klifs_overview_file, klifs_export_file):
+    def from_files(self, path_klifs_overview, path_klifs_export):
         """
         Get KLIFS metadata as DataFrame.
 
@@ -47,9 +47,9 @@ class KlifsMetadataLoader:
 
         Parameters
         ----------
-        klifs_overview_file : str or pathlib.Path
+        path_klifs_overview : str or pathlib.Path
             Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
-        klifs_export_file : str or pathlib.Path
+        path_klifs_export : str or pathlib.Path
             Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
 
         Returns
@@ -58,8 +58,8 @@ class KlifsMetadataLoader:
             Metadata of KLIFS download, merged from two KLIFS metadata files.
         """
 
-        klifs_overview = self._from_klifs_overview_file(Path(klifs_overview_file))
-        klifs_export = self._from_klifs_export_file(Path(klifs_export_file))
+        klifs_overview = self._from_klifs_overview_file(Path(path_klifs_overview))
+        klifs_export = self._from_klifs_export_file(Path(path_klifs_export))
 
         klifs_metadata = self._merge_files(klifs_overview, klifs_export)
         klifs_metadata = self._add_filepaths(klifs_metadata)
