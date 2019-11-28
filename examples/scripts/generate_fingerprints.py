@@ -42,7 +42,7 @@ def main():
 
     # Calculate fingerprints
     fingerprint_generator = FingerprintGenerator()
-    fingerprint_generator.from_metadata_entry(klifs_metadata[:20])
+    fingerprint_generator.from_metadata(klifs_metadata[:20])
 
     # Save fingerprints
     with open(PATH_TO_RESULTS / 'fingerprints.p', 'wb') as f:
