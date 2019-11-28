@@ -64,27 +64,35 @@ def test_from_residue(residue_name, feature_name, feature):
     assert feature_calculated == feature
 
 
-@pytest.mark.parametrize('mol2_filename, molecule_code, shape', [
-    ('HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2', 'HUMAN/AAK1_4wsq_altA_chainB', (85, 6)),
-    ('HUMAN/ABL1/2g2i_chainA/pocket.mol2', 'HUMAN/ABL1_2g2i_chainA', (82, 6))  # Contains not full KLIFS positions
-
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, molecule_code, shape', [
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+        'HUMAN/AAK1_4wsq_altA_chainB',
+        (85, 6)
+    ),
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+        'HUMAN/ABL1_2g2i_chainA',
+        (82, 6)
+    )  # Contains not full KLIFS positions
 ])
-def test_pharmacophoresizefeatures_from_residue(mol2_filename, molecule_code, shape):
+def test_pharmacophoresizefeatures_from_residue(path_klifs_metadata, path_mol2, molecule_code, shape):
     """
-    Test PharmacohpreSizeFeatures class attributes.
+    Test PharmacophoreSizeFeatures class attributes.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
+    path_mol2 : str
         Path to file originating from test data folder.
     molecule_code : str
         Molecule code as defined by KLIFS in mol2 file.
     """
 
     # Load molecule
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / mol2_filename
-
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
 

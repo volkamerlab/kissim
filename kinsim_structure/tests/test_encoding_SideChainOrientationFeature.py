@@ -15,8 +15,9 @@ from kinsim_structure.encoding import SideChainOrientationFeature
 PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
 
-@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms', [
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms', [
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
         'A',
@@ -24,12 +25,14 @@ PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
         659
     )
 ])
-def test_get_pocket_residues(path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms):
+def test_get_pocket_residues(path_klifs_metadata, path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms):
     """
     Test the mean of the pocket's PDB residue IDs and the number of pocket atoms.
 
     Parameters
     ----------
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
     path_mol2 : pathlib.Path
         Path to mol2 file.
     path_pdb : pathlib.Path
@@ -41,8 +44,6 @@ def test_get_pocket_residues(path_mol2, path_pdb, chain_id, res_id_mean, n_pocke
     n_pocket_atoms : int
         Number of pocket atoms.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
@@ -357,20 +358,23 @@ def test_get_side_chain_centroid(path_pdb, chain_id, residue_id, side_chain_cent
         assert side_chain_centroid_calculated == side_chain_centroid
 
 
-@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, pocket_centroid', [
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, pocket_centroid', [
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
         'A',
         np.array([0.99, 21.06, 36.70])
     )
 ])
-def test_get_pocket_centroid(path_mol2, path_pdb, chain_id, pocket_centroid):
+def test_get_pocket_centroid(path_klifs_metadata, path_mol2, path_pdb, chain_id, pocket_centroid):
     """
     Test pocket centroid calculation.
 
     Parameters
     ----------
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
     path_mol2 : pathlib.Path
         Path to mol2 file.
     path_pdb : pathlib.Path
@@ -380,8 +384,6 @@ def test_get_pocket_centroid(path_mol2, path_pdb, chain_id, pocket_centroid):
     pocket_centroid : list of float
         Pocket centroid coordinates.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
@@ -399,21 +401,24 @@ def test_get_pocket_centroid(path_mol2, path_pdb, chain_id, pocket_centroid):
         assert pocket_centroid_calculated == pocket_centroid
 
 
-@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, n_vectors', [
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, n_vectors', [
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
         'A',
         82
     )
 ])
-def test_get_pocket_vectors(path_mol2, path_pdb, chain_id, n_vectors):
+def test_get_pocket_vectors(path_klifs_metadata, path_mol2, path_pdb, chain_id, n_vectors):
     """
     Test if returned DataFrame for pocket vectors contains correct column names and correct number of vectors
     (= number of pocket residues).
 
     Parameters
     ----------
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
     path_mol2 : pathlib.Path
         Path to mol2 file.
     path_pdb : pathlib.Path
@@ -423,8 +428,6 @@ def test_get_pocket_vectors(path_mol2, path_pdb, chain_id, n_vectors):
     n_vectors : int
         Number of vectors (= number of pocket residues)
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
@@ -441,21 +444,24 @@ def test_get_pocket_vectors(path_mol2, path_pdb, chain_id, n_vectors):
     assert len(pocket_vectors) == n_vectors
 
 
-@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, angles_mean', [
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean', [
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2', 
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb', 
         'A', 
         95.07
     )
 ])
-def test_get_vertex_angles(path_mol2, path_pdb, chain_id, angles_mean):
+def test_get_vertex_angles(path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean):
     """
     Test if vertex angles are calculated correctly (check mean angle), and if returned DataFrame contains correct column
     name.
 
     Parameters
     ----------
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
     path_mol2 : pathlib.Path
         Path to mol2 file.
     path_pdb : pathlib.Path
@@ -465,8 +471,6 @@ def test_get_vertex_angles(path_mol2, path_pdb, chain_id, angles_mean):
     angles_mean : float
         Mean of non-None angles.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
@@ -561,20 +565,23 @@ def test_get_category_from_vertex_angle(vertex_angle, category):
         assert np.isnan(category_calculated)
 
 
-@pytest.mark.parametrize('path_mol2, path_pdb, chain_id', [
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id', [
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2', 
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb', 
         'A'
     )
 ])
-def test_from_molecule(path_mol2, path_pdb, chain_id):
+def test_from_molecule(path_klifs_metadata, path_mol2, path_pdb, chain_id):
     """
     Test if SideChainOrientation attributes features and features_verbose contain the correct column names.
     Values are tested already in other test_sidechainorientation_* unit tests.
 
     Parameters
     ----------
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
     path_mol2 : pathlib.Path
         Path to mol2 file.
     path_pdb : pathlib.Path
@@ -582,8 +589,6 @@ def test_from_molecule(path_mol2, path_pdb, chain_id):
     chain_id : str
         Chain ID.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)

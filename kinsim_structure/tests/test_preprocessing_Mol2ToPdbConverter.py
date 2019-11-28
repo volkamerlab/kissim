@@ -13,7 +13,7 @@ PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
 
 @pytest.mark.parametrize('path_mol2', [
-    'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
+    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
 ])
 def test_set_path_mol2(path_mol2):
     """
@@ -21,11 +21,9 @@ def test_set_path_mol2(path_mol2):
 
     Parameters
     ----------
-    path_mol2 : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
     """
-
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
 
     converter = Mol2ToPdbConverter()
 
@@ -33,7 +31,7 @@ def test_set_path_mol2(path_mol2):
 
 
 @pytest.mark.parametrize('path_mol2', [
-    'xxx.mol2'
+    PATH_TEST_DATA / 'KLIFS_download' / 'xxx.mol2'
 ])
 def test_set_path_mol2_filenotfounderror(path_mol2):
     """
@@ -41,11 +39,9 @@ def test_set_path_mol2_filenotfounderror(path_mol2):
 
     Parameters
     ----------
-    path_mol2 : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
     """
-
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
 
     with pytest.raises(FileNotFoundError):
         converter = Mol2ToPdbConverter()
@@ -53,7 +49,7 @@ def test_set_path_mol2_filenotfounderror(path_mol2):
 
 
 @pytest.mark.parametrize('path_mol2', [
-    'HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'  # Existing file but no mol2
+    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'  # Existing file but no mol2
 ])
 def test_set_path_mol2_valueerror(path_mol2):
     """
@@ -61,11 +57,9 @@ def test_set_path_mol2_valueerror(path_mol2):
 
     Parameters
     ----------
-    path_mol2 : str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
     """
-
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
 
     with pytest.raises(ValueError):
         converter = Mol2ToPdbConverter()
@@ -74,14 +68,14 @@ def test_set_path_mol2_valueerror(path_mol2):
 
 @pytest.mark.parametrize('path_mol2_input, path_pdb_input, path_pdb_output', [
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
         None,  # Do not define pdb path - will be set automatically
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
     ),
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb',  # Define some pdb path
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb',  # Define some pdb path
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket2.pdb'
     )
 ])
 def test_set_path_pdb(path_mol2_input, path_pdb_input, path_pdb_output):
@@ -90,19 +84,13 @@ def test_set_path_pdb(path_mol2_input, path_pdb_input, path_pdb_output):
 
     Parameters
     ----------
-    path_mol2_input : str
+    path_mol2_input : pathlib.Path
         Path to mol2 file.
-    path_pdb_input : str or None
+    path_pdb_input : pathlib.Path or None
         Path to pdb file (None: Automatically set pdb path in same folder as mol2 file)
     path_pdb_output : pathlib.Path
         Path to pdb file which is returned from function.
     """
-
-    path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
-    path_pdb_output = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_output
-
-    if path_pdb_input is not None:
-        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     converter = Mol2ToPdbConverter()
     converter.path_mol2 = path_mol2_input
@@ -114,8 +102,8 @@ def test_set_path_pdb(path_mol2_input, path_pdb_input, path_pdb_output):
 
 @pytest.mark.parametrize('path_mol2_input, path_pdb_input', [
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'xxx/pocket.pdb'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'xxx/pocket.pdb'
     )
 ])
 def test_set_path_pdb_filenotfounderror(path_mol2_input, path_pdb_input):
@@ -125,17 +113,11 @@ def test_set_path_pdb_filenotfounderror(path_mol2_input, path_pdb_input):
 
     Parameters
     ----------
-    path_mol2_input : str
+    path_mol2_input : pathlib.Path
         Path to mol2 file.
-    path_pdb_input : str or None
+    path_pdb_input : pathlib.Path or None
         Path to pdb file (None: Automatically set pdb path in same folder as mol2 file)
     """
-
-    if path_mol2_input is not None:
-        path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
-
-    if path_pdb_input is not None:
-        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     with pytest.raises(FileNotFoundError):
 
@@ -148,19 +130,19 @@ def test_set_path_pdb_filenotfounderror(path_mol2_input, path_pdb_input):
 @pytest.mark.parametrize('path_mol2_input, path_pdb_input', [
     (
         None,
-        'KLIFS_download/HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
     ),
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2'
     ),
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket'
     ),
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket/'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket/'
     )
 ])
 def test_set_path_pdb_valueerror(path_mol2_input, path_pdb_input):
@@ -170,17 +152,11 @@ def test_set_path_pdb_valueerror(path_mol2_input, path_pdb_input):
 
     Parameters
     ----------
-    path_mol2_input : str
+    path_mol2_input : pathlib.Path
         Path to mol2 file.
-    path_pdb_input : str or None
+    path_pdb_input : pathlib.Path or None
         Path to pdb file (None: Automatically set pdb path in same folder as mol2 file)
     """
-
-    if path_mol2_input is not None:
-        path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
-
-    if path_pdb_input is not None:
-        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     with pytest.raises(ValueError):
 
@@ -192,8 +168,8 @@ def test_set_path_pdb_valueerror(path_mol2_input, path_pdb_input):
 
 @pytest.mark.parametrize('path_mol2, path_pdb', [
     (
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'KLIFS_download/HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_correct.pdb'
     )
 ])
 def test_report_inconsistent_conversion(path_mol2, path_pdb):
@@ -202,15 +178,12 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
 
     Parameters
     ----------
-    path_mol2 : pathlib.Path or str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    path_pdb : None or pathlib.Path or str
+    path_pdb : pathlib.Path or None
         Path to pdb file (= converted mol2 file). Directory must exist.
         Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
     """
-
-    path_mol2 = PATH_TEST_DATA / path_mol2
-    path_pdb = PATH_TEST_DATA / path_pdb
 
     converter = Mol2ToPdbConverter()
 
@@ -219,8 +192,8 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
 
 @pytest.mark.parametrize('path_mol2, path_pdb, inconsistency', [
     (
-        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'HUMAN/ADCK3/5i35_chainA/protein_irregular_n_atoms.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_irregular_n_atoms.pdb',
         pd.DataFrame(
             [
                 ['HUMAN/ADCK3/5i35_chainA', 'Unequal number of atoms', {'mol2': 6194, 'pdb': 6193}]
@@ -229,8 +202,8 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
         )
     ),
     (
-        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'HUMAN/ADCK3/5i35_chainA/protein_irregular_x_mean.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_irregular_x_mean.pdb',
         pd.DataFrame(
             [
                 ['HUMAN/ADCK3/5i35_chainA', 'Unequal x coordinate mean', -0.14]
@@ -239,8 +212,8 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
         )
     ),
     (
-        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'HUMAN/ADCK3/5i35_chainA/protein_irregular_y_mean.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_irregular_y_mean.pdb',
         pd.DataFrame(
             [
                 ['HUMAN/ADCK3/5i35_chainA', 'Unequal y coordinate mean', -0.15]
@@ -249,8 +222,8 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
         )
     ),
     (
-        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'HUMAN/ADCK3/5i35_chainA/protein_irregular_z_mean.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_irregular_z_mean.pdb',
         pd.DataFrame(
             [
                 ['HUMAN/ADCK3/5i35_chainA', 'Unequal z coordinate mean', -0.14]
@@ -259,8 +232,8 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
         )
     ),
     (
-        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'HUMAN/ADCK3/5i35_chainA/protein_irregular_record_name.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_irregular_record_name.pdb',
         pd.DataFrame(
             [
                 ['HUMAN/ADCK3/5i35_chainA', 'Non-ATOM entries', {'record_name': {'HETATM'}, 'residue_name': {'GLU'}}]
@@ -269,8 +242,8 @@ def test_report_inconsistent_conversion(path_mol2, path_pdb):
         )
     ),
     (
-        'HUMAN/ADCK3/5i35_chainA/protein.mol2',
-        'HUMAN/ADCK3/5i35_chainA/protein_irregular_residue_details.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_irregular_residue_details.pdb',
         pd.DataFrame(
             [
                 ['HUMAN/ADCK3/5i35_chainA', 'Unequal residue ID/name', {'mol2': {'GLU261'}, 'pdb': {'GLU999'}}]
@@ -285,15 +258,12 @@ def test_report_inconsistent_conversion_valueerror(path_mol2, path_pdb, inconsis
 
     Parameters
     ----------
-    path_mol2 : pathlib.Path or str
+    path_mol2 : pathlib.Path
         Path to mol2 file.
-    path_pdb : None or pathlib.Path or str
+    path_pdb : pathlib.Path or None
         Path to pdb file (= converted mol2 file). Directory must exist.
         Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
     """
-
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / path_mol2
-    path_pdb = PATH_TEST_DATA / 'KLIFS_download' / path_pdb
 
     converter = Mol2ToPdbConverter()
     converter._report_inconsistent_conversion(path_mol2, path_pdb)
@@ -303,9 +273,9 @@ def test_report_inconsistent_conversion_valueerror(path_mol2, path_pdb, inconsis
 
 @pytest.mark.parametrize('path_mol2_input, path_pdb_input, path_pdb_output', [
     (
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.mol2',
         None,
-        'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainA/pocket.pdb'
     )
 ])
 def test_from_file(path_mol2_input, path_pdb_input, path_pdb_output):
@@ -314,19 +284,13 @@ def test_from_file(path_mol2_input, path_pdb_input, path_pdb_output):
 
     Parameters
     ----------
-    path_mol2_input : str
+    path_mol2_input : pathlib.Path
         Path to input mol2 file.
-    path_pdb_input : str
+    path_pdb_input : pathlib.Path
         Path to input pdb file.
-    path_pdb_output : str
+    path_pdb_output : pathlib.Path
         Path to output pdb file.
     """
-
-    path_mol2_input = PATH_TEST_DATA / 'KLIFS_download' / path_mol2_input
-    path_pdb_output = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_output
-
-    if path_pdb_input is not None:
-        path_pdb_input = PATH_TEST_DATA / 'KLIFS_download' / path_pdb_input
 
     converter = Mol2ToPdbConverter()
     converter.from_file(path_mol2_input, path_pdb_input)
@@ -345,7 +309,7 @@ def test_from_file(path_mol2_input, path_pdb_input, path_pdb_output):
     (
             pd.DataFrame(['HUMAN/ADCK3/5i35_chainA'], columns=['filepath']),
             PATH_TEST_DATA / 'KLIFS_download',
-            'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb'
+            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb'
     )
 ])
 def ttest_from_klifs_metadata(klifs_metadata, path_klifs_download, path_pdb):  # TODO PyMol cannot be launched mulitple times...
@@ -356,13 +320,11 @@ def ttest_from_klifs_metadata(klifs_metadata, path_klifs_download, path_pdb):  #
     ----------
     klifs_metadata : pandas.DataFrame
         KLIFS metadata describing the KLIFS dataset.
-    path_klifs_download : pathlib.Path or str
+    path_klifs_download : pathlib.Path
         Path to directory of KLIFS dataset files.
-    path_pdb : str
+    path_pdb : pathlib.Path
         Pdb path to converted pdb file.
     """
-
-    path_pdb = PATH_TEST_DATA / 'KLIFS_download' / path_pdb
 
     converter = Mol2ToPdbConverter()
     converter.from_klifs_metadata(klifs_metadata, path_klifs_download)

@@ -151,8 +151,9 @@ def test_get_molecule_exposures(path_pdb, chain_id, radius, n_residues, missing_
     assert missing_residues_calculated['cb'] == missing_exposure['cb']
 
 
-@pytest.mark.parametrize('path_mol2, path_pdb, chain_id, radius, n_residues, missing_exposure', [
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, radius, n_residues, missing_exposure', [
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
         'A',
@@ -161,6 +162,7 @@ def test_get_molecule_exposures(path_pdb, chain_id, radius, n_residues, missing_
         {'ca': [5, 6], 'cb': []}
     ),
     (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3nlb_chainA/pocket.mol2',
         PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3nlb_chainA/protein_pymol.pdb',
         'A',
@@ -169,13 +171,15 @@ def test_get_molecule_exposures(path_pdb, chain_id, radius, n_residues, missing_
         {'ca': [], 'cb': [7]}
     )
 ])
-def test_from_molecule(path_mol2, path_pdb, chain_id, radius, n_residues, missing_exposure):
+def test_from_molecule(path_klifs_metadata, path_mol2, path_pdb, chain_id, radius, n_residues, missing_exposure):
     """
     Test KLIFS ID subset of molecule exposure values and correct selection of HSExposureCB and HSExposureCA values as
     final exposure value (use CB, but if not available use CA).
 
     Parameters
     ----------
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
     path_mol2 : pathlib.Path
         Path to mol2 file.
     path_pdb : pathlib.Path
@@ -189,8 +193,6 @@ def test_from_molecule(path_mol2, path_pdb, chain_id, radius, n_residues, missin
     missing_exposure : dict of list of int
         Residue IDs with missing exposures for HSExposureCA and HSExposureCB calculation.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
 
     # Load pdb and mol2 files
     klifs_molecule_loader = KlifsMoleculeLoader()
