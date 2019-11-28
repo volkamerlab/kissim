@@ -13,22 +13,24 @@ from kinsim_structure.encoding import SpatialFeatures
 PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
 
-@pytest.mark.parametrize('mol2_filename', [
-    'HUMAN/ABL1/2g2i_chainA/pocket.mol2'
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2', [
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2'
+    )
 ])
-def test_from_molecule(mol2_filename):
+def test_from_molecule(path_klifs_metadata, path_mol2):
     """
     Test length (85 rows for 85 KLIFS residues) and columns names of features DataFrame.
     Values are tested already in respective feature unit test.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
+    path_mol2 : pathlib.Path
         Path to mol2 file.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / mol2_filename
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
@@ -47,18 +49,38 @@ def test_from_molecule(mol2_filename):
     assert len(features) == 85
 
 
-@pytest.mark.parametrize('mol2_filename, reference_point_name, anchor_residue_klifs_ids, x_coordinate', [
-    ('HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2', 'hinge_region', [16, 47, 80], 6.25545),
-    ('HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2', 'dfg_region', [20, 23, 81], 11.6846),
-    ('HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2', 'front_pocket', [6, 48, 75], float('nan'))
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, reference_point_name, anchor_residue_klifs_ids, x_coordinate', [
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+        'hinge_region',
+        [16, 47, 80],
+        6.25545
+    ),
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+        'dfg_region',
+        [20, 23, 81],
+        11.6846
+    ),
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+        'front_pocket',
+        [6, 48, 75],
+        float('nan')
+    )
 ])
-def test_get_anchor_atoms(mol2_filename, reference_point_name, anchor_residue_klifs_ids, x_coordinate):
+def test_get_anchor_atoms(path_klifs_metadata, path_mol2, reference_point_name, anchor_residue_klifs_ids, x_coordinate):
     """
     Test function that calculates the anchor atoms for different scenarios (missing anchor residues, missing neighbors)
 
     Parameters
     ----------
-    mol2_filename : str
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
+    path_mol2 : pathlib.Path
         Path to file originating from test data folder.
     reference_point_name : str
         Reference point name, e.g. 'hinge_region'.
@@ -67,9 +89,6 @@ def test_get_anchor_atoms(mol2_filename, reference_point_name, anchor_residue_kl
     x_coordinate: float
         X coordinate of first anchor atom.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / mol2_filename
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
@@ -105,23 +124,26 @@ def test_get_anchor_atoms(mol2_filename, reference_point_name, anchor_residue_kl
         assert anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], 'x'] == x_coordinate
 
 
-@pytest.mark.parametrize('mol2_filename, x_coordinate', [
-    ('HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2', 1.02664)
+@pytest.mark.parametrize('path_klifs_metadata, path_mol2, x_coordinate', [
+    (
+        PATH_TEST_DATA / 'klifs_metadata.csv',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+        1.02664
+    )
 ])
-def test_get_reference_points(mol2_filename, x_coordinate):
+def test_get_reference_points(path_klifs_metadata, path_mol2, x_coordinate):
     """
     Test calculation of reference point "centroid" of a pocket.
 
     Parameters
     ----------
-    mol2_filename : str
+    path_klifs_metadata : pathlib.Path
+        Path to unfiltered KLIFS metadata.
+    path_mol2 : pathlib.Path
         Path to file originating from test data folder.
     x_coordinate: float
         X coordinate of the centroid.
     """
-
-    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
-    path_mol2 = PATH_TEST_DATA / 'KLIFS_download' / mol2_filename
 
     klifs_molecule_loader = KlifsMoleculeLoader()
     klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
