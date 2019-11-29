@@ -13,7 +13,7 @@ from multiprocessing import cpu_count, Pool
 from Bio.PDB import HSExposureCA, HSExposureCB, Vector
 from Bio.PDB.Chain import Chain
 from Bio.PDB import calc_angle
-import nglview as nv
+#import nglview as nv
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -143,11 +143,9 @@ class FingerprintGenerator:
             Metadata (columns) for KLIFS molecules (rows).
         """
 
-        # Get start time of script
         start = datetime.datetime.now()
-        print(start)
 
-        logger.info(f'Calculate fingerprints...')
+        logger.info(f'ENCODING: FingerprintGenerator')
 
         # Set path to KLIFS download
         self.path_klifs_download = path_klifs_download
@@ -176,12 +174,10 @@ class FingerprintGenerator:
             i.molecule_code: i for i in fingerprints_list
         }
 
-        # Get end time of script
         end = datetime.datetime.now()
-        print(end)
 
-        logger.info(start)
-        logger.info(end)
+        logger.info(f'Start of fingerprint generation: {start}')
+        logger.info(f'End of fingerprint generation: {end}')
 
     def _get_fingerprint(self, klifs_metadata_entry):
         """
@@ -244,7 +240,6 @@ class SideChainOrientationGenerator:
 
         # Get start time of script
         start = datetime.datetime.now()
-        print(start)
 
         logger.info(f'Calculate side chain orientations...')
 
@@ -277,7 +272,6 @@ class SideChainOrientationGenerator:
 
         # Get end time of script
         end = datetime.datetime.now()
-        print(end)
 
         logger.info(start)
         logger.info(end)
@@ -1704,6 +1698,7 @@ class SideChainOrientationFeature:
         # PyMOL > ray 900, 900
         # PyMOL > save refpoints.png
 
+    """
     def show_in_nglviewer(self):
 
         # Get molecule and molecule code
@@ -1753,6 +1748,7 @@ class SideChainOrientationFeature:
         viewer.gui_style = 'ngl'
 
         return viewer
+    """
 
 
 class ExposureFeature:

@@ -6,6 +6,8 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the structural kinase fingerprint comparison.
 """
 
+print(f'similarity.py module name is {__name__}')
+
 import datetime
 import logging
 from multiprocessing import cpu_count, Pool
@@ -80,6 +82,10 @@ class FingerprintDistanceGenerator:
             For (ii) and (iii): All floats must sum up to 1.0.
         """
 
+        start = datetime.datetime.now()
+
+        logger.info(f'SIMILARITY: FingerprintDistanceGenerator: {feature_weights}')
+
         # Set class attributes
         self.distance_measure = feature_distances_generator.distance_measure
         self.feature_weights = feature_weights
@@ -101,6 +107,11 @@ class FingerprintDistanceGenerator:
             ],
             columns='molecule_code_1 molecule_code_2 distance coverage'.split()
         )
+
+        end = datetime.datetime.now()
+
+        logger.info(f'Start of fingerprint distance generation: {start}')
+        logger.info(f'End of fingerprint distance generation: {end}')
 
     @staticmethod
     def _get_fingerprint_distance_from_list(
@@ -379,6 +390,10 @@ class FeatureDistancesGenerator:
             Type of distance measure, defaults to scaled Euclidean distance.
         """
 
+        start = datetime.datetime.now()
+
+        logger.info(f'SIMILARITY: FeatureDistancesGenerator: {distance_measure}')
+
         # Remove empty fingerprints
         fingerprints = self._remove_empty_fingerprints(fingerprints_generator.data)
 
@@ -402,6 +417,11 @@ class FeatureDistancesGenerator:
         self.data = {
             (i.molecule_codes[0], i.molecule_codes[1]): i for i in feature_distances_list
         }
+
+        end = datetime.datetime.now()
+
+        logger.info(f'Start of feature distances generator: {start}')
+        logger.info(f'End of feature distances generator: {end}')
 
     @staticmethod
     def _get_feature_distances_from_list(
@@ -1087,3 +1107,7 @@ class FeatureDistances:
         else:
             d = 1 / len(values1) * distance.cityblock(values1, values2)
             return d
+
+
+if __name__ == '__main__':
+    print('similarity.py executed from CLI.')

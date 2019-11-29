@@ -6,12 +6,14 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the helper functions.
 """
 
+print(f'auxiliary.py module name is {__name__}')
+
 import logging
 from pathlib import Path
 
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
-from Bio.PDB import PDBParser, Selection, Entity
+from Bio.PDB import PDBParser, MMCIFParser, Selection, Entity
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ class MoleculeLoader:
         if self.molecule_path.exists():
             pass
         else:
-            logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
+            #logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
             raise FileNotFoundError(f'File not found: {self.molecule_path}')
 
         # Load molecule data
@@ -764,3 +766,7 @@ def get_klifs_regions():
     klifs_regions.index = klifs_regions.klifs_id
 
     return klifs_regions
+
+
+if __name__ == '__main__':
+    print('auxiliary.py executed from CLI.')
