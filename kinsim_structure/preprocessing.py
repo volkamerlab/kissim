@@ -6,6 +6,10 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the preprocessing of the KLIFS dataset.
 """
 
+print(f'preprocessing.py module name is {__name__}')
+
+import datetime
+from multiprocessing import cpu_count, Pool
 import logging
 from pathlib import Path
 import time
@@ -57,6 +61,8 @@ class KlifsMetadataLoader:
         pandas.DataFrame
             Metadata of KLIFS download, merged from two KLIFS metadata files.
         """
+
+        logger.info(f'PREPROCESSING: KlifsMoleculeLoader')
 
         klifs_overview = self._from_klifs_overview_file(Path(path_klifs_overview))
         klifs_export = self._from_klifs_export_file(Path(path_klifs_export))
@@ -366,6 +372,7 @@ class KlifsMetadataFilter:
             Path to directory of KLIFS dataset files.
         """
 
+        logger.info(f'PREPROCESSING: KlifsMetadataFilter')
         logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
 
         self.unfiltered = klifs_metadata
@@ -823,6 +830,7 @@ class Mol2FormatScreener:
             'residues_non_standard': None,
             'residues_duplicated_atom_names': None
         }
+        self.path_klifs_download = None
 
     def from_metadata(self, klifs_metadata, path_klifs_download):
         """
@@ -836,7 +844,14 @@ class Mol2FormatScreener:
             Path to directory of KLIFS dataset files.
         """
 
+        start = datetime.datetime.now()
+
+        logger.info(f'PREPROCESSING: Mol2FormatScreener')
         logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
+
+        path_klifs_download = Path(path_klifs_download)
+        if path_klifs_download.exists():
+            self.path_klifs_download = path_klifs_download
 
         klifs_metadata = klifs_metadata.copy()
 
@@ -846,23 +861,22 @@ class Mol2FormatScreener:
             'residues_duplicated_atom_names': []
         }
 
-        for index, row in klifs_metadata.iterrows():
+        # Number of CPUs on machine
+        num_cores = cpu_count() - 1
+        logger.info(f'Number of cores used: {num_cores}')
 
-            if index % 100 == 0:
-                print(f'Progress: {index}/{len(klifs_metadata)}')
+        # Create pool with `num_processes` processes
+        pool = Pool(processes=num_cores)
 
-            # Load molecule
-            ml = MoleculeLoader(path_klifs_download / row.filepath / 'protein.mol2')
-            molecule = ml.molecules[0]
+        # Get KLIFS entries as list
+        entry_list = [j for i, j in klifs_metadata.iterrows()]
 
-            # Get underscored residues
-            self._get_underscored_residues(molecule)
+        # Apply function to each chunk in list
+        pool.map(self._screen_mol2_format, entry_list)
 
-            # Get non-standard residues
-            self._get_non_standard_residues(molecule)
-
-            # Get duplicated atom names per residue
-            self._get_structures_with_duplicated_residue_atom_names(molecule)
+        # Close and join pool
+        pool.close()
+        pool.join()
 
         # Cast lists to DataFrame and log results
         if len(self.structures_irregular['residues_underscored']) > 0:
@@ -891,6 +905,31 @@ class Mol2FormatScreener:
                         f'{len(self.structures_irregular["residues_duplicated_atom_names"].groupby("molecule_code"))}')
         else:
             self.structures_irregular['residues_duplicated_atom_names'] = None
+
+        end = datetime.datetime.now()
+
+        logger.info(f'Start of mol2 format screening: {start}')
+        logger.info(f'End of mol2 format screening: {end}')
+
+    def _screen_mol2_format(self, klifs_metadata_entry):
+
+        try:
+
+            # Load molecule
+            ml = MoleculeLoader(self.path_klifs_download / klifs_metadata_entry.filepath / 'protein.mol2')
+            molecule = ml.molecules[0]
+
+            # Get underscored residues
+            self._get_underscored_residues(molecule)
+
+            # Get non-standard residues
+            self._get_non_standard_residues(molecule)
+
+            # Get duplicated atom names per residue
+            self._get_structures_with_duplicated_residue_atom_names(molecule)
+
+        except FileNotFoundError:
+            pass
 
     def _get_underscored_residues(self, molecule):
         """
@@ -964,14 +1003,14 @@ class Mol2KlifsToPymolConverter:
 
     Attributes
     ----------
-    pymol_path_mol2 : list of str
+    path_mol2_pymol : list of str
         List of PyMol readable mol2 files.
     """
 
     def __init__(self):
 
-        self.pymol_path_mol2 = []
-        self.converted_lines = pd.DataFrame([], columns=['path_mol2', 'line'])
+        self.path_mol2_pymol = []
+        self.converted_lines = pd.DataFrame([], columns=['path_mol2', 'conversion_type', 'line', 'line_new'])
 
     def from_metadata(self, klifs_metadata, path_klifs_download):
         """
@@ -985,28 +1024,44 @@ class Mol2KlifsToPymolConverter:
             Path to directory of KLIFS dataset files.
         """
 
+        start = datetime.datetime.now()
+
+        logger.info(f'PREPROCESSING: Mol2KlifsToPymolConverter')
         logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
 
         for index, row in klifs_metadata.iterrows():
 
-            path_mol2 = Path(path_klifs_download) / row.filepath / 'protein.mol2'
-            path_mol2_pymol = Path(path_mol2).parent / 'protein_pymol.mol2'
+            if index % 1000 == 0:
+                print(f'Progress: {index}/{len(klifs_metadata)}')
 
-            # Load lines from mol2 file
-            with open(path_mol2, 'r') as f:
-                lines = f.readlines()
+            try:
 
-            # Convert lines
-            lines_new = self._convert_mol2(lines, row.filepath)
+                path_mol2 = Path(path_klifs_download) / row.filepath / 'protein.mol2'
+                path_mol2_pymol = Path(path_mol2).parent / 'protein_pymol.mol2'
 
-            # Write new lines to new mol2 file
-            with open(path_mol2_pymol, 'w') as f:
-                f.writelines(lines_new)
+                # Load lines from mol2 file
+                with open(path_mol2, 'r') as f:
+                    lines = f.readlines()
 
-            # Add new file path to class attribute
-            self.pymol_path_mol2.append(path_mol2_pymol)
+                # Convert lines
+                lines_new = self._convert_mol2(lines, row.filepath)
 
-        logger.info(f'Number of converted files: {len(self.pymol_path_mol2)}')
+                # Write new lines to new mol2 file
+                with open(path_mol2_pymol, 'w') as f:
+                    f.writelines(lines_new)
+
+                # Add new file path to class attribute
+                self.path_mol2_pymol.append(path_mol2_pymol)
+
+            except FileNotFoundError:
+                pass
+
+        logger.info(f'Number of converted files: {len(self.path_mol2_pymol)}')
+
+        end = datetime.datetime.now()
+
+        logger.info(f'Start of mol2 KLIFS to PyMol conversion: {start}')
+        logger.info(f'End of mol2 KLIFS to PyMol conversion: {end}')
 
     def _convert_mol2(self, lines_mol2, filepath=None):
         """
@@ -1033,10 +1088,12 @@ class Mol2KlifsToPymolConverter:
         }
 
         lines_new = []
-        unexpected_targets = []
 
         for line in lines_mol2:
 
+            # KLIFS mol2 file have 4 sections: MOLECULE, ATOM, BOND, SUBSTRUCTURE
+
+            # Set flag to sections that have been visited, lasted True flag is currently visited section
             if line.startswith('@<TRIPOS>MOLECULE'):
                 headers['@<TRIPOS>MOLECULE'] = True
 
@@ -1049,52 +1106,91 @@ class Mol2KlifsToPymolConverter:
             if line.startswith('@<TRIPOS>SUBSTRUCTURE'):
                 headers['@<TRIPOS>SUBSTRUCTURE'] = True
 
-            if '_' in line:
-
-                # In what section are we?
-
-                if headers['@<TRIPOS>MOLECULE'] and not headers['@<TRIPOS>ATOM'] and not headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
-
-                    if line.startswith('USER_CHARGES'):
-                        lines_new.append(line)
-                    else:
-                        unexpected_targets.append(line)
-
-                elif headers['@<TRIPOS>MOLECULE'] and headers['@<TRIPOS>ATOM'] and not headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
-
-                    if '_' in line.split()[7]:
-                        lines_new.append(line.replace('_', '-'))
-                        self.converted_lines = self.converted_lines.append(
-                            pd.DataFrame([[filepath, line]], columns=['path_mol2', 'line'])
-                        )
-
-                    else:
-                        unexpected_targets.append(line)
-
-                elif headers['@<TRIPOS>MOLECULE'] and headers['@<TRIPOS>ATOM'] and headers['@<TRIPOS>BOND'] and not headers['@<TRIPOS>SUBSTRUCTURE']:
-
-                    unexpected_targets.append(line)
-
-                else:
-
-                    if '_' in line.split()[1]:
-                        lines_new.append(line.replace('_', '-'))
-                        self.converted_lines = self.converted_lines.append(
-                            pd.DataFrame([[filepath, line]], columns=['path_mol2', 'line'])
-                        )
-
-                    elif line.startswith('# MOE 2012.10 (io_trps.svl 2012.10)'):
-                        lines_new.append(line)
-
-                    else:
-                        unexpected_targets.append(line)
-            else:
+            # In MOLECULE section: No conversions necessary
+            if headers['@<TRIPOS>MOLECULE'] and \
+                    not headers['@<TRIPOS>ATOM'] and \
+                    not headers['@<TRIPOS>BOND'] and \
+                    not headers['@<TRIPOS>SUBSTRUCTURE']:
 
                 lines_new.append(line)
 
-            if len(unexpected_targets) > 0:
+            # In ATOM section: Underscored residues > residues with minus sign
+            elif headers['@<TRIPOS>MOLECULE'] and \
+                    headers['@<TRIPOS>ATOM'] and \
+                    not headers['@<TRIPOS>BOND'] and \
+                    not headers['@<TRIPOS>SUBSTRUCTURE']:
 
-                raise ValueError(f'{path_mol2}: Unknown underscores were transformed, please check: {unexpected_targets}')
+                try:
+
+                    if '_' in line.split()[7]:  # Substructure name, e.g. GLY_1
+                        line_new = line.replace('_', '-')
+                        lines_new.append(line_new)
+                        self.converted_lines = self.converted_lines.append(
+                            pd.DataFrame(
+                                [
+                                    [
+                                        filepath,
+                                        'ATOM section: Underscored residue IDs',
+                                        line,
+                                        line_new
+                                    ]
+                                ],
+                                columns=['path_mol2', 'conversion_type', 'line', 'line_new']
+                            )
+                        )
+
+                    else:  # Substructure name, e.g. GLY1
+                        lines_new.append(line)
+
+                except IndexError:
+
+                    lines_new.append(line)
+
+            # In BOND section: No conversions necessary
+            elif headers['@<TRIPOS>MOLECULE'] and \
+                    headers['@<TRIPOS>ATOM'] and \
+                    headers['@<TRIPOS>BOND'] and \
+                    not headers['@<TRIPOS>SUBSTRUCTURE']:
+
+                lines_new.append(line)
+
+            # In SUBSTRUCTURE section:
+            # - Underscored residues > residues with minus sign
+            # - Irregular chain IDs, e.g. A1 > A
+            else:
+
+                try:
+
+                    if '_' in line.split()[1] or len(line.split()[5]) > 1:
+
+                        # In case of underscored residue IDs
+                        line_new = line.replace('_', '-')
+
+                        # In case of irregular chain IDs
+                        chain_id = line.split()[5]
+                        line_new = line_new.replace(chain_id, chain_id[0])
+
+                        lines_new.append(line_new)
+                        self.converted_lines = self.converted_lines.append(
+                            pd.DataFrame(
+                                [
+                                    [
+                                        filepath,
+                                        'SUBSTRUCTURE section: Underscored residue or irregular chain ID',
+                                        line,
+                                        line_new
+                                    ]
+                                ],
+                                columns=['path_mol2', 'conversion_type', 'line', 'line_new']
+                            )
+                        )
+
+                    else:
+                        lines_new.append(line)
+
+                except IndexError:
+
+                    lines_new.append(line)
 
         return lines_new
 
@@ -1125,6 +1221,9 @@ class Mol2ToPdbConverter:
             Path to directory of KLIFS dataset files.
         """
 
+        start = datetime.datetime.now()
+
+        logger.info(f'PREPROCESSING: Mol2ToPdbConverter')
         logger.info(f'Number of metadata entries: {len(klifs_metadata)}')
 
         # Launch PyMol once
@@ -1132,22 +1231,32 @@ class Mol2ToPdbConverter:
 
         for index, row in klifs_metadata.iterrows():
 
-            if index % 100 == 0:
+            if index % 1000 == 0:
                 print(f'Progress: {index}/{len(klifs_metadata)}')
 
-            path_mol2 = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
+            try:
 
-            # Set mol2 path
-            path_mol2 = self._set_path_mol2(path_mol2)
+                path_mol2 = Path(path_klifs_download) / row.filepath / 'protein_pymol.mol2'
 
-            # Set pdb path
-            path_pdb = self._set_path_pdb(path_mol2, path_pdb=None)
+                # Set mol2 path
+                path_mol2 = self._set_path_mol2(path_mol2)
 
-            # PyMol mol2 to pdb conversion
-            self._pymol_mol2_to_pdb_conversion(path_mol2, path_pdb)
-            self._report_inconsistent_conversion(path_mol2, path_pdb)  # Check if files are equivalent
+                # Set pdb path
+                path_pdb = self._set_path_pdb(path_mol2, path_pdb=None)
+
+                # PyMol mol2 to pdb conversion
+                self._pymol_mol2_to_pdb_conversion(path_mol2, path_pdb)
+                self._report_inconsistent_conversion(path_mol2, path_pdb)  # Check if files are equivalent
+
+            except FileNotFoundError:
+                pass
 
         self._pymol_quit()
+
+        end = datetime.datetime.now()
+
+        logger.info(f'Start of mol2 to pdb conversion: {start}')
+        logger.info(f'End of mol2 to pdb conversion: {end}')
 
     def from_file(self, path_mol2, path_pdb=None):
         """
@@ -1432,3 +1541,8 @@ class Mol2ToPdbConverter:
                                  f'Must have the form: /path/to/existing/directory/filename.pdb')
 
         return path_pdb
+
+
+if __name__ == "__main__":
+    # Do something if this file is invoked on its own
+    print('preprocessing.py executed from CLI.')
