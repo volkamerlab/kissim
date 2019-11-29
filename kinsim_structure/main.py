@@ -1,5 +1,5 @@
 """
-kinsim_structure.py
+main.py
 Subpocket-based structural fingerprint for kinase pocket comparison
 
 Handles the primary functions
@@ -11,6 +11,8 @@ Subpocket-based structural fingerprint for kinase pocket comparison
 
 Handles the primary functions
 """
+
+print(f'main.py module name is {__name__}')
 
 import logging
 from pathlib import Path
@@ -26,14 +28,7 @@ logger = logging.getLogger(__name__)
 
 class Preprocessing:
     """
-    Preprocess KLIFS dataset:
-    1. Load KLIFS metadata from files.
-    2. Screen KLIFS protein mol files for irregular file rows.
-    3. Convert KLIFS protein.mol files to PyMol readable protein_pymol.mol2 files
-     (residues with underscores are transformed to residues with negative sign).
-    4. Convert protein_pymol.mol2 file to protein_pymol.pdb file.
-    5. Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in), resolution
-    (<=4), KLIFS quality score (>=4) and existent/parsable mol2 and pdb files.
+    Preprocess KLIFS dataset.
 
     Attributes
     ----------
@@ -83,14 +78,14 @@ class Preprocessing:
         """
 
         # Check if input files and directories exist.
-        if not self.path_klifs_overview.exists():
-            raise FileNotFoundError(f'File not found: {self.path_klifs_overview}')
-        if not self.path_klifs_export.exists():
-            raise FileNotFoundError(f'File not found: {self.path_klifs_export}')
-        if not self.path_klifs_download.exists():
-            raise FileNotFoundError(f'Directory not found: {self.path_klifs_download}')
-        if not self.path_results.exists():
-            raise FileNotFoundError(f'Directory not found: {self.path_results}')
+        if not path_klifs_overview.exists():
+            raise FileNotFoundError(f'File not found: {path_klifs_overview}')
+        if not path_klifs_export.exists():
+            raise FileNotFoundError(f'File not found: {path_klifs_export}')
+        if not path_klifs_download.exists():
+            raise FileNotFoundError(f'Directory not found: {path_klifs_download}')
+        if not path_results.exists():
+            raise FileNotFoundError(f'Directory not found: {path_results}')
 
         # Set as class attributes
         self.path_klifs_overview = Path(path_klifs_overview)
@@ -147,7 +142,8 @@ class Preprocessing:
 
         Parameters
         ----------
-        klifs_metadata_loader
+        klifs_metadata_loader : preprocessing.KlifsMetadataLoader
+            Unfiltered KLIFS metadata.
         """
 
         mol2_format_screener = Mol2FormatScreener()
@@ -164,7 +160,8 @@ class Preprocessing:
 
         Parameters
         ----------
-        klifs_metadata_loader
+        klifs_metadata_loader : preprocessing.KlifsMetadataLoader
+            Unfiltered KLIFS metadata.
         """
 
         mol2_klifs_to_pymol_converter = Mol2KlifsToPymolConverter()
@@ -181,7 +178,8 @@ class Preprocessing:
 
         Parameters
         ----------
-        klifs_metadata_loader
+        klifs_metadata_loader : preprocessing.KlifsMetadataLoader
+            Unfiltered KLIFS metadata.
         """
 
         mol2_to_pdb_converter = Mol2ToPdbConverter()
@@ -194,10 +192,12 @@ class Preprocessing:
 
     def _filter_klifs_metadata(self, klifs_metadata_loader):
         """
+        Filter KLIFS metadata.
 
         Parameters
         ----------
-        klifs_metadata_loader
+        klifs_metadata_loader : preprocessing.KlifsMetadataLoader
+            Unfiltered KLIFS metadata.
         """
 
         klifs_metadata_filter = KlifsMetadataFilter()
@@ -210,28 +210,57 @@ class Preprocessing:
 
 
 class Encoding:
+    """
+    Encode KLIFS dataset.
+
+    Attributes
+    ----------
+    path_klifs_download : pathlib.Path or str
+        Path to directory of KLIFS dataset files.
+    path_results : pathlib.Path or str
+        Path to results folder.
+
+    """
 
     def __init__(self):
 
         self.path_results = None
+        self.path_klifs_download = None
 
-    def execute(self, klifs_metadata_filter, path_results):
+    def execute(self, klifs_metadata_filter, path_klifs_download, path_results):
+        """
+        Encode KLIFS dataset, i.e. generate fingerprints for each KLIFS entry in filtered KLIFS metadata.
+
+        Parameters
+        ----------
+        klifs_metadata_filter : preprocessing.KlifsMetadataFilter
+            Filtered KLIFS metadata.
+        path_klifs_download : pathlib.Path or str
+            Path to directory of KLIFS dataset files.
+        path_results : pathlib.Path or str
+            Path to results folder.
+
+        Returns
+        -------
+        encoding.FingerprintGenerator
+            Fingerprints for KLIFS dataset.
+        """
 
         # Check if input parameters
-        if not self.path_results.exists():
-            raise FileNotFoundError(f'Directory not found: {self.path_results}')
-        if isinstance(klifs_metadata_filter, KlifsMetadataFilter):
-            raise ValueError(f'TBA')  # TODO write error message, what makes sense?
+        if not path_results.exists():
+            raise FileNotFoundError(f'Directory not found: {path_results}')
+        #if isinstance(klifs_metadata_filter, KlifsMetadataFilter):
+        #    raise ValueError(f'{type(klifs_metadata_filter)}')  # TODO write error message, what makes sense?
 
         # Set as class attributes
         self.path_results = Path(path_results)
+        self.path_klifs_download = Path(path_klifs_download)
 
         # Generate fingerprints
-        logger.info(f'***FingerprintGenerator')
         fingerprint_generator = FingerprintGenerator()
         fingerprint_generator.from_metadata(
-            klifs_metadata_filter.data_essential,
-            self.path_results
+            klifs_metadata_filter.filtered,
+            self.path_klifs_download
         )
 
         # Save class object to file
@@ -240,30 +269,49 @@ class Encoding:
 
 
 class Similarity:
+    """
+    Calculate all-against-all fingerprint distance.
+
+    Attributes
+    ----------
+    path_results : pathlib.Path or str
+        Path to results folder.
+    """
 
     def __init__(self):
 
         self.path_results = None
 
     def execute(self, fingerprint_generator, distance_measures, feature_weighting_schemes, path_results):
+        """
+        Calculate all-against-all feature and fingerprint distances for different distance measures and feature
+        weighting schemes.
+
+        Parameters
+        ----------
+        fingerprint_generator : encoding.FingerprintGenerator
+            Fingerprints for KLIFS dataset.
+        distance_measures : dict of str
+            Distance measures: Key is name for file name, value is name as implemented in package.
+        feature_weighting_schemes : dict of (dict or None)
+            Feature weighting schemes: Key is name for file name, value is formatting as required for package.
+        path_results : pathlib.Path or str
+            Path to results folder.
+        """
 
         # Check if input parameters
-        if not self.path_results.exists():
-            raise FileNotFoundError(f'Directory not found: {self.path_results}')
-        if isinstance(fingerprint_generator, FingerprintGenerator):
-            raise ValueError(f'TBA')  # TODO write error message, what makes sense?
+        if not path_results.exists():
+            raise FileNotFoundError(f'Directory not found: {path_results}')
+        #if isinstance(fingerprint_generator, FingerprintGenerator):
+        #    raise ValueError(f'TBA')  # TODO write error message, what makes sense?
 
         # Set as class attributes
         self.path_results = Path(path_results)
 
         # All against all fingerprint comparison
-        logger.info(f'***FeatureDistancesGenerator')
-
         for distance_measure_name, distance_measure in distance_measures.items():
 
             # Generate feature distances (FeatureDistancesGenerator)
-            logger.info(f'***FeatureDistancesGenerator: {distance_measure_name}')
-
             feature_distances_generator = FeatureDistancesGenerator()
             feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
 
@@ -273,8 +321,6 @@ class Similarity:
 
             for feature_weights_name, feature_weights in feature_weighting_schemes.items():
                 # Generate fingerprint distance (FingerprintDistanceGenerator)
-                logger.info(f'***FingerprintDistanceGenerator: {distance_measure_name}')
-
                 fingerprint_distance_generator = FingerprintDistanceGenerator()
                 fingerprint_distance_generator.from_feature_distances_generator(
                     feature_distances_generator,
@@ -286,42 +332,3 @@ class Similarity:
                     self.path_results / f'similarity_fingerprint_distance_{distance_measure}_{feature_weights_name}.p', 'wb'
                 ) as f:
                     pickle.dump(feature_distances_generator, f)
-
-
-def main(
-    path_klifs_overview,
-    path_klifs_export,
-    path_klifs_download,
-    path_results,
-    distance_measures,
-    feature_weighting_schemes
-):
-
-    # Preprocess KLIFS data
-    preprocessing = Preprocessing()
-    klifs_metadata_filter = preprocessing.execute(
-        path_klifs_overview,
-        path_klifs_export,
-        path_klifs_download,
-        path_results
-    )
-
-    # Encode KLIFS pockets
-    encoding = Encoding()
-    fingerprint_generator = encoding.execute(
-        klifs_metadata_filter,
-        path_results
-    )
-
-    # Calculate all-against-all similarity
-    similarity = Similarity()
-    similarity.execute(
-        fingerprint_generator,
-        distance_measures,
-        feature_weighting_schemes,
-        path_results
-    )
-
-
-if __name__ == "__main__":
-    pass
