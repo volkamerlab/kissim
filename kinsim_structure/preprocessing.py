@@ -1231,7 +1231,7 @@ class Mol2KlifsToPymolConverter:
 
                         chain_id = line.split()[5]
                         # Spaces necessary, so that ALA145 is not converted to ALA45
-                        line_new = line_new.replace(' ' + chain_id, ' ' + chain_id[0])
+                        line_new = line.replace(' ' + chain_id, ' ' + chain_id[0])
 
                         lines_new.append(line_new)
                         lines_converted.append(
@@ -1566,7 +1566,7 @@ class Mol2ToPdbConverter:
         residue_set_mol2 = set(mol2_df.subst_name)
         pdb_df.residue_number = pdb_df.residue_number.astype(str)
         residue_set_pdb = set(pdb_df.residue_name + pdb_df.residue_number)
-        residue_set_diff = (residue_set_mol2 - residue_set_pdb)|(residue_set_pdb - residue_set_mol2)
+        residue_set_diff = (residue_set_mol2 - residue_set_pdb) | (residue_set_pdb - residue_set_mol2)
 
         if not len(residue_set_diff) == 0:
 
