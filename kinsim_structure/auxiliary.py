@@ -6,8 +6,6 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the helper functions.
 """
 
-print(f'auxiliary.py module name is {__name__}')
-
 import logging
 from pathlib import Path
 

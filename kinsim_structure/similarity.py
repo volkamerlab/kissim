@@ -6,8 +6,6 @@ Subpocket-based structural fingerprint for kinase pocket comparison.
 Handles the primary functions for the structural kinase fingerprint comparison.
 """
 
-print(f'similarity.py module name is {__name__}')
-
 import datetime
 import logging
 from multiprocessing import cpu_count, Pool

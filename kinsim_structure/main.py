@@ -12,8 +12,6 @@ Subpocket-based structural fingerprint for kinase pocket comparison
 Handles the primary functions
 """
 
-print(f'main.py module name is {__name__}')
-
 import logging
 from pathlib import Path
 import pickle
