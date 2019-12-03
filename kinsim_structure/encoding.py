@@ -171,7 +171,7 @@ class FingerprintGenerator:
 
         # Transform to dict
         self.data = {
-            i.molecule_code: i for i in fingerprints_list
+            i.molecule_code: i for i in fingerprints_list if i is not None  # Removes emtpy fingerprints
         }
 
         end = datetime.datetime.now()
@@ -203,7 +203,7 @@ class FingerprintGenerator:
 
         except Exception as e:
 
-            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.filepath}')
             logger.error(e)
 
             return None
@@ -308,7 +308,7 @@ class SideChainOrientationGenerator:
 
         except Exception as e:
 
-            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.filepath}')
             logger.error(e)
 
             return None
@@ -370,6 +370,12 @@ class Fingerprint:
             'physicochemical': None,
             'distances': None,
             'moments': None
+        }
+
+        self.features_verbose = {
+            'reference_points': None,
+            'side_chain_orientation': None,
+            'exposure': None,
         }
 
     @property
@@ -461,6 +467,11 @@ class Fingerprint:
         self.fingerprint_normalized['physicochemical'] = self._normalize_physicochemical_bits()
         self.fingerprint_normalized['distances'] = self._normalize_distances_bits()
         self.fingerprint_normalized['moments'] = self._normalize_moments_bits()
+
+        # Add verbose feature details
+        self.features_verbose['reference_points'] = spatial_features.reference_points
+        self.features_verbose['exposure'] = physicochemical_features.features_verbose['exposure']
+        self.features_verbose['side_chain_orientation'] = physicochemical_features.features_verbose['side_chain_orientation']
 
     def _get_fingerprint(self, fingerprint_type, normalized=True):
         """
@@ -729,6 +740,10 @@ class PhysicoChemicalFeatures:
     def __init__(self):
 
         self.features = None
+        self.features_verbose = {
+            'side_chain_orientation': None,
+            'exposure': None
+        }
 
     def from_molecule(self, molecule, chain):
         """
@@ -769,6 +784,9 @@ class PhysicoChemicalFeatures:
         physicochemical_features.fillna(value=pd.np.nan, inplace=True)
 
         self.features = physicochemical_features
+
+        self.features_verbose['side_chain_orientation'] = side_chain_orientation.features_verbose
+        self.features_verbose['exposure'] = exposure.features_verbose
 
 
 class SpatialFeatures:
