@@ -420,7 +420,7 @@ class KlifsMoleculeLoader:
         """
 
         # Depending on whether alternate model and chain ID is given build file path:
-        path_pocket_mol2 = path_klifs_download / klifs_metadata_entry.filepath / 'pocket.mol2'
+        path_pocket_mol2 = Path(path_klifs_download) / klifs_metadata_entry.filepath / 'pocket.mol2'
 
         # If file does not exist, raise error
         if not path_pocket_mol2.exists():
