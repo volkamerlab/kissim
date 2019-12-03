@@ -1820,7 +1820,7 @@ class ExposureFeature:
         # Set index (from residue IDs) to KLIFS IDs
         exposures.set_index('klifs_id', inplace=True, drop=True)
 
-        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
+        # Add column with CB exposure values, but with CA exposure values if CB exposure values are missing
         exposures['exposure'] = exposures.apply(
             lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
             axis=1
