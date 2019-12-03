@@ -7,711 +7,380 @@ Handles the primary functions for the structural kinase fingerprint analysis.
 """
 
 import logging
-import math
-import multiprocessing
 from pathlib import Path
-import pickle
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader, iprint
-from kinsim_structure.encoding import SideChainAngleFeature
 
 logger = logging.getLogger(__name__)
 
-STANDARD_AMINOACIDS = 'GLY ALA SER PRO VAL THR CYS ILE LEU ASN ASP GLN LYS GLU MET HIS PHE ARG TYR TRP'.split()
 
-
-class ResidueConservation:
+class KlifsMetadataAnalyser:
     """
-    Occurrence of each residue per KLIFS ID over all KLIFS structures.
+    xxx
 
-    Attributes
-    ----------
-    data : pandas.DataFrame
-        Occurrence of each residue (rows) over all structures per KLIFS ID (columns).
-
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
     """
 
-    def __init__(self, klifs_metadata):
-        self.data = self.get_residue_occurrence(klifs_metadata)
+    def __init__(self):
+        pass
 
     @staticmethod
-    def get_residue_occurrence(klifs_metadata):
-
-        # Get DataFrame containing residue per KLIFS ID (columns) for all structure pockets (rows).
-        pockets = pd.DataFrame(
-            list(klifs_metadata.pocket.apply(lambda x: list(x))),
-            columns=range(1, 86)
-        )
-
-        # Get DataFrame containing per KLIFS ID (columns) the occurrence of each residue (rows) over all structures.
-        residues_occurrence = pockets.apply(lambda x: x.value_counts(), axis=0)
-
-        # Convert float and nan values into int and 0 values
-        residues_occurrence.fillna(0, inplace=True)
-        residues_occurrence = residues_occurrence.astype('int64')
-
-        return residues_occurrence
-
-
-class GapRate:
-    """
-    ...
-
-    Attributes
-    ----------
-    data : pandas.DataFrame
-        DataFrame containing gap rates for each position in the KLIFS alignment for the input data.
-
-    Parameters
-    ----------
-    klifs_metadata : pandas.DataFrame
-        DataFrame containing merged metadate from both input KLIFS tables.
-    """
-
-    def __init__(self, klifs_metadata):
-
-        self.n_structures = klifs_metadata.shape[0]
-        self.data = self.calculate_gap_rate(klifs_metadata)
-
-    def calculate_gap_rate(self, klifs_metadata):
+    def plot_residue_sequence_occurrency(klifs_metadata, residue_name, path_output):
         """
-        Calculate gap rate at every KLIFS MSA position across the filtered kinase data set.
+        xxx
 
         Parameters
         ----------
         klifs_metadata : pandas.DataFrame
             DataFrame containing merged metadate from both input KLIFS tables.
+        residue_name : str
+            One letter residue code.
+
+        Returns
+        -------
+        xxx
+            xxx
+        """
+
+        sequence = pd.DataFrame([list(i) for i in klifs_metadata.pocket], columns=range(1, 86))
+
+        fig, ax = plt.subplots(figsize=(20, 4))
+
+        axes = sequence.apply(
+            lambda x: x == residue_name
+        ).apply(
+            lambda x: sum(x)
+        ).plot(kind='bar', ax=ax)
+
+        axes.set_ylabel('Number of KLIFS entries')
+        axes.set_xlabel('KLIFS position')
+        axes.set_title(f'Positional occurrency of residue {residue_name} in KLIFS pocket')
+        plt.suptitle('')
+
+        if residue_name == '_':
+            residue_name = 'gap'
+
+        axes.get_figure().savefig(
+            Path(path_output) / f'sequence_occurrence_of_{residue_name}.png',
+            dpi=300,
+        )
+
+        return axes
+
+
+class FeatureDistributions:
+
+    def __init__(self):
+        pass
+
+    def plot_boxplot(self, fingerprints, features_type, features_type_label, color, path_output):
+        """
+        Generate boxplot describing the feature distribution per feature name.
+
+        Parameters
+        ----------
+        fingerprints : list of kinsim_structure.encoding.Fingerprint
+            Fingerprints.
+        features_type : str
+            Type of fingerprint feature.
+        features_type_label : str
+            Label name for type of fingerprint feature.
+        path_output : pathlib.Path or str
+            Path to output folder.
+
+        Returns
+        -------
+        matplotlib.axes._subplots.AxesSubplot
+            Boxplot axes.
+        """
+
+        feature = self._get_features_by_type(fingerprints, features_type)
+
+        axes = feature.plot(
+            figsize=(8.5, 6),
+            kind='box',
+            title=features_type_label,
+            grid=False,
+            color=dict(boxes=color, whiskers=color, medians='grey', caps=color),
+            boxprops=dict(linestyle='-', linewidth=1.5),
+            flierprops=dict(linestyle='none', marker='o', markerfacecolor='none', markersize=3,  markeredgecolor='grey'),
+            medianprops=dict(linestyle='-', linewidth=1.5),
+            whiskerprops=dict(linestyle='-', linewidth=1.5),
+            capprops=dict(linestyle='-', linewidth=1.5),
+            showfliers=True
+        )
+
+        # https://www.drawingfromdata.com/how-to-rotate-axis-labels-in-seaborn-and-matplotlib
+        #axes.set_xticklabels(axes.get_xticklabels(), rotation=45, ha='right')
+
+        axes.get_figure().savefig(
+            Path(path_output) / f'feature_distribution_boxplot_{features_type}.png',
+            dpi=300,
+            #bbox_inches='tight'
+        )
+
+        return axes
+
+    def plot_violinplot(self, fingerprints, features_type, features_type_label, color, path_output):
+
+        plt.figure(figsize=(8.5, 6))
+
+        # Melt data
+        melted_data = self._melt_features_by_type(fingerprints, features_type, features_type_label)
+
+        if ('physicochemical' in features_type) or ('distances' in features_type):
+
+            axes = sns.violinplot(
+                x=features_type_label,
+                y='Feature value',
+                data=melted_data,
+                color=color,
+                rot=90
+            )
+
+        elif 'moments' in features_type:
+
+            axes = sns.violinplot(
+                x=features_type_label,
+                y='Feature value',
+                hue='Distance to',
+                data=melted_data,
+                color=color,
+                rot=90
+            )
+
+        else:
+            print(f'Input did not match. Check again.')
+            axes = None
+
+        # https://www.drawingfromdata.com/how-to-rotate-axis-labels-in-seaborn-and-matplotlib
+        #axes.set_xticklabels(axes.get_xticklabels(), rotation=45, ha='right')
+
+        axes.get_figure().savefig(
+            path_output / f'feature_distribution_violinplot_{features_type}.png',
+            dpi=300
+        )
+
+        return axes
+
+    def _melt_features_by_type(self, fingerprints, features_type, features_type_label):
+        """
+        Melt data for fingerprint feature (as preparation for plotting).
+
+        Parameters
+        ----------
+        fingerprints : list of kinsim_structure.encoding.Fingerprint
+            Fingerprints.
+        features_type : str
+            Type of fingerprint feature.
+        features_type_label : str
+            Label name for type of fingerprint feature.
 
         Returns
         -------
         pandas.DataFrame
-            DataFrame containing gap rates for each position in the KLIFS alignment for the input data.
+            Melted fingerprint features of certain type (label names as column/row names).
         """
 
-        gaps = [0] * 85
+        if ('physicochemical' in features_type) or ('distances' in features_type):
 
-        for pocket in klifs_metadata.pocket:
-            for klifs_position, residue in enumerate(pocket):
-                if residue == '_':
-                    gaps[klifs_position] += 1
+            return self._get_features_by_type(fingerprints, features_type).melt(
+                var_name=features_type_label,
+                value_name='Feature value'
+            )
 
-        gap_rate = [round(i / float(self.n_structures), 4) for i in gaps]
+        elif 'moments' in features_type:
 
-        data = pd.concat(
-            [
-                pd.Series(range(1, 86), name='klifs_id'),
-                pd.Series(gaps, name='gaps'),
-                pd.Series(gap_rate, name='gap_rate')
-            ],
-            axis=1
-        )
+            return self._get_features_by_type(fingerprints, features_type).reset_index().melt(
+                id_vars=['Distance to', 'index'],
+                var_name=features_type_label,
+                value_name='Feature value'
+            )
 
-        data.set_index('klifs_id', inplace=True, drop=False)
-
-        return data
-
-    def plot_gap_rate(self, path_to_results):
-        """
-        Plot gap rate for KLIFS IDs (positions).
-
-        Parameters
-        ----------
-        path_to_results : str or pathlib.Path
-            Path to directory where plot shall be saved.
-        """
-
-        path_to_results = Path(path_to_results)
-
-        plt.figure(figsize=(15, 6))
-        ax = sns.barplot(x='klifs_id',
-                         y='gap_rate',
-                         data=self.data,
-                         color='steelblue')
-
-        ax.set_title(f'KLIFS sequence alignment: '
-                     f'Gap rate for the 85 residue positions ({self.n_structures} KLIFS entries)',
-                     fontsize=20)
-        ax.set_xlabel('KLIFS position ID')
-        ax.set_ylabel('Gap rate')
-        ax.xaxis.set_ticks(np.arange(4, 85, 5))
-        ax.set_xticklabels(np.arange(5, 86, 5))
-
-        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-            item.set_fontsize(20)
-
-        plt.savefig(path_to_results / 'gap_rate.png', dpi=300)
-
-
-class SideChainAngleGenerator:
-    """
-    Generate side chain angle data (KLIFS and PDB residue ID, residue name, Ca, Cb and centroid vector, side chain angle
-    and KLIFS code) for KLIFS dataset (described by KLIFS metadata).
-
-    Attributes
-    ----------
-    data : pandas.DataFrame
-        Side chain angle data for multiple KLIFS entries, including KLIFS and PDB residue ID, residue name, Ca, Cb and
-        centroid vector, side chain angle and KLIFS code.
-    """
-
-    def __init__(self):
-        self.data = None
+        else:
+            print(f'Input did not match. Check again.')
 
     @staticmethod
-    def get_side_chain_angle(klifs_metadata_entry):
+    def _get_features_by_type(fingerprints, features_type):
         """
-        Get side chain angle data for one KLIFS entry.
+        Get fingerprint features by feature type and return with updated columns/indices suitable as plot label names.
 
         Parameters
         ----------
-        klifs_metadata_entry: pandas.Series
-            KLIFS metadata describing one pocket entry in the KLIFS dataset.
+        fingerprints : list of kinsim_structure.encoding.Fingerprint
+            Fingerprints.
+        features_type : str
+            Type of fingerprint feature.
 
         Returns
         -------
         pandas.DataFrame
-            Side chain angle data for one KLIFS entries, including KLIFS and PDB residue ID, residue name, Ca, Cb and
-            centroid vector, side chain angle and KLIFS code.
+            Fingerprint features of certain type (label names as column/row names).
         """
 
-        klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=klifs_metadata_entry)
-        molecule = klifs_molecule_loader.molecule
+        # Set label names for plots
+        physicochemical_columns = {
+            'size': 'Size',
+            'hbd': 'HBD',
+            'hba': 'HBA',
+            'charge': 'Charge',
+            'aromatic': 'Aromatic',
+            'aliphatic': 'Aliphatic',
+            'sco': 'SCO',
+            'exposure': 'Exposure'
+        }
 
-        pdb_chain_loader = PdbChainLoader(klifs_metadata_entry=klifs_metadata_entry)
-        chain = pdb_chain_loader.chain
+        distances_columns = {
+            'distance_to_centroid': 'Centroid',
+            'distance_to_hinge_region': 'Hinge region',
+            'distance_to_dfg_region': 'DFG region',
+            'distance_to_front_pocket': 'Front pocket'
+        }
 
-        side_chain_angle_feature = SideChainAngleFeature()
-        side_chain_angle_feature.from_molecule(molecule, chain=chain)
+        moments_columns = {
+            'index': 'Distance to',
+            'moment1': 'Moment 1',
+            'moment2': 'Moment 2',
+            'moment3': 'Moment 3'
+        }
 
-        side_chain_angle_feature.features_verbose['klifs_code'] = molecule.code
-
-        return side_chain_angle_feature.features_verbose
-
-    def get_side_chain_angles(self, klifs_metadata):
-        """
-        Get side chain angle data for multiple KLIFS entries (parallelized entry processing).
-
-        Parameters
-        ----------
-        klifs_metadata : pandas.DataFrame
-            KLIFS metadata describing every pocket entry in the KLIFS dataset.
-
-        Returns
-        -------
-        pandas.DataFrame
-            CA, CB and centroid points for each residue for all molecules described in the KLIFS metadata.
-        """
-
-        # Number of CPUs on machine
-        num_cores = multiprocessing.cpu_count() - 1
-
-        # List of entries to be processed
-        entry_list = [j for i, j in klifs_metadata.iterrows()]
-        print(f'{len(entry_list)} entries to be processed.')
-
-        # Create pool with `num_cores` processes
-        pool = multiprocessing.Pool(processes=num_cores)
-
-        # Apply function to each chunk in list
-        side_chain_angles = pool.map(self.get_side_chain_angle, entry_list)
-        print(f'{len(side_chain_angles)} entries processed.')
-
-        pool.close()
-        pool.join()
-
-        self.data = pd.concat(side_chain_angles)
-
-    def save_data(self, data_path):
-        """
-        Save data to file.
-
-        Parameters
-        ----------
-        data_path : pathlib.Path or str
-            Path to output data file.
-        """
-
-        data_path = Path(data_path)
-
-        if self.data is not None:
-            with open(Path(data_path), 'wb') as f:
-                pickle.dump(self.data, f)
-        else:
-            print(f'No data generated to be saved to file. Please generate data first.')
-
-
-class SideChainAngleAnalyser:
-
-    def __init__(self):
-        self.data = None
-        self.missing_residues_ca_cb = None
-
-    def load_data(self, data_path):
-        """
-        Load data to file.
-
-        Parameters
-        ----------
-        data_path : pathlib.Path or str
-            Path to data file.
-        """
-
-        with open(Path(data_path), 'rb') as f:
-            self.data = pickle.load(f)
-
-    def get_missing_residues_ca_cb(self, gap_rate):
-
-        # Get number of missing atoms per KLIFS position
-        missing_ca = self.data[
-            self.data.ca.isna()
-        ].groupby(by='klifs_id').size()
-        missing_cb = self.data[
-            self.data.cb.isna()
-        ].groupby(by='klifs_id').size()
-        missing_ca_cb = self.data[
-            (self.data.ca.isna()) & (self.data.cb.isna())
-        ].groupby(by='klifs_id', sort=False).size()
-
-        missing_positions = pd.DataFrame(
-            [
-                missing_ca,
-                missing_cb,
-                missing_ca_cb,
-                gap_rate.data.gaps
-            ],
-            index='ca cb ca_cb gaps'.split()
-        ).transpose()
-        missing_positions.fillna(value=0, inplace=True)
-        missing_positions = missing_positions.astype('int64')
-        missing_positions['klifs_id'] = missing_positions.index
-
-        self.missing_residues_ca_cb = missing_positions
-
-    def get_mean_median(self, output_path=None, from_file=None):
-        """
-        Get mean and median of side chain angles for each amino acid in dataset.
-        Add angle of 0 to GLY.
-
-        Parameters
-        ----------
-        output_path : str or pathlib.Path
-            Path to directory where data file should be saved.
-        from_file : None or str or pathlib.Path
-            Default is None, optionally can take path to file containing respective data.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Mean and median of side chain angles for each amino acid in dataset.
-        """
-
-        if isinstance(self.data, pd.DataFrame):
-            sca_stats_std = self.data.copy()
-        elif from_file:
-            with open(Path(from_file), 'rb') as f:
-                sca_stats_std = pickle.load(f)
-        else:
-            raise ValueError(f'No data available for mean/median value calculation.')
-
-        # Calculate mean and median
-        sca_mean_median = pd.DataFrame(
-            [
-                sca_stats_std.groupby('residue_name').mean()['sca'],
-                sca_stats_std.groupby('residue_name').median()['sca']
-            ]
-        ).transpose()
-        sca_mean_median.columns = ['sca_mean', 'sca_median']
-        sca_mean_median = sca_mean_median.round(2)
-
-        # Add value: GLY=0
-        sca_mean_median.loc['GLY'] = 0
-
-        if output_path:
-            sca_mean_median.to_csv(output_path / 'side_chain_angle_mean_median.csv')
-
-        return sca_mean_median
-
-    def plot_missing_residues_ca_cb(self, path_to_results):
-
-        ax = plt.gca()
-
-        self.missing_residues_ca_cb.loc[:, ['gaps', 'cb', 'ca']].plot(
-            figsize=(20, 6),
-            kind='bar',
-            stacked=True,
-            rot=1,
-            ax=ax
+        # Get all fingerprints of certain type
+        features = pd.concat(
+            [getattr(i, features_type) for i in fingerprints],
+            axis=0
         )
 
-        ax.set_title(f'Missing residues, Cb and Ca atoms ({len(self.data.groupby("klifs_code"))} KLIFS entries)',
-                     fontsize=20)
+        # Rename columns/indices to label names
+        if 'physicochemical' in features_type:
 
-        ax.set_xlabel('KLIFS position ID')
-        ax.set_ylabel('Number of missing data')
-        ax.xaxis.set_ticks(np.arange(4, 85, 5))
-        ax.set_xticklabels(np.arange(5, 86, 5))
-
-        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-            item.set_fontsize(20)
-
-        plt.savefig(path_to_results / 'missing_residues_ca_cb.png', dpi=300)
-
-    def plot_side_chain_angle_distribution(self, path_to_results, kind='violin'):
-
-        kinds = 'violin histograms'.split()
-
-        if kind == kinds[0]:
-
-            # Plot standard amino acids
-            self._plot_violin_standard_amino_acids(path_to_results)
-
-            # Plot non-standard amino acids
-            self._plot_violin_non_standard_amino_acids(path_to_results)
-
-        elif kind == kinds[1]:
-
-            # Plot histograms for all amino acids separately
-            self._plot_histogram_all_amino_acids(path_to_results)
-
-        else:
-
-            raise ValueError(f'Plot kind unknown. Please choose from: {", ".join(kinds)}')
-
-    def _plot_violin_standard_amino_acids(self, path_to_results):
-
-        data = self.data[self.data.residue_name.isin(STANDARD_AMINOACIDS)]
-
-        if len(data) == 0:
-            print('Plotting standard amino acids (violin): No data to plot.')
-
-        else:
-            print('Plotting standard amino acids (violin)...')
-
-            plt.figure(figsize=(25, 8))
-
-            ax = sns.violinplot(
-                x='residue_name',
-                y='sca',
-                data=data,
-                order=STANDARD_AMINOACIDS
+            features.rename(
+                columns=physicochemical_columns,
+                inplace=True
             )
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
-            ax.set_xlabel('Residue name (standard amino acids sorted by molecular weight)')
-            ax.set_ylabel('Side chain angle')
 
-            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-                item.set_fontsize(20)
+        elif 'distances' in features_type:
 
-            plt.savefig(path_to_results / 'sca_violin_standard.png', dpi=300)
+            features.rename(
+                columns=distances_columns,
+                inplace=True
+            )
 
-    def _plot_violin_non_standard_amino_acids(self, path_to_results):
+        elif 'moments' in features_type:
 
-        data = self.data[~self.data.residue_name.isin(STANDARD_AMINOACIDS)]
+            features.rename(
+                columns=moments_columns,
+                inplace=True
+            )
 
-        if len(data) == 0:
-            print('Plotting non-standard amino acids (violin): No data to plot.')
+            features.reset_index(inplace=True)
+
+            features.rename(
+                columns=moments_columns,
+                inplace=True
+            )
+
+            features['Distance to'] = [distances_columns[i] for i in features['Distance to']]
 
         else:
-            print('Plotting non-standard amino acids (violin)...')
+            raise ValueError(f'Input fingerprint type did not match. Check again.')
 
-            plt.figure(figsize=(20, 8))
-
-            ax = sns.violinplot(
-                x='residue_name',
-                y='sca',
-                data=data
-            )
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
-            ax.set_xlabel('Residue name (non-standard amino acids)')
-            ax.set_ylabel('Side chain angle')
-
-            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-                item.set_fontsize(20)
-
-            plt.savefig(path_to_results / 'sca_violin_nonstandard.png', dpi=300)
-
-    def _plot_histogram_all_amino_acids(self, path_to_results):
-
-        plt.figure(figsize=(20, 30))
-
-        subplot_n_rows = math.ceil(len(self.data.groupby(by='residue_name')) / 3)
-
-        for index, group in enumerate(self.data.groupby(by='residue_name'), 1):
-            plt.subplot(subplot_n_rows, 3, index)
-            group[1].sca.plot(kind='hist', title=group[0], xlim=(0, 180))
-
-        plt.savefig(path_to_results / 'sca_histograms.png', dpi=300, bbox_inches='tight')
+        return features
 
 
-class SideChainAngleStatistics:
+class SideChainOrientationDistribution:
 
     def __init__(self):
-        self.n_structures = None
-        self.data = None
-        self.missing_residues_ca_cb = None
+        pass
 
-    def from_metadata(self, klifs_metadata):
-        """
+    @staticmethod
+    def plot_sco_boxplot(sco_df, path_output):
 
-        Parameters
-        ----------
-        klifs_metadata : pandas.DataFrame
-            KLIFS metadata describing every pocket entry in the KLIFS dataset.
+        fig, ax = plt.subplots(figsize=(20, 6))
 
-        Returns
-        -------
-        pandas.DataFrame
-            CA, CB and centroid points for each residue for all molecules described in the KLIFS metadata.
-        """
-
-        # Set number of structures in dataset
-        self.n_structures = klifs_metadata.shape[0]
-
-        stats = []
-
-        for index, row in klifs_metadata.iterrows():
-
-            iprint(f'{index + 1}/{len(klifs_metadata)}')
-
-            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=row)
-            molecule = klifs_molecule_loader.molecule
-
-            pdb_chain_loader = PdbChainLoader(klifs_metadata_entry=row)
-            chain = pdb_chain_loader.chain
-
-            side_chain_angle_feature = SideChainAngleFeature()
-            side_chain_angle_feature.from_molecule(molecule, chain=chain)
-
-            side_chain_angle_feature.features_verbose['klifs_code'] = molecule.code
-
-            stats.append(side_chain_angle_feature.features_verbose)
-
-        self.data = pd.concat(stats)
-
-    def get_missing_residues_ca_cb(self, gap_rate):
-
-        # Get number of missing atoms per KLIFS position
-        missing_ca = self.data[
-            self.data.ca.isna()
-        ].groupby(by='klifs_id').size()
-        missing_cb = self.data[
-            self.data.cb.isna()
-        ].groupby(by='klifs_id').size()
-        missing_ca_cb = self.data[
-            (self.data.ca.isna()) & (self.data.cb.isna())
-        ].groupby(by='klifs_id', sort=False).size()
-
-        missing_positions = pd.DataFrame(
-            [
-                missing_ca,
-                missing_cb,
-                missing_ca_cb,
-                gap_rate.data.gaps
-            ],
-            index='ca cb ca_cb gaps'.split()
-        ).transpose()
-        missing_positions.fillna(value=0, inplace=True)
-        missing_positions = missing_positions.astype('int64')
-        missing_positions['klifs_id'] = missing_positions.index
-
-        self.missing_residues_ca_cb = missing_positions
-
-    def get_mean_median(self, output_path=None, from_file=None):
-        """
-        Get mean and median of side chain angles for each amino acid in dataset.
-        Add angle of 0 to GLY.
-
-        Parameters
-        ----------
-        output_path : str or pathlib.Path
-            Path to directory where data file should be saved.
-        from_file : None or str or pathlib.Path
-            Default is None, optionally can take path to file containing respective data.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Mean and median of side chain angles for each amino acid in dataset.
-        """
-
-        if isinstance(self.data, pd.DataFrame):
-            sca_stats_std = self.data.copy()
-        elif from_file:
-            with open(Path(from_file), 'rb') as f:
-                sca_stats_std = pickle.load(f)
-        else:
-            raise ValueError(f'No data available for mean/median value calculation.')
-
-        # Calculate mean and median
-        sca_mean_median = pd.DataFrame(
-            [
-                sca_stats_std.groupby('residue_name').mean()['sca'],
-                sca_stats_std.groupby('residue_name').median()['sca']
-            ]
-        ).transpose()
-        sca_mean_median.columns = ['sca_mean', 'sca_median']
-        sca_mean_median = sca_mean_median.round(2)
-
-        # Add value: GLY=0
-        sca_mean_median.loc['GLY'] = 0
-
-        if output_path:
-            sca_mean_median.to_csv(output_path / 'side_chain_angle_mean_median.csv')
-
-        return sca_mean_median
-
-    def plot_missing_residues_ca_cb(self, path_to_results):
-
-        ax = plt.gca()
-
-        self.missing_residues_ca_cb.loc[:, ['gaps', 'cb', 'ca']].plot(
-            figsize=(20, 6),
-            kind='bar',
-            stacked=True,
-            rot=1,
-            ax=ax
+        axes = sco_df.boxplot(
+            column='vertex_angle',
+            by='klifs_id',
+            ax=ax,
+            grid=False
         )
 
-        ax.set_title(f'Missing residues, Cb and Ca atoms ({self.n_structures} KLIFS entries)',
-                     fontsize=20)
+        axes.set_ylabel('Side chain orientation (vertex angle)')
+        axes.set_xlabel('KLIFS position')
+        axes.set_title('Side chain orientation towards pocket centroid')
+        plt.suptitle('')
 
-        ax.set_xlabel('KLIFS position ID')
-        ax.set_ylabel('Number of missing data')
-        ax.xaxis.set_ticks(np.arange(4, 85, 5))
-        ax.set_xticklabels(np.arange(5, 86, 5))
+        axes.get_figure().savefig(
+            Path(path_output) / f'side_chain_orientation_per_klifs_position_boxplot.png',
+            dpi=300,
+        )
 
-        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-            item.set_fontsize(20)
+        return axes
 
-        plt.savefig(path_to_results / 'missing_residues_ca_cb.png', dpi=300)
+    @staticmethod
+    def plot_sco_barplot(sco_df, path_output):
 
-    def plot_side_chain_angle_distribution(self, path_to_results, kind='violin'):
+        fig, ax = plt.subplots(figsize=(20, 6))
+        plt.suptitle('')
 
-        kinds = 'violin histograms'.split()
+        axes = sco_df.groupby(['klifs_id', 'sco']).size().unstack().plot(
+            kind='bar',
+            stacked=True,
+            ax=ax,
+            color=['steelblue', 'lightgrey', 'skyblue'],
+            legend=['a', 'b', 'c'],
+            ylim=[0, 5000]
+        )
 
-        # 20 standard amino acids
-        standard_aminoacids = 'GLY ALA SER PRO VAL THR CYS ILE LEU ASN ASP GLN LYS GLU MET HIS PHE ARG TYR TRP'.split()
+        axes.set_ylabel('Number of KLIFS structures')
+        axes.set_xlabel('KLIFS position')
+        axes.set_title('Side chain orientation towards pocket centroid')
 
-        if kind == kinds[0]:
+        legend = plt.legend()
+        legend.get_texts()[0].set_text('0.0 - Inwards (angle [0, 45])')
+        legend.get_texts()[1].set_text('1.0 - Intermediate (angle ]45, 90])')
+        legend.get_texts()[2].set_text('2.0 - Outwards (angle ]90, 180])')
 
-            # Plot standard amino acids
-            plt.figure(figsize=(25, 8))
+        axes.get_figure().savefig(
+            Path(path_output) / f'side_chain_orientation_per_klifs_position_barplot.png',
+            dpi=300,
+        )
 
-            ax = sns.violinplot(
-                x='residue_name',
-                y='sca',
-                data=self.data[self.data.residue_name.isin(standard_aminoacids)],
-                order=standard_aminoacids
-            )
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
-            ax.set_xlabel('Residue name (sorted by molecular weight)')
-            ax.set_ylabel('Side chain angle')
+        return axes
 
-            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-                item.set_fontsize(20)
+    @staticmethod
+    def get_sco_data(fingerprint_generator):
 
-            plt.savefig(path_to_results / 'sca_violin_standard.png', dpi=300)
+        sco_list = []
 
-            # Plot non-standard amino acids
-            plt.figure(figsize=(20, 8))
+        for molecule_code, fingerprint in fingerprint_generator.data.items():
 
-            ax = sns.violinplot(
-                x='residue_name',
-                y='sca',
-                data=self.data[~self.data.residue_name.isin(standard_aminoacids)]
-            )
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
-            ax.set_xlabel('Residue name')
-            ax.set_ylabel('Side chain angle')
+            sco = fingerprint.features_verbose['side_chain_orientation']
+            sco['molecule_code'] = molecule_code
+            sco_list.append(sco)
 
-            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
-                item.set_fontsize(20)
+        sco_df = pd.concat(sco_list, sort=False)
+        sco_df.reset_index(inplace=True, drop=True)
 
-            plt.savefig(path_to_results / 'sca_violin_nonstandard.png', dpi=300)
-
-        elif kind == kinds[1]:
-
-            plt.figure(figsize=(20, 30))
-
-            for index, residue in enumerate(standard_aminoacids, 1):
-                group = self.data.groupby(by='residue_name').get_group(residue)
-                plt.subplot(7, 3, index)
-                group.sca.plot(kind='hist', title=residue, xlim=(0, 180))
-
-            plt.savefig(path_to_results / 'sca_histograms.png', dpi=300, bbox_inches='tight')
-
-        else:
-
-            raise ValueError(f'Plot kind unknown. Please choose from: {", ".join(kinds)}')
+        return sco_df
 
 
-class NonStandardKlifsAminoAcids:
+class ExposureDistribution:
 
     def __init__(self):
-        self.data = None
+        pass
 
-    def get_non_standard_amino_acids_in_klifs(self, klifs_metadata):
-        """
-        For a given set of mol2 files, collect all non-standard amino acids.
+    @staticmethod
+    def get_exposure_data(fingerprint_generator):
+        exposure_list = []
 
-        Parameters
-        ----------
-        klifs_metadata : pandas.DataFrame
-            KLIFS metadata describing every pocket entry in the KLIFS dataset.
+        for molecule_code, fingerprint in fingerprint_generator.data.items():
+            exposure = fingerprint.features_verbose['exposure']
+            exposure['molecule_code'] = molecule_code
+            exposure_list.append(exposure)
 
-        Returns
-        -------
-        pandas.DataFrame
-            Non-standard amino acids (residue ID and residue name in mol2 file and KLIFS metadata)
-            for each structure listed in the KLIFS metadata.
-        """
+        exposure_df = pd.concat(exposure_list, sort=False)
+        exposure_df.reset_index(inplace=True, drop=True)
 
-        standard_aminoacids = 'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET PHE PRO SER THR TRP TYR VAL'.split()
-
-        # Initialize list for non-standard amino acid entries in dataset
-        non_std_list = []
-
-        for index, row in klifs_metadata.iterrows():
-
-            # Load molecule from metadata
-            klifs_molecule_loader = KlifsMoleculeLoader(klifs_metadata_entry=row)
-            molecule = klifs_molecule_loader.molecule
-
-            # Get first entry per residue
-            firsts = molecule.df.groupby(by='res_id', as_index=False).first()
-
-            non_std = firsts[~firsts.res_name.isin(standard_aminoacids)].copy()
-            non_std = non_std[['res_name', 'res_id', 'klifs_id']]
-
-            # If non-standard amino acids are present in molecule...
-            if len(non_std) > 0:
-
-                # ... add molecule code
-                non_std['code'] = molecule.code
-
-                # ... add KLIFS residue names
-                non_std['klifs_res_name'] = non_std.apply(
-                    lambda x: row.pocket[x.klifs_id - 1],
-                    axis=1
-                )
-
-                # Add to non-standard amino acid entry list
-                non_std_list.append(non_std)
-
-            # If no non-standard amino acids are present, do nothing
-            else:
-                continue
-
-        non_std_all = pd.concat(non_std_list)
-        non_std_all.reset_index(inplace=True, drop=True)
-
-        self.data = non_std_all
+        return exposure_df
