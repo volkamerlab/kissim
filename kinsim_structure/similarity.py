@@ -363,7 +363,7 @@ class FeatureDistancesGenerator:
         Unique molecule codes associated with all fingerprints (sorted alphabetically).
     kinase_names : list of str
         Unique kinase names associated with all fingerprints (sorted alphabetically).
-    data : dict of kinsim_structure.similarity.FeatureDistances
+    data : dict of tuple of str: kinsim_structure.similarity.FeatureDistances
         Dictionary of distances between two fingerprints for each of their features, plus details on feature type,
         feature, feature bit coverage, and feature bit number. Dictionary key is molecule code tuple associated with
         fingerprint pair.
@@ -400,13 +400,9 @@ class FeatureDistancesGenerator:
         self.molecule_codes = sorted(fingerprints_generator.data.keys())
         self.kinase_names = sorted(set([i.split('/')[1].split('_')[0] for i in self.molecule_codes]))
 
-        # Get fingerprint pairs (molecule code pairs)
-        pairs = self._get_fingerprint_pairs(fingerprints)
-
         # Calculate pairwise feature distances
         feature_distances_list = self._get_feature_distances_from_list(
             self._get_feature_distances,
-            pairs,
             fingerprints,
             self.distance_measure
         )
@@ -421,9 +417,8 @@ class FeatureDistancesGenerator:
         logger.info(f'Start of feature distances generator: {start}')
         logger.info(f'End of feature distances generator: {end}')
 
-    @staticmethod
     def _get_feature_distances_from_list(
-            method_get_feature_distances, pairs, fingerprints, distance_measure='scaled_euclidean'
+            self, method_get_feature_distances, fingerprints, distance_measure='scaled_euclidean'
     ):
         """
         Get feature distances for multiple fingerprint pairs.
@@ -433,10 +428,8 @@ class FeatureDistancesGenerator:
         ----------
         method_get_feature_distances : method
             Method calculating feature distances for one fingerprint pair.
-        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        fingerprints : dict of str: kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        pairs : list of list of str
-            List of molecule code pairs (list).
         distance_measure : str
             Type of distance measure, defaults to scaled Euclidean distance.
 
@@ -457,6 +450,9 @@ class FeatureDistancesGenerator:
 
         # Create pool with `num_processes` processes
         pool = Pool(processes=num_cores)
+
+        # Get fingerprint pairs (molecule code pairs)
+        pairs = self._get_fingerprint_pairs(fingerprints)
 
         # Apply function to each chunk in list
         feature_distances_list = pool.starmap(
@@ -484,9 +480,9 @@ class FeatureDistancesGenerator:
 
         Parameters
         ----------
-        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        fingerprints : dict of tuple of str: kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        pair : list of str
+        pair : tuple of str
             Molecule names of molecules encoded by fingerprint pair.
         distance_measure : str
             Type of distance measure, defaults to scaled Euclidean distance.
@@ -513,19 +509,19 @@ class FeatureDistancesGenerator:
 
         Parameters
         ----------
-        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        fingerprints : dict of str: kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
 
         Returns
         -------
-        list of list of str
+        list of tuple of str
             List of molecule code pairs (list).
         """
 
         pairs = []
 
         for i, j in combinations(fingerprints.keys(), 2):
-            pairs.append([i, j])
+            pairs.append((i, j))
 
         logger.info(f'Number of pairs: {len(pairs)}')
 
@@ -538,12 +534,12 @@ class FeatureDistancesGenerator:
 
         Parameters
         ----------
-        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        fingerprints : dict of str: kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
 
         Returns
         -------
-        dict of kinsim_structure.encoding.Fingerprint
+        dict of str: kinsim_structure.encoding.Fingerprint
             Dictionary of non-empty fingerprints: Keys are molecule codes and values are fingerprint data.
         """
 
@@ -572,11 +568,11 @@ class FingerprintDistance:
 
     Attributes
     ----------
-    molecule_codes : list of str
+    molecule_codes : tuple of str
         Codes of both molecules represented by the fingerprints.
     distance_measure : str
         Type of distance measure, defaults to scaled Euclidean distance.
-    feature_weights : dict of floats
+    feature_weights : dict of str: floats
         Weights per feature.
     data : pandas.Series
         Fingerprint distance and coverage (weighted per feature).
@@ -598,7 +594,7 @@ class FingerprintDistance:
         feature_distances : kinsim_structure.similarity.FeatureDistances
             Distances between two fingerprints for each of their features, plus details on feature type, feature,
             feature bit coverage, and feature bit number.
-        feature_weights : dict of float or None
+        feature_weights : dict of str: float or None
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
@@ -646,7 +642,7 @@ class FingerprintDistance:
         feature_distances : pandas.DataFrame
             Distances between two fingerprints for each of their features, plus details on feature type, feature,
             feature bit coverage, and feature bit number.
-        feature_weights : dict of float or None
+        feature_weights : dict of str: float or None
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
@@ -702,7 +698,7 @@ class FingerprintDistance:
 
         Parameters
         ----------
-        feature_type_weights : dict of float (3 items) or None
+        feature_type_weights : dict of str: float (3 items) or None
             Weights per feature type which need to sum up to 1.0.
             Feature types to be set are: physicochemical, distances, and moments.
             Default feature weights (None) are set equally distributed to 1/3 (3 feature types in total).
@@ -771,7 +767,7 @@ class FingerprintDistance:
 
         Parameters
         ----------
-        feature_weights : dict of float (15 items) or None
+        feature_weights : dict of str: float (15 items) or None
             Weights per feature which need to sum up to 1.0.
             Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
             distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
@@ -844,7 +840,7 @@ class FeatureDistances:
 
     Attributes
     ----------
-    molecule_codes : list of str
+    molecule_codes : tuple of str
         Codes of both molecules represented by the fingerprints.
     distance_measure : str
         Type of distance measure, defaults to scaled Euclidean distance.
@@ -880,7 +876,7 @@ class FeatureDistances:
         """
 
         # Set class attributes
-        self.molecule_codes = [fingerprint1.molecule_code, fingerprint2.molecule_code]
+        self.molecule_codes = (fingerprint1.molecule_code, fingerprint2.molecule_code)
         self.distance_measure = distance_measure
 
         # Get fingerprint pair (normalized fingerprints only)
@@ -960,43 +956,44 @@ class FeatureDistances:
 
         Parameters
         ----------
-        feature_pair : pandas.DataFrame
+        feature_pair : np.ndarray
             Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
         distance_measure : str
             Distance measure.
 
         Returns
         -------
-        dict
+        dict of str: float
             Distance between two value lists (describing each the same feature).
         """
 
-        # Test if parameter input is correct
-        if not isinstance(feature_pair, pd.DataFrame):
-            raise TypeError(f'Parameter "feature_pair" must be of type pandas.DataFrame, but is {type(feature_pair)}.')
+        print(type(feature_pair))
+        print(feature_pair)
 
-        if feature_pair.shape[1] != 2:
-            raise ValueError(f'Parameter "feature_pair" must be pandas.DataFrame with two columns, '
-                             f'but has {feature_pair.shape[1]} columns.')
+        # TODO test if nan values there
+
+        # Test if parameter input is correct
+        if not isinstance(feature_pair, np.ndarray):
+            raise TypeError(f'Parameter "feature_pair" must be of type np.ndarray, but is {type(feature_pair)}.')
 
         # Set feature distance to NaN if no bits available for distance calculation
         if len(feature_pair) == 0:
             return np.nan
 
-        # In case there are NaN positions in input, remove bit positions containing any NaN value
-        feature_pair.dropna(how='any', axis=0, inplace=True)
+        if feature_pair.shape[0] != 2:
+            raise ValueError(f'Parameter "feature_pair" has not two (i.e. {feature_pair.shape[1]}) np.ndarray rows.')
 
         # Get feature distance
         if distance_measure == 'scaled_euclidean':
             return self._scaled_euclidean_distance(
-                feature_pair.iloc[:, 0],  # Fingerprint 1
-                feature_pair.iloc[:, 1]  # Fingerprint 2
+                feature_pair[0],
+                feature_pair[1]
             )
 
         elif distance_measure == 'scaled_cityblock':
             return self._scaled_cityblock_distance(
-                feature_pair.iloc[:, 0],  # Fingerprint 1
-                feature_pair.iloc[:, 1]  # Fingerprint 2
+                feature_pair[0],
+                feature_pair[1]
             )
 
         else:
@@ -1019,10 +1016,10 @@ class FeatureDistances:
 
         Returns
         -------
-        dict of dict of pandas.DataFrame
+        dict of str: dict of str: np.ndarray
             For each feature type, i.e. physicochemical, distances, and moments (dict) and for each corresponding
             feature, i.e. size, HBD, HDA, ... for physicochemical feature type (dict), non-NaN bits from both
-            fingerprints (pandas.DataFrame).
+            fingerprints (np.ndarray).
         """
 
         if normalized:
@@ -1042,14 +1039,20 @@ class FeatureDistances:
             # Iterate over all features
             for feature_name in FEATURE_NAMES[feature_type]:
 
-                # Concatenate feature bits from both fingerprints and remove bits where one or both bits are NaN
-                feature_pair = pd.concat(
-                    [f1[feature_type][feature_name], f2[feature_type][feature_name]],
-                    axis=1
+                # Merge both fingerprints to array in order to remove positions with nan values
+                feature_pair = np.array(
+                    [
+                        f1[feature_type][feature_name],
+                        f2[feature_type][feature_name]
+                    ]
                 )
-                feature_pair.columns = ['fingerprint1', 'fingerprint2']
-                #feature_pair.dropna(how='any', axis=0, inplace=True)
 
+                # Remove nan positions (shall not be compared)
+                feature_pair = feature_pair[
+                    :, ~np.isnan(feature_pair).any(axis=0)
+                ]
+
+                # Add to dict
                 fingerprint_pair[feature_type][feature_name] = feature_pair
 
         return fingerprint_pair
@@ -1061,9 +1064,9 @@ class FeatureDistances:
 
         Parameters
         ----------
-        values1 : list or pandas.Series
+        values1 : np.ndarray
             Value list (same length as values2).
-        values2 : list or pandas.Series
+        values2 : np.ndarray
             Value list (same length as values1).
 
         Returns
@@ -1087,9 +1090,9 @@ class FeatureDistances:
 
         Parameters
         ----------
-        values1 : list or pandas.Series
+        values1 : np.ndarray
             Value list (same length as values2).
-        values2 : list or pandas.Series
+        values2 : np.ndarray
             Value list (same length as values1).
 
         Returns

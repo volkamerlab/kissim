@@ -82,7 +82,7 @@ def test_remove_empty_fingerprints(fingerprints, empty_fingerprints):
 @pytest.mark.parametrize('fingerprints, pairs', [
     (
         {'a': Fingerprint(), 'b': Fingerprint(), 'c': Fingerprint()},
-        [['a', 'b'], ['a', 'c'], ['b', 'c']]
+        [('a', 'b'), ('a', 'c'), ('b', 'c')]
     )
 ])
 def test_get_fingerprint_pairs(fingerprints, pairs):
@@ -197,10 +197,9 @@ def test_get_feature_distances_from_list(path_klifs_metadata, paths_mol2, paths_
 
     # Test bulk feature distance calculation
     generator = FeatureDistancesGenerator()
-    pairs = generator._get_fingerprint_pairs(fingerprints)
 
     feature_distances_list = generator._get_feature_distances_from_list(
-        generator._get_feature_distances, pairs, fingerprints
+        generator._get_feature_distances, fingerprints
     )
 
     assert isinstance(feature_distances_list, list)
@@ -212,7 +211,7 @@ def test_get_feature_distances_from_list(path_klifs_metadata, paths_mol2, paths_
 @pytest.mark.parametrize(
     'path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names', [
         (
-        PATH_TEST_DATA / 'klifs_metadata.csv',
+            PATH_TEST_DATA / 'klifs_metadata.csv',
             [
                 PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
                 PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',

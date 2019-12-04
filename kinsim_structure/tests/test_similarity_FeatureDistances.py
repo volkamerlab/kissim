@@ -152,8 +152,8 @@ def test_get_bit_coverage_valueerror(feature_type, bit_number):
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure, distance', [
-    (pd.DataFrame([[4, 0], [0, 3]], columns=['a', 'b']), 'scaled_euclidean', 2.5),
-    (pd.DataFrame([], columns=['a', 'b']), 'scaled_euclidean', np.nan)
+    (np.array([[4, 0], [0, 3]]), 'scaled_euclidean', 2.5),
+    (np.array([]), 'scaled_euclidean', np.nan)
 ])
 def test_calculate_feature_distance(feature_pair, distance_measure, distance):
     """
@@ -161,7 +161,7 @@ def test_calculate_feature_distance(feature_pair, distance_measure, distance):
 
     Parameters
     ----------
-    feature_pair : pandas.DataFrame
+    feature_pair : np.ndarray
         Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
         Type of distance measure, defaults to Euclidean distance.
@@ -182,7 +182,7 @@ def test_calculate_feature_distance(feature_pair, distance_measure, distance):
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure', [
-    ('feature_pair', 'scaled_euclidean')  # Feature pair is not pandas.DataFrame
+    ('feature_pair', 'scaled_euclidean')  # Feature pair is not np.ndarray
 ])
 def test_calculate_feature_distance_typeerror(feature_pair, distance_measure):
     """
@@ -190,7 +190,7 @@ def test_calculate_feature_distance_typeerror(feature_pair, distance_measure):
 
     Parameters
     ----------
-    feature_pair : pandas.DataFrame
+    feature_pair : np.ndarray
         Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
         Type of distance measure, defaults to Euclidean distance.
@@ -202,9 +202,9 @@ def test_calculate_feature_distance_typeerror(feature_pair, distance_measure):
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure', [
-    (pd.DataFrame([[1, 2], [1, 2]]), 'xxx'),  # Distance measure is not implemented
-    (pd.DataFrame([[1, 2, 1], [1, 2, 1]]), 'scaled_euclidean'),  # Feature pair has more than two columns
-    (pd.DataFrame([[1, 2], [1, 2]]), 11),  # Distance measure is not str
+    (np.array([[1, 2], [1, 2]]), 'xxx'),  # Distance measure is not implemented
+    (np.array([[1, 2], [1, 2], [1, 2]]), 'scaled_euclidean'),  # Feature pair has more than two rows
+    (np.array([[1, 2], [1, 2]]), 11),  # Distance measure is not str
 ])
 def test_calculate_feature_distance_valueerror(feature_pair, distance_measure):
     """
@@ -212,7 +212,7 @@ def test_calculate_feature_distance_valueerror(feature_pair, distance_measure):
 
     Parameters
     ----------
-    feature_pair : pandas.DataFrame
+    feature_pair : np.ndarray
         Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
     distance_measure : str
         Type of distance measure, defaults to Euclidean distance.
@@ -276,15 +276,14 @@ def test_extract_fingerprint_pair(path_klifs_metadata, paths_mol2, paths_pdb, ch
 
         for feature_name in pair[feature_type].keys():
 
-            # Correct DataFrame column names?
-            assert list(pair[feature_type][feature_name].columns) == 'fingerprint1 fingerprint2'.split()
-
             # Correct number of bits for one example feature?
             if (feature_type == 'physicochemical') and (feature_name == 'size'):
-                assert len(pair[feature_type][feature_name]) == n_bits_wo_nan_size
+                print(pair[feature_type][feature_name])
+                assert pair[feature_type][feature_name].shape == (2, n_bits_wo_nan_size)
 
 
 @pytest.mark.parametrize('values1, values2, distance', [
+    (np.array([0, 0]), np.array([4, 3]), 2.5),
     ([0, 0], [4, 3], 2.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
 ])
@@ -294,9 +293,9 @@ def test_scaled_euclidean_distance(values1, values2, distance):
 
     Parameters
     ----------
-    values1 : list or pandas.Series
+    values1 : np.ndarray or list of pd.Series
         Value list (same length as values2).
-    values2 : list or pandas.Series
+    values2 : np.ndarray or list of pd.Series
         Value list (same length as values1).
     distance : float
         Euclidean distance between two value lists.
@@ -310,6 +309,7 @@ def test_scaled_euclidean_distance(values1, values2, distance):
 
 @pytest.mark.parametrize('values1, values2, distance', [
     ([0, 0], [4, 3], 3.5),
+    (np.ndarray([0, 0]), np.ndarray([4, 3]), 3.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 3.5)
 ])
 def test_scaled_cityblock_distance(values1, values2, distance):
@@ -318,9 +318,9 @@ def test_scaled_cityblock_distance(values1, values2, distance):
 
     Parameters
     ----------
-    values1 : list or pandas.Series
+    values1 : np.ndarray or list of pd.Series
         Value list (same length as values2).
-    values2 : list or pandas.Series
+    values2 : np.ndarray or list of pd.Series
         Value list (same length as values1).
     distance : float
         Euclidean distance between two value lists.
