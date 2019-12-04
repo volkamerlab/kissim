@@ -11,7 +11,7 @@ from pathlib import Path
 
 from biopandas.pdb import PandasPdb
 from biopandas.mol2 import PandasMol2, split_multimol2
-from Bio.PDB import PDBParser, Selection, Entity
+from Bio.PDB import PDBParser, MMCIFParser, Selection, Entity
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class MoleculeLoader:
         if self.molecule_path.exists():
             pass
         else:
-            logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
+            #logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
             raise FileNotFoundError(f'File not found: {self.molecule_path}')
 
         # Load molecule data
@@ -420,7 +420,7 @@ class KlifsMoleculeLoader:
         """
 
         # Depending on whether alternate model and chain ID is given build file path:
-        path_pocket_mol2 = path_klifs_download / klifs_metadata_entry.filepath / 'pocket.mol2'
+        path_pocket_mol2 = Path(path_klifs_download) / klifs_metadata_entry.filepath / 'pocket.mol2'
 
         # If file does not exist, raise error
         if not path_pocket_mol2.exists():
@@ -764,3 +764,7 @@ def get_klifs_regions():
     klifs_regions.index = klifs_regions.klifs_id
 
     return klifs_regions
+
+
+if __name__ == '__main__':
+    print('auxiliary.py executed from CLI.')

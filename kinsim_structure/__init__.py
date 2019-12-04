@@ -4,7 +4,7 @@ Subpocket-based structural fingerprint for kinase pocket comparison
 """
 
 # Add imports here
-from .kinsim_structure import *
+from .main import *
 
 # Handle versioneer
 from ._version import get_versions

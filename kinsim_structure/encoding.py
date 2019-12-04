@@ -13,7 +13,7 @@ from multiprocessing import cpu_count, Pool
 from Bio.PDB import HSExposureCA, HSExposureCB, Vector
 from Bio.PDB.Chain import Chain
 from Bio.PDB import calc_angle
-import nglview as nv
+#import nglview as nv
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -143,11 +143,9 @@ class FingerprintGenerator:
             Metadata (columns) for KLIFS molecules (rows).
         """
 
-        # Get start time of script
         start = datetime.datetime.now()
-        print(start)
 
-        logger.info(f'Calculate fingerprints...')
+        logger.info(f'ENCODING: FingerprintGenerator')
 
         # Set path to KLIFS download
         self.path_klifs_download = path_klifs_download
@@ -173,15 +171,13 @@ class FingerprintGenerator:
 
         # Transform to dict
         self.data = {
-            i.molecule_code: i for i in fingerprints_list
+            i.molecule_code: i for i in fingerprints_list if i is not None  # Removes emtpy fingerprints
         }
 
-        # Get end time of script
         end = datetime.datetime.now()
-        print(end)
 
-        logger.info(start)
-        logger.info(end)
+        logger.info(f'Start of fingerprint generation: {start}')
+        logger.info(f'End of fingerprint generation: {end}')
 
     def _get_fingerprint(self, klifs_metadata_entry):
         """
@@ -207,7 +203,7 @@ class FingerprintGenerator:
 
         except Exception as e:
 
-            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.filepath}')
             logger.error(e)
 
             return None
@@ -244,7 +240,6 @@ class SideChainOrientationGenerator:
 
         # Get start time of script
         start = datetime.datetime.now()
-        print(start)
 
         logger.info(f'Calculate side chain orientations...')
 
@@ -277,7 +272,6 @@ class SideChainOrientationGenerator:
 
         # Get end time of script
         end = datetime.datetime.now()
-        print(end)
 
         logger.info(start)
         logger.info(end)
@@ -314,7 +308,7 @@ class SideChainOrientationGenerator:
 
         except Exception as e:
 
-            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.molecule_code}')
+            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.filepath}')
             logger.error(e)
 
             return None
@@ -376,6 +370,12 @@ class Fingerprint:
             'physicochemical': None,
             'distances': None,
             'moments': None
+        }
+
+        self.features_verbose = {
+            'reference_points': None,
+            'side_chain_orientation': None,
+            'exposure': None,
         }
 
     @property
@@ -467,6 +467,11 @@ class Fingerprint:
         self.fingerprint_normalized['physicochemical'] = self._normalize_physicochemical_bits()
         self.fingerprint_normalized['distances'] = self._normalize_distances_bits()
         self.fingerprint_normalized['moments'] = self._normalize_moments_bits()
+
+        # Add verbose feature details
+        self.features_verbose['reference_points'] = spatial_features.reference_points
+        self.features_verbose['exposure'] = physicochemical_features.features_verbose['exposure']
+        self.features_verbose['side_chain_orientation'] = physicochemical_features.features_verbose['side_chain_orientation']
 
     def _get_fingerprint(self, fingerprint_type, normalized=True):
         """
@@ -735,6 +740,10 @@ class PhysicoChemicalFeatures:
     def __init__(self):
 
         self.features = None
+        self.features_verbose = {
+            'side_chain_orientation': None,
+            'exposure': None
+        }
 
     def from_molecule(self, molecule, chain):
         """
@@ -775,6 +784,9 @@ class PhysicoChemicalFeatures:
         physicochemical_features.fillna(value=pd.np.nan, inplace=True)
 
         self.features = physicochemical_features
+
+        self.features_verbose['side_chain_orientation'] = side_chain_orientation.features_verbose
+        self.features_verbose['exposure'] = exposure.features_verbose
 
 
 class SpatialFeatures:
@@ -1704,6 +1716,7 @@ class SideChainOrientationFeature:
         # PyMOL > ray 900, 900
         # PyMOL > save refpoints.png
 
+    """
     def show_in_nglviewer(self):
 
         # Get molecule and molecule code
@@ -1753,6 +1766,7 @@ class SideChainOrientationFeature:
         viewer.gui_style = 'ngl'
 
         return viewer
+    """
 
 
 class ExposureFeature:
@@ -1806,7 +1820,7 @@ class ExposureFeature:
         # Set index (from residue IDs) to KLIFS IDs
         exposures.set_index('klifs_id', inplace=True, drop=True)
 
-        # Add column with CB exposure values AND CA exposure values if CB exposure values are missing
+        # Add column with CB exposure values, but with CA exposure values if CB exposure values are missing
         exposures['exposure'] = exposures.apply(
             lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
             axis=1
