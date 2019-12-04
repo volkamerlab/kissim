@@ -1048,7 +1048,7 @@ class FeatureDistances:
                     axis=1
                 )
                 feature_pair.columns = ['fingerprint1', 'fingerprint2']
-                feature_pair.dropna(how='any', axis=0, inplace=True)
+                #feature_pair.dropna(how='any', axis=0, inplace=True)
 
                 fingerprint_pair[feature_type][feature_name] = feature_pair
 
