@@ -10,7 +10,7 @@ import datetime
 import logging
 from multiprocessing import cpu_count, Pool
 
-from itertools import combinations, repeat
+from itertools import combinations, repeat, chain
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
@@ -618,22 +618,17 @@ class FingerprintDistance:
 
     Attributes
     ----------
-    molecule_codes : tuple of str
+    molecule_pair_code : tuple of str
         Codes of both molecules represented by the fingerprints.
-    distance_measure : str
-        Type of distance measure, defaults to scaled Euclidean distance.
-    feature_weights : dict of str: floats
-        Weights per feature.
     data : pandas.Series
         Fingerprint distance and coverage (weighted per feature).
     """
 
     def __init__(self):
 
-        self.molecule_codes = None
-        self.distance_measure = None
-        self.feature_weights = None
-        self.data = None
+        self.molecule_pair_code = None
+        self.distance = None
+        self.bit_coverage = None
 
     def from_feature_distances(self, feature_distances, feature_weights=None):
         """
@@ -663,19 +658,14 @@ class FingerprintDistance:
         """
 
         # Set class attributes
-        self.molecule_codes = feature_distances.molecule_codes
-        self.distance_measure = feature_distances.distance_measure
-
-        # Get feature distances data
-        feature_distances = feature_distances.data
+        self.molecule_pair_code = feature_distances.molecule_pair_code
 
         # Add weights
         feature_distances = self._add_weight_column(feature_distances, feature_weights)
-        self.feature_weights = feature_distances.weight
 
         # Calculate weighted sum of feature distances and feature coverage
-        fingerprint_distance = (feature_distances.distance * feature_distances.weight).sum()
-        fingerprint_coverage = (feature_distances.bit_coverage * feature_distances.weight).sum()
+        fingerprint_distance = (feature_distances.distances * feature_distances.weight).sum()
+        fingerprint_coverage = (feature_distances.bit_coverages * feature_distances.weight).sum()
 
         # Format results and save to class attribute
         self.data = pd.Series(
