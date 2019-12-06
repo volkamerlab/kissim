@@ -67,7 +67,7 @@ def generate_feature_distances():
 
     # FeatureDistances (set class attributes manually)
     feature_distances = FeatureDistances()
-    feature_distances.molecule_codes = molecule_codes
+    feature_distances.molecule_pair_code = molecule_codes
     feature_distances.data = data
 
     return feature_distances
@@ -129,7 +129,7 @@ def test_from_feature_distances(feature_weights, distance, coverage):
     # Test class attributes:
 
     # Molecule codes
-    assert fingerprint_distance.molecule_codes == feature_distances.molecule_codes
+    assert fingerprint_distance.molecule_pair_code == feature_distances.molecule_pair_code
 
     # Feature weights
     assert fingerprint_distance.feature_weights.equals(
