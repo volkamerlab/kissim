@@ -359,22 +359,42 @@ class FeatureDistancesGenerator:
     ----------
     distance_measure : str
         Type of distance measure, defaults to scaled Euclidean distance.
-    molecule_codes : list of str
-        Unique molecule codes associated with all fingerprints (sorted alphabetically).
-    kinase_names : list of str
-        Unique kinase names associated with all fingerprints (sorted alphabetically).
-    data : dict of tuple of str: kinsim_structure.similarity.FeatureDistances
-        Dictionary of distances between two fingerprints for each of their features, plus details on feature type,
-        feature, feature bit coverage, and feature bit number. Dictionary key is molecule code tuple associated with
-        fingerprint pair.
+    data : dict of tuple of str: np.ndarray
+        Feature distances and bit coverage (value) for each fingerprint pair (key: molecule codes).
     """
 
     def __init__(self):
 
         self.distance_measure = None
-        self.molecule_codes = None
-        self.kinase_names = None
         self.data = None
+
+    @property
+    def molecule_codes(self):
+        """
+        Unique molecule codes associated with all fingerprints (sorted alphabetically).
+
+        Returns
+        -------
+        list of str:
+            Molecule codes.
+        """
+
+        if self.data is not None:
+            return sorted(list(set(chain.from_iterable(self.data.keys()))))
+
+    @property
+    def kinase_names(self):
+        """
+        Unique kinase names associated with all fingerprints (sorted alphabetically).
+
+        Returns
+        -------
+        list of str
+            Kinase names.
+        """
+
+        if self.molecule_codes is not None:
+            return sorted(set([i.split('/')[1].split('_')[0] for i in self.molecule_codes]))
 
     def from_fingerprint_generator(self, fingerprints_generator, distance_measure='scaled_euclidean'):
         """
@@ -397,8 +417,6 @@ class FeatureDistancesGenerator:
 
         # Set class attributes
         self.distance_measure = distance_measure
-        self.molecule_codes = sorted(fingerprints_generator.data.keys())
-        self.kinase_names = sorted(set([i.split('/')[1].split('_')[0] for i in self.molecule_codes]))
 
         # Calculate pairwise feature distances
         feature_distances_list = self._get_feature_distances_from_list(
@@ -407,15 +425,47 @@ class FeatureDistancesGenerator:
             self.distance_measure
         )
 
-        # Cast both attributes to DataFrames
+        # Cast returned list into dict
         self.data = {
-            (i.molecule_codes[0], i.molecule_codes[1]): i for i in feature_distances_list
+            i.molecule_pair_code: i for i in feature_distances_list
         }
 
         end = datetime.datetime.now()
 
         logger.info(f'Start of feature distances generator: {start}')
         logger.info(f'End of feature distances generator: {end}')
+
+    def get_data_by_molecule_pair(self, molecule_code1, molecule_code2):
+        """
+        Get feature distances for fingerprint pair by their molecule codes, with details on feature types,
+        feature names, and feature bit coverages.
+
+        Parameters
+        ----------
+        molecule_code1 : str
+            Molecule code 1.
+        molecule_code2 : str
+            Molecule code 2.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Feature distances for fingerprint pair with details on feature types, features names, and feature bit
+            coverages.
+        """
+
+        if self.data is not None:
+
+            feature_types = list(chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()]))
+            feature_names = list(chain.from_iterable(FEATURE_NAMES.values()))
+
+            data = self.data[(molecule_code1, molecule_code2)]
+
+            data_df = pd.DataFrame(data, columns='distance bit_coverage'.split())
+            data_df.insert(loc=0, column='feature_type', value=feature_types)
+            data_df.insert(loc=1, column='feature_names', value=feature_names)
+
+            return data_df
 
     def _get_feature_distances_from_list(
             self, method_get_feature_distances, fingerprints, distance_measure='scaled_euclidean'
