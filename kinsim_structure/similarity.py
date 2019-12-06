@@ -840,22 +840,49 @@ class FeatureDistances:
 
     Attributes
     ----------
-    molecule_codes : tuple of str
+    molecule_pair_code : tuple of str
         Codes of both molecules represented by the fingerprints.
-    distance_measure : str
-        Type of distance measure, defaults to scaled Euclidean distance.
-    data : pandas.DataFrame
-        Distances between two fingerprints for each of their features, plus details on feature type, feature,
-        feature bit coverage, and feature bit number.
+    distances : np.ndarray
+        Distances between two fingerprints for each of their features.
+    bit_coverages : np.ndarray
+        Bit coverage for two fingerprints for each of their features.
     """
 
     def __init__(self):
 
-        self.molecule_codes = None
-        self.distance_measure = None
-        self.data = None
+        self.molecule_pair_code = None
+        self.distances = None
+        self.bit_coverages = None
 
-    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='scaled_euclidean'):
+    @property
+    def data(self):
+        """
+        Feature distances for fingerprint pair, with details on feature types, feature names, and feature bit coverages.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Feature distances for fingerprint pair with details on feature types, features names, and feature bit
+            coverages.
+        """
+
+        if (self.distances is not None) and (self.bit_coverages is not None):
+
+            feature_types = list(chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()]))
+            feature_names = list(chain.from_iterable(FEATURE_NAMES.values()))
+
+            data_df = pd.DataFrame(
+                {
+                    'feature_type': feature_types,
+                    'feature_name': feature_names,
+                    'distance': self.distances,
+                    'bit_coverage': self.bit_coverages
+                }
+            )
+
+            return data_df
+
+    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='scaled_euclidean', normalized=True):
         """
         Calculate distance between two fingerprints for each (normalized) feature.
 
@@ -867,6 +894,8 @@ class FeatureDistances:
             Fingerprint 2.
         distance_measure : str
             Type of distance measure, defaults to scaled Euclidean distance.
+        normalized : bool
+            Normalized (default) or non-normalized fingerprints.
 
         Returns
         -------
@@ -876,79 +905,71 @@ class FeatureDistances:
         """
 
         # Set class attributes
-        self.molecule_codes = (fingerprint1.molecule_code, fingerprint2.molecule_code)
-        self.distance_measure = distance_measure
+        self.molecule_pair_code = (fingerprint1.molecule_code, fingerprint2.molecule_code)
 
-        # Get fingerprint pair (normalized fingerprints only)
-        fingerprint_pair = self._extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True)
+        # Get fingerprint (normalized or not normalized)
+        if normalized:
+            f1 = fingerprint1.fingerprint_normalized
+            f2 = fingerprint2.fingerprint_normalized
+        else:
+            f1 = fingerprint1.fingerprint
+            f2 = fingerprint2.fingerprint
 
-        feature_distances = []
+        # Iterate over all features and get feature type, feature name, feature distance and feature bit coverage
+        distances = []
+        bit_coverages = []
 
         for feature_type in FEATURE_NAMES.keys():
 
             for feature_name in FEATURE_NAMES[feature_type]:
 
-                # Get feature distance
-                feature_distance = self._calculate_feature_distance(
-                        fingerprint_pair[feature_type][feature_name],
-                        distance_measure
-                    )
+                # Get feature bits
+                features1 = f1[feature_type][feature_name]
+                features2 = f2[feature_type][feature_name]
 
-                # Get number of feature bits without any NaN value
-                bit_number = len(fingerprint_pair[feature_type][feature_name])
-
-                # Get bit coverage
-                bit_coverage = self._get_bit_coverage(feature_type, bit_number)
+                distance, bit_coverage = self.from_features(features1, features2, distance_measure)
 
                 # Save feature data to fingerprint data
-                feature_distances.append([feature_type, feature_name, feature_distance, bit_coverage, bit_number])
+                distances.append(distance)
+                bit_coverages.append(bit_coverage)
 
-        # Format result and save to class attribute
-        self.data = pd.DataFrame(
-            feature_distances,
-            columns='feature_type feature_name distance bit_coverage bit_number'.split()
-        )
+        self.distances = np.array(distances)
+        self.bit_coverages = np.array(bit_coverages)
 
-    @staticmethod
-    def _get_bit_coverage(feature_type, bit_number):
+    def from_features(self, features1, features2, distance_measure='scaled_euclidean'):
         """
-        Get bit coverage for a given feature type.
+        For each feature, get both fingerprint bits without NaN positions.
 
         Parameters
         ----------
-        feature_type : str
-            Feature type: physicochemical, distances or moments.
-        bit_number : int
-            Number of feature bits used for distance calculation.
+        features1 : pd.Series
+            Fingerprint 1.
+        features2 : pd.Series
+            Fingerprint 2.
+        distance_measure : str
+            Distance measure.
 
         Returns
         -------
-        float
-            Bit coverage describing the percentage of bits used for distance calculation.
+        dict of str: dict of str: np.ndarray
+            For each feature type, i.e. physicochemical, distances, and moments (dict) and for each corresponding
+            feature, i.e. size, HBD, HDA, ... for physicochemical feature type (dict), non-NaN bits from both
+            fingerprints (np.ndarray).
         """
 
-        if feature_type not in FEATURE_NAMES.keys():
-            raise ValueError(f'Feature type unknown. Choose from: {", ".join(list(FEATURE_NAMES.keys()))}.')
+        # Cast feature pair to numpy array
+        feature_pair = np.array([features1, features2])
 
-        # Define number of bits per feature type
-        bit_number_moments = 4.0
-        bit_number_other = 85.0
+        # Remove NaN positions in feature pair
+        feature_pair_wo_nan = feature_pair[:, ~np.isnan(feature_pair).any(axis=0)]
 
-        if feature_type is 'moments':
+        # Get feature pair coverage
+        bit_coverage = round(feature_pair_wo_nan.shape[1] / feature_pair.shape[1], 2)
 
-            if 0 <= bit_number <= bit_number_moments:
-                return round(bit_number / bit_number_moments, 2)
-            else:
-                raise ValueError(f'Unexcepted number of bits for {feature_type}: '
-                                 f'Is {bit_number}, but must be between 0 and {int(bit_number_moments)}.')
+        # Get feature distance
+        feature_distance = self._calculate_feature_distance(feature_pair_wo_nan, distance_measure)
 
-        else:
-
-            if 0 <= bit_number <= bit_number_other:
-                return round(bit_number / bit_number_other, 2)
-            else:
-                raise ValueError(f'Unexcepted number of bits for {feature_type}: '
-                                 f'Is {bit_number}, but must be between 0 and {int(bit_number_other)}.')
+        return feature_distance, bit_coverage
 
     def _calculate_feature_distance(self, feature_pair, distance_measure='scaled_euclidean'):
         """
@@ -966,11 +987,6 @@ class FeatureDistances:
         dict of str: float
             Distance between two value lists (describing each the same feature).
         """
-
-        print(type(feature_pair))
-        print(feature_pair)
-
-        # TODO test if nan values there
 
         # Test if parameter input is correct
         if not isinstance(feature_pair, np.ndarray):
@@ -999,63 +1015,6 @@ class FeatureDistances:
         else:
             distance_measures = 'scaled_euclidean scaled_cityblock'.split()
             raise ValueError(f'Distance measure unknown. Choose from: {", ".join(distance_measures)}')
-
-    @staticmethod
-    def _extract_fingerprint_pair(fingerprint1, fingerprint2, normalized=True):
-        """
-        For each feature, get both fingerprint bits without NaN positions.
-
-        Parameters
-        ----------
-        fingerprint1 : encoding.Fingerprint
-            Fingerprint 1.
-        fingerprint2 : encoding.Fingerprint
-            Fingerprint 2.
-        normalized : bool
-            Normalized (default) or non-normalized fingerprints.
-
-        Returns
-        -------
-        dict of str: dict of str: np.ndarray
-            For each feature type, i.e. physicochemical, distances, and moments (dict) and for each corresponding
-            feature, i.e. size, HBD, HDA, ... for physicochemical feature type (dict), non-NaN bits from both
-            fingerprints (np.ndarray).
-        """
-
-        if normalized:
-            f1 = fingerprint1.fingerprint_normalized
-            f2 = fingerprint2.fingerprint_normalized
-        else:
-            f1 = fingerprint1.fingerprint
-            f2 = fingerprint2.fingerprint
-
-        fingerprint_pair = {}
-
-        # Iterate over all feature types
-        for feature_type in FEATURE_NAMES.keys():
-
-            fingerprint_pair[feature_type] = {}
-
-            # Iterate over all features
-            for feature_name in FEATURE_NAMES[feature_type]:
-
-                # Merge both fingerprints to array in order to remove positions with nan values
-                feature_pair = np.array(
-                    [
-                        f1[feature_type][feature_name],
-                        f2[feature_type][feature_name]
-                    ]
-                )
-
-                # Remove nan positions (shall not be compared)
-                feature_pair = feature_pair[
-                    :, ~np.isnan(feature_pair).any(axis=0)
-                ]
-
-                # Add to dict
-                fingerprint_pair[feature_type][feature_name] = feature_pair
-
-        return fingerprint_pair
 
     @staticmethod
     def _scaled_euclidean_distance(values1, values2):
