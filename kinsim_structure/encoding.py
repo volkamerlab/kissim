@@ -9,6 +9,7 @@ Handles the primary functions for the structural kinase fingerprint encoding.
 import datetime
 import logging
 from multiprocessing import cpu_count, Pool
+from pathlib import Path
 
 from Bio.PDB import HSExposureCA, HSExposureCB, Vector
 from Bio.PDB.Chain import Chain
@@ -16,7 +17,6 @@ from Bio.PDB import calc_angle
 #import nglview as nv
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from scipy.special import cbrt
 from scipy.stats.stats import moment
 
