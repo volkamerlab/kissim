@@ -100,7 +100,7 @@ class FingerprintDistanceGenerator:
         # Format result and save to class attribute
         self.data = pd.DataFrame(
             [
-                [i.molecule_codes[0], i.molecule_codes[1], i.data.distance, i.data.coverage]
+                [i.molecule_pair_code[0], i.molecule_pair_code[1], i.distance, i.bit_coverage]
                 for i in fingerprint_distance_list
             ],
             columns='molecule_code_1 molecule_code_2 distance coverage'.split()
@@ -620,8 +620,10 @@ class FingerprintDistance:
     ----------
     molecule_pair_code : tuple of str
         Codes of both molecules represented by the fingerprints.
-    data : pandas.Series
-        Fingerprint distance and coverage (weighted per feature).
+    distance : float
+        Fingerprint distance (weighted per feature).
+    bit_coverage : float
+        Fingerprint coverage (weighted per feature).
     """
 
     def __init__(self):
@@ -639,14 +641,14 @@ class FingerprintDistance:
         feature_distances : kinsim_structure.similarity.FeatureDistances
             Distances between two fingerprints for each of their features, plus details on feature type, feature,
             feature bit coverage, and feature bit number.
-        feature_weights : dict of str: float or None
+        feature_weights : list of float or None
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
-            (ii) By feature type
-                Feature types to be set are: physicochemical, distances, and moments.
-            (iii) By feature:
-                Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and moments.
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
                 moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
@@ -661,216 +663,153 @@ class FingerprintDistance:
         self.molecule_pair_code = feature_distances.molecule_pair_code
 
         # Add weights
-        feature_distances = self._add_weight_column(feature_distances, feature_weights)
+        feature_weights_formatted = self._format_weights(feature_weights)
 
         # Calculate weighted sum of feature distances and feature coverage
-        fingerprint_distance = (feature_distances.distances * feature_distances.weight).sum()
-        fingerprint_coverage = (feature_distances.bit_coverages * feature_distances.weight).sum()
+        self.distance = sum(feature_distances.distances * feature_weights_formatted)
+        self.bit_coverage = sum(feature_distances.bit_coverages * feature_weights_formatted)
 
-        # Format results and save to class attribute
-        self.data = pd.Series(
-            [fingerprint_distance, fingerprint_coverage],
-            index='distance coverage'.split()
-        )
-
-    def _add_weight_column(self, feature_distances, feature_weights=None):
+    def _format_weights(self, feature_weights=None):
         """
-        Add feature weights to feature distance details (each feature or feature type can be set individually).
+        Get feature weights based on input weights (each feature or feature type can be set individually).
 
         Parameters
         ----------
-        feature_distances : pandas.DataFrame
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, and feature bit number.
-        feature_weights : dict of str: float or None
+        feature_weights : None or list of float
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
-            (ii) By feature type
-                Feature types to be set are: physicochemical, distances, and moments.
-            (iii) By feature:
-                Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and moments.
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
                 moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
 
         Returns
         -------
-        pandas.DataFrame
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, feature bit number, AND feature weights.
+        np.ndarray
+            Feature weights.
         """
 
         # The parameter feature_weights can come in three difference formats as described in this method's docstring.
         # For each of the three formats perform a certain action:
 
-        if feature_weights is None:
+        if feature_weights is None:  # Defaults to equally distributed weights between all features
 
-            # Defaults to equally distributed weights between all features
             feature_weights = self._format_weight_per_feature(feature_weights)
-            return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
 
-        elif isinstance(feature_weights, dict):
+        elif isinstance(feature_weights, list):
 
-            # Try to figure out if input feature weights are per feature or feature type
-
-            if len(feature_weights) <= 3:
-
-                # Set weights per feature type
+            if len(feature_weights) == 3:   # Set weights per feature type
                 feature_weights = self._format_weight_per_feature_type(feature_weights)
-                return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
+
+            elif len(feature_weights) == 15:  # Set weights per feature
+                feature_weights = self._format_weight_per_feature(feature_weights)
 
             else:
-
-                # Set weights per feature
-                feature_weights = self._format_weight_per_feature(feature_weights)
-                return pd.merge(feature_distances, feature_weights, on='feature_name', sort=False)
+                raise ValueError(f'Weights must have length 3 or 15, but have length {len(feature_weights)}.')
 
         else:
 
-            raise TypeError(f'Data type of "feature_weights" parameter must be dict, but is {type(feature_weights)}.')
+            raise TypeError(f'Data type of "feature_weights" parameter must be list, but is {type(feature_weights)}.')
+
+        return feature_weights
 
     @staticmethod
     def _format_weight_per_feature_type(feature_type_weights=None):
         """
-        Distribute feature type weights equally to features per feature type and format these values as a DataFrame
-        with 15 rows (features) and 2 columns (feature name, weight).
+        Distribute feature type weights equally to features per feature type.
 
         Parameters
         ----------
-        feature_type_weights : dict of str: float (3 items) or None
-            Weights per feature type which need to sum up to 1.0.
-            Feature types to be set are: physicochemical, distances, and moments.
-            Default feature weights (None) are set equally distributed to 1/3 (3 feature types in total).
+        feature_type_weights : None or list of float
+            Feature weights of the following form:
+            (i) None
+                Default feature weights: All features equally distributed to 1/15 (15 features in total).
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and moments.
+                All floats must sum up to 1.0.
 
         Returns
         -------
-        pandas.DataFrame
-            Feature weights: 15 rows (features) and 2 columns (feature name, weight).
+        np.ndarray
+            Feature weights.
         """
 
         # 1. Either set feature weights to default or check if non-default input is correct
-        equal_weights = 1.0 / 3
-
-        feature_type_weights_default = {
-            'physicochemical': equal_weights,
-            'distances': equal_weights,
-            'moments': equal_weights
-        }
-
         if feature_type_weights is None:
-
-            feature_type_weights = feature_type_weights_default
+            feature_type_weights = [1.0 / 3] * 3
 
         else:
 
             # Check data type of feature weights
-            if not isinstance(feature_type_weights, dict):
-                raise TypeError(f'Data type of "feature_weights" parameter must be dict, but is '
+            if not isinstance(feature_type_weights, list):
+                raise TypeError(f'Data type of "feature_weights" parameter must be list, but is '
                                 f'{type(feature_type_weights)}.')
 
             # Check if feature weight keys are correct
-            if not feature_type_weights.keys() == feature_type_weights_default.keys():
-                raise ValueError(f'Feature weights contain unknown or missing feature(s). Set the following features: '
-                                 f'{", ".join(list(feature_type_weights_default.keys()))}.')
-
-            # Check if feature weight values are correct
-            for feature_name, weight in feature_type_weights.items():
-                if not isinstance(weight, float):
-                    raise TypeError(f'Weight for feature "{feature_name}" must be float, but is {type(weight)}.')
+            if len(feature_type_weights) != 3:
+                raise ValueError(f'List must have length 3, but has length {len(feature_type_weights)}.')
 
             # Check if sum of weights is 1.0
-            if sum(feature_type_weights.values()) != 1.0:
-                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_type_weights.values())}.')
+            if sum(feature_type_weights) != 1.0:
+                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_type_weights)}.')
 
-        # 2. Distribute feature type weight equally to features in feature type
-        feature_weights = {}
+        # 2. Distribute feature type weight equally to features in feature type (in default feature order)
+        feature_weights_formatted = []
 
-        for feature_type, feature_names in FEATURE_NAMES.items():
+        for feature_type_weight, n_features_per_type in zip(feature_type_weights, [8, 4, 3]):
+            feature_weights_formatted.extend(
+                [feature_type_weight / n_features_per_type] * n_features_per_type
+            )
 
-            weight_per_feature_in_feature_type = feature_type_weights[feature_type] / len(feature_names)
-
-            for feature_name in feature_names:
-                feature_weights[feature_name] = weight_per_feature_in_feature_type
-
-        # 3. Get feature weights as DataFrame with feature names
-        feature_weights = pd.DataFrame.from_dict(feature_weights, orient='index', columns=['weight'])
-        feature_weights['feature_name'] = feature_weights.index
-        feature_weights.reset_index(inplace=True, drop=True)
-
-        return feature_weights
+        return np.array(feature_weights_formatted)
 
     @staticmethod
     def _format_weight_per_feature(feature_weights=None):
         """
-        Format input feature weights to DataFrame with 15 rows (features) and 2 columns (feature name, weight).
+        Format feature weights.
 
         Parameters
         ----------
-        feature_weights : dict of str: float (15 items) or None
-            Weights per feature which need to sum up to 1.0.
-            Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure, distance_to_centroid,
-            distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
-            Default feature weights (None) are set equally distributed to 1/15 (15 features in total).
+        feature_weights : None or list of float
+            Feature weights of the following form:
+            (i) None
+                Default feature weights: All features equally distributed to 1/15 (15 features in total).
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+                distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
+                moment1, moment2, and moment3.
+                All floats must sum up to 1.0.
 
         Returns
         -------
-        pandas.DataFrame
-            Feature weights: 15 rows (features) and 2 columns (feature name, weight).
+        np.ndarray
+            Feature weights.
         """
 
         # 1. Either set feature weights to default or check if non-default input is correct
-        equal_weights = 1.0 / 15
-
-        feature_weights_default = {
-            'size': equal_weights,
-            'hbd': equal_weights,
-            'hba': equal_weights,
-            'charge': equal_weights,
-            'aromatic': equal_weights,
-            'aliphatic': equal_weights,
-            'sco': equal_weights,
-            'exposure': equal_weights,
-            'distance_to_centroid': equal_weights,
-            'distance_to_hinge_region': equal_weights,
-            'distance_to_dfg_region': equal_weights,
-            'distance_to_front_pocket': equal_weights,
-            'moment1': equal_weights,
-            'moment2': equal_weights,
-            'moment3': equal_weights
-        }
-
         if feature_weights is None:
-
-            feature_weights = feature_weights_default
+            feature_weights = [1.0 / 15] * 15
 
         else:
 
             # Check data type of feature weights
-            if not isinstance(feature_weights, dict):
-                raise TypeError(f'Data type of "feature_weights" parameter must be dict, but is '
+            if not isinstance(feature_weights, list):
+                raise TypeError(f'Data type of "feature_weights" parameter must be list, but is '
                                 f'{type(feature_weights)}.')
 
             # Check if feature weight keys are correct
-            if not feature_weights.keys() == feature_weights_default.keys():
-                raise ValueError(f'Feature weights contain unknown or missing feature(s). Set the following features: '
-                                 f'{", ".join(list(feature_weights_default.keys()))}.')
-
-            # Check if feature weight values are correct
-            for feature_name, weight in feature_weights.items():
-                if not isinstance(weight, float):
-                    raise TypeError(f'Weight for feature "{feature_name}" must be float, but is {type(weight)}.')
+            if len(feature_weights) != 15:
+                raise ValueError(f'List must have length 15, but has length {len(feature_weights)}.')
 
             # Check if sum of weights is 1.0
-            if sum(feature_weights.values()) != 1.0:
-                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_weights.values())}.')
+            if sum(feature_weights) != 1.0:
+                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_weights)}.')
 
-        # 2. Get feature weights as DataFrame with feature names
-        feature_weights = pd.DataFrame.from_dict(feature_weights, orient='index', columns=['weight'])
-        feature_weights['feature_name'] = feature_weights.index
-        feature_weights.reset_index(inplace=True, drop=True)
-
-        return feature_weights
+        return np.array(feature_weights)
 
 
 class FeatureDistances:
@@ -976,29 +915,30 @@ class FeatureDistances:
         self.distances = np.array(distances)
         self.bit_coverages = np.array(bit_coverages)
 
-    def from_features(self, features1, features2, distance_measure='scaled_euclidean'):
+    def from_features(self, feature1, feature2, distance_measure='scaled_euclidean'):
         """
-        For each feature, get both fingerprint bits without NaN positions.
+        Distance and bit coverage for a feature pair.
 
         Parameters
         ----------
-        features1 : pd.Series
-            Fingerprint 1.
-        features2 : pd.Series
-            Fingerprint 2.
+        feature1 : pd.Series
+            Feature bits for a given feature in fingerprint 1.
+        feature2 : pd.Series
+            Feature bits for a given feature in fingerprint 2.
         distance_measure : str
             Distance measure.
 
         Returns
         -------
-        dict of str: dict of str: np.ndarray
-            For each feature type, i.e. physicochemical, distances, and moments (dict) and for each corresponding
-            feature, i.e. size, HBD, HDA, ... for physicochemical feature type (dict), non-NaN bits from both
-            fingerprints (np.ndarray).
+        tuple of float
+            Distance and bit coverage value for a feature pair.
         """
 
+        if len(feature1) != len(feature2):
+            raise ValueError(f'Features are not of same length!')
+
         # Cast feature pair to numpy array
-        feature_pair = np.array([features1, features2])
+        feature_pair = np.array([feature1, feature2])
 
         # Remove NaN positions in feature pair
         feature_pair_wo_nan = feature_pair[:, ~np.isnan(feature_pair).any(axis=0)]
@@ -1007,9 +947,9 @@ class FeatureDistances:
         bit_coverage = round(feature_pair_wo_nan.shape[1] / feature_pair.shape[1], 2)
 
         # Get feature distance
-        feature_distance = self._calculate_feature_distance(feature_pair_wo_nan, distance_measure)
+        distance = self._calculate_feature_distance(feature_pair_wo_nan, distance_measure)
 
-        return feature_distance, bit_coverage
+        return distance, bit_coverage
 
     def _calculate_feature_distance(self, feature_pair, distance_measure='scaled_euclidean'):
         """

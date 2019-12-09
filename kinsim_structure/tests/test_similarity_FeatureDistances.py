@@ -103,52 +103,54 @@ def test_from_fingerprints(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids
     assert all(feature_type_dimension_calculated == feature_type_dimension)
 
 
-@pytest.mark.parametrize('feature_type, bit_number, bit_coverage', [
-    ('moments', 4, 1.0),
-    ('moments', 2, 0.5),
-    ('moments', 0, 0.0),
-    ('physicochemical', 50, 0.59),
-    ('distances', 1, 0.01)
+@pytest.mark.parametrize('feature1, feature2, distance, bit_coverage', [
+    (pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0, 0]), 0.5, 1.0),
+    (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, 0]), 0.5, 0.8),
+    (pd.Series([1, 1, 1, 1, 1]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8),
+    (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8)
 ])
-def test_get_bit_coverage(feature_type, bit_number, bit_coverage):
+def test_from_features(feature1, feature2, distance, bit_coverage):
     """
-    Test bit coverage calculation.
+    Test if feature distance and bit coverage is correct for given feature bits.
 
     Parameters
     ----------
-    feature_type : str
-        Feature type: physicochemical, distances or moments.
-    bit_number : int
-        Number of feature bits used for distance calculation.
+    feature1 : pd.Series
+        Feature bits for a given feature in fingerprint 1.
+    feature2 : pd.Series
+        Feature bits for a given feature in fingerprint 2.
+    distance : float
+        Distance value for a feature pair.
     bit_coverage : float
-        Bit coverage describing the percentage of bits used for distance calculation.
+        Bit coverage value for a feature pair.
     """
 
-    feature_distances_generator = FeatureDistances()
-    bit_coverage_calculated = feature_distances_generator._get_bit_coverage(feature_type, bit_number)
+    feature_distances = FeatureDistances()
+    distance_calculated, bit_coverage_calculated = feature_distances.from_features(feature1, feature2)
 
-    assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-02)  # Coverage has two decimals
+    assert np.isclose(distance_calculated, distance, rtol=1e-04)
+    assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-04)
 
 
-@pytest.mark.parametrize('feature_type, bit_number', [
-    ('xxx', 1),  # Feature type unknown
-    ('moments', 5)  # Too many bits
+@pytest.mark.parametrize('feature1, feature2', [
+    (pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0]))
 ])
-def test_get_bit_coverage_valueerror(feature_type, bit_number):
+def test_from_features_valueerror(feature1, feature2):
     """
-    Test exceptions for bit coverage calculation.
+    Test if feature distance and bit coverage is correct for given feature bits, here if error is raised correctly.
 
     Parameters
     ----------
-    feature_type : str
-        Feature type: physicochemical, distances or moments.
-    bit_number : int
-        Number of feature bits used for distance calculation.
+    feature1 : pd.Series
+        Feature bits for a given feature in fingerprint 1.
+    feature2 : pd.Series
+        Feature bits for a given feature in fingerprint 2.
     """
+
+    feature_distances = FeatureDistances()
 
     with pytest.raises(ValueError):
-        feature_distances_generator = FeatureDistances()
-        feature_distances_generator._get_bit_coverage(feature_type, bit_number)
+        feature_distances.from_features(feature1, feature2)
 
 
 @pytest.mark.parametrize('feature_pair, distance_measure, distance', [
@@ -223,68 +225,9 @@ def test_calculate_feature_distance_valueerror(feature_pair, distance_measure):
         feature_distance_generator._calculate_feature_distance(feature_pair, distance_measure)
 
 
-@pytest.mark.parametrize('path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, n_bits_wo_nan_size', [
-    (
-        PATH_TEST_DATA / 'klifs_metadata.csv',
-        [
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-        ],
-        [
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-        ],
-        [
-            'A',
-            'B'
-        ],
-        82
-    )
-])
-def test_extract_fingerprint_pair(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, n_bits_wo_nan_size):
-    """
-    Test extracting fingerprint pairs for each feature.
-
-    Parameters
-    ----------
-    path_klifs_metadata : pathlib.Path
-        Path to unfiltered KLIFS metadata.
-    paths_mol2 : list of str
-        Paths to two mol2 files.
-    paths_pdb : list of str
-        Paths to two cif files.
-    chain_ids : list of str
-        Two chain IDs.
-    n_bits_wo_nan_size : int
-        Number of bits after removing all positions with any NaN value for size feature.
-    """
-
-    # Fingerprints
-    fingerprints = generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids)
-
-    # Fingerprint pair
-    feature_distances_generator = FeatureDistances()
-    pair = feature_distances_generator._extract_fingerprint_pair(fingerprints[0], fingerprints[1], normalized=True)
-
-    # Correct feature type keys?
-    assert pair.keys() == FEATURE_NAMES.keys()
-
-    for feature_type in pair.keys():
-
-        # Correct feature names per feature type?
-        assert list(pair[feature_type].keys()) == FEATURE_NAMES[feature_type]
-
-        for feature_name in pair[feature_type].keys():
-
-            # Correct number of bits for one example feature?
-            if (feature_type == 'physicochemical') and (feature_name == 'size'):
-                print(pair[feature_type][feature_name])
-                assert pair[feature_type][feature_name].shape == (2, n_bits_wo_nan_size)
-
-
 @pytest.mark.parametrize('values1, values2, distance', [
-    (np.array([0, 0]), np.array([4, 3]), 2.5),
     ([0, 0], [4, 3], 2.5),
+    (np.array([0, 0]), np.array([4, 3]), 2.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
 ])
 def test_scaled_euclidean_distance(values1, values2, distance):
@@ -309,12 +252,12 @@ def test_scaled_euclidean_distance(values1, values2, distance):
 
 @pytest.mark.parametrize('values1, values2, distance', [
     ([0, 0], [4, 3], 3.5),
-    (np.ndarray([0, 0]), np.ndarray([4, 3]), 3.5),
+    (np.array([0, 0]), np.array([4, 3]), 3.5),
     (pd.Series([0, 0]), pd.Series([4, 3]), 3.5)
 ])
 def test_scaled_cityblock_distance(values1, values2, distance):
     """
-    Test Euclidean distance calculation.
+    Test Manhattan distance calculation.
 
     Parameters
     ----------
