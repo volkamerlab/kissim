@@ -82,8 +82,9 @@ class Preprocessing:
             raise FileNotFoundError(f'File not found: {path_klifs_export}')
         if not path_klifs_download.exists():
             raise FileNotFoundError(f'Directory not found: {path_klifs_download}')
-        if not path_results.exists():
-            raise FileNotFoundError(f'Directory not found: {path_results}')
+
+        # Create results folder if not already there
+        path_results.mkdir(parents=True, exist_ok=True)
 
         # Set as class attributes
         self.path_klifs_overview = Path(path_klifs_overview)
@@ -244,11 +245,8 @@ class Encoding:
             Fingerprints for KLIFS dataset.
         """
 
-        # Check if input parameters
-        if not path_results.exists():
-            raise FileNotFoundError(f'Directory not found: {path_results}')
-        #if isinstance(klifs_metadata_filter, KlifsMetadataFilter):
-        #    raise ValueError(f'{type(klifs_metadata_filter)}')  # TODO write error message, what makes sense?
+        # Create results folder if not already there
+        path_results.mkdir(parents=True, exist_ok=True)
 
         # Set as class attributes
         self.path_results = Path(path_results)
@@ -297,11 +295,8 @@ class Similarity:
             Path to results folder.
         """
 
-        # Check if input parameters
-        if not path_results.exists():
-            raise FileNotFoundError(f'Directory not found: {path_results}')
-        #if isinstance(fingerprint_generator, FingerprintGenerator):
-        #    raise ValueError(f'TBA')  # TODO write error message, what makes sense?
+        # Create results folder if not already there
+        path_results.mkdir(parents=True, exist_ok=True)
 
         # Set as class attributes
         self.path_results = Path(path_results)
