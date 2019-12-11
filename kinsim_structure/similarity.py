@@ -34,14 +34,14 @@ class FingerprintDistanceGenerator:
         Unique molecule codes associated with all fingerprints (sorted alphabetically).
     kinase_names : list of str
         Unique kinase names associated with all fingerprints (sorted alphabetically).
-    feature_weights : dict of float or None
+    feature_weights : None or list of float
         Feature weights of the following form:
         (i) None
             Default feature weights: All features equally distributed to 1/15 (15 features in total).
-        (ii) By feature type
-            Feature types to be set are: physicochemical, distances, and moments.
-        (iii) By feature:
-            Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+        (ii) By feature type (list of 3 floats)
+            Feature types to be set in the following order: physicochemical, distances, and moments.
+        (iii) By feature (list of 15 floats):
+            Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
             distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
             moment1, moment2, and moment3.
         For (ii) and (iii): All floats must sum up to 1.0.
@@ -67,14 +67,14 @@ class FingerprintDistanceGenerator:
         ----------
         feature_distances_generator : kinsim_structure.similarity.FeatureDistancesGenerator
             Feature distances for multiple fingerprint pairs.
-        feature_weights : dict of float or None
+        feature_weights : None or list of float
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
-            (ii) By feature type
-                Feature types to be set are: physicochemical, distances, and moments.
-            (iii) By feature:
-                Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and moments.
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
                 moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
@@ -112,28 +112,25 @@ class FingerprintDistanceGenerator:
         logger.info(f'End of fingerprint distance generation: {end}')
 
     @staticmethod
-    def _get_fingerprint_distance_from_list(
-            method_get_fingerprint_distance, feature_distances_list, feature_weights=None
-    ):
+    def _get_fingerprint_distance_from_list(_get_fingerprint_distance, feature_distances_list, feature_weights=None):
         """
         Get fingerprint distances based on multiple feature distances (i.e. for multiple fingerprint pairs).
-        Method uses parallel computing.
+        Uses parallel computing.
 
         Parameters
         ----------
-        method_get_fingerprint_distance : method
+        _get_fingerprint_distance : method
             Method calculating fingerprint distance for one fingerprint pair (based on their feature distances).
         feature_distances_list : list of kinsim_structure.similarity.FeatureDistances
-            List of distances between two fingerprints for each of their features, plus details on feature type,
-            feature, feature bit coverage, and feature bit number.
-        feature_weights : dict of float or None
+            List of distances and bit coverages between two fingerprints for each of their features.
+        feature_weights : None or list of float
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
-            (ii) By feature type
-                Feature types to be set are: physicochemical, distances, and moments.
-            (iii) By feature:
-                Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and moments.
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
                 moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
@@ -158,7 +155,7 @@ class FingerprintDistanceGenerator:
 
         # Apply function to each chunk in list
         fingerprint_distances_list = pool.starmap(
-            method_get_fingerprint_distance,
+            _get_fingerprint_distance,
             zip(feature_distances_list, repeat(feature_weights))
         )
 
@@ -183,16 +180,15 @@ class FingerprintDistanceGenerator:
         Parameters
         ----------
         feature_distances : kinsim_structure.similarity.FeatureDistances
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, and feature bit number.
-        feature_weights : dict of float or None
+            Distances and bit coverages between two fingerprints for each of their features.
+        feature_weights : None or list of float
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
-            (ii) By feature type
-                Feature types to be set are: physicochemical, distances, and moments.
-            (iii) By feature:
-                Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and moments.
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
                 moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
@@ -467,16 +463,14 @@ class FeatureDistancesGenerator:
 
             return data_df
 
-    def _get_feature_distances_from_list(
-            self, method_get_feature_distances, fingerprints, distance_measure='scaled_euclidean'
-    ):
+    def _get_feature_distances_from_list(self, _get_feature_distances, fingerprints, distance_measure='scaled_euclidean'):
         """
         Get feature distances for multiple fingerprint pairs.
-        Method uses parallel computing.
+        Uses parallel computing.
 
         Parameters
         ----------
-        method_get_feature_distances : method
+        _get_feature_distances : method
             Method calculating feature distances for one fingerprint pair.
         fingerprints : dict of str: kinsim_structure.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
@@ -486,8 +480,7 @@ class FeatureDistancesGenerator:
         Returns
         -------
         list of kinsim_structure.similarity.FeatureDistances
-            List of distances between two fingerprints for each of their features, plus details on feature type,
-            feature, feature bit coverage, and feature bit number.
+            List of distances and bit coverages between two fingerprints for each of their features.
         """
 
         # Get start time of computation
@@ -506,7 +499,7 @@ class FeatureDistancesGenerator:
 
         # Apply function to each chunk in list
         feature_distances_list = pool.starmap(
-            method_get_feature_distances,
+            _get_feature_distances,
             zip(pairs, repeat(fingerprints), repeat(distance_measure))
         )
 
@@ -540,8 +533,7 @@ class FeatureDistancesGenerator:
         Returns
         -------
         kinsim_structure.similarity.FeatureDistances
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, and feature bit number.
+            Distances and bit coverages between two fingerprints for each of their features.
         """
 
         fingerprint1 = fingerprints[pair[0]]
@@ -639,9 +631,8 @@ class FingerprintDistance:
         Parameters
         ----------
         feature_distances : kinsim_structure.similarity.FeatureDistances
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, and feature bit number.
-        feature_weights : list of float or None
+            Distances and bit coverages between two fingerprints for each of their features.
+        feature_weights : None or list of float
             Feature weights of the following form:
             (i) None
                 Default feature weights: All features equally distributed to 1/15 (15 features in total).
@@ -652,11 +643,6 @@ class FingerprintDistance:
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
                 moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
-
-        Returns
-        -------
-        float
-            Fingerprint distance.
         """
 
         # Set class attributes
@@ -824,7 +810,7 @@ class FeatureDistances:
     distances : np.ndarray
         Distances between two fingerprints for each of their features.
     bit_coverages : np.ndarray
-        Bit coverage for two fingerprints for each of their features.
+        Bit coverages for two fingerprints for each of their features.
     """
 
     def __init__(self):
@@ -875,12 +861,6 @@ class FeatureDistances:
             Type of distance measure, defaults to scaled Euclidean distance.
         normalized : bool
             Normalized (default) or non-normalized fingerprints.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Distances between two fingerprints for each of their features, plus details on feature type, feature,
-            feature bit coverage, and feature bit number.
         """
 
         # Set class attributes
@@ -964,7 +944,7 @@ class FeatureDistances:
 
         Returns
         -------
-        dict of str: float
+        float
             Distance between two value lists (describing each the same feature).
         """
 
