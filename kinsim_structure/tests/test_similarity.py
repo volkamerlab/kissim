@@ -168,7 +168,7 @@ def fingerprint_distance_generator():
 
 class TestsFeatureDistances:
     """
-    Test FeatureDistances class methods
+    Test FeatureDistances class methods.
     """
 
     @pytest.mark.parametrize('values1, values2, distance', [
