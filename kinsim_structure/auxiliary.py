@@ -265,9 +265,9 @@ class KlifsMoleculeLoader:
 
         Parameters
         ----------
-        path_pocket_mol2 : pathlib.Path
+        path_pocket_mol2 : pathlib.Path or str
             KLIFS pocket mol2 file path.
-        path_klifs_metadata : pathlib.Path
+        path_klifs_metadata : pathlib.Path or str
             KLIFS metadata file path.
         """
 
