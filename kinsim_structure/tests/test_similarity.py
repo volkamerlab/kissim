@@ -9,34 +9,43 @@ import pandas as pd
 import pytest
 
 from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.encoding import Fingerprint, FingerprintGenerator, FEATURE_NAMES
+from kinsim_structure.encoding import Fingerprint, FingerprintGenerator
 from kinsim_structure.similarity import FeatureDistances, FingerprintDistance, \
     FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
 
 
-def generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids):
+@pytest.fixture(scope="module")
+def fingerprint_generator():
     """
-    Helper function: Generate multiple fingerprints from files.
-
-    Parameters
-    ----------
-    path_klifs_metadata : pathlib.Path
-        Path to unfiltered KLIFS metadata.
-    paths_mol2 : list of pathlib.Path
-        Paths to multiple mol2 files.
-    paths_pdb : list of pathlib.Path
-        Paths to multiple cif files.
-    chain_ids : list of str
-        Multiple chain IDs.
+    Get FingerprintGenerator instance with dummy data, i.e. multiple fingerprints (encoded pockets).
 
     Returns
     -------
-    list of kinsim_structure.encoding.Fingerprint
-        List of fingerprints.
+    kinsim_structure.encoding.FingerprintGenerator
+        Fingerprints.
     """
 
+    # Set data paths
+    path_klifs_metadata = PATH_TEST_DATA / 'klifs_metadata.csv'
+    paths_mol2 = [
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
+    ]
+    paths_pdb = [
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
+        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
+    ]
+    chain_ids = [
+        'A',
+        'B',
+        'B'
+    ]
+
+    # Generate fingerprints
     fingerprints = []
 
     for path_mol2, path_pdb, chain_id in zip(paths_mol2, paths_pdb, chain_ids):
@@ -51,19 +60,23 @@ def generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb,
 
         fingerprints.append(fingerprint)
 
-    return fingerprints
+    # FingerprintGenerator (set class attribute manually)
+    fingerprint_generator = FingerprintGenerator()
+    fingerprint_generator.data = {i.molecule_code: i for i in fingerprints}
+
+    return fingerprint_generator
 
 
-def generate_feature_distances():
+@pytest.fixture(scope="module")
+def feature_distances():
     """
-    Get FeatureDistances instance with dummy data, i.e. distances between two fingerprints for each of their features,
-    plus details on feature type, feature, feature bit coverage, and feature bit number.
+    Get FeatureDistances instance with dummy data, i.e. distances and bit coverages between two fingerprints for each
+    of their features.
 
     Returns
     -------
     kinsim_structure.similarity.FeatureDistances
-        Distances between two fingerprints for each of their features, plus details on feature type, feature,
-        feature bit coverage, and feature bit number.
+        Distances and bit coverages between two fingerprints for each of their features.
     """
 
     molecule_pair_code = ['molecule1', 'molecule2']
@@ -79,104 +92,132 @@ def generate_feature_distances():
     return feature_distances
 
 
+@pytest.fixture(scope="module")
+def feature_distances_generator():
+    """
+    Get FeatureDistancesGenerator instance with dummy data.
+
+    Returns
+    -------
+    kinsim_structure.similarity.FeatureDistancesGenerator
+        Feature distances for multiple fingerprint pairs.
+    """
+
+    # FeatureDistances
+    feature_distances1 = FeatureDistances()
+    feature_distances1.molecule_pair_code = ('HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2')
+    feature_distances1.distances = [1.0] * 15
+    feature_distances1.bit_coverages = [1.0] * 15
+
+    feature_distances2 = FeatureDistances()
+    feature_distances2.molecule_pair_code = ('HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1')
+    feature_distances2.distances = [0.0] * 15
+    feature_distances2.bit_coverages = [1.0] * 15
+
+    feature_distances3 = FeatureDistances()
+    feature_distances3.molecule_pair_code = ('HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1')
+    feature_distances3.distances = [0.0] * 15
+    feature_distances3.bit_coverages = [0.0] * 15
+
+    # FeatureDistancesGenerator
+    distance_measure = 'scaled_euclidean'
+    data = {
+        feature_distances1.molecule_pair_code: feature_distances1,
+        feature_distances2.molecule_pair_code: feature_distances2,
+        feature_distances3.molecule_pair_code: feature_distances3,
+    }
+
+    # FeatureDistancesGenerator
+    feature_distances_generator = FeatureDistancesGenerator()
+    feature_distances_generator.distance_measure = distance_measure
+    feature_distances_generator.data = data
+
+    return feature_distances_generator
+
+
+@pytest.fixture(scope="module")
+def fingerprint_distance_generator():
+    """
+    Get FingerprintDistanceGenerator instance with dummy data.
+
+    Returns
+    -------
+    kinsim_structure.similarity.FingerprintDistanceGenerator
+        Fingerprint distance for multiple fingerprint pairs.
+    """
+
+    molecule_codes = 'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split()
+    kinase_names = 'kinase1 kinase2'.split()
+    data = pd.DataFrame(
+        [
+            ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
+            ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
+            ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
+        ],
+        columns='molecule_code_1 molecule_code_2 distance coverage'.split()
+    )
+
+    # FingerprintDistanceGenerator
+    fingerprint_distance_generator = FingerprintDistanceGenerator()
+    fingerprint_distance_generator.molecule_codes = molecule_codes
+    fingerprint_distance_generator.kinase_names = kinase_names
+    fingerprint_distance_generator.data = data
+
+    return fingerprint_distance_generator
+
+
 class TestsFeatureDistances:
+    """
+    Test FeatureDistances class methods
+    """
 
-    @pytest.mark.parametrize('path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, feature_type_dimension', [
-        (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                ],
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                ],
-                [
-                    'A',
-                    'B'
-                ],
-                pd.Series([8, 4, 3], index='physicochemical distances moments'.split())
-        )
+    @pytest.mark.parametrize('values1, values2, distance', [
+        ([0, 0], [4, 3], 2.5),
+        (np.array([0, 0]), np.array([4, 3]), 2.5),
+        (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
     ])
-    def test_from_fingerprints(self, path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, feature_type_dimension):
+    def test_scaled_euclidean_distance(self, values1, values2, distance):
         """
-        Test data type and dimensions of feature distances between two fingerprints.
+        Test Euclidean distance calculation.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        paths_mol2 : list of str
-            Paths to two mol2 files.
-        paths_pdb : list of str
-            Paths to two cif files.
-        chain_ids : list of str
-            Two chain IDs.
-        """
-
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids)
-
-        # Get feature distances and check if format is correct
-        feature_distances = FeatureDistances()
-        feature_distances.from_fingerprints(
-            fingerprint1=fingerprints[0],
-            fingerprint2=fingerprints[1],
-            distance_measure='scaled_euclidean'
-        )
-
-        feature_type_dimension_calculated = feature_distances.data.groupby(by='feature_type', sort=False).size()
-
-        assert all(feature_type_dimension_calculated == feature_type_dimension)
-
-    @pytest.mark.parametrize('feature1, feature2, distance, bit_coverage', [
-        (pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0, 0]), 0.5, 1.0),
-        (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, 0]), 0.5, 0.8),
-        (pd.Series([1, 1, 1, 1, 1]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8),
-        (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8)
-    ])
-    def test_from_features(self, feature1, feature2, distance, bit_coverage):
-        """
-        Test if feature distance and bit coverage is correct for given feature bits.
-
-        Parameters
-        ----------
-        feature1 : pd.Series
-            Feature bits for a given feature in fingerprint 1.
-        feature2 : pd.Series
-            Feature bits for a given feature in fingerprint 2.
+        values1 : np.ndarray or list of pd.Series
+            Value list (same length as values2).
+        values2 : np.ndarray or list of pd.Series
+            Value list (same length as values1).
         distance : float
-            Distance value for a feature pair.
-        bit_coverage : float
-            Bit coverage value for a feature pair.
+            Euclidean distance between two value lists.
         """
 
-        feature_distances = FeatureDistances()
-        distance_calculated, bit_coverage_calculated = feature_distances.from_features(feature1, feature2)
+        feature_distances_generator = FeatureDistances()
+        score_calculated = feature_distances_generator._scaled_euclidean_distance(values1, values2)
 
-        assert np.isclose(distance_calculated, distance, rtol=1e-04)
-        assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-04)
+        assert np.isclose(score_calculated, distance, rtol=1e-04)
 
-    @pytest.mark.parametrize('feature1, feature2', [
-        (pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0]))
+    @pytest.mark.parametrize('values1, values2, distance', [
+        ([0, 0], [4, 3], 3.5),
+        (np.array([0, 0]), np.array([4, 3]), 3.5),
+        (pd.Series([0, 0]), pd.Series([4, 3]), 3.5)
     ])
-    def test_from_features_valueerror(self, feature1, feature2):
+    def test_scaled_cityblock_distance(self, values1, values2, distance):
         """
-        Test if feature distance and bit coverage is correct for given feature bits, here if error is raised correctly.
+        Test Manhattan distance calculation.
 
         Parameters
         ----------
-        feature1 : pd.Series
-            Feature bits for a given feature in fingerprint 1.
-        feature2 : pd.Series
-            Feature bits for a given feature in fingerprint 2.
+        values1 : np.ndarray or list of pd.Series
+            Value list (same length as values2).
+        values2 : np.ndarray or list of pd.Series
+            Value list (same length as values1).
+        distance : float
+            Manhattan distance between two value lists.
         """
 
-        feature_distances = FeatureDistances()
+        feature_distances_generator = FeatureDistances()
+        score_calculated = feature_distances_generator._scaled_cityblock_distance(values1, values2)
 
-        with pytest.raises(ValueError):
-            feature_distances.from_features(feature1, feature2)
+        assert np.isclose(score_calculated, distance, rtol=1e-04)
 
     @pytest.mark.parametrize('feature_pair, distance_measure, distance', [
         (np.array([[4, 0], [0, 3]]), 'scaled_euclidean', 2.5),
@@ -247,120 +288,97 @@ class TestsFeatureDistances:
             feature_distance_generator = FeatureDistances()
             feature_distance_generator._calculate_feature_distance(feature_pair, distance_measure)
 
-    @pytest.mark.parametrize('values1, values2, distance', [
-        ([0, 0], [4, 3], 2.5),
-        (np.array([0, 0]), np.array([4, 3]), 2.5),
-        (pd.Series([0, 0]), pd.Series([4, 3]), 2.5)
+    @pytest.mark.parametrize('feature1, feature2, distance, bit_coverage', [
+        (pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0, 0]), 0.5, 1.0),
+        (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, 0]), 0.5, 0.8),
+        (pd.Series([1, 1, 1, 1, 1]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8),
+        (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8)
     ])
-    def test_scaled_euclidean_distance(self, values1, values2, distance):
+    def test_from_features(self, feature1, feature2, distance, bit_coverage):
         """
-        Test Euclidean distance calculation.
+        Test if feature distance and bit coverage is correct for given feature bits.
 
         Parameters
         ----------
-        values1 : np.ndarray or list of pd.Series
-            Value list (same length as values2).
-        values2 : np.ndarray or list of pd.Series
-            Value list (same length as values1).
+        feature1 : pd.Series
+            Feature bits for a given feature in fingerprint 1.
+        feature2 : pd.Series
+            Feature bits for a given feature in fingerprint 2.
         distance : float
-            Euclidean distance between two value lists.
+            Distance value for a feature pair.
+        bit_coverage : float
+            Bit coverage value for a feature pair.
         """
 
-        feature_distances_generator = FeatureDistances()
-        score_calculated = feature_distances_generator._scaled_euclidean_distance(values1, values2)
+        feature_distances = FeatureDistances()
+        distance_calculated, bit_coverage_calculated = feature_distances.from_features(feature1, feature2)
 
-        assert np.isclose(score_calculated, distance, rtol=1e-04)
+        assert np.isclose(distance_calculated, distance, rtol=1e-04)
+        assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-04)
 
-    @pytest.mark.parametrize('values1, values2, distance', [
-        ([0, 0], [4, 3], 3.5),
-        (np.array([0, 0]), np.array([4, 3]), 3.5),
-        (pd.Series([0, 0]), pd.Series([4, 3]), 3.5)
+    @pytest.mark.parametrize('feature1, feature2', [
+        (pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0]))
     ])
-    def test_scaled_cityblock_distance(self, values1, values2, distance):
+    def test_from_features_valueerror(self, feature1, feature2):
         """
-        Test Manhattan distance calculation.
+        Test ValueError exceptions in feature distance calculation.
 
         Parameters
         ----------
-        values1 : np.ndarray or list of pd.Series
-            Value list (same length as values2).
-        values2 : np.ndarray or list of pd.Series
-            Value list (same length as values1).
-        distance : float
-            Euclidean distance between two value lists.
+        feature1 : np.ndarray
+            Feature bits for a given feature in fingerprint 1.
+        feature2 : np.ndarray
+            Feature bits for a given feature in fingerprint 2.
         """
 
-        feature_distances_generator = FeatureDistances()
-        score_calculated = feature_distances_generator._scaled_cityblock_distance(values1, values2)
+        feature_distances = FeatureDistances()
 
-        assert np.isclose(score_calculated, distance, rtol=1e-04)
+        with pytest.raises(ValueError):
+            feature_distances.from_features(feature1, feature2)
+
+    def test_from_fingerprints(self, fingerprint_generator):
+        """
+        Test data type and dimensions of feature distances between two fingerprints.
+
+        Parameters
+        ----------
+        fingerprint_generator : FingerprintGenerator
+            Multiple fingerprints.
+        """
+
+        # Fingerprints
+        fingerprints = list(fingerprint_generator.data.values())
+
+        # Get feature distances
+        feature_distances = FeatureDistances()
+        feature_distances.from_fingerprints(
+            fingerprint1=fingerprints[0],
+            fingerprint2=fingerprints[1],
+            distance_measure='scaled_euclidean'
+        )
+
+        # Class attribute types and dimensions correct?
+        assert isinstance(feature_distances.molecule_pair_code, tuple)
+        assert len(feature_distances.molecule_pair_code) == 2
+
+        assert isinstance(feature_distances.distances, np.ndarray)
+        assert len(feature_distances.distances) == 15
+
+        assert isinstance(feature_distances.bit_coverages, np.ndarray)
+        assert len(feature_distances.bit_coverages) == 15
+
+        # Class property type and dimension correct?
+        assert isinstance(feature_distances.data, pd.DataFrame)
+
+        feature_type_dimension_calculated = feature_distances.data.groupby(by='feature_type', sort=False).size()
+        feature_type_dimension = pd.Series([8, 4, 3], index='physicochemical distances moments'.split())
+        assert all(feature_type_dimension_calculated == feature_type_dimension)
 
 
 class TestsFingerprintDistance:
-
-    @pytest.mark.parametrize('feature_weights, distance, coverage', [
-        (
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.25],
-                0.5,
-                0.75
-        )
-    ])
-    def test_from_feature_distances(self, feature_weights, distance, coverage):
-        """
-        Test if fingerprint distances are calculated correctly based on feature distances.
-
-        Parameters
-        ----------
-        feature_weights : dict of float or None
-            Feature weights.
-        distance : float
-            Fingerprint distance.
-        coverage : float
-            Fingerprint coverage.
-        """
-
-        # FeatureDistances (dummy values)
-        feature_distances = generate_feature_distances()
-
-        # FingerprintDistance
-        fingerprint_distance = FingerprintDistance()
-        fingerprint_distance.from_feature_distances(feature_distances, feature_weights)
-
-        # Test class attributes:
-
-        # Molecule codes
-        assert fingerprint_distance.molecule_pair_code == feature_distances.molecule_pair_code
-
-        # Fingerprint distance
-        assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
-
-        # Fingerprint coverage
-        assert np.isclose(fingerprint_distance.bit_coverage, coverage, rtol=1e-04)
-
-    @pytest.mark.parametrize('feature_weights', [
-        {'a': 0},
-        'bla'
-    ])
-    def test_format_weights_typeerror(self, feature_weights):
-        """
-        Test if wrong data type of input feature weights raises TypeError.
-        """
-
-        with pytest.raises(TypeError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weights(feature_weights)
-
-    @pytest.mark.parametrize('feature_weights', [
-        [0],
-    ])
-    def test_format_weights_valueerror(self, feature_weights):
-        """
-        Test if wrong data type of input feature weights raises TypeError.
-        """
-
-        with pytest.raises(ValueError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weights(feature_weights)
+    """
+    Test FingerprintDistance class methods.
+    """
 
     @pytest.mark.parametrize('feature_weights, feature_weights_formatted', [
         (
@@ -399,6 +417,61 @@ class TestsFingerprintDistance:
             rtol=1e-04
         )
 
+    @pytest.mark.parametrize('feature_weights', [
+        {'a': 0},
+        'bla'
+    ])
+    def test_format_weights_typeerror(self, feature_weights):
+        """
+        Test if wrong data type of input feature weights raises TypeError.
+        """
+
+        with pytest.raises(TypeError):
+            fingerprint_distance = FingerprintDistance()
+            fingerprint_distance._format_weights(feature_weights)
+
+    @pytest.mark.parametrize('feature_weights', [
+        [0],
+    ])
+    def test_format_weights_valueerror(self, feature_weights):
+        """
+        Test if wrong data type of input feature weights raises TypeError.
+        """
+
+        with pytest.raises(ValueError):
+            fingerprint_distance = FingerprintDistance()
+            fingerprint_distance._format_weights(feature_weights)
+
+    @pytest.mark.parametrize('feature_type_weights, feature_weights', [
+        (
+                [0.0, 1.0, 0.0],
+                np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25, 0.0, 0.0, 0.0])
+        )
+    ])
+    def test_format_weight_per_feature_type(self, feature_type_weights, feature_weights):
+        """
+        Test formatting of weights per feature type (weights need to be equally distributed between all features in feature
+        type and transformed into a DataFrame).
+
+        Parameters
+        ----------
+        feature_type_weights : dict of float (3 items) or None
+            Weights per feature type which need to sum up to 1.0.
+        feature_weights : dict of float (15 items) or None
+            Weights per feature which need to sum up to 1.0.
+        """
+
+        # FingerprintDistance
+        fingerprint_distance = FingerprintDistance()
+        feature_weights_calculated = fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
+
+        # Test weight values
+        assert np.isclose(
+            np.std(feature_weights_calculated),
+            np.std(feature_weights),
+            rtol=1e-04
+        )
+
     @pytest.mark.parametrize('feature_type_weights', [
         ([0.1]),  # Features missing
         ([0.5, 0.5, 0.5]),  # Weights do not sum up to 1.0
@@ -424,44 +497,44 @@ class TestsFingerprintDistance:
             fingerprint_distance = FingerprintDistance()
             fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
 
-    @pytest.mark.parametrize('feature_type_weights, feature_weights', [
+    @pytest.mark.parametrize('feature_weights, feature_weights_formatted', [
         (
-                [0.0, 1.0, 0.0],
-                np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25, 0.0, 0.0, 0.0])
+            [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        ),
+        (
+            None,
+            [0.0667] * 15
         )
     ])
-    def test_format_weight_per_feature_type(self, feature_type_weights, feature_weights):
+    def test_format_weight_per_feature(self, feature_weights, feature_weights_formatted):
         """
-        Test formatting of weights per feature type (weights need to be equally distributed between all features in feature
-        type and transformed into a DataFrame).
+        Test formatting of weights per feature type (weights need to be transformed into a DataFrame).
 
         Parameters
         ----------
-        feature_type_weights : dict of float (3 items) or None
-            Weights per feature type which need to sum up to 1.0.
-        feature_weights : dict of float (15 items) or None
+        feature_weights : dict of float or None (15 items)
             Weights per feature which need to sum up to 1.0.
+        feature_weights_formatted : xxx
+            Formatted feature weights.
         """
 
         # FingerprintDistance
         fingerprint_distance = FingerprintDistance()
-        print('hallo')
-        feature_weights_calculated = fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
-        print(feature_weights_calculated)
+        feature_weights_formatted_calculated = fingerprint_distance._format_weight_per_feature(feature_weights)
 
-        # Test weight values
         assert np.isclose(
-            np.std(feature_weights_calculated),
-            np.std(feature_weights),
+            np.std(feature_weights_formatted_calculated),
+            np.std(feature_weights_formatted),
             rtol=1e-04
         )
 
     @pytest.mark.parametrize('feature_weights', [
         (
-                [0.1]
+            [0.1]
         ),  # Features missing
         (
-                [0.5, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.125, 0.125, 0.125, 0.125, 0.0, 0.0, 0.0]
+            [0.5, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.125, 0.125, 0.125, 0.125, 0.0, 0.0, 0.0]
         ),  # Weights do not sum up to 1.0
     ])
     def test_format_weight_per_feature_valueerror(self, feature_weights):
@@ -487,49 +560,58 @@ class TestsFingerprintDistance:
             fingerprint_distance = FingerprintDistance()
             fingerprint_distance._format_weight_per_feature(feature_weights)
 
-    @pytest.mark.parametrize('feature_weights, feature_weights_formatted', [
+    @pytest.mark.parametrize('feature_weights, distance, coverage', [
         (
-                [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-        ),
-        (
-                None,
-                [0.0667] * 15
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.25],
+            0.5,
+            0.75
         )
     ])
-    def test_format_weight_per_feature(self, feature_weights, feature_weights_formatted):
+    def test_from_feature_distances(self, feature_distances, feature_weights, distance, coverage):
         """
-        Test formatting of weights per feature type (weights need to be transformed into a DataFrame).
+        Test if fingerprint distances are calculated correctly based on feature distances.
 
         Parameters
         ----------
-        feature_weights : dict of float or None (15 items)
-            Weights per feature which need to sum up to 1.0.
-        feature_weights_formatted : xxx
-            Formatted feature weights.
+        feature_distances : kinsim_structure.similarity.FeatureDistances
+            Distances and bit coverages between two fingerprints for each of their features.
+        feature_weights : dict of float or None
+            Feature weights.
+        distance : float
+            Fingerprint distance.
+        coverage : float
+            Fingerprint coverage.
         """
 
         # FingerprintDistance
         fingerprint_distance = FingerprintDistance()
-        feature_weights_formatted_calculated = fingerprint_distance._format_weight_per_feature(feature_weights)
+        fingerprint_distance.from_feature_distances(feature_distances, feature_weights)
 
-        assert np.isclose(
-            np.std(feature_weights_formatted_calculated),
-            np.std(feature_weights_formatted),
-            rtol=1e-04
-        )
+        # Test class attributes:
+
+        # Molecule codes
+        assert fingerprint_distance.molecule_pair_code == feature_distances.molecule_pair_code
+
+        # Fingerprint distance
+        assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
+
+        # Fingerprint coverage
+        assert np.isclose(fingerprint_distance.bit_coverage, coverage, rtol=1e-04)
 
 
 class TestsFeatureDistancesGenerator:
+    """
+    Test FeatureDistancesGenerator class methods.
+    """
 
     @pytest.mark.parametrize('fingerprints, empty_fingerprints', [
         (
-                {'a': Fingerprint(), 'b': None},
-                {'a': Fingerprint()}
+            {'a': Fingerprint(), 'b': None},
+            {'a': Fingerprint()}
         ),
         (
-                {'a': Fingerprint()},
-                {'a': Fingerprint()}
+            {'a': Fingerprint()},
+            {'a': Fingerprint()}
         )
     ])
     def test_remove_empty_fingerprints(self, fingerprints, empty_fingerprints):
@@ -551,8 +633,8 @@ class TestsFeatureDistancesGenerator:
 
     @pytest.mark.parametrize('fingerprints, pairs', [
         (
-                {'a': Fingerprint(), 'b': Fingerprint(), 'c': Fingerprint()},
-                [('a', 'b'), ('a', 'c'), ('b', 'c')]
+            {'a': Fingerprint(), 'b': Fingerprint(), 'c': Fingerprint()},
+            [('a', 'b'), ('a', 'c'), ('b', 'c')]
         )
     ])
     def test_get_fingerprint_pairs(self, fingerprints, pairs):
@@ -573,101 +655,42 @@ class TestsFeatureDistancesGenerator:
         for pair_calculated, pair in zip(pairs_calculated, pairs):
             assert pair_calculated == pair
 
-    @pytest.mark.parametrize('path_klifs_metadata, paths_mol2, paths_pdb, chain_ids', [
-        (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                ],
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                ],
-                [
-                    'A',
-                    'B'
-                ]
-        )
-
-    ])
-    def test_get_feature_distances(self, path_klifs_metadata, paths_mol2, paths_pdb, chain_ids):
+    def test_get_feature_distances(self, fingerprint_generator):
         """
         Test if return type is instance of FeatureDistance class.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        paths_mol2 : list of str
-            Paths to two mol2 files.
-        paths_pdb : list of str
-            Paths to two cif files.
-        chain_ids : list of str
-            Two chain IDs.
+        fingerprint_generator : FingerprintGenerator
+            Multiple fingerprints.
         """
 
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids)
-
-        # Fingerprint dictionary and pair names
-        pair = [i.molecule_code for i in fingerprints]
-        fingerprints = {i.molecule_code: i for i in fingerprints}
+        # Get fingerprint pair from FingerprintGenerator
+        pair = list(fingerprint_generator.data.keys())[:2]
+        fingerprints = fingerprint_generator.data
 
         # Test feature distance calculation
-        generator = FeatureDistancesGenerator()
-        feature_distances_calculated = generator._get_feature_distances(pair, fingerprints)
+        feature_distances_generator = FeatureDistancesGenerator()
+        feature_distances_calculated = feature_distances_generator._get_feature_distances(pair, fingerprints)
 
         assert isinstance(feature_distances_calculated, FeatureDistances)
 
-    @pytest.mark.parametrize('path_klifs_metadata, paths_mol2, paths_pdb, chain_ids', [
-        (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                ],
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                ],
-                [
-                    'A',
-                    'B',
-                    'B'
-                ]
-        )
-
-    ])
-    def test_get_feature_distances_from_list(self, path_klifs_metadata, paths_mol2, paths_pdb, chain_ids):
+    def test_get_feature_distances_from_list(self, fingerprint_generator):
         """
         Test if return type is instance of list of FeatureDistance class.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        paths_mol2 : list of str
-            Paths to multiple mol2 files.
-        paths_pdb : list of str
-            Paths to multiple cif files.
-        chain_ids : list of str
-            Multiple chain IDs.
+        fingerprint_generator : FingerprintGenerator
+            Multiple fingerprints.
         """
-
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids)
-
-        # Fingerprint dictionary and pair names
-        fingerprints = {i.molecule_code: i for i in fingerprints}
 
         # Test bulk feature distance calculation
         generator = FeatureDistancesGenerator()
 
         feature_distances_list = generator._get_feature_distances_from_list(
-            generator._get_feature_distances, fingerprints
+            generator._get_feature_distances,
+            fingerprint_generator.data
         )
 
         assert isinstance(feature_distances_list, list)
@@ -675,60 +698,24 @@ class TestsFeatureDistancesGenerator:
         for i in feature_distances_list:
             assert isinstance(i, FeatureDistances)
 
-    @pytest.mark.parametrize(
-        'path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names',
-        [
+    @pytest.mark.parametrize('distance_measure, feature_weights, molecule_codes, kinase_names', [
             (
-                    PATH_TEST_DATA / 'klifs_metadata.csv',
-                    [
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                    ],
-                    [
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                    ],
-                    [
-                        'A',
-                        'B',
-                        'B'
-                    ],
-                    'scaled_euclidean',
-                    None,
-                    ['HUMAN/ABL1_2g2i_chainA', 'HUMAN/AAK1_4wsq_altA_chainB'],
-                    ['AAK1', 'ABL1']
+                'scaled_euclidean',
+                None,
+                ['HUMAN/ABL1_2g2i_chainA', 'HUMAN/AAK1_4wsq_altA_chainB'],
+                ['AAK1', 'ABL1']
             )
         ]
     )
-    def test_from_fingerprints(
-            self, path_klifs_metadata, paths_mol2, paths_pdb, chain_ids, distance_measure, feature_weights, molecule_codes,
-            kinase_names
-    ):
+    def test_from_fingerprints(self, fingerprint_generator, distance_measure, feature_weights, molecule_codes, kinase_names):
         """
         Test FeatureDistancesGenerator class attributes.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        paths_mol2 : list of str
-            Paths to multiple mol2 files.
-        paths_pdb : list of str
-            Paths to multiple cif files.
-        chain_ids : list of str
-            Multiple chain IDs.
         distance_measure : str
             Type of distance measure, defaults to Euclidean distance.
         """
-
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, paths_mol2, paths_pdb, chain_ids)
-
-        # Fingerprint dictionary and pair names
-        fingerprint_generator = FingerprintGenerator()
-        fingerprint_generator.data = {i.molecule_code: i for i in fingerprints}
 
         # Test FeatureDistancesGenerator class attributes
         feature_distances_generator = FeatureDistancesGenerator()
@@ -744,49 +731,20 @@ class TestsFeatureDistancesGenerator:
 
 
 class TestsFingerprintDistanceGenerator:
+    """
+    Test FingerprintDistanceGenerator class methods.
+    """
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2s, path_pdbs, chain_ids', [
-        (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                ],
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                ],
-                [
-                    'A',
-                    'B'
-                ]
-        )
-
-    ])
-    def test_get_fingerprint_distance(self, path_klifs_metadata, path_mol2s, path_pdbs, chain_ids):
+    def test_get_fingerprint_distance(self, feature_distances):
         """
         Test if return type is FingerprintDistance class instance.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        path_mol2s : list of str
-            Paths to two mol2 files.
-        path_pdbs : list of str
-            Paths to two cif files.
-        chain_ids : list of str
-            Two chain IDs.
+        feature_distances : kinsim_structure.similarity.FeatureDistances
+            Distances and bit coverages between two fingerprints for each of their features.
         """
 
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, path_mol2s, path_pdbs, chain_ids)
-
-        # FeatureDistances
-        feature_distances = FeatureDistances()
-        feature_distances.from_fingerprints(fingerprints[0], fingerprints[1])
-
-        # FingerprintDistanceGenerator
         fingerprint_distance_generator = FingerprintDistanceGenerator()
         fingerprint_distance_calculated = fingerprint_distance_generator._get_fingerprint_distance(
             feature_distances
@@ -794,60 +752,20 @@ class TestsFingerprintDistanceGenerator:
 
         assert isinstance(fingerprint_distance_calculated, FingerprintDistance)
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2s, path_pdbs, chain_ids', [
-        (
-
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                ],
-                [
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-                    PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                ],
-                [
-                    'A',
-                    'B',
-                    'B'
-                ]
-        )
-
-    ])
-    def test_get_fingerprint_distance_from_list(self, path_klifs_metadata, path_mol2s, path_pdbs, chain_ids):
+    def test_get_fingerprint_distance_from_list(self, feature_distances_generator):
         """
-        Test if return type is instance of list of FeatureDistance class instances.
+        Test if return type is instance of list of FingerprintDistance class instances.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        path_mol2s : list of str
-            Paths to multiple mol2 files.
-        path_pdbs : list of str
-            Paths to multiple cif files.
-        chain_ids : list of str
-            Multiple chain IDs.
+        feature_distances_generator : FeatureDistancesGenerator
+            Feature distances for multiple fingerprints.
         """
 
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, path_mol2s, path_pdbs, chain_ids)
-
-        # FingerprintGenerator
-        fingerprint_generator = FingerprintGenerator()
-        fingerprint_generator.data = {i.molecule_code: i for i in fingerprints}
-
-        # FeatureDistancesGenerator
-        feature_distances_generator = FeatureDistancesGenerator()
-        feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
-        feature_distances_list = list(feature_distances_generator.data.values())
-
-        # FingerprintDistanceGenerator
         fingerprint_distance_generator = FingerprintDistanceGenerator()
         fingerprint_distance_list = fingerprint_distance_generator._get_fingerprint_distance_from_list(
-            fingerprint_distance_generator._get_fingerprint_distance, feature_distances_list
+            fingerprint_distance_generator._get_fingerprint_distance,
+            list(feature_distances_generator.data.values())
         )
 
         assert isinstance(fingerprint_distance_list, list)
@@ -855,50 +773,30 @@ class TestsFingerprintDistanceGenerator:
         for i in fingerprint_distance_list:
             assert isinstance(i, FingerprintDistance)
 
-    @pytest.mark.parametrize(
-        'path_klifs_metadata, path_mol2s, path_pdbs, chain_ids, distance_measure, feature_weights, molecule_codes, kinase_names',
-        [
+    @pytest.mark.parametrize('distance_measure, feature_weights, molecule_codes, kinase_names', [
             (
-                    PATH_TEST_DATA / 'klifs_metadata.csv',
-                    [
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2'
-                    ],
-                    [
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-                        PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb'
-                    ],
-                    [
-                        'A',
-                        'B',
-                        'B'
-                    ],
-                    'scaled_euclidean',
-                    None,
-                    ['HUMAN/AAK1_4wsq_altA_chainB', 'HUMAN/ABL1_2g2i_chainA'],
-                    ['AAK1', 'ABL1']
+                'scaled_euclidean',
+                None,
+                'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+                'kinase1 kinase2'.split()
             )
         ]
     )
     def test_from_feature_distances_generator(
-            self, path_klifs_metadata, path_mol2s, path_pdbs, chain_ids, distance_measure, feature_weights, molecule_codes,
-            kinase_names
+        self,
+        feature_distances_generator,
+        distance_measure,
+        feature_weights,
+        molecule_codes,
+        kinase_names
     ):
         """
         Test FingerprintDistanceGenerator class attributes.
 
         Parameters
         ----------
-        path_klifs_metadata : pathlib.Path
-            Path to unfiltered KLIFS metadata.
-        path_mol2s : list of str
-            Paths to multiple mol2 files.
-        path_pdbs : list of str
-            Paths to multiple cif files.
-        chain_ids : list of str
-            Multiple chain IDs.
+        feature_distances_generator : FeatureDistancesGenerator
+            Feature distances for multiple fingerprints.
         distance_measure : str
             Type of distance measure, defaults to Euclidean distance.
         feature_weights : dict of float or None
@@ -918,19 +816,9 @@ class TestsFingerprintDistanceGenerator:
             List of kinase names associated with input fingerprints.
         """
 
-        # Fingerprints
-        fingerprints = generate_fingerprints_from_files(path_klifs_metadata, path_mol2s, path_pdbs, chain_ids)
-
-        # FingerprintGenerator
-        fingerprint_generator = FingerprintGenerator()
-        fingerprint_generator.data = {i.molecule_code: i for i in fingerprints}
-
-        # FeatureDistancesGenerator
-        feature_distances_generator = FeatureDistancesGenerator()
-        feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
-
         # FingerprintDistanceGenerator
         fingerprint_distance_generator = FingerprintDistanceGenerator()
+        print(feature_distances_generator.data)
         fingerprint_distance_generator.from_feature_distances_generator(feature_distances_generator)
 
         # Test attributes
@@ -940,132 +828,99 @@ class TestsFingerprintDistanceGenerator:
         assert fingerprint_distance_generator.kinase_names == kinase_names
 
         assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
-        assert list(
-            fingerprint_distance_generator.data.columns) == 'molecule_code_1 molecule_code_2 distance coverage'.split()
 
-    @pytest.mark.parametrize('molecule_codes, data, fill, structure_distance_matrix', [
+        data_columns = 'molecule_code_1 molecule_code_2 distance coverage'.split()
+        assert list(fingerprint_distance_generator.data.columns) == data_columns
+
+    @pytest.mark.parametrize('fill, structure_distance_matrix', [
         (
-                'a b c'.split(),
-                pd.DataFrame(
-                    [['a', 'b', 0.5, 1.0], ['a', 'c', 0.75, 1.0], ['b', 'c', 1.0, 1.0]],
-                    columns='molecule_code_1 molecule_code_2 distance coverage'.split()
-                ),
-                False,
-                pd.DataFrame(
-                    [[0.0, 0.5, 0.75], [np.nan, 0.0, 1.0], [np.nan, np.nan, 0.0]],
-                    columns='a b c'.split(),
-                    index='a b c'.split()
-                )
+            False,
+            pd.DataFrame(
+                [[0.0, 0.5, 0.75], [np.nan, 0.0, 1.0], [np.nan, np.nan, 0.0]],
+                columns='HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+                index='HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split()
+            )
         ),
         (
-                'a b c'.split(),
-                pd.DataFrame(
-                    [['a', 'b', 0.5, 1.0], ['a', 'c', 0.75, 1.0], ['b', 'c', 1.0, 1.0]],
-                    columns='molecule_code_1 molecule_code_2 distance coverage'.split()
-                ),
-                True,
-                pd.DataFrame(
-                    [[0.0, 0.5, 0.75], [0.5, 0.0, 1.0], [0.75, 1.0, 0.0]],
-                    columns='a b c'.split(),
-                    index='a b c'.split()
-                )
+            True,
+            pd.DataFrame(
+                [[0.0, 0.5, 0.75], [0.5, 0.0, 1.0], [0.75, 1.0, 0.0]],
+                columns='HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
+                index='HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split()
+            )
         )
     ])
-    def test_get_structure_distance_matrix(self, molecule_codes, data, fill, structure_distance_matrix):
-        # Set dummy FingerprintDistanceGenerator class attributes
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_generator.molecule_codes = molecule_codes
-        fingerprint_distance_generator.data = data
+    def test_get_structure_distance_matrix(self, fingerprint_distance_generator, fill, structure_distance_matrix):
+        """
+        Test if structure distance matrix is correct.
+
+        Parameters
+        ----------
+        fingerprint_distance_generator : FingerprintDistanceGenerator
+            Fingerprint distance for multiple fingerprint pairs.
+        fill
+        structure_distance_matrix
+        """
 
         # Test generation of structure distance matrix
         structure_distance_matrix_calculated = fingerprint_distance_generator.get_structure_distance_matrix(fill)
 
         assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
 
-    @pytest.mark.parametrize('molecule_codes, kinase_names, data, by, fill, structure_distance_matrix', [
+    @pytest.mark.parametrize('by, fill, structure_distance_matrix', [
         (
-                'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
-                'kinase1 kinase2'.split(),
-                pd.DataFrame(
-                    [
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
-                        ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
-                    ],
-                    columns='molecule_code_1 molecule_code_2 distance coverage'.split()
-                ),
-                'minimum',
-                False,
-                pd.DataFrame(
-                    [[0.5, 0.75], [np.nan, 0.0]],
-                    columns='kinase1 kinase2'.split(),
-                    index='kinase1 kinase2'.split()
-                )
+            'minimum',
+            False,
+            pd.DataFrame(
+                [[0.5, 0.75], [np.nan, 0.0]],
+                columns='kinase1 kinase2'.split(),
+                index='kinase1 kinase2'.split()
+            )
         ),  # Minimum
         (
-                'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
-                'kinase1 kinase2'.split(),
-                pd.DataFrame(
-                    [
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
-                        ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
-                    ],
-                    columns='molecule_code_1 molecule_code_2 distance coverage'.split()
-                ),
-                'minimum',
-                True,
-                pd.DataFrame(
-                    [[0.5, 0.75], [0.75, 0.0]],
-                    columns='kinase1 kinase2'.split(),
-                    index='kinase1 kinase2'.split()
-                )
+            'minimum',
+            True,
+            pd.DataFrame(
+                [[0.5, 0.75], [0.75, 0.0]],
+                columns='kinase1 kinase2'.split(),
+                index='kinase1 kinase2'.split()
+            )
         ),  # Fill=True
         (
-                'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
-                'kinase1 kinase2'.split(),
-                pd.DataFrame(
-                    [
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
-                        ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
-                    ],
-                    columns='molecule_code_1 molecule_code_2 distance coverage'.split()
-                ),
-                'maximum',
-                False,
-                pd.DataFrame(
-                    [[0.5, 1.0], [np.nan, 0.0]],
-                    columns='kinase1 kinase2'.split(),
-                    index='kinase1 kinase2'.split()
-                )
+            'maximum',
+            False,
+            pd.DataFrame(
+                [[0.5, 1.0], [np.nan, 0.0]],
+                columns='kinase1 kinase2'.split(),
+                index='kinase1 kinase2'.split()
+            )
         ),  # Maximum
         (
-                'HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1'.split(),
-                'kinase1 kinase2'.split(),
-                pd.DataFrame(
-                    [
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase1_pdb2', 0.5, 1.0],
-                        ['HUMAN/kinase1_pdb1', 'HUMAN/kinase2_pdb1', 0.75, 1.0],
-                        ['HUMAN/kinase1_pdb2', 'HUMAN/kinase2_pdb1', 1.0, 1.0]
-                    ],
-                    columns='molecule_code_1 molecule_code_2 distance coverage'.split()
-                ),
-                'mean',
-                False,
-                pd.DataFrame(
-                    [[0.5, 0.875], [np.nan, 0.0]],
-                    columns='kinase1 kinase2'.split(),
-                    index='kinase1 kinase2'.split()
-                )
+            'mean',
+            False,
+            pd.DataFrame(
+                [[0.5, 0.875], [np.nan, 0.0]],
+                columns='kinase1 kinase2'.split(),
+                index='kinase1 kinase2'.split()
+            )
         ),  # Minimum
     ])
-    def test_get_kinase_distance_matrix(self, molecule_codes, kinase_names, data, by, fill, structure_distance_matrix):
-        # Set dummy FingerprintDistanceGenerator class attributes
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_generator.molecule_codes = molecule_codes
-        fingerprint_distance_generator.kinase_names = kinase_names
-        fingerprint_distance_generator.data = data
+    def test_get_kinase_distance_matrix(self, fingerprint_distance_generator, by, fill, structure_distance_matrix):
+        """
+        Test if kinase distance matrix is correct.
+
+        Parameters
+        ----------
+        fingerprint_distance_generator : FingerprintDistanceGenerator
+            Fingerprint distance for multiple fingerprint pairs.
+        by : str
+            Condition on which the distance value per kinase pair is extracted from the set of distances values per
+            structure pair. Default: Minimum distance value.
+        fill : bool
+            Fill or fill not (default) lower triangle of distance matrix.
+        structure_distance_matrix : pandas.DataFrame
+            xxx
+        """
 
         # Test generation of structure distance matrix
         structure_distance_matrix_calculated = fingerprint_distance_generator.get_kinase_distance_matrix(
