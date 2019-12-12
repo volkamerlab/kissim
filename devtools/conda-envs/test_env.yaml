@@ -17,7 +17,6 @@ dependencies:
   # Package dependencies
   - biopandas
   - biopython
-  - itertools
   - nglview
   - pmw
   - pymol
