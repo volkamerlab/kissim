@@ -1,14 +1,28 @@
 name: test
+
 channels:
+  - conda-forge
+  - defaults
+  - samoturk
+
 dependencies:
+
     # Base depends
-  - python
+  - python>=3.6
   - pip
 
     # Testing
   - pytest
   - pytest-cov
   - codecov
+
+    # Package dependencies
+  - biopandas
+  - biopython
+  - nglview
+  - pmw
+  - pymol
+  - scipy
 
     # Pip-only installs
   #- pip:
