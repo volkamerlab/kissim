@@ -81,7 +81,7 @@ class FeatureDistributions:
 
         Parameters
         ----------
-        fingerprints : list of kinsim_structure.encoding.Fingerprint
+        fingerprints : list of kissim.encoding.Fingerprint
             Fingerprints.
         features_type : str
             Type of fingerprint feature.
@@ -171,7 +171,7 @@ class FeatureDistributions:
 
         Parameters
         ----------
-        fingerprints : list of kinsim_structure.encoding.Fingerprint
+        fingerprints : list of kissim.encoding.Fingerprint
             Fingerprints.
         features_type : str
             Type of fingerprint feature.
@@ -209,7 +209,7 @@ class FeatureDistributions:
 
         Parameters
         ----------
-        fingerprints : list of kinsim_structure.encoding.Fingerprint
+        fingerprints : list of kissim.encoding.Fingerprint
             Fingerprints.
         features_type : str
             Type of fingerprint feature.

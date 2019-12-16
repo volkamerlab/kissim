@@ -12,7 +12,7 @@ import pickle
 import sys
 
 sys.path.append('../..')
-from kinsim_structure.similarity import FeatureDistancesGenerator, FingerprintDistanceGenerator
+from kissim.similarity import FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 PATH_TO_KINSIM = Path('.') / '..' / '..'
 PATH_TO_FINGERPRINTS = PATH_TO_KINSIM / 'examples' / 'results' / 'fingerprints' / 'fingerprints.p'

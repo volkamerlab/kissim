@@ -1,5 +1,5 @@
 """
-kinsim_structure
+kissim
 Subpocket-based structural fingerprint for kinase pocket comparison
 """
 

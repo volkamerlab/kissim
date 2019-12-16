@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=kinsim_structure
+set SPHINXPROJ=kissim
 
 if "%1" == "" goto help
 

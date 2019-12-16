@@ -1,5 +1,5 @@
 """
-Unit and regression test for kinsim_structure.preprocessing class methods.
+Unit and regression test for kissim.preprocessing class methods.
 """
 
 from pathlib import Path
@@ -7,10 +7,10 @@ from pathlib import Path
 import pytest
 import pandas as pd
 
-from kinsim_structure.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter, \
+from kissim.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter, \
     Mol2KlifsToPymolConverter, Mol2ToPdbConverter
 
-PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
+PATH_TEST_DATA = Path(__name__).parent / 'kissim' / 'tests' / 'data'
 
 
 class TestsKlifsMetadataLoader:

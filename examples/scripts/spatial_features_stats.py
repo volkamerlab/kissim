@@ -4,8 +4,8 @@ import pickle
 
 import pandas as pd
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader
-from kinsim_structure.encoding import SpatialFeatures
+from kissim.auxiliary import KlifsMoleculeLoader
+from kissim.encoding import SpatialFeatures
 
 
 def get_spatial_features(klifs_metadata_entry):
@@ -29,7 +29,7 @@ def get_spatial_features(klifs_metadata_entry):
 if __name__ == "__main__":
 
     path_to_data = Path('/') / 'home' / 'dominique' / 'Documents' / 'data' / 'kinsim' / '20190724_full'
-    path_to_kinsim = Path('/') / 'home' / 'dominique' / 'Documents' / 'projects' / 'kinsim_structure'
+    path_to_kinsim = Path('/') / 'home' / 'dominique' / 'Documents' / 'projects' / 'kissim'
     path_to_results = path_to_kinsim / 'results'
 
     metadata_path = path_to_data / 'preprocessed' / 'klifs_metadata_preprocessed.csv'
