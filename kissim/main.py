@@ -324,4 +324,4 @@ class Similarity:
                 with open(
                     self.path_results / f'similarity_fingerprint_distance_{distance_measure}_{feature_weights_name}.p', 'wb'
                 ) as f:
-                    pickle.dump(feature_distances_generator, f)
+                    pickle.dump(fingerprint_distance_generator, f)
