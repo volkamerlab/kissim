@@ -6,7 +6,7 @@ Handles the primary functions
 """
 
 """
-kinsim_structure.py
+kissim.py
 Subpocket-based structural fingerprint for kinase pocket comparison
 
 Handles the primary functions
@@ -16,10 +16,10 @@ import logging
 from pathlib import Path
 import pickle
 
-from kinsim_structure.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter, \
+from kissim.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter, \
     Mol2FormatScreener, Mol2KlifsToPymolConverter, Mol2ToPdbConverter
-from kinsim_structure.encoding import FingerprintGenerator
-from kinsim_structure.similarity import FeatureDistancesGenerator, FingerprintDistanceGenerator
+from kissim.encoding import FingerprintGenerator
+from kissim.similarity import FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 logger = logging.getLogger(__name__)
 

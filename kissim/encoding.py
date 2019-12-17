@@ -20,8 +20,8 @@ import pandas as pd
 from scipy.special import cbrt
 from scipy.stats.stats import moment
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.auxiliary import center_of_mass, split_klifs_code
+from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kissim.auxiliary import center_of_mass, split_klifs_code
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class FingerprintGenerator:
 
     Attributes
     ----------
-    data : dict of kinsim_structure.encoding.Fingerprint
+    data : dict of kissim.encoding.Fingerprint
         Fingerprints for multiple molecules.
     path_klifs_download : pathlib.Path or str
         Path to directory of KLIFS dataset files.
@@ -190,7 +190,7 @@ class FingerprintGenerator:
 
         Returns
         -------
-        kinsim_structure.similarity.Fingerprint
+        kissim.similarity.Fingerprint
             Fingerprint
         """
 
@@ -215,7 +215,7 @@ class SideChainOrientationGenerator:
 
     Attributes
     ----------
-    data : dict of kinsim_structure.encoding.SideChainOrientationFeature
+    data : dict of kissim.encoding.SideChainOrientationFeature
         Fingerprints for multiple molecules.
     path_klifs_download : pathlib.Path or str
         Path to directory of KLIFS dataset files.
@@ -287,7 +287,7 @@ class SideChainOrientationGenerator:
 
         Returns
         -------
-        kinsim_structure.similarity.SideChainOrientationFeature
+        kissim.similarity.SideChainOrientationFeature
             Side chain orientation.
         """
 

@@ -1,9 +1,9 @@
-Structural kinase similarity (`kinsim_structure`)
+Structural kinase similarity (`kissim`)
 ==============================
 [//]: # (Badges)
-[![Travis Build Status](https://travis-ci.org/REPLACE_WITH_OWNER_ACCOUNT/kinsim_structure.png)](https://travis-ci.org/REPLACE_WITH_OWNER_ACCOUNT/kinsim_structure)
-[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/REPLACE_WITH_APPVEYOR_LINK/branch/master?svg=true)](https://ci.appveyor.com/project/REPLACE_WITH_OWNER_ACCOUNT/kinsim_structure/branch/master)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/kinsim_structure/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/kinsim_structure/branch/master)
+[![Travis Build Status](https://travis-ci.org/REPLACE_WITH_OWNER_ACCOUNT/kissim.png)](https://travis-ci.org/REPLACE_WITH_OWNER_ACCOUNT/kissim)
+[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/REPLACE_WITH_APPVEYOR_LINK/branch/master?svg=true)](https://ci.appveyor.com/project/REPLACE_WITH_OWNER_ACCOUNT/kissim/branch/master)
+[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/kissim/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/kissim/branch/master)
 
 **Subpocket-based structural fingerprint for kinase pocket comparison**
 
@@ -12,7 +12,7 @@ Due to the highly conserved structure of kinases, especially at the ATP binding 
 the main challenge while developing kinase inhibitors is selectivity, 
 which requires a comprehensive understanding of kinase similarity. [1]  
 
-Our package `kinsim_structure` offers a novel fingerprinting strategy designed specifically for kinase pockets, 
+Our package `kissim` offers a novel fingerprinting strategy designed specifically for kinase pockets, 
 allowing for similarity studies across the structurally covered kinome. 
 The kinase fingerprint is based on the KLIFS [2] pocket alignment, 
 which defines 85 pocket residues for all kinase structures. 

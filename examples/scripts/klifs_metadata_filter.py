@@ -13,7 +13,7 @@ import pickle
 import sys
 
 sys.path.append('../..')
-from kinsim_structure.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter
+from kissim.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter
 
 PATH_SCRIPT = Path(__name__).parent
 PATH_KLIFS_DOWNLOAD = Path('/home/dominique/Documents/data/kinsim/20191115_full/KLIFS_download')

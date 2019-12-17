@@ -42,7 +42,7 @@ install:
 
 
 script:
-  - pytest -v --cov=kinsim_structure kinsim_structure/tests/
+  - pytest -v --cov=kissim kissim/tests/
 
 notifications:
     email: false

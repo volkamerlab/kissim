@@ -15,7 +15,7 @@ import sys
 import pandas as pd
 
 sys.path.append('../..')
-from kinsim_structure.encoding import SideChainOrientationGenerator
+from kissim.encoding import SideChainOrientationGenerator
 
 PATH_TO_KINSIM = Path('.') / '..' / '..'
 PATH_TO_METADATA = PATH_TO_KINSIM / 'examples' / 'data' / 'postprocessed' / 'klifs_metadata_postprocessed.csv'

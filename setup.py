@@ -1,5 +1,5 @@
 """
-kinsim_structure
+kissim
 Subpocket-based structural fingerprint for kinase pocket comparison
 """
 import sys
@@ -21,7 +21,7 @@ except:
 
 setup(
     # Self-descriptive entries which should always be present
-    name='kinsim_structure',
+    name='kissim',
     author='Volkamer Lab',
     author_email='dominique.sydow@charite.de',
     description=short_description[0],
@@ -34,12 +34,12 @@ setup(
     # Which Python importable modules should be included when your package is installed
     # Handled automatically by setuptools. Use 'exclude' to prevent some specific
     # subpackage(s) from being added, if needed
-    packages=['kinsim_structure', 'kinsim_structure.tests'],
+    packages=['kissim', 'kissim.tests'],
 
     # Optional include package data to ship with your package
     # Customize MANIFEST.in if the general case does not suit your needs
     # Comment out this line to prevent the files from being packaged with your software
-    package_data={'kinsim_structure': ["data/*.dat"]
+    package_data={'kissim': ["data/*.dat"]
                   },
 
     # Allows `setup.py test` to work correctly with pytest

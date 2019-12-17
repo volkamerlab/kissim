@@ -1,5 +1,5 @@
 """
-Unit and regression test for kinsim_structure.encoding class methods.
+Unit and regression test for kissim.encoding class methods.
 """
 
 import math
@@ -10,11 +10,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.encoding import PharmacophoreSizeFeatures, ExposureFeature, SideChainOrientationFeature, \
+from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kissim.encoding import PharmacophoreSizeFeatures, ExposureFeature, SideChainOrientationFeature, \
     PhysicoChemicalFeatures, SpatialFeatures, Fingerprint, DISTANCE_CUTOFFS, MOMENT_CUTOFFS, FEATURE_NAMES
 
-PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
+PATH_TEST_DATA = Path(__name__).parent / 'kissim' / 'tests' / 'data'
 
 
 class TestsPharmacophoreSizeFeatures:

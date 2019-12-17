@@ -46,7 +46,7 @@ jobs:
       shell: bash
       run: |
         . devtools/scripts/initialize_conda.sh
-        pytest -v --cov=kinsim_structure --cov-report=xml --color=yes kinsim_structure/tests/
+        pytest -v --cov=kissim --cov-report=xml --color=yes kissim/tests/
     - name: CodeCov
       uses: codecov/codecov-action@v1
       with:

@@ -1,5 +1,5 @@
 """
-Unit and regression tests for kinsim_structure.similarity class methods.
+Unit and regression tests for kissim.similarity class methods.
 """
 
 from pathlib import Path
@@ -8,12 +8,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from kinsim_structure.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kinsim_structure.encoding import Fingerprint, FingerprintGenerator
-from kinsim_structure.similarity import FeatureDistances, FingerprintDistance, \
+from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kissim.encoding import Fingerprint, FingerprintGenerator
+from kissim.similarity import FeatureDistances, FingerprintDistance, \
     FeatureDistancesGenerator, FingerprintDistanceGenerator
 
-PATH_TEST_DATA = Path(__name__).parent / 'kinsim_structure' / 'tests' / 'data'
+PATH_TEST_DATA = Path(__name__).parent / 'kissim' / 'tests' / 'data'
 
 
 @pytest.fixture(scope="module")
@@ -23,7 +23,7 @@ def fingerprint_generator():
 
     Returns
     -------
-    kinsim_structure.encoding.FingerprintGenerator
+    kissim.encoding.FingerprintGenerator
         Fingerprints.
     """
 
@@ -75,7 +75,7 @@ def feature_distances():
 
     Returns
     -------
-    kinsim_structure.similarity.FeatureDistances
+    kissim.similarity.FeatureDistances
         Distances and bit coverages between two fingerprints for each of their features.
     """
 
@@ -99,7 +99,7 @@ def feature_distances_generator():
 
     Returns
     -------
-    kinsim_structure.similarity.FeatureDistancesGenerator
+    kissim.similarity.FeatureDistancesGenerator
         Feature distances for multiple fingerprint pairs.
     """
 
@@ -142,7 +142,7 @@ def fingerprint_distance_generator():
 
     Returns
     -------
-    kinsim_structure.similarity.FingerprintDistanceGenerator
+    kissim.similarity.FingerprintDistanceGenerator
         Fingerprint distance for multiple fingerprint pairs.
     """
 
@@ -573,7 +573,7 @@ class TestsFingerprintDistance:
 
         Parameters
         ----------
-        feature_distances : kinsim_structure.similarity.FeatureDistances
+        feature_distances : kissim.similarity.FeatureDistances
             Distances and bit coverages between two fingerprints for each of their features.
         feature_weights : dict of float or None
             Feature weights.
@@ -620,9 +620,9 @@ class TestsFeatureDistancesGenerator:
 
         Parameters
         ----------
-        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        fingerprints : dict of kissim.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        empty_fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        empty_fingerprints : dict of kissim.encoding.Fingerprint
             Dictionary of non-empty fingerprints: Keys are molecule codes and values are fingerprint data.
         """
 
@@ -643,7 +643,7 @@ class TestsFeatureDistancesGenerator:
 
         Parameters
         ----------
-        fingerprints : dict of kinsim_structure.encoding.Fingerprint
+        fingerprints : dict of kissim.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
         pairs : list of list of str
             List of molecule code pairs (list).
@@ -741,7 +741,7 @@ class TestsFingerprintDistanceGenerator:
 
         Parameters
         ----------
-        feature_distances : kinsim_structure.similarity.FeatureDistances
+        feature_distances : kissim.similarity.FeatureDistances
             Distances and bit coverages between two fingerprints for each of their features.
         """
 

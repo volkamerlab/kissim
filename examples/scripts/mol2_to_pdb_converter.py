@@ -12,7 +12,7 @@ from pathlib import Path
 import sys
 
 sys.path.append('../..')
-from kinsim_structure.preprocessing import KlifsMetadataLoader, Mol2ToPdbConverter
+from kissim.preprocessing import KlifsMetadataLoader, Mol2ToPdbConverter
 
 PATH_SCRIPT = Path(__name__).parent
 PATH_KLIFS_DOWNLOAD = Path('/home/dominique/Documents/data/kinsim/20191115_full/KLIFS_download')

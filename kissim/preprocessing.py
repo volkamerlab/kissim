@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import pymol
 
-from kinsim_structure.auxiliary import MoleculeLoader, KlifsMoleculeLoader, get_klifs_regions, AMINO_ACIDS
+from kissim.auxiliary import MoleculeLoader, KlifsMoleculeLoader, get_klifs_regions, AMINO_ACIDS
 
 logger = logging.getLogger(__name__)
 
