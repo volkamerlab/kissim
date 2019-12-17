@@ -60,7 +60,7 @@ class KlifsMetadataLoader:
             Metadata of KLIFS download, merged from two KLIFS metadata files.
         """
 
-        logger.info(f'PREPROCESSING: KlifsMoleculeLoader')
+        logger.info(f'PREPROCESSING: KlifsMetadataLoader')
 
         klifs_overview = self._from_klifs_overview_file(Path(path_klifs_overview))
         klifs_export = self._from_klifs_export_file(Path(path_klifs_export))
