@@ -108,15 +108,15 @@ class Preprocessing:
         klifs_metadata_filter = self._filter_klifs_metadata(klifs_metadata_loader)
 
         # Save class objects as files
-        with open(self.path_results / 'preprocessing/klifs_metadata_loader.p', 'wb') as f:
+        with open(self.path_results / 'preprocessing' / 'klifs_metadata_loader.p', 'wb') as f:
             pickle.dump(klifs_metadata_loader, f)
-        with open(self.path_results / 'preprocessing/mol2_format_screener.p', 'wb') as f:
+        with open(self.path_results / 'preprocessing' / 'mol2_format_screener.p', 'wb') as f:
             pickle.dump(mol2_format_screener, f)
-        with open(self.path_results / 'preprocessing/mol2_klifs_to_pymol_converter.p', 'wb') as f:
+        with open(self.path_results / 'preprocessing' / 'mol2_klifs_to_pymol_converter.p', 'wb') as f:
             pickle.dump(mol2_klifs_to_pymol_converter, f)
-        with open(self.path_results / 'preprocessing/mol2_to_pdb_converter.p', 'wb') as f:
+        with open(self.path_results / 'preprocessing' / 'mol2_to_pdb_converter.p', 'wb') as f:
             pickle.dump(mol2_to_pdb_converter, f)
-        with open(self.path_results / 'preprocessing/klifs_metadata_filter.p', 'wb') as f:
+        with open(self.path_results / 'preprocessing' / 'klifs_metadata_filter.p', 'wb') as f:
             pickle.dump(klifs_metadata_filter, f)
 
         return klifs_metadata_filter
