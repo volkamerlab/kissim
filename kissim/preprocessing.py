@@ -1337,7 +1337,7 @@ class Mol2ToPdbConverter:
         for index, row in klifs_metadata.iterrows():
 
             if index % 1000 == 0:
-                print(f'Progress: {index}/{len(klifs_metadata)}')
+                logger.info(f'Progress: {index}/{len(klifs_metadata)}')
 
             try:
 
