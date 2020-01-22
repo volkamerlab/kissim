@@ -75,22 +75,22 @@ class Preprocessing:
             Filtered KLIFS metadata.
         """
 
-        # Check if input files and directories exist.
-        if not path_klifs_overview.exists():
-            raise FileNotFoundError(f'File not found: {path_klifs_overview}')
-        if not path_klifs_export.exists():
-            raise FileNotFoundError(f'File not found: {path_klifs_export}')
-        if not path_klifs_download.exists():
-            raise FileNotFoundError(f'Directory not found: {path_klifs_download}')
-
-        # Create results folder if not already there
-        path_results.mkdir(parents=True, exist_ok=True)
-
-        # Set as class attributes
+        # Set as class attributes as Path object
         self.path_klifs_overview = Path(path_klifs_overview)
         self.path_klifs_export = Path(path_klifs_export)
         self.path_klifs_download = Path(path_klifs_download)
         self.path_results = Path(path_results)
+
+        # Check if input files and directories exist.
+        if not self.path_klifs_overview.exists():
+            raise FileNotFoundError(f'File not found: {self.path_klifs_overview}')
+        if not self.path_klifs_export.exists():
+            raise FileNotFoundError(f'File not found: {self.path_klifs_export}')
+        if not self.path_klifs_download.exists():
+            raise FileNotFoundError(f'Directory not found: {self.path_klifs_download}')
+
+        # Create results folder if not already there
+        (self.path_results / 'preprocessing').mkdir(parents=True, exist_ok=True)
 
         # Load KLIFS metadata (unfiltered)
         klifs_metadata_loader = self._load_klifs_metadata()
@@ -245,12 +245,16 @@ class Encoding:
             Fingerprints for KLIFS dataset.
         """
 
-        # Create results folder if not already there
-        path_results.mkdir(parents=True, exist_ok=True)
-
-        # Set as class attributes
-        self.path_results = Path(path_results)
+        # Set as class attributes as Path object
         self.path_klifs_download = Path(path_klifs_download)
+        self.path_results = Path(path_results)
+
+        # Check if input files and directories exist.
+        if not self.path_klifs_download.exists():
+            raise FileNotFoundError(f'Directory not found: {self.path_klifs_download}')
+
+        # Create results folder if not already there
+        (self.path_results / 'encoding').mkdir(parents=True, exist_ok=True)
 
         # Generate fingerprints
         fingerprint_generator = FingerprintGenerator()
@@ -295,11 +299,11 @@ class Similarity:
             Path to results folder.
         """
 
-        # Create results folder if not already there
-        path_results.mkdir(parents=True, exist_ok=True)
-
-        # Set as class attributes
+        # Set as class attributes as Path object
         self.path_results = Path(path_results)
+
+        # Create results folder if not already there
+        (self.path_results / 'similarity').mkdir(parents=True, exist_ok=True)
 
         # All against all fingerprint comparison
         for distance_measure_name, distance_measure in distance_measures.items():
