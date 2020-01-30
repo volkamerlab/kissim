@@ -308,7 +308,7 @@ class FingerprintDistanceGenerator:
         )
 
         # Get distance values per kinase pair based on given condition
-        by_terms = 'minimum maximum mean'.split()
+        by_terms = 'minimum maximum mean size'.split()
 
         if by == 'minimum':
             kinase_distances = structure_distances_grouped_by_kinases.min()
@@ -316,6 +316,8 @@ class FingerprintDistanceGenerator:
             kinase_distances = structure_distances_grouped_by_kinases.max()
         elif by == 'mean':
             kinase_distances = structure_distances_grouped_by_kinases.mean()
+        elif by == 'size':
+            kinase_distances = structure_distances_grouped_by_kinases.size()
         else:
             raise ValueError(f'Condition "by" unknown. Choose from: {", ".join(by_terms)}')
 
