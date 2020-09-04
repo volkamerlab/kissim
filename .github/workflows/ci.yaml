@@ -24,7 +24,7 @@ jobs:
     env:
       CI_OS: ${{ matrix.os }}
       PYVER: ${{ matrix.python-version }}
-      PACKAGE: "opencadd"
+      PACKAGE: "kissim"
 
     steps:
       - uses: actions/checkout@v2
@@ -48,13 +48,6 @@ jobs:
           show-channel-urls: true
           # mamba-version: "*"
 
-      - name: Install package
-        shell: bash -l {0}
-        run: |
-          conda install -c local mmligner pip
-          python -m pip install . --no-deps
-          conda list
-
       - name: Run tests
         shell: bash -l {0}
         run: |
@@ -73,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI_OS: ubuntu-latest
-      PACKAGE: "opencadd"
+      PACKAGE: "kissim"
       PYVER: "3.7"
 
     steps:
@@ -113,7 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI_OS: ubuntu-latest
-      PACKAGE: "opencadd"
+      PACKAGE: "kissim"
       PYVER: "3.7"
 
     steps:
