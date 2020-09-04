@@ -1,56 +1,142 @@
+#!/bin/bash
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  schedule:
+    # Nightly Tests
+    - cron: "0 0 * * *"
 
 jobs:
   test:
-
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest] #[macOS-latest, ubuntu-latest, windows-latest]
-        python-version: [3.6] #[3.6, 3.7]
+        os: [macOS-latest, ubuntu-latest]
+        python-version: [3.7, 3.8]
     env:
       CI_OS: ${{ matrix.os }}
+      PYVER: ${{ matrix.python-version }}
+      PACKAGE: "opencadd"
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Additional info about the build
-      shell: bash
-      run: |
-        uname -a
-        df -h
-        ulimit -a
-    - name: Create environment for package
-      shell: bash
-      run: |
-        . devtools/scripts/initialize_conda.sh
-        conda info
-        python devtools/scripts/create_conda_env.py -n=test -p=${{ matrix.python-version }} devtools/conda-envs/test_env.yaml
-    - name: Install package
-      shell: bash
-      run: |
-        . devtools/scripts/initialize_conda.sh
-        python -m pip install . --no-deps
-        conda list
-    - name: Lint with flake8
-      shell: bash
-      run: |
-        . devtools/scripts/initialize_conda.sh
-        pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Run tests
-      shell: bash
-      run: |
-        . devtools/scripts/initialize_conda.sh
-        pytest -v --cov=kissim --cov-report=xml --color=yes kissim/tests/
-    - name: CodeCov
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
-        flags: unittests
-        yml: ./.codecov.yml
+      - uses: actions/checkout@v2
+
+      - name: Additional info about the build
+        shell: bash
+        run: |
+          uname -a
+          df -h
+          ulimit -a
+
+      # More info on options: https://github.com/goanpeca/setup-miniconda
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          environment-file: devtools/conda-envs/test_env.yaml
+          channels: conda-forge,defaults,bioconda
+          activate-environment: test
+          auto-update-conda: true
+          auto-activate-base: false
+          show-channel-urls: true
+          # mamba-version: "*"
+
+      - name: Install package
+        shell: bash -l {0}
+        run: |
+          conda install -c local mmligner pip
+          python -m pip install . --no-deps
+          conda list
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          pytest -v --cov=${PACKAGE} --cov-report=xml --color=yes ${PACKAGE}/tests/
+
+      - name: CodeCov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          yml: ./.codecov.yml
+
+  #############
+  lint-format:
+    runs-on: ubuntu-latest
+    env:
+      CI_OS: ubuntu-latest
+      PACKAGE: "opencadd"
+      PYVER: "3.7"
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      # More info on options: https://github.com/goanpeca/setup-miniconda
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          environment-file: devtools/conda-envs/test_env.yaml
+          channels: conda-forge,defaults,bioconda
+          activate-environment: test
+          auto-update-conda: true
+          auto-activate-base: false
+          show-channel-urls: true
+          # mamba-version: "*"
+
+      - name: Install linter and formatter
+        shell: bash -l {0}
+        run: |
+          conda install -y pylint black
+
+      - name: Run pylint
+        shell: bash -l {0}
+        run: |
+          pylint $PACKAGE/
+
+      - name: Run black check
+        shell: bash -l {0}
+        if: always()
+        run: |
+          black --check -l 99 $PACKAGE/
+
+  #############
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      CI_OS: ubuntu-latest
+      PACKAGE: "opencadd"
+      PYVER: "3.7"
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      # More info on options: https://github.com/goanpeca/setup-miniconda
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          environment-file: devtools/conda-envs/test_env.yaml
+          channels: conda-forge,defaults,bioconda
+          activate-environment: test
+          auto-update-conda: true
+          auto-activate-base: false
+          show-channel-urls: true
+          # mamba-version: "*"
+
+      - name: Run sphinx
+        shell: bash
+        run: |
+          . devtools/scripts/initialize_conda.sh
+          conda activate test
+          cd docs
+          make clean
+          SPHINXOPTS="-W -T --keep-going" make html
