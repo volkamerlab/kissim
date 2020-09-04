@@ -14,7 +14,8 @@ from pathlib import Path
 from Bio.PDB import HSExposureCA, HSExposureCB, Vector
 from Bio.PDB.Chain import Chain
 from Bio.PDB import calc_angle
-#import nglview as nv
+
+# import nglview as nv
 import numpy as np
 import pandas as pd
 from scipy.special import cbrt
@@ -26,89 +27,93 @@ from kissim.auxiliary import center_of_mass, split_klifs_code
 logger = logging.getLogger(__name__)
 
 FEATURE_NAMES = {
-    'physicochemical': 'size hbd hba charge aromatic aliphatic sco exposure'.split(),
-    'distances': 'distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket'.split(),
-    'moments': 'moment1 moment2 moment3'.split()
+    "physicochemical": "size hbd hba charge aromatic aliphatic sco exposure".split(),
+    "distances": "distance_to_centroid distance_to_hinge_region distance_to_dfg_region distance_to_front_pocket".split(),
+    "moments": "moment1 moment2 moment3".split(),
 }
 
-SITEALIGN_FEATURES = pd.read_csv(Path(__file__).parent / 'data' / 'sitealign_features.csv', index_col=0)
+SITEALIGN_FEATURES = pd.read_csv(
+    Path(__file__).parent / "data" / "sitealign_features.csv", index_col=0
+)
 
 MODIFIED_RESIDUE_CONVERSION = {
-    'CAF': 'CYS',
-    'CME': 'CYS',
-    'CSS': 'CYS',
-    'OCY': 'CYS',
-    'KCX': 'LYS',
-    'MSE': 'MET',
-    'PHD': 'ASP',
-    'PTR': 'TYR'
+    "CAF": "CYS",
+    "CME": "CYS",
+    "CSS": "CYS",
+    "OCY": "CYS",
+    "KCX": "LYS",
+    "MSE": "MET",
+    "PHD": "ASP",
+    "PTR": "TYR",
 }
 
 EXPOSURE_RADIUS = 12.0
 
 N_HEAVY_ATOMS = {
-    'GLY': 0,
-    'ALA': 1,
-    'CYS': 2,
-    'SER': 2,
-    'PRO': 3,
-    'THR': 3,
-    'VAL': 3,
-    'ASN': 4,
-    'ASP': 4,
-    'ILE': 4,
-    'LEU': 4,
-    'MET': 4,
-    'GLN': 5,
-    'GLU': 5,
-    'LYS': 5,
-    'HIS': 6,
-    'ARG': 7,
-    'PHE': 7,
-    'TYR': 8,
-    'TRP': 10
+    "GLY": 0,
+    "ALA": 1,
+    "CYS": 2,
+    "SER": 2,
+    "PRO": 3,
+    "THR": 3,
+    "VAL": 3,
+    "ASN": 4,
+    "ASP": 4,
+    "ILE": 4,
+    "LEU": 4,
+    "MET": 4,
+    "GLN": 5,
+    "GLU": 5,
+    "LYS": 5,
+    "HIS": 6,
+    "ARG": 7,
+    "PHE": 7,
+    "TYR": 8,
+    "TRP": 10,
 }
 
-N_HEAVY_ATOMS_CUTOFF = {  # Number of heavy atoms needed for side chain centroid calculation (>75% coverage)
-    'GLY': 0,
-    'ALA': 1,
-    'CYS': 2,
-    'SER': 2,
-    'PRO': 3,
-    'THR': 3,
-    'VAL': 3,
-    'ASN': 3,
-    'ASP': 3,
-    'ILE': 3,
-    'LEU': 3,
-    'MET': 3,
-    'GLN': 4,
-    'GLU': 4,
-    'LYS': 4,
-    'HIS': 5,
-    'ARG': 6,
-    'PHE': 6,
-    'TYR': 6,
-    'TRP': 8
-}
+N_HEAVY_ATOMS_CUTOFF = (
+    {  # Number of heavy atoms needed for side chain centroid calculation (>75% coverage)
+        "GLY": 0,
+        "ALA": 1,
+        "CYS": 2,
+        "SER": 2,
+        "PRO": 3,
+        "THR": 3,
+        "VAL": 3,
+        "ASN": 3,
+        "ASP": 3,
+        "ILE": 3,
+        "LEU": 3,
+        "MET": 3,
+        "GLN": 4,
+        "GLU": 4,
+        "LYS": 4,
+        "HIS": 5,
+        "ARG": 6,
+        "PHE": 6,
+        "TYR": 6,
+        "TRP": 8,
+    }
+)
 
 ANCHOR_RESIDUES = {
-    'hinge_region': [16, 47, 80],
-    'dfg_region': [19, 24, 81],
-    'front_pocket': [6, 48, 75]
+    "hinge_region": [16, 47, 80],
+    "dfg_region": [19, 24, 81],
+    "front_pocket": [6, 48, 75],
 }  # Are the same as in Eva's implementation
 
 DISTANCE_CUTOFFS = {  # 99% percentile of all distances
-    'distance_to_centroid': (3.05, 21.38),
-    'distance_to_hinge_region': (4.10, 23.07),
-    'distance_to_dfg_region': (4.62, 26.69),
-    'distance_to_front_pocket': (5.46, 23.55)
+    "distance_to_centroid": (3.05, 21.38),
+    "distance_to_hinge_region": (4.10, 23.07),
+    "distance_to_dfg_region": (4.62, 26.69),
+    "distance_to_front_pocket": (5.46, 23.55),
 }
 
 MOMENT_CUTOFFS = {  # 99% percentile of all moments
-    'moment1': (11.68, 14.14),
-    'moment2': (3.29, 5.29),
-    'moment3': (-1.47, 4.66)
+    "moment1": (11.68, 14.14),
+    "moment2": (3.29, 5.29),
+    "moment3": (-1.47, 4.66),
 }
 
 # KLIFS IDs for hinge/DFG region (taken from KLIFS website)
@@ -145,14 +150,14 @@ class FingerprintGenerator:
 
         start = datetime.datetime.now()
 
-        logger.info(f'ENCODING: FingerprintGenerator')
+        logger.info(f"ENCODING: FingerprintGenerator")
 
         # Set path to KLIFS download
         self.path_klifs_download = path_klifs_download
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
-        logger.info(f'Number of cores used: {num_cores}')
+        logger.info(f"Number of cores used: {num_cores}")
 
         # Create pool with `num_processes` processes
         pool = Pool(processes=num_cores)
@@ -167,17 +172,19 @@ class FingerprintGenerator:
         pool.close()
         pool.join()
 
-        logger.info(f'Number of fingerprints: {len(fingerprints_list)}')
+        logger.info(f"Number of fingerprints: {len(fingerprints_list)}")
 
         # Transform to dict
         self.data = {
-            i.molecule_code: i for i in fingerprints_list if i is not None  # Removes emtpy fingerprints
+            i.molecule_code: i
+            for i in fingerprints_list
+            if i is not None  # Removes emtpy fingerprints
         }
 
         end = datetime.datetime.now()
 
-        logger.info(f'Start of fingerprint generation: {start}')
-        logger.info(f'End of fingerprint generation: {end}')
+        logger.info(f"Start of fingerprint generation: {start}")
+        logger.info(f"End of fingerprint generation: {end}")
 
     def _get_fingerprint(self, klifs_metadata_entry):
         """
@@ -203,7 +210,7 @@ class FingerprintGenerator:
 
         except Exception as e:
 
-            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.filepath}')
+            logger.info(f"Molecule with empty fingerprint: {klifs_metadata_entry.filepath}")
             logger.error(e)
 
             return None
@@ -241,14 +248,14 @@ class SideChainOrientationGenerator:
         # Get start time of script
         start = datetime.datetime.now()
 
-        logger.info(f'Calculate side chain orientations...')
+        logger.info(f"Calculate side chain orientations...")
 
         # Set path to KLIFS download
         self.path_klifs_download = path_klifs_download
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
-        logger.info(f'Number of cores used: {num_cores}')
+        logger.info(f"Number of cores used: {num_cores}")
 
         # Create pool with `num_processes` processes
         pool = Pool(processes=num_cores)
@@ -263,12 +270,10 @@ class SideChainOrientationGenerator:
         pool.close()
         pool.join()
 
-        logger.info(f'Number of fingerprints: {len(fingerprints_list)}')
+        logger.info(f"Number of fingerprints: {len(fingerprints_list)}")
 
         # Transform to dict
-        self.data = {
-            i.molecule_code: i for i in fingerprints_list
-        }
+        self.data = {i.molecule_code: i for i in fingerprints_list}
 
         # Get end time of script
         end = datetime.datetime.now()
@@ -294,7 +299,9 @@ class SideChainOrientationGenerator:
         try:
 
             klifs_molecule_loader = KlifsMoleculeLoader()
-            klifs_molecule_loader.from_metadata_entry(klifs_metadata_entry, self.path_klifs_download)
+            klifs_molecule_loader.from_metadata_entry(
+                klifs_metadata_entry, self.path_klifs_download
+            )
             molecule = klifs_molecule_loader.molecule
 
             pdb_chain_loader = PdbChainLoader()
@@ -308,7 +315,7 @@ class SideChainOrientationGenerator:
 
         except Exception as e:
 
-            logger.info(f'Molecule with empty fingerprint: {klifs_metadata_entry.filepath}')
+            logger.info(f"Molecule with empty fingerprint: {klifs_metadata_entry.filepath}")
             logger.error(e)
 
             return None
@@ -361,62 +368,54 @@ class Fingerprint:
 
         self.molecule_code = None
 
-        self.fingerprint = {
-            'physicochemical': None,
-            'distances': None,
-            'moments': None
-        }
-        self.fingerprint_normalized = {
-            'physicochemical': None,
-            'distances': None,
-            'moments': None
-        }
+        self.fingerprint = {"physicochemical": None, "distances": None, "moments": None}
+        self.fingerprint_normalized = {"physicochemical": None, "distances": None, "moments": None}
 
         self.features_verbose = {
-            'reference_points': None,
-            'side_chain_orientation': None,
-            'exposure': None,
+            "reference_points": None,
+            "side_chain_orientation": None,
+            "exposure": None,
         }
 
     @property
     def physicochemical(self):
-        return self.fingerprint['physicochemical']
+        return self.fingerprint["physicochemical"]
 
     @property
     def distances(self):
-        return self.fingerprint['distances']
+        return self.fingerprint["distances"]
 
     @property
     def moments(self):
-        return self.fingerprint['moments']
+        return self.fingerprint["moments"]
 
     @property
     def physicochemical_distances(self):
-        return self._get_fingerprint('physicochemical_distances', normalized=False)
+        return self._get_fingerprint("physicochemical_distances", normalized=False)
 
     @property
     def physicochemical_moments(self):
-        return self._get_fingerprint('physicochemical_moments', normalized=False)
+        return self._get_fingerprint("physicochemical_moments", normalized=False)
 
     @property
     def physicochemical_normalized(self):
-        return self.fingerprint_normalized['physicochemical']
+        return self.fingerprint_normalized["physicochemical"]
 
     @property
     def distances_normalized(self):
-        return self.fingerprint_normalized['distances']
+        return self.fingerprint_normalized["distances"]
 
     @property
     def moments_normalized(self):
-        return self.fingerprint_normalized['moments']
+        return self.fingerprint_normalized["moments"]
 
     @property
     def physicochemical_distances_normalized(self):
-        return self._get_fingerprint('physicochemical_distances', normalized=True)
+        return self._get_fingerprint("physicochemical_distances", normalized=True)
 
     @property
     def physicochemical_moments_normalized(self):
-        return self._get_fingerprint('physicochemical_moments', normalized=True)
+        return self._get_fingerprint("physicochemical_moments", normalized=True)
 
     def from_metadata_entry(self, klifs_metadata_entry, path_klifs_download):
         """
@@ -460,18 +459,20 @@ class Fingerprint:
         spatial_features = SpatialFeatures()
         spatial_features.from_molecule(molecule)
 
-        self.fingerprint['physicochemical'] = physicochemical_features.features
-        self.fingerprint['distances'] = spatial_features.features
-        self.fingerprint['moments'] = self._calc_moments(spatial_features.features)
+        self.fingerprint["physicochemical"] = physicochemical_features.features
+        self.fingerprint["distances"] = spatial_features.features
+        self.fingerprint["moments"] = self._calc_moments(spatial_features.features)
 
-        self.fingerprint_normalized['physicochemical'] = self._normalize_physicochemical_bits()
-        self.fingerprint_normalized['distances'] = self._normalize_distances_bits()
-        self.fingerprint_normalized['moments'] = self._normalize_moments_bits()
+        self.fingerprint_normalized["physicochemical"] = self._normalize_physicochemical_bits()
+        self.fingerprint_normalized["distances"] = self._normalize_distances_bits()
+        self.fingerprint_normalized["moments"] = self._normalize_moments_bits()
 
         # Add verbose feature details
-        self.features_verbose['reference_points'] = spatial_features.reference_points
-        self.features_verbose['exposure'] = physicochemical_features.features_verbose['exposure']
-        self.features_verbose['side_chain_orientation'] = physicochemical_features.features_verbose['side_chain_orientation']
+        self.features_verbose["reference_points"] = spatial_features.reference_points
+        self.features_verbose["exposure"] = physicochemical_features.features_verbose["exposure"]
+        self.features_verbose[
+            "side_chain_orientation"
+        ] = physicochemical_features.features_verbose["side_chain_orientation"]
 
     def _get_fingerprint(self, fingerprint_type, normalized=True):
         """
@@ -491,35 +492,31 @@ class Fingerprint:
             Fingerprint containing physicochemical and spatial bits.
         """
 
-        fingerprint_types = 'physicochemical_distances physicochemical_moments'.split()
+        fingerprint_types = "physicochemical_distances physicochemical_moments".split()
 
-        if fingerprint_type == 'physicochemical_distances':
-
-            if normalized:
-                return {
-                    'physicochemical': self.physicochemical_normalized,
-                    'distances': self.distances_normalized
-                }
-            else:
-                return {
-                    'physicochemical': self.physicochemical,
-                    'distances': self.distances
-                }
-
-        elif fingerprint_type == 'physicochemical_moments':
+        if fingerprint_type == "physicochemical_distances":
 
             if normalized:
                 return {
-                    'physicochemical': self.physicochemical_normalized,
-                    'moments': self.moments_normalized
+                    "physicochemical": self.physicochemical_normalized,
+                    "distances": self.distances_normalized,
                 }
             else:
+                return {"physicochemical": self.physicochemical, "distances": self.distances}
+
+        elif fingerprint_type == "physicochemical_moments":
+
+            if normalized:
                 return {
-                    'physicochemical': self.physicochemical,
-                    'moments': self.moments
+                    "physicochemical": self.physicochemical_normalized,
+                    "moments": self.moments_normalized,
                 }
+            else:
+                return {"physicochemical": self.physicochemical, "moments": self.moments}
         else:
-            raise ValueError(f'Fingerprint type unknown. Please choose from {", ".join(fingerprint_types)}.')
+            raise ValueError(
+                f'Fingerprint type unknown. Please choose from {", ".join(fingerprint_types)}.'
+            )
 
     def _normalize_physicochemical_bits(self):
         """
@@ -537,17 +534,19 @@ class Fingerprint:
             normalized = self.physicochemical.copy()
 
             # Normalize size
-            normalized['size'] = normalized['size'].apply(lambda x: self._normalize(x, 1.0, 3.0))
+            normalized["size"] = normalized["size"].apply(lambda x: self._normalize(x, 1.0, 3.0))
 
             # Normalize pharmacophoric features: HBD, HBA and charge
-            normalized['hbd'] = normalized['hbd'].apply(lambda x: self._normalize(x, 0.0, 3.0))
-            normalized['hba'] = normalized['hba'].apply(lambda x: self._normalize(x, 0.0, 2.0))
-            normalized['charge'] = normalized['charge'].apply(lambda x: self._normalize(x, -1.0, 1.0))
+            normalized["hbd"] = normalized["hbd"].apply(lambda x: self._normalize(x, 0.0, 3.0))
+            normalized["hba"] = normalized["hba"].apply(lambda x: self._normalize(x, 0.0, 2.0))
+            normalized["charge"] = normalized["charge"].apply(
+                lambda x: self._normalize(x, -1.0, 1.0)
+            )
 
             # No normalization needed for aromatic and aliphatic features which are already 0 or 1
 
             # Normalize side chain orientation
-            normalized['sco'] = normalized['sco'].apply(lambda x: self._normalize(x, 0.0, 2.0))
+            normalized["sco"] = normalized["sco"].apply(lambda x: self._normalize(x, 0.0, 2.0))
 
             # No normalization needed for exposure feature which is already between 0 and 1
 
@@ -572,32 +571,32 @@ class Fingerprint:
             normalized = self.distances.copy()
 
             # Normalize using cutoffs defined for each reference point
-            normalized['distance_to_centroid'] = normalized['distance_to_centroid'].apply(
+            normalized["distance_to_centroid"] = normalized["distance_to_centroid"].apply(
                 lambda x: self._normalize(
                     x,
-                    DISTANCE_CUTOFFS['distance_to_centroid'][0],
-                    DISTANCE_CUTOFFS['distance_to_centroid'][1]
+                    DISTANCE_CUTOFFS["distance_to_centroid"][0],
+                    DISTANCE_CUTOFFS["distance_to_centroid"][1],
                 )
             )
-            normalized['distance_to_hinge_region'] = normalized['distance_to_hinge_region'].apply(
+            normalized["distance_to_hinge_region"] = normalized["distance_to_hinge_region"].apply(
                 lambda x: self._normalize(
                     x,
-                    DISTANCE_CUTOFFS['distance_to_hinge_region'][0],
-                    DISTANCE_CUTOFFS['distance_to_hinge_region'][1]
+                    DISTANCE_CUTOFFS["distance_to_hinge_region"][0],
+                    DISTANCE_CUTOFFS["distance_to_hinge_region"][1],
                 )
             )
-            normalized['distance_to_dfg_region'] = normalized['distance_to_dfg_region'].apply(
+            normalized["distance_to_dfg_region"] = normalized["distance_to_dfg_region"].apply(
                 lambda x: self._normalize(
                     x,
-                    DISTANCE_CUTOFFS['distance_to_dfg_region'][0],
-                    DISTANCE_CUTOFFS['distance_to_dfg_region'][1]
+                    DISTANCE_CUTOFFS["distance_to_dfg_region"][0],
+                    DISTANCE_CUTOFFS["distance_to_dfg_region"][1],
                 )
             )
-            normalized['distance_to_front_pocket'] = normalized['distance_to_front_pocket'].apply(
+            normalized["distance_to_front_pocket"] = normalized["distance_to_front_pocket"].apply(
                 lambda x: self._normalize(
                     x,
-                    DISTANCE_CUTOFFS['distance_to_front_pocket'][0],
-                    DISTANCE_CUTOFFS['distance_to_front_pocket'][1]
+                    DISTANCE_CUTOFFS["distance_to_front_pocket"][0],
+                    DISTANCE_CUTOFFS["distance_to_front_pocket"][1],
                 )
             )
 
@@ -622,25 +621,19 @@ class Fingerprint:
             normalized = self.moments.copy()
 
             # Normalize using cutoffs defined for each moment
-            normalized['moment1'] = normalized['moment1'].apply(
+            normalized["moment1"] = normalized["moment1"].apply(
                 lambda x: self._normalize(
-                    x,
-                    MOMENT_CUTOFFS['moment1'][0],
-                    MOMENT_CUTOFFS['moment1'][1]
+                    x, MOMENT_CUTOFFS["moment1"][0], MOMENT_CUTOFFS["moment1"][1]
                 )
             )
-            normalized['moment2'] = normalized['moment2'].apply(
+            normalized["moment2"] = normalized["moment2"].apply(
                 lambda x: self._normalize(
-                    x,
-                    MOMENT_CUTOFFS['moment2'][0],
-                    MOMENT_CUTOFFS['moment2'][1]
+                    x, MOMENT_CUTOFFS["moment2"][0], MOMENT_CUTOFFS["moment2"][1]
                 )
             )
-            normalized['moment3'] = normalized['moment3'].apply(
+            normalized["moment3"] = normalized["moment3"].apply(
                 lambda x: self._normalize(
-                    x,
-                    MOMENT_CUTOFFS['moment3'][0],
-                    MOMENT_CUTOFFS['moment3'][1]
+                    x, MOMENT_CUTOFFS["moment3"][0], MOMENT_CUTOFFS["moment3"][1]
                 )
             )
 
@@ -679,7 +672,7 @@ class Fingerprint:
         elif np.isnan(value):
             return np.nan
         else:
-            raise ValueError(f'Unexpected value to be normalized: {value}')
+            raise ValueError(f"Unexpected value to be normalized: {value}")
 
     @staticmethod
     def _calc_moments(distances):
@@ -702,21 +695,15 @@ class Fingerprint:
             m1 = distances.mean()
             m2 = distances.std(ddof=0)
             m3 = pd.Series(
-                cbrt(
-                    moment(
-                        distances,
-                        moment=3,
-                        nan_policy='omit'
-                    )
-                ),
-                index=distances.columns.tolist()
+                cbrt(moment(distances, moment=3, nan_policy="omit")),
+                index=distances.columns.tolist(),
             )
         else:
-            raise ValueError(f'No data available to calculate moments.')
+            raise ValueError(f"No data available to calculate moments.")
 
         # Store all moments in DataFrame
         moments = pd.concat([m1, m2, m3], axis=1)
-        moments.columns = ['moment1', 'moment2', 'moment3']
+        moments.columns = ["moment1", "moment2", "moment3"]
 
         return moments
 
@@ -740,10 +727,7 @@ class PhysicoChemicalFeatures:
     def __init__(self):
 
         self.features = None
-        self.features_verbose = {
-            'side_chain_orientation': None,
-            'exposure': None
-        }
+        self.features_verbose = {"side_chain_orientation": None, "exposure": None}
 
     def from_molecule(self, molecule, chain):
         """
@@ -768,12 +752,8 @@ class PhysicoChemicalFeatures:
 
         # Concatenate all physicochemical features
         physicochemical_features = pd.concat(
-            [
-                pharmacophore_size.features,
-                side_chain_orientation.features,
-                exposure.features
-            ],
-            axis=1
+            [pharmacophore_size.features, side_chain_orientation.features, exposure.features],
+            axis=1,
         )
 
         # Bring all fingerprints to same dimensions (i.e. add currently missing residues in DataFrame)
@@ -785,8 +765,8 @@ class PhysicoChemicalFeatures:
 
         self.features = physicochemical_features
 
-        self.features_verbose['side_chain_orientation'] = side_chain_orientation.features_verbose
-        self.features_verbose['exposure'] = exposure.features_verbose
+        self.features_verbose["side_chain_orientation"] = side_chain_orientation.features_verbose
+        self.features_verbose["exposure"] = exposure.features_verbose
 
 
 class SpatialFeatures:
@@ -827,8 +807,8 @@ class SpatialFeatures:
         self.reference_points = self.get_reference_points(molecule)
 
         # Get all residues' CA atoms in molecule (set KLIFS position as index)
-        residues_ca = molecule.df[molecule.df.atom_name == 'CA']['klifs_id x y z'.split()]
-        residues_ca.set_index('klifs_id', drop=True, inplace=True)
+        residues_ca = molecule.df[molecule.df.atom_name == "CA"]["klifs_id x y z".split()]
+        residues_ca.set_index("klifs_id", drop=True, inplace=True)
 
         distances = {}
 
@@ -837,11 +817,11 @@ class SpatialFeatures:
             # If any reference points coordinate is None, set also distance to None
 
             if coord.isna().any():
-                distances[f'distance_to_{name}'] = None
+                distances[f"distance_to_{name}"] = None
             else:
                 distance = (residues_ca - coord).transpose().apply(lambda x: np.linalg.norm(x))
                 distance.rename(name, inplace=True)
-                distances[f'distance_to_{name}'] = np.round(distance, 2)
+                distances[f"distance_to_{name}"] = np.round(distance, 2)
 
         spatial_features = pd.DataFrame.from_dict(distances)
 
@@ -873,7 +853,9 @@ class SpatialFeatures:
 
         # Calculate centroid-based reference point:
         # Calculate mean of all CA atoms
-        reference_points['centroid'] = molecule.df[molecule.df.atom_name == 'CA']['x y z'.split()].mean()
+        reference_points["centroid"] = molecule.df[molecule.df.atom_name == "CA"][
+            "x y z".split()
+        ].mean()
 
         # Calculate anchor-based reference points:
         # Get anchor atoms for each anchor-based reference point
@@ -920,58 +902,63 @@ class SpatialFeatures:
 
                 # Select anchor atom, i.e. CA atom of KLIFS ID (anchor residue)
                 anchor_atom = molecule.df[
-                    (molecule.df.klifs_id == anchor_klifs_id) &
-                    (molecule.df.atom_name == 'CA')
+                    (molecule.df.klifs_id == anchor_klifs_id) & (molecule.df.atom_name == "CA")
                 ]
 
                 # If this anchor atom exists, append to anchor atoms list
                 if len(anchor_atom) == 1:
-                    anchor_atom.set_index('klifs_id', inplace=True)
+                    anchor_atom.set_index("klifs_id", inplace=True)
                     anchor_atom.index.name = None
-                    anchor_atoms.append(anchor_atom[['x', 'y', 'z']])
+                    anchor_atoms.append(anchor_atom[["x", "y", "z"]])
 
                 # If this anchor atom does not exist, do workarounds
                 elif len(anchor_atom) == 0:
 
                     # Do residues (and there CA atoms) exist next to anchor residue?
                     atom_before = molecule.df[
-                        (molecule.df.klifs_id == anchor_klifs_id - 1) &
-                        (molecule.df.atom_name == 'CA')
-                        ]
+                        (molecule.df.klifs_id == anchor_klifs_id - 1)
+                        & (molecule.df.atom_name == "CA")
+                    ]
                     atom_after = molecule.df[
-                        (molecule.df.klifs_id == anchor_klifs_id + 1) &
-                        (molecule.df.atom_name == 'CA')
-                        ]
-                    atom_before.set_index('klifs_id', inplace=True, drop=False)
-                    atom_after.set_index('klifs_id', inplace=True, drop=False)
+                        (molecule.df.klifs_id == anchor_klifs_id + 1)
+                        & (molecule.df.atom_name == "CA")
+                    ]
+                    atom_before.set_index("klifs_id", inplace=True, drop=False)
+                    atom_after.set_index("klifs_id", inplace=True, drop=False)
 
                     # If both neighboring CA atoms exist, get their mean as alternative anchor atom
                     if len(atom_before) == 1 and len(atom_after) == 1:
-                        anchor_atom_alternative = pd.concat([atom_before, atom_after])[['x', 'y', 'z']].mean()
-                        anchor_atom_alternative = pd.DataFrame({anchor_klifs_id: anchor_atom_alternative}).transpose()
+                        anchor_atom_alternative = pd.concat([atom_before, atom_after])[
+                            ["x", "y", "z"]
+                        ].mean()
+                        anchor_atom_alternative = pd.DataFrame(
+                            {anchor_klifs_id: anchor_atom_alternative}
+                        ).transpose()
                         anchor_atoms.append(anchor_atom_alternative)
 
                     elif len(atom_before) == 1 and len(atom_after) == 0:
-                        atom_before.set_index('klifs_id', inplace=True)
-                        anchor_atoms.append(atom_before[['x', 'y', 'z']])
+                        atom_before.set_index("klifs_id", inplace=True)
+                        anchor_atoms.append(atom_before[["x", "y", "z"]])
 
                     elif len(atom_after) == 1 and len(atom_before) == 0:
-                        atom_after.set_index('klifs_id', inplace=True)
-                        anchor_atoms.append(atom_after[['x', 'y', 'z']])
+                        atom_after.set_index("klifs_id", inplace=True)
+                        anchor_atoms.append(atom_after[["x", "y", "z"]])
 
                     else:
                         atom_missing = pd.DataFrame.from_dict(
                             {anchor_klifs_id: [None, None, None]},
-                            orient='index',
-                            columns='x y z'.split()
+                            orient="index",
+                            columns="x y z".split(),
                         )
                         anchor_atoms.append(atom_missing)
 
                 # If there are several anchor atoms, something's wrong...
                 else:
-                    raise ValueError(f'Too many anchor atoms for'
-                                     f'{molecule.code}, {reference_point_name}, {anchor_klifs_id}: '
-                                     f'{len(anchor_atom)} (one atom allowed).')
+                    raise ValueError(
+                        f"Too many anchor atoms for"
+                        f"{molecule.code}, {reference_point_name}, {anchor_klifs_id}: "
+                        f"{len(anchor_atom)} (one atom allowed)."
+                    )
 
             anchors[reference_point_name] = pd.concat(anchor_atoms)
 
@@ -997,10 +984,10 @@ class SpatialFeatures:
 
         # PyMol sphere colors (for reference points)
         sphere_colors = {
-            'centroid': [1.0, 0.65, 0.0],  # orange
-            'hinge_region': [1.0, 0.0, 1.0],  # magenta
-            'dfg_region': [0.25, 0.41, 0.88],  # skyblue
-            'front_pocket': [0.0, 1.0, 0.0]  # green
+            "centroid": [1.0, 0.65, 0.0],  # orange
+            "hinge_region": [1.0, 0.0, 1.0],  # magenta
+            "dfg_region": [0.25, 0.41, 0.88],  # skyblue
+            "front_pocket": [0.0, 1.0, 0.0],  # green
         }
 
         # Load molecule from KLIFS metadata entry
@@ -1009,7 +996,9 @@ class SpatialFeatures:
         molecule = klifs_molecule_loader.molecule
 
         # Path to molecule file
-        path_mol2 = klifs_molecule_loader._file_from_metadata_entry(klifs_metadata_entry, path_klifs_download)
+        path_mol2 = klifs_molecule_loader._file_from_metadata_entry(
+            klifs_metadata_entry, path_klifs_download
+        )
 
         # Output path
         Path(output_path).mkdir(parents=True, exist_ok=True)
@@ -1025,20 +1014,20 @@ class SpatialFeatures:
         anchor_atoms = space.get_anchor_atoms(molecule)
 
         # Drop missing reference points and anchor atoms
-        ref_points.dropna(axis=0, how='any', inplace=True)
+        ref_points.dropna(axis=0, how="any", inplace=True)
         for ref_point_name, anchor_atoms_per_ref_point in anchor_atoms.items():
-            anchor_atoms_per_ref_point.dropna(axis=0, how='any', inplace=True)
+            anchor_atoms_per_ref_point.dropna(axis=0, how="any", inplace=True)
 
         # Collect all text lines to be written to file
         lines = []
 
         # Set descriptive PyMol object name for reference points
-        obj_name = f'refpoints_{molecule.code[6:]}'
+        obj_name = f"refpoints_{molecule.code[6:]}"
 
         # Imports
-        lines.append('from pymol import *')
-        lines.append('import os')
-        lines.append('from pymol.cgo import *\n')
+        lines.append("from pymol import *")
+        lines.append("import os")
+        lines.append("from pymol.cgo import *\n")
 
         # Load pocket structure
         lines.append(f'cmd.load("{path_mol2}", "pocket_{molecule.code[6:]}")\n')
@@ -1051,58 +1040,63 @@ class SpatialFeatures:
         # Color hinge and DFG region
         lines.append(f'cmd.set_color("hinge_color", {sphere_colors["hinge_region"]})')
         lines.append(f'cmd.set_color("dfg_color", {sphere_colors["dfg_region"]})')
-        lines.append(f'cmd.color("hinge_color", "pocket_{molecule.code[6:]} and resi {"+".join([str(i) for i in hinge_mol2_ids])}")')
-        lines.append(f'cmd.color("dfg_color", "pocket_{molecule.code[6:]} and resi {"+".join([str(i) for i in dfg_mol2_ids])}")\n')
+        lines.append(
+            f'cmd.color("hinge_color", "pocket_{molecule.code[6:]} and resi {"+".join([str(i) for i in hinge_mol2_ids])}")'
+        )
+        lines.append(
+            f'cmd.color("dfg_color", "pocket_{molecule.code[6:]} and resi {"+".join([str(i) for i in dfg_mol2_ids])}")\n'
+        )
 
         # Add spheres, i.e. reference points and anchor atoms
-        lines.append(f'obj_{obj_name} = [\n')  # Variable cannot start with digit, thus add prefix obj_
+        lines.append(
+            f"obj_{obj_name} = [\n"
+        )  # Variable cannot start with digit, thus add prefix obj_
 
         # Reference points
         for ref_point_name, ref_point in ref_points.iterrows():
 
             # Set and write sphere color to file
             lines.append(
-                f'\tCOLOR, '
-                f'{str(sphere_colors[ref_point_name][0])}, '
-                f'{str(sphere_colors[ref_point_name][1])}, '
-                f'{str(sphere_colors[ref_point_name][2])},'
+                f"\tCOLOR, "
+                f"{str(sphere_colors[ref_point_name][0])}, "
+                f"{str(sphere_colors[ref_point_name][1])}, "
+                f"{str(sphere_colors[ref_point_name][2])},"
             )
 
             # Write reference point coordinates and size to file
             lines.append(
-                f'\tSPHERE, '
+                f"\tSPHERE, "
                 f'{str(ref_point["x"])}, '
                 f'{str(ref_point["y"])}, '
                 f'{str(ref_point["z"])}, '
-                f'{str(1)},'
+                f"{str(1)},"
             )
 
             # Write anchor atom coordinates and size to file
-            if ref_point_name != 'centroid':
+            if ref_point_name != "centroid":
                 for anchor_atom_index, anchor_atom in anchor_atoms[ref_point_name].iterrows():
                     lines.append(
-                        f'\tSPHERE, '
+                        f"\tSPHERE, "
                         f'{str(anchor_atom["x"])}, '
                         f'{str(anchor_atom["y"])}, '
                         f'{str(anchor_atom["z"])}, '
-                        f'{str(0.5)},'
+                        f"{str(0.5)},"
                     )
 
         # Write command to file that will load the reference points as PyMol object
-        lines.append(f']\n')
+        lines.append(f"]\n")
 
         # Add KLIFS IDs to CA atoms as labels
 
         for res_id, klifs_id in zip(molecule.df.res_id.unique(), molecule.df.klifs_id.unique()):
             lines.append(
                 f'cmd.label(selection="pocket_{molecule.code[6:]} and name CA and resi {res_id}", expression="\'{klifs_id}\'")'
-
             )
 
         lines.append(f'\ncmd.load_cgo(obj_{obj_name}, "{obj_name}")')
 
-        with open(output_path / f'refpoints_{molecule.code[6:]}.py', 'w') as f:
-            f.write('\n'.join(lines))
+        with open(output_path / f"refpoints_{molecule.code[6:]}.py", "w") as f:
+            f.write("\n".join(lines))
 
         # In PyMol enter the following to save png
         # PyMOL > ray 900, 900
@@ -1133,7 +1127,9 @@ class SideChainOrientationFeature:
         self.molecule_code = None
         self.features = None
         self.features_verbose = None
-        self.vector_pocket_centroid = None  # Necessary to not calculate pocket centroid for each residue again
+        self.vector_pocket_centroid = (
+            None  # Necessary to not calculate pocket centroid for each residue again
+        )
 
     def from_molecule(self, molecule, chain):
         """
@@ -1191,11 +1187,10 @@ class SideChainOrientationFeature:
 
         # Get KLIFS pocket metadata, e.g. PDB residue IDs from mol2 file (DataFrame)
         pocket_residues = pd.DataFrame(
-            molecule.df.groupby('klifs_id res_id res_name'.split()).groups.keys(),
-            columns='klifs_id res_id res_name'.split()
-
+            molecule.df.groupby("klifs_id res_id res_name".split()).groups.keys(),
+            columns="klifs_id res_id res_name".split(),
         )
-        pocket_residues.set_index('klifs_id', drop=False, inplace=True)
+        pocket_residues.set_index("klifs_id", drop=False, inplace=True)
 
         # Select residues from chain based on PDB residue IDs and add to DataFrame
         pocket_residues_list = []
@@ -1210,7 +1205,7 @@ class SideChainOrientationFeature:
 
             pocket_residues_list.append(pocket_residue)
 
-        pocket_residues['pocket_residues'] = pocket_residues_list
+        pocket_residues["pocket_residues"] = pocket_residues_list
 
         return pocket_residues
 
@@ -1251,14 +1246,16 @@ class SideChainOrientationFeature:
         data = pd.DataFrame(
             data,
             index=pocket_residues.klifs_id,
-            columns='ca side_chain_centroid pocket_centroid'.split()
+            columns="ca side_chain_centroid pocket_centroid".split(),
         )
 
-        metadata = pocket_residues['klifs_id res_id res_name'.split()]
+        metadata = pocket_residues["klifs_id res_id res_name".split()]
 
         if len(metadata) != len(data):
-            raise ValueError(f'DataFrames to be concatenated must be of same length: '
-                             f'Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows.')
+            raise ValueError(
+                f"DataFrames to be concatenated must be of same length: "
+                f"Metadata has {len(metadata)} rows, CA/CB/centroid data has {len(data)} rows."
+            )
 
         return pd.concat([metadata, data], axis=1)
 
@@ -1291,9 +1288,7 @@ class SideChainOrientationFeature:
             if row.ca and row.side_chain_centroid and row.pocket_centroid:
                 # Calculate vertex vertex_angle: CA atom is vertex
                 vertex_angle = np.degrees(
-                    calc_angle(
-                        row.side_chain_centroid, row.ca, row.pocket_centroid
-                    )
+                    calc_angle(row.side_chain_centroid, row.ca, row.pocket_centroid)
                 )
                 vertex_angles.append(vertex_angle.round(2))
             else:
@@ -1301,9 +1296,7 @@ class SideChainOrientationFeature:
 
         # Cast to DataFrame
         vertex_angles = pd.DataFrame(
-            vertex_angles,
-            index=pocket_vectors.klifs_id,
-            columns=['vertex_angle']
+            vertex_angles, index=pocket_vectors.klifs_id, columns=["vertex_angle"]
         )
 
         return vertex_angles
@@ -1325,19 +1318,16 @@ class SideChainOrientationFeature:
             Side chain orientation categories (column) for up to 85 residues (rows).
         """
 
-        if 'vertex_angle' not in vertex_angles.columns:
+        if "vertex_angle" not in vertex_angles.columns:
             raise ValueError('Input DataFrame needs column with name "vertex_angle".')
 
         categories = [
-            self._get_category_from_vertex_angle(vertex_angle) for vertex_angle in vertex_angles.vertex_angle
+            self._get_category_from_vertex_angle(vertex_angle)
+            for vertex_angle in vertex_angles.vertex_angle
         ]
 
         # Cast from Series to DataFrame and set column name for feature
-        categories = pd.DataFrame(
-            categories,
-            index=vertex_angles.index,
-            columns=['sco']
-        )
+        categories = pd.DataFrame(categories, index=vertex_angles.index, columns=["sco"])
 
         return categories
 
@@ -1368,8 +1358,10 @@ class SideChainOrientationFeature:
         elif np.isnan(vertex_angle):
             return np.nan
         else:
-            raise ValueError(f'Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. '
-                             f'Only values between 0.0 and 180.0 allowed.')
+            raise ValueError(
+                f"Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. "
+                f"Only values between 0.0 and 180.0 allowed."
+            )
 
     def _get_ca(self, residue):
         """
@@ -1390,10 +1382,10 @@ class SideChainOrientationFeature:
 
         # Set CA atom
 
-        if 'CA' in atom_names:
-            vector_ca = residue['CA'].get_vector()
+        if "CA" in atom_names:
+            vector_ca = residue["CA"].get_vector()
         else:
-            logger.info(f'{self.molecule_code}: SCO: CA atom: Missing in {residue}.')
+            logger.info(f"{self.molecule_code}: SCO: CA atom: Missing in {residue}.")
             vector_ca = None
 
         return vector_ca
@@ -1421,8 +1413,9 @@ class SideChainOrientationFeature:
         # - not H atoms
 
         selected_atoms = [
-            atom for atom in residue.get_atoms() if
-            (atom.name not in 'N CA C O OXT'.split()) & (not atom.get_id().startswith('H'))
+            atom
+            for atom in residue.get_atoms()
+            if (atom.name not in "N CA C O OXT".split()) & (not atom.get_id().startswith("H"))
         ]
 
         n_atoms = len(selected_atoms)
@@ -1437,25 +1430,25 @@ class SideChainOrientationFeature:
 
             n_atoms_cutoff = N_HEAVY_ATOMS_CUTOFF[residue.get_resname()]
 
-            if residue.get_resname() == 'GLY':  # GLY residue
+            if residue.get_resname() == "GLY":  # GLY residue
 
                 side_chain_centroid = self._get_pcb_from_residue(residue, chain)
 
                 if side_chain_centroid is None:
-                    exception = 'GLY - None'
+                    exception = "GLY - None"
 
-            elif residue.get_resname() == 'ALA':  # ALA residue
+            elif residue.get_resname() == "ALA":  # ALA residue
 
                 try:
-                    side_chain_centroid = residue['CB'].get_vector()
+                    side_chain_centroid = residue["CB"].get_vector()
 
                 except KeyError:
                     side_chain_centroid = self._get_pcb_from_residue(residue, chain)
 
                     if side_chain_centroid is not None:
-                        exception = 'ALA - pCB atom'
+                        exception = "ALA - pCB atom"
                     else:
-                        exception = 'ALA - None'
+                        exception = "ALA - None"
 
             elif n_atoms >= n_atoms_cutoff:  # Other standard residues with enough side chain atoms
 
@@ -1464,31 +1457,37 @@ class SideChainOrientationFeature:
             else:  # Other standard residues with too few side chain atoms
 
                 try:
-                    side_chain_centroid = residue['CB'].get_vector()
-                    exception = f'Standard residue - CB atom, only {n_atoms}/{n_atoms_cutoff} residues'
+                    side_chain_centroid = residue["CB"].get_vector()
+                    exception = (
+                        f"Standard residue - CB atom, only {n_atoms}/{n_atoms_cutoff} residues"
+                    )
 
                 except KeyError:
                     side_chain_centroid = self._get_pcb_from_residue(residue, chain)
 
                     if side_chain_centroid is not None:
-                        exception = f'Standard residue - pCB atom, only {n_atoms}/{n_atoms_cutoff} residues'
+                        exception = f"Standard residue - pCB atom, only {n_atoms}/{n_atoms_cutoff} residues"
                     else:
-                        exception = f'Standard residue - None, only {n_atoms}/{n_atoms_cutoff} residues'
+                        exception = (
+                            f"Standard residue - None, only {n_atoms}/{n_atoms_cutoff} residues"
+                        )
 
         # Non-standard residues
         except KeyError:
 
             if n_atoms > 0:
                 side_chain_centroid = Vector(center_of_mass(selected_atoms, geometric=True))
-                exception = f'Non-standard residue - centroid of {n_atoms} atoms'
+                exception = f"Non-standard residue - centroid of {n_atoms} atoms"
             else:
                 side_chain_centroid = None
-                exception = 'Non-standard residue - None'
+                exception = "Non-standard residue - None"
 
         if exception:
-            logger.info(f'{self.molecule_code}: SCO: Side chain centroid for '
-                        f'residue {residue.get_resname()}, {residue.id} with {n_atoms} atoms is: '
-                        f'{exception}.')
+            logger.info(
+                f"{self.molecule_code}: SCO: Side chain centroid for "
+                f"residue {residue.get_resname()}, {residue.id} with {n_atoms} atoms is: "
+                f"{exception}."
+            )
 
         return side_chain_centroid
 
@@ -1516,19 +1515,23 @@ class SideChainOrientationFeature:
 
         for residue in pocket_residues.pocket_residues:
             try:
-                ca_vectors.append(residue['CA'])
+                ca_vectors.append(residue["CA"])
             except KeyError:
                 ca_atoms_missing.append(residue)
 
         if len(ca_atoms_missing) > 0:
-            logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
-                        f'{len(ca_atoms_missing)} missing CA atom(s): {ca_atoms_missing}')
+            logger.info(
+                f"{self.molecule_code}: SCO: Pocket centroid: "
+                f"{len(ca_atoms_missing)} missing CA atom(s): {ca_atoms_missing}"
+            )
 
         try:
             return Vector(center_of_mass(ca_vectors, geometric=True))
         except ValueError:
-            logger.info(f'{self.molecule_code}: SCO: Pocket centroid: '
-                        f'Cannot be calculated. {len(ca_vectors)} CA atoms available.')
+            logger.info(
+                f"{self.molecule_code}: SCO: Pocket centroid: "
+                f"Cannot be calculated. {len(ca_vectors)} CA atoms available."
+            )
             return None
 
     @staticmethod
@@ -1547,10 +1550,10 @@ class SideChainOrientationFeature:
             Pseudo-CB atom vector for GLY centered at CA atom (= pseudo-CB atom coordinate).
         """
 
-        if residue.get_resname() == 'GLY':
+        if residue.get_resname() == "GLY":
 
             # Get pseudo-CB for GLY (vector centered at origin)
-            chain = Chain(id='X')  # Set up chain instance
+            chain = Chain(id="X")  # Set up chain instance
             pcb = HSExposureCB(chain)._get_gly_cb_vector(residue)
 
             if pcb is None:
@@ -1558,12 +1561,12 @@ class SideChainOrientationFeature:
 
             else:
                 # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
-                ca = residue['CA'].get_vector()
+                ca = residue["CA"].get_vector()
                 ca_pcb = ca + pcb
                 return ca_pcb
 
         else:
-            raise ValueError(f'Residue must be GLY, but is {residue.get_resname()}.')
+            raise ValueError(f"Residue must be GLY, but is {residue.get_resname()}.")
 
     def _get_pcb_from_residue(self, residue, chain):
         """
@@ -1582,7 +1585,7 @@ class SideChainOrientationFeature:
             Pseudo-CB atom vector for residue centered at CA atom (= pseudo-CB atom coordinate).
         """
 
-        if residue.get_resname() == 'GLY':
+        if residue.get_resname() == "GLY":
             return self._get_pcb_from_gly(residue)
 
         else:
@@ -1599,14 +1602,14 @@ class SideChainOrientationFeature:
                 return None
 
             # Get pseudo-CB for non-GLY residue
-            pcb = HSExposureCA(Chain(id='X'))._get_cb(residue_before, residue, residue_after)
+            pcb = HSExposureCA(Chain(id="X"))._get_cb(residue_before, residue, residue_after)
 
             if pcb is None:  # If one or more of the three residues have no CA
                 return None
 
             else:
                 # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
-                ca = residue['CA'].get_vector()
+                ca = residue["CA"].get_vector()
                 ca_pcb = ca + pcb[0]
                 return ca_pcb
 
@@ -1628,27 +1631,25 @@ class SideChainOrientationFeature:
         pocket_residues_ids = list(self.features_verbose.res_id)
 
         # List contains lines for python script
-        lines = [f'from pymol import *', f'import os', f'from pymol.cgo import *\n']
+        lines = [f"from pymol import *", f"import os", f"from pymol.cgo import *\n"]
 
         # Fetch PDB, remove solvent, remove unnecessary chain(s) and residues
         lines.append(f'cmd.fetch("{code["pdb_id"]}")')
         lines.append(f'cmd.remove("solvent")')
         if code["chain"]:
             lines.append(f'cmd.remove("{code["pdb_id"]} and not chain {code["chain"]}")')
-        lines.append(f'cmd.remove("all and not (resi {"+".join([str(i) for i in pocket_residues_ids])})")')
-        lines.append(f'')
+        lines.append(
+            f'cmd.remove("all and not (resi {"+".join([str(i) for i in pocket_residues_ids])})")'
+        )
+        lines.append(f"")
 
         # Set sphere color and size
         sphere_colors = {
-            'ca': [0.0, 1.0, 0.0],  # Green
-            'side_chain_centroid': [1.0, 0.0, 0.0],  # Red
-            'pocket_centroid': [0.0, 0.0, 1.0],  # Blue
+            "ca": [0.0, 1.0, 0.0],  # Green
+            "side_chain_centroid": [1.0, 0.0, 0.0],  # Red
+            "pocket_centroid": [0.0, 0.0, 1.0],  # Blue
         }
-        sphere_size = {
-            'ca': str(0.2),
-            'side_chain_centroid': str(0.2),
-            'pocket_centroid': str(1)
-        }
+        sphere_size = {"ca": str(0.2), "side_chain_centroid": str(0.2), "pocket_centroid": str(1)}
 
         # Collect all PyMol objects here (in order to group them after loading them to PyMol)
         obj_names = []
@@ -1657,29 +1658,31 @@ class SideChainOrientationFeature:
         for index, row in self.features_verbose.iterrows():
 
             # Set PyMol object name: residue ID
-            obj_name = f'{row.res_id}'
+            obj_name = f"{row.res_id}"
             obj_names.append(obj_name)
 
             if not np.isnan(row.sco):
 
                 # Add angle to CA atom in the form of a label
-                obj_angle_name = f'angle_{row.res_id}'
+                obj_angle_name = f"angle_{row.res_id}"
                 obj_angle_names.append(obj_angle_name)
 
                 lines.append(
                     f'cmd.pseudoatom(object="angle_{row.res_id}", '
-                    f'pos=[{str(row.ca[0])}, {str(row.ca[1])}, {str(row.ca[2])}], '
-                    f'label={str(round(row.sco, 1))})'
+                    f"pos=[{str(row.ca[0])}, {str(row.ca[1])}, {str(row.ca[2])}], "
+                    f"label={str(round(row.sco, 1))})"
                 )
 
             vectors = {
-                'ca': row.ca,
-                'side_chain_centroid': row.side_chain_centroid,
-                'pocket_centroid': row.pocket_centroid
+                "ca": row.ca,
+                "side_chain_centroid": row.side_chain_centroid,
+                "pocket_centroid": row.pocket_centroid,
             }
 
             # Write all spheres for current residue in cgo format
-            lines.append(f'obj_{obj_name} = [')  # Variable cannot start with digit, thus add prefix obj_
+            lines.append(
+                f"obj_{obj_name} = ["
+            )  # Variable cannot start with digit, thus add prefix obj_
 
             # For each reference point, write sphere color, coordinates and size to file
             for key, vector in vectors.items():
@@ -1691,26 +1694,23 @@ class SideChainOrientationFeature:
                     # Write sphere a) color and b) coordinates and size to file
                     lines.extend(
                         [
-                            f'\tCOLOR, {str(sphere_color[0])}, {str(sphere_color[1])}, {str(sphere_color[2])},',
-                            f'\tSPHERE, {str(vector[0])}, {str(vector[1])}, {str(vector[2])}, {sphere_size[key]},'
+                            f"\tCOLOR, {str(sphere_color[0])}, {str(sphere_color[1])}, {str(sphere_color[2])},",
+                            f"\tSPHERE, {str(vector[0])}, {str(vector[1])}, {str(vector[2])}, {sphere_size[key]},",
                         ]
                     )
 
             # Load the spheres as PyMol object
-            lines.extend(
-                [
-                    f']',
-                    f'cmd.load_cgo(obj_{obj_name}, "{obj_name}")',
-                    ''
-                ]
-
-            )
+            lines.extend([f"]", f'cmd.load_cgo(obj_{obj_name}, "{obj_name}")', ""])
         # Group all objects to one group
-        lines.append(f'cmd.group("{self.molecule_code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")')
+        lines.append(
+            f'cmd.group("{self.molecule_code.replace("/", "_")}", "{" ".join(obj_names + obj_angle_names)}")'
+        )
 
-        cgo_path = Path(output_path) / f'side_chain_orientation_{self.molecule_code.split("/")[1]}.py'
-        with open(cgo_path, 'w') as f:
-            f.write('\n'.join(lines))
+        cgo_path = (
+            Path(output_path) / f'side_chain_orientation_{self.molecule_code.split("/")[1]}.py'
+        )
+        with open(cgo_path, "w") as f:
+            f.write("\n".join(lines))
 
         # In PyMol enter the following to save png
         # PyMOL > ray 900, 900
@@ -1809,27 +1809,24 @@ class ExposureFeature:
         exposures_molecule = self.get_molecule_exposures(chain, radius)
 
         # Get residues IDs belonging to KLIFS binding site
-        klifs_res_ids = molecule.df.groupby(by=['res_id', 'klifs_id'], sort=False).groups.keys()
-        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=['res_id', 'klifs_id'])
-        klifs_res_ids.set_index('res_id', inplace=True, drop=False)
+        klifs_res_ids = molecule.df.groupby(by=["res_id", "klifs_id"], sort=False).groups.keys()
+        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=["res_id", "klifs_id"])
+        klifs_res_ids.set_index("res_id", inplace=True, drop=False)
 
         # Keep only KLIFS residues
         # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure calculation
-        exposures = klifs_res_ids.join(exposures_molecule, how='left')
+        exposures = klifs_res_ids.join(exposures_molecule, how="left")
 
         # Set index (from residue IDs) to KLIFS IDs
-        exposures.set_index('klifs_id', inplace=True, drop=True)
+        exposures.set_index("klifs_id", inplace=True, drop=True)
 
         # Add column with CB exposure values, but with CA exposure values if CB exposure values are missing
-        exposures['exposure'] = exposures.apply(
-            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure,
-            axis=1
+        exposures["exposure"] = exposures.apply(
+            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure, axis=1
         )
 
         self.features = pd.DataFrame(
-            exposures.exposure,
-            index=exposures.exposure.index,
-            columns=['exposure']
+            exposures.exposure, index=exposures.exposure.index, columns=["exposure"]
         )
         self.features_verbose = exposures
 
@@ -1852,16 +1849,16 @@ class ExposureFeature:
         """
 
         # Calculate exposure values
-        exposures_cb = self.get_molecule_exposure_by_method(chain, radius, method='HSExposureCB')
-        exposures_ca = self.get_molecule_exposure_by_method(chain, radius, method='HSExposureCA')
+        exposures_cb = self.get_molecule_exposure_by_method(chain, radius, method="HSExposureCB")
+        exposures_ca = self.get_molecule_exposure_by_method(chain, radius, method="HSExposureCA")
 
         # Join both exposures calculations
-        exposures_both = exposures_ca.join(exposures_cb, how='outer')
+        exposures_both = exposures_ca.join(exposures_cb, how="outer")
 
         return exposures_both
 
     @staticmethod
-    def get_molecule_exposure_by_method(chain, radius=12.0, method='HSExposureCB'):
+    def get_molecule_exposure_by_method(chain, radius=12.0, method="HSExposureCB"):
         """
         Get exposure values for a given Half Sphere Exposure method, i.e. HSExposureCA or HSExposureCB.
 
@@ -1881,7 +1878,7 @@ class ExposureFeature:
             residue (index: residue ID).
         """
 
-        methods = 'HSExposureCB HSExposureCA'.split()
+        methods = "HSExposureCB HSExposureCA".split()
 
         # Calculate exposure values
         if method == methods[0]:
@@ -1892,16 +1889,14 @@ class ExposureFeature:
             raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
 
         # Define column names
-        up = f'{method[-2:].lower()}_up'
-        down = f'{method[-2:].lower()}_down'
-        angle = f'{method[-2:].lower()}_angle_CB-CA-pCB'
-        exposure = f'{method[-2:].lower()}_exposure'
+        up = f"{method[-2:].lower()}_up"
+        down = f"{method[-2:].lower()}_down"
+        angle = f"{method[-2:].lower()}_angle_CB-CA-pCB"
+        exposure = f"{method[-2:].lower()}_exposure"
 
         # Transform into DataFrame
         exposures = pd.DataFrame(
-            exposures.property_dict,
-            index=[up, down, angle],
-            dtype=float
+            exposures.property_dict, index=[up, down, angle], dtype=float
         ).transpose()
         exposures.index = [i[1][1] for i in exposures.index]
 
@@ -1956,7 +1951,7 @@ class PharmacophoreSizeFeatures:
         for feature_name in SITEALIGN_FEATURES.columns:
 
             # Select from DataFrame first row per KLIFS position (index) and residue name
-            residues = molecule.df.groupby(by='klifs_id', sort=False).first()['res_name']
+            residues = molecule.df.groupby(by="klifs_id", sort=False).first()["res_name"]
 
             # Get feature values for each KLIFS position
             features = residues.apply(lambda residue: self.from_residue(residue, feature_name))
@@ -1988,8 +1983,10 @@ class PharmacophoreSizeFeatures:
         """
 
         if feature_name not in SITEALIGN_FEATURES.columns:
-            raise KeyError(f'Feature {feature_name} does not exist. '
-                           f'Please choose from: {", ".join(SITEALIGN_FEATURES.columns)}')
+            raise KeyError(
+                f"Feature {feature_name} does not exist. "
+                f'Please choose from: {", ".join(SITEALIGN_FEATURES.columns)}'
+            )
 
         try:
 
@@ -1999,17 +1996,21 @@ class PharmacophoreSizeFeatures:
 
             if residue_name in MODIFIED_RESIDUE_CONVERSION.keys():
 
-                logger.info(f'{self.molecule_code}, {feature_name} feature: '
-                            f'Non-standard amino acid {residue_name} is processed as '
-                            f'{MODIFIED_RESIDUE_CONVERSION[residue_name]}.')
+                logger.info(
+                    f"{self.molecule_code}, {feature_name} feature: "
+                    f"Non-standard amino acid {residue_name} is processed as "
+                    f"{MODIFIED_RESIDUE_CONVERSION[residue_name]}."
+                )
 
                 residue_name = MODIFIED_RESIDUE_CONVERSION[residue_name]
                 feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
 
             else:
 
-                logger.info(f'{self.molecule_code}, {feature_name} feature: '
-                            f'Non-standard amino acid {residue_name} is set to None.')
+                logger.info(
+                    f"{self.molecule_code}, {feature_name} feature: "
+                    f"Non-standard amino acid {residue_name} is set to None."
+                )
 
                 feature_value = None
 

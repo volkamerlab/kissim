@@ -7,6 +7,7 @@ import kissim
 import pytest
 import sys
 
+
 def test_kissim_imported():
     """Sample test, will always pass so long as import statement worked"""
     assert "kissim" in sys.modules

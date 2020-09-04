@@ -82,7 +82,7 @@ class FingerprintDistanceGenerator:
 
         start = datetime.datetime.now()
 
-        logger.info(f'SIMILARITY: FingerprintDistanceGenerator: {feature_weights}')
+        logger.info(f"SIMILARITY: FingerprintDistanceGenerator: {feature_weights}")
 
         # Set class attributes
         self.distance_measure = feature_distances_generator.distance_measure
@@ -94,7 +94,7 @@ class FingerprintDistanceGenerator:
         fingerprint_distance_list = self._get_fingerprint_distance_from_list(
             self._get_fingerprint_distance,
             list(feature_distances_generator.data.values()),
-            self.feature_weights
+            self.feature_weights,
         )
 
         # Format result and save to class attribute
@@ -103,16 +103,18 @@ class FingerprintDistanceGenerator:
                 [i.molecule_pair_code[0], i.molecule_pair_code[1], i.distance, i.bit_coverage]
                 for i in fingerprint_distance_list
             ],
-            columns='molecule_code_1 molecule_code_2 distance coverage'.split()
+            columns="molecule_code_1 molecule_code_2 distance coverage".split(),
         )
 
         end = datetime.datetime.now()
 
-        logger.info(f'Start of fingerprint distance generation: {start}')
-        logger.info(f'End of fingerprint distance generation: {end}')
+        logger.info(f"Start of fingerprint distance generation: {start}")
+        logger.info(f"End of fingerprint distance generation: {end}")
 
     @staticmethod
-    def _get_fingerprint_distance_from_list(_get_fingerprint_distance, feature_distances_list, feature_weights=None):
+    def _get_fingerprint_distance_from_list(
+        _get_fingerprint_distance, feature_distances_list, feature_weights=None
+    ):
         """
         Get fingerprint distances based on multiple feature distances (i.e. for multiple fingerprint pairs).
         Uses parallel computing.
@@ -144,19 +146,18 @@ class FingerprintDistanceGenerator:
 
         # Get start time of computation
         start = datetime.datetime.now()
-        logger.info(f'Calculate pairwise fingerprint distances...')
+        logger.info(f"Calculate pairwise fingerprint distances...")
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
-        logger.info(f'Number of cores used: {num_cores}')
+        logger.info(f"Number of cores used: {num_cores}")
 
         # Create pool with `num_processes` processes
         pool = Pool(processes=num_cores)
 
         # Apply function to each chunk in list
         fingerprint_distances_list = pool.starmap(
-            _get_fingerprint_distance,
-            zip(feature_distances_list, repeat(feature_weights))
+            _get_fingerprint_distance, zip(feature_distances_list, repeat(feature_weights))
         )
 
         # Close and join pool
@@ -164,11 +165,11 @@ class FingerprintDistanceGenerator:
         pool.join()
 
         # Get end time of computation
-        logger.info(f'Number of fingerprint distances: {len(fingerprint_distances_list)}')
+        logger.info(f"Number of fingerprint distances: {len(fingerprint_distances_list)}")
         end = datetime.datetime.now()
 
-        logger.info(f'Start: {start}')
-        logger.info(f'End: {end}')
+        logger.info(f"Start: {start}")
+        logger.info(f"End: {end}")
 
         return fingerprint_distances_list
 
@@ -221,10 +222,7 @@ class FingerprintDistanceGenerator:
 
         # Initialize matrix
         structure_distance_matrix = pd.DataFrame(
-            [],
-            columns=self.molecule_codes,
-            index=self.molecule_codes,
-            dtype=float
+            [], columns=self.molecule_codes, index=self.molecule_codes, dtype=float
         )
 
         # Fill matrix with distance values
@@ -232,7 +230,9 @@ class FingerprintDistanceGenerator:
             structure_distance_matrix.loc[row.molecule_code_1, row.molecule_code_2] = row.distance
 
             if fill:
-                structure_distance_matrix.loc[row.molecule_code_2, row.molecule_code_1] = row.distance
+                structure_distance_matrix.loc[
+                    row.molecule_code_2, row.molecule_code_1
+                ] = row.distance
 
         # Fill values on matrix main diagonal to 0.0
         for molecule_code in self.molecule_codes:
@@ -240,7 +240,7 @@ class FingerprintDistanceGenerator:
 
         return structure_distance_matrix
 
-    def get_kinase_distance_matrix(self, by='minimum', fill=False):
+    def get_kinase_distance_matrix(self, by="minimum", fill=False):
         """
         Extract per kinase pair one distance value from the set of structure pair distance values and return these
         fingerprint distances for all kinase pairs in the form of a matrix (DataFrame).
@@ -261,10 +261,7 @@ class FingerprintDistanceGenerator:
 
         # Initialize matrix
         kinase_distance_matrix = pd.DataFrame(
-            [],
-            columns=self.kinase_names,
-            index=self.kinase_names,
-            dtype=float
+            [], columns=self.kinase_names, index=self.kinase_names, dtype=float
         )
 
         # Fill matrix with distance values
@@ -282,7 +279,7 @@ class FingerprintDistanceGenerator:
 
         return kinase_distance_matrix
 
-    def _get_kinase_distances(self, by='minimum'):
+    def _get_kinase_distances(self, by="minimum"):
         """
         Extract per kinase pair one distance value from the set of structure pair distance values.
 
@@ -303,20 +300,19 @@ class FingerprintDistanceGenerator:
 
         # Group by kinase names
         structure_distances_grouped_by_kinases = structure_distances.groupby(
-            by=['kinase_1', 'kinase_2'],
-            sort=False
+            by=["kinase_1", "kinase_2"], sort=False
         )
 
         # Get distance values per kinase pair based on given condition
-        by_terms = 'minimum maximum mean size'.split()
+        by_terms = "minimum maximum mean size".split()
 
-        if by == 'minimum':
+        if by == "minimum":
             kinase_distances = structure_distances_grouped_by_kinases.min()
-        elif by == 'maximum':
+        elif by == "maximum":
             kinase_distances = structure_distances_grouped_by_kinases.max()
-        elif by == 'mean':
+        elif by == "mean":
             kinase_distances = structure_distances_grouped_by_kinases.mean()
-        elif by == 'size':
+        elif by == "size":
             kinase_distances = structure_distances_grouped_by_kinases.size()
         else:
             raise ValueError(f'Condition "by" unknown. Choose from: {", ".join(by_terms)}')
@@ -338,11 +334,11 @@ class FingerprintDistanceGenerator:
         fingerprint_distance = self.data.copy()
 
         # Add columns for kinase names (kinase pair)
-        fingerprint_distance['kinase_1'] = [
-            i.split('/')[1].split('_')[0] for i in fingerprint_distance.molecule_code_1
+        fingerprint_distance["kinase_1"] = [
+            i.split("/")[1].split("_")[0] for i in fingerprint_distance.molecule_code_1
         ]
-        fingerprint_distance['kinase_2'] = [
-            i.split('/')[1].split('_')[0] for i in fingerprint_distance.molecule_code_2
+        fingerprint_distance["kinase_2"] = [
+            i.split("/")[1].split("_")[0] for i in fingerprint_distance.molecule_code_2
         ]
 
         return fingerprint_distance
@@ -392,9 +388,11 @@ class FeatureDistancesGenerator:
         """
 
         if self.molecule_codes is not None:
-            return sorted(set([i.split('/')[1].split('_')[0] for i in self.molecule_codes]))
+            return sorted(set([i.split("/")[1].split("_")[0] for i in self.molecule_codes]))
 
-    def from_fingerprint_generator(self, fingerprints_generator, distance_measure='scaled_euclidean'):
+    def from_fingerprint_generator(
+        self, fingerprints_generator, distance_measure="scaled_euclidean"
+    ):
         """
         Calculate feature distances for all possible fingerprint pair combinations, given a distance measure.
 
@@ -408,7 +406,7 @@ class FeatureDistancesGenerator:
 
         start = datetime.datetime.now()
 
-        logger.info(f'SIMILARITY: FeatureDistancesGenerator: {distance_measure}')
+        logger.info(f"SIMILARITY: FeatureDistancesGenerator: {distance_measure}")
 
         # Remove empty fingerprints
         fingerprints = self._remove_empty_fingerprints(fingerprints_generator.data)
@@ -418,20 +416,16 @@ class FeatureDistancesGenerator:
 
         # Calculate pairwise feature distances
         feature_distances_list = self._get_feature_distances_from_list(
-            self._get_feature_distances,
-            fingerprints,
-            self.distance_measure
+            self._get_feature_distances, fingerprints, self.distance_measure
         )
 
         # Cast returned list into dict
-        self.data = {
-            i.molecule_pair_code: i for i in feature_distances_list
-        }
+        self.data = {i.molecule_pair_code: i for i in feature_distances_list}
 
         end = datetime.datetime.now()
 
-        logger.info(f'Start of feature distances generator: {start}')
-        logger.info(f'End of feature distances generator: {end}')
+        logger.info(f"Start of feature distances generator: {start}")
+        logger.info(f"End of feature distances generator: {end}")
 
     def get_data_by_molecule_pair(self, molecule_code1, molecule_code2):
         """
@@ -454,18 +448,22 @@ class FeatureDistancesGenerator:
 
         if self.data is not None:
 
-            feature_types = list(chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()]))
+            feature_types = list(
+                chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()])
+            )
             feature_names = list(chain.from_iterable(FEATURE_NAMES.values()))
 
             data = self.data[(molecule_code1, molecule_code2)]
 
-            data_df = pd.DataFrame(data, columns='distance bit_coverage'.split())
-            data_df.insert(loc=0, column='feature_type', value=feature_types)
-            data_df.insert(loc=1, column='feature_names', value=feature_names)
+            data_df = pd.DataFrame(data, columns="distance bit_coverage".split())
+            data_df.insert(loc=0, column="feature_type", value=feature_types)
+            data_df.insert(loc=1, column="feature_names", value=feature_names)
 
             return data_df
 
-    def _get_feature_distances_from_list(self, _get_feature_distances, fingerprints, distance_measure='scaled_euclidean'):
+    def _get_feature_distances_from_list(
+        self, _get_feature_distances, fingerprints, distance_measure="scaled_euclidean"
+    ):
         """
         Get feature distances for multiple fingerprint pairs.
         Uses parallel computing.
@@ -487,11 +485,11 @@ class FeatureDistancesGenerator:
 
         # Get start time of computation
         start = datetime.datetime.now()
-        logger.info(f'Calculate pairwise feature distances...')
+        logger.info(f"Calculate pairwise feature distances...")
 
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
-        logger.info(f'Number of cores used: {num_cores}')
+        logger.info(f"Number of cores used: {num_cores}")
 
         # Create pool with `num_processes` processes
         pool = Pool(processes=num_cores)
@@ -501,8 +499,7 @@ class FeatureDistancesGenerator:
 
         # Apply function to each chunk in list
         feature_distances_list = pool.starmap(
-            _get_feature_distances,
-            zip(pairs, repeat(fingerprints), repeat(distance_measure))
+            _get_feature_distances, zip(pairs, repeat(fingerprints), repeat(distance_measure))
         )
 
         # Close and join pool
@@ -510,7 +507,7 @@ class FeatureDistancesGenerator:
         pool.join()
 
         # Get end time of script
-        logger.info(f'Number of feature distances: {len(feature_distances_list)}')
+        logger.info(f"Number of feature distances: {len(feature_distances_list)}")
         end = datetime.datetime.now()
 
         logger.info(start)
@@ -519,7 +516,7 @@ class FeatureDistancesGenerator:
         return feature_distances_list
 
     @staticmethod
-    def _get_feature_distances(pair, fingerprints, distance_measure='scaled_euclidean'):
+    def _get_feature_distances(pair, fingerprints, distance_measure="scaled_euclidean"):
         """
         Calculate the feature distances for one fingerprint pair.
 
@@ -567,7 +564,7 @@ class FeatureDistancesGenerator:
         for i, j in combinations(fingerprints.keys(), 2):
             pairs.append((i, j))
 
-        logger.info(f'Number of pairs: {len(pairs)}')
+        logger.info(f"Number of pairs: {len(pairs)}")
 
         return pairs
 
@@ -594,14 +591,14 @@ class FeatureDistancesGenerator:
 
             if not fingerprint:
                 empty_molecule_codes.append(molecule_code)
-                logger.info(f'Empty fingerprint molecule codes: {molecule_code}')
+                logger.info(f"Empty fingerprint molecule codes: {molecule_code}")
 
         # Delete empty fingerprints from dict
         for empty in empty_molecule_codes:
             del fingerprints[empty]
 
-        logger.info(f'Number of empty fingerprints: {len(empty_molecule_codes)}')
-        logger.info(f'Number of non-empty fingerprints: {len(fingerprints)}')
+        logger.info(f"Number of empty fingerprints: {len(empty_molecule_codes)}")
+        logger.info(f"Number of non-empty fingerprints: {len(fingerprints)}")
 
         return fingerprints
 
@@ -690,18 +687,22 @@ class FingerprintDistance:
 
         elif isinstance(feature_weights, list):
 
-            if len(feature_weights) == 3:   # Set weights per feature type
+            if len(feature_weights) == 3:  # Set weights per feature type
                 feature_weights = self._format_weight_per_feature_type(feature_weights)
 
             elif len(feature_weights) == 15:  # Set weights per feature
                 feature_weights = self._format_weight_per_feature(feature_weights)
 
             else:
-                raise ValueError(f'Weights must have length 3 or 15, but have length {len(feature_weights)}.')
+                raise ValueError(
+                    f"Weights must have length 3 or 15, but have length {len(feature_weights)}."
+                )
 
         else:
 
-            raise TypeError(f'Data type of "feature_weights" parameter must be list, but is {type(feature_weights)}.')
+            raise TypeError(
+                f'Data type of "feature_weights" parameter must be list, but is {type(feature_weights)}.'
+            )
 
         return feature_weights
 
@@ -734,16 +735,22 @@ class FingerprintDistance:
 
             # Check data type of feature weights
             if not isinstance(feature_type_weights, list):
-                raise TypeError(f'Data type of "feature_weights" parameter must be list, but is '
-                                f'{type(feature_type_weights)}.')
+                raise TypeError(
+                    f'Data type of "feature_weights" parameter must be list, but is '
+                    f"{type(feature_type_weights)}."
+                )
 
             # Check if feature weight keys are correct
             if len(feature_type_weights) != 3:
-                raise ValueError(f'List must have length 3, but has length {len(feature_type_weights)}.')
+                raise ValueError(
+                    f"List must have length 3, but has length {len(feature_type_weights)}."
+                )
 
             # Check if sum of weights is 1.0
             if sum(feature_type_weights) != 1.0:
-                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_type_weights)}.')
+                raise ValueError(
+                    f"Sum of all weights must be one, but is {sum(feature_type_weights)}."
+                )
 
         # 2. Distribute feature type weight equally to features in feature type (in default feature order)
         feature_weights_formatted = []
@@ -786,16 +793,20 @@ class FingerprintDistance:
 
             # Check data type of feature weights
             if not isinstance(feature_weights, list):
-                raise TypeError(f'Data type of "feature_weights" parameter must be list, but is '
-                                f'{type(feature_weights)}.')
+                raise TypeError(
+                    f'Data type of "feature_weights" parameter must be list, but is '
+                    f"{type(feature_weights)}."
+                )
 
             # Check if feature weight keys are correct
             if len(feature_weights) != 15:
-                raise ValueError(f'List must have length 15, but has length {len(feature_weights)}.')
+                raise ValueError(
+                    f"List must have length 15, but has length {len(feature_weights)}."
+                )
 
             # Check if sum of weights is 1.0
             if sum(feature_weights) != 1.0:
-                raise ValueError(f'Sum of all weights must be one, but is {sum(feature_weights)}.')
+                raise ValueError(f"Sum of all weights must be one, but is {sum(feature_weights)}.")
 
         return np.array(feature_weights)
 
@@ -835,21 +846,25 @@ class FeatureDistances:
 
         if (self.distances is not None) and (self.bit_coverages is not None):
 
-            feature_types = list(chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()]))
+            feature_types = list(
+                chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()])
+            )
             feature_names = list(chain.from_iterable(FEATURE_NAMES.values()))
 
             data_df = pd.DataFrame(
                 {
-                    'feature_type': feature_types,
-                    'feature_name': feature_names,
-                    'distance': self.distances,
-                    'bit_coverage': self.bit_coverages
+                    "feature_type": feature_types,
+                    "feature_name": feature_names,
+                    "distance": self.distances,
+                    "bit_coverage": self.bit_coverages,
                 }
             )
 
             return data_df
 
-    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure='scaled_euclidean', normalized=True):
+    def from_fingerprints(
+        self, fingerprint1, fingerprint2, distance_measure="scaled_euclidean", normalized=True
+    ):
         """
         Calculate distance between two fingerprints for each (normalized) feature.
 
@@ -897,7 +912,7 @@ class FeatureDistances:
         self.distances = np.array(distances)
         self.bit_coverages = np.array(bit_coverages)
 
-    def from_features(self, feature1, feature2, distance_measure='scaled_euclidean'):
+    def from_features(self, feature1, feature2, distance_measure="scaled_euclidean"):
         """
         Distance and bit coverage for a feature pair.
 
@@ -917,7 +932,7 @@ class FeatureDistances:
         """
 
         if len(feature1) != len(feature2):
-            raise ValueError(f'Features are not of same length!')
+            raise ValueError(f"Features are not of same length!")
 
         # Cast feature pair to numpy array
         feature_pair = np.array([feature1, feature2])
@@ -933,7 +948,7 @@ class FeatureDistances:
 
         return distance, bit_coverage
 
-    def _calculate_feature_distance(self, feature_pair, distance_measure='scaled_euclidean'):
+    def _calculate_feature_distance(self, feature_pair, distance_measure="scaled_euclidean"):
         """
         Calculate distance between two value lists (describing each the same feature).
 
@@ -952,31 +967,31 @@ class FeatureDistances:
 
         # Test if parameter input is correct
         if not isinstance(feature_pair, np.ndarray):
-            raise TypeError(f'Parameter "feature_pair" must be of type np.ndarray, but is {type(feature_pair)}.')
+            raise TypeError(
+                f'Parameter "feature_pair" must be of type np.ndarray, but is {type(feature_pair)}.'
+            )
 
         # Set feature distance to NaN if no bits available for distance calculation
         if len(feature_pair) == 0:
             return np.nan
 
         if feature_pair.shape[0] != 2:
-            raise ValueError(f'Parameter "feature_pair" has not two (i.e. {feature_pair.shape[1]}) np.ndarray rows.')
+            raise ValueError(
+                f'Parameter "feature_pair" has not two (i.e. {feature_pair.shape[1]}) np.ndarray rows.'
+            )
 
         # Get feature distance
-        if distance_measure == 'scaled_euclidean':
-            return self._scaled_euclidean_distance(
-                feature_pair[0],
-                feature_pair[1]
-            )
+        if distance_measure == "scaled_euclidean":
+            return self._scaled_euclidean_distance(feature_pair[0], feature_pair[1])
 
-        elif distance_measure == 'scaled_cityblock':
-            return self._scaled_cityblock_distance(
-                feature_pair[0],
-                feature_pair[1]
-            )
+        elif distance_measure == "scaled_cityblock":
+            return self._scaled_cityblock_distance(feature_pair[0], feature_pair[1])
 
         else:
-            distance_measures = 'scaled_euclidean scaled_cityblock'.split()
-            raise ValueError(f'Distance measure unknown. Choose from: {", ".join(distance_measures)}')
+            distance_measures = "scaled_euclidean scaled_cityblock".split()
+            raise ValueError(
+                f'Distance measure unknown. Choose from: {", ".join(distance_measures)}'
+            )
 
     @staticmethod
     def _scaled_euclidean_distance(values1, values2):
@@ -997,7 +1012,7 @@ class FeatureDistances:
         """
 
         if len(values1) != len(values2):
-            raise ValueError(f'Distance calculation failed: Values lists are not of same length.')
+            raise ValueError(f"Distance calculation failed: Values lists are not of same length.")
         elif len(values1) == 0:
             return np.nan
         else:
@@ -1023,7 +1038,7 @@ class FeatureDistances:
         """
 
         if len(values1) != len(values2):
-            raise ValueError(f'Distance calculation failed: Values lists are not of same length.')
+            raise ValueError(f"Distance calculation failed: Values lists are not of same length.")
         elif len(values1) == 0:
             return np.nan
         else:
@@ -1031,5 +1046,5 @@ class FeatureDistances:
             return d
 
 
-if __name__ == '__main__':
-    print('similarity.py executed from CLI.')
+if __name__ == "__main__":
+    print("similarity.py executed from CLI.")
