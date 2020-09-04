@@ -1,7 +1,7 @@
 Structural kinase similarity (`kissim`)
 ==============================
 [//]: # (Badges)
-[![Travis Build Status](https://travis-ci.org/volkamerlab/kissim.png)](https://travis-ci.org/volkamerlab/kissim)
+[![GH Actions Status](https://github.com/volkamerlab/kissim/workflows/CI/badge.svg)](https://github.com/volkamerlab/kissim/actions?query=branch%3Amaster)
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/volkamerlab/branch/master?svg=true)](https://ci.appveyor.com/project/volkamerlab/kissim/branch/master)
 [![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/master/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim/branch/master)
 
