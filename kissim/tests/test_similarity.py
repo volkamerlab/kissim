@@ -23,7 +23,8 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 @pytest.fixture(scope="module")
 def fingerprint_generator():
     """
-    Get FingerprintGenerator instance with dummy data, i.e. multiple fingerprints (encoded pockets).
+    Get FingerprintGenerator instance with dummy data, i.e. multiple fingerprints
+    (encoded pockets).
 
     Returns
     -------
@@ -70,8 +71,8 @@ def fingerprint_generator():
 @pytest.fixture(scope="module")
 def feature_distances():
     """
-    Get FeatureDistances instance with dummy data, i.e. distances and bit coverages between two fingerprints for each
-    of their features.
+    Get FeatureDistances instance with dummy data, i.e. distances and bit coverages between two
+    fingerprints for each of their features.
 
     Returns
     -------
@@ -243,7 +244,8 @@ class TestsFeatureDistances:
         Parameters
         ----------
         feature_pair : np.ndarray
-            Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
+            Pairwise bits of one feature extracted from two fingerprints (only bit positions
+            without any NaN value).
         distance_measure : str
             Type of distance measure, defaults to Euclidean distance.
         distance : float
@@ -271,7 +273,8 @@ class TestsFeatureDistances:
         Parameters
         ----------
         feature_pair : np.ndarray
-            Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
+            Pairwise bits of one feature extracted from two fingerprints (only bit positions
+            without any NaN value).
         distance_measure : str
             Type of distance measure, defaults to Euclidean distance.
         """
@@ -298,7 +301,8 @@ class TestsFeatureDistances:
         Parameters
         ----------
         feature_pair : np.ndarray
-            Pairwise bits of one feature extracted from two fingerprints (only bit positions without any NaN value).
+            Pairwise bits of one feature extracted from two fingerprints (only bit positions
+            without any NaN value).
         distance_measure : str
             Type of distance measure, defaults to Euclidean distance.
         """
@@ -483,8 +487,8 @@ class TestsFingerprintDistance:
     )
     def test_format_weight_per_feature_type(self, feature_type_weights, feature_weights):
         """
-        Test formatting of weights per feature type (weights need to be equally distributed between all features in feature
-        type and transformed into a DataFrame).
+        Test formatting of weights per feature type (weights need to be equally distributed
+        between all features in feature type and transformed into a DataFrame).
 
         Parameters
         ----------
@@ -548,7 +552,8 @@ class TestsFingerprintDistance:
     )
     def test_format_weight_per_feature(self, feature_weights, feature_weights_formatted):
         """
-        Test formatting of weights per feature type (weights need to be transformed into a DataFrame).
+        Test formatting of weights per feature type (weights need to be transformed into a
+        DataFrame).
 
         Parameters
         ----------
@@ -677,7 +682,8 @@ class TestsFeatureDistancesGenerator:
         fingerprints : dict of kissim.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
         empty_fingerprints : dict of kissim.encoding.Fingerprint
-            Dictionary of non-empty fingerprints: Keys are molecule codes and values are fingerprint data.
+            Dictionary of non-empty fingerprints: Keys are molecule codes and values are
+            fingerprint data.
         """
 
         generator = FeatureDistancesGenerator()
@@ -873,13 +879,14 @@ class TestsFingerprintDistanceGenerator:
         feature_weights : dict of float or None
             Feature weights of the following form:
             (i) None
-                Default feature weights: All features equally distributed to 1/15 (15 feature in total).
+                Default feature weights: All features equally distributed to 1/15
+                (15 feature in total).
             (ii) By feature type
                 Feature types to be set are: physicochemical, distances, and moments.
             (iii) By feature:
                 Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
-                distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region, distance_to_front_pocket,
-                moment1, moment2, and moment3.
+                distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region,
+                distance_to_front_pocket, moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
         molecule_codes : list of str
             List of molecule codes associated with input fingerprints.
@@ -999,8 +1006,8 @@ class TestsFingerprintDistanceGenerator:
         fingerprint_distance_generator : FingerprintDistanceGenerator
             Fingerprint distance for multiple fingerprint pairs.
         by : str
-            Condition on which the distance value per kinase pair is extracted from the set of distances values per
-            structure pair. Default: Minimum distance value.
+            Condition on which the distance value per kinase pair is extracted from the set of
+            distances values per structure pair. Default: Minimum distance value.
         fill : bool
             Fill or fill not (default) lower triangle of distance matrix.
         structure_distance_matrix : pandas.DataFrame

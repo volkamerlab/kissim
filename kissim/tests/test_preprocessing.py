@@ -35,8 +35,8 @@ class TestsKlifsMetadataLoader:
     )
     def test_format_kinase_name(self, kinase_names_string, kinase_names_list):
         """
-        Test formatting of kinase name(s): One or multiple kinase names (additional names in brackets) are formated to list
-        of kinase names.
+        Test formatting of kinase name(s): One or multiple kinase names
+        (additional names in brackets) are formated to list of kinase names.
 
         Parameters
         ----------
@@ -240,9 +240,11 @@ class TestsKlifsMetadataFilter:
         Parameters
         ----------
         klifs_overview_file : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         klifs_export_file : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         n_rows : int
             Number of rows (structures) after filtering.
         """
@@ -275,9 +277,11 @@ class TestsKlifsMetadataFilter:
         Parameters
         ----------
         klifs_overview_file : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         klifs_export_file : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         n_rows : int
             Number of rows (structures) after filtering.
         """
@@ -310,9 +314,11 @@ class TestsKlifsMetadataFilter:
         Parameters
         ----------
         klifs_overview_file : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         klifs_export_file : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         n_rows : int
             Number of rows (structures) after filtering.
         """
@@ -345,9 +351,11 @@ class TestsKlifsMetadataFilter:
         Parameters
         ----------
         klifs_overview_file : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         klifs_export_file : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         n_rows : int
             Number of rows (structures) after filtering.
         """
@@ -383,9 +391,11 @@ class TestsKlifsMetadataFilter:
         Parameters
         ----------
         klifs_overview_file : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         klifs_export_file : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         path_klifs_download : pathlib.Path or str
             Path to directory of KLIFS dataset files.
         n_rows : int
@@ -420,9 +430,11 @@ class TestsKlifsMetadataFilter:
         Parameters
         ----------
         klifs_overview_file : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         klifs_export_file : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         n_rows : int
             Number of rows (structures) after filtering.
         """
@@ -456,8 +468,8 @@ class TestsMol2KlifsToPymolConverter:
     )
     def test_convert_mol2(self, path_mol2, path_mol2_pymol, n_converted_lines):
         """
-        Test if conversion from KLIFS mol2 file to PyMol readable file is correct (replace underscores with minus signs
-        for residue IDs).
+        Test if conversion from KLIFS mol2 file to PyMol readable file is correct (replace
+        underscores with minus signs for residue IDs).
 
         Parameters
         ----------
@@ -536,7 +548,8 @@ class TestsMol2ToPdbConverter:
     )
     def test_set_path_mol2_valueerror(self, path_mol2):
         """
-        Test if mol2 path is set correctly (in this case raises error because file is no mol2 file).
+        Test if mol2 path is set correctly (in this case raises error because file is no mol2
+        file).
 
         Parameters
         ----------
@@ -597,8 +610,8 @@ class TestsMol2ToPdbConverter:
     )
     def test_set_path_pdb_filenotfounderror(self, path_mol2_input, path_pdb_input):
         """
-        Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input (in this case raises error
-        because input pdb path, i.e. directory, does not exist).
+        Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input
+        (in this case raises error because input pdb path, i.e. directory, does not exist).
 
         Parameters
         ----------
@@ -634,8 +647,8 @@ class TestsMol2ToPdbConverter:
     )
     def test_set_path_pdb_valueerror(self, path_mol2_input, path_pdb_input):
         """
-        Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input (in this case raises error
-        because input file path incorrect/incomplete).
+        Test if pdb path is set correctly, given a mol2 path and an optional pdb path as input
+        (in this case raises error because input file path incorrect/incomplete).
 
         Parameters
         ----------
@@ -670,7 +683,8 @@ class TestsMol2ToPdbConverter:
             Path to mol2 file.
         path_pdb : pathlib.Path or None
             Path to pdb file (= converted mol2 file). Directory must exist.
-            Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
+            Default is None - saves pdb file next to the mol2 file in same directory with the same
+            filename.
         """
 
         converter = Mol2ToPdbConverter()
@@ -770,7 +784,8 @@ class TestsMol2ToPdbConverter:
             Path to mol2 file.
         path_pdb : pathlib.Path or None
             Path to pdb file (= converted mol2 file). Directory must exist.
-            Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
+            Default is None - saves pdb file next to the mol2 file in same directory with the same
+            filename.
         """
 
         converter = Mol2ToPdbConverter()

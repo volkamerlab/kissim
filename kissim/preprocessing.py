@@ -50,9 +50,11 @@ class KlifsMetadataLoader:
         Parameters
         ----------
         path_klifs_overview : pathlib.Path or str
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         path_klifs_export : pathlib.Path or str
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
 
         Returns
         -------
@@ -110,7 +112,8 @@ class KlifsMetadataLoader:
 
     def _from_klifs_export_file(self, klifs_export_file):
         """
-        Read KLIFS_export.csv file from KLIFS database download as DataFrame and unify format with overview.csv format.
+        Read KLIFS_export.csv file from KLIFS database download as DataFrame and unify format with
+        overview.csv format.
 
         Parameters
         ----------
@@ -157,7 +160,8 @@ class KlifsMetadataLoader:
     @staticmethod
     def _from_klifs_overview_file(klifs_overview_file):
         """
-        Read overview.csv file from KLIFS database download as DataFrame and unify format with KLIFS_export.csv format.
+        Read overview.csv file from KLIFS database download as DataFrame and unify format with
+        KLIFS_export.csv format.
 
         Parameters
         ----------
@@ -191,7 +195,8 @@ class KlifsMetadataLoader:
     @staticmethod
     def _format_kinase_name(kinase_name):
         """
-        Format kinase name(s): One or multiple kinase names (additional names in brackets) are formated to list of
+        Format kinase name(s): One or multiple kinase names (additional names in brackets) are
+        formated to list of
         kinase names.
 
         Examples:
@@ -219,7 +224,8 @@ class KlifsMetadataLoader:
     @staticmethod
     def _merge_files(klifs_export, klifs_overview):
         """
-        Merge data contained in overview.csv and KLIFS_export.csv files from KLIFS database download.
+        Merge data contained in overview.csv and KLIFS_export.csv files from KLIFS database
+        download.
 
         Parameters
         ----------
@@ -329,8 +335,8 @@ class KlifsMetadataLoader:
 
 class KlifsMetadataFilter:
     """
-    Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in), resolution (<=4),
-    KLIFS quality score (>=4) and existence/usability of mol2 and pdb files.
+    Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in),
+    resolution (<=4), KLIFS quality score (>=4) and existence/usability of mol2 and pdb files.
 
     Attributes
     ----------
@@ -355,8 +361,8 @@ class KlifsMetadataFilter:
 
     def from_klifs_metadata(self, klifs_metadata, path_klifs_download):
         """
-        Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in), resolution (<=4),
-        KLIFS quality score (>=4) and existence/usability of mol2 and pdb files.
+        Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in),
+        resolution (<=4), KLIFS quality score (>=4) and existence/usability of mol2 and pdb files.
 
         Parameters
         ----------
@@ -504,7 +510,8 @@ class KlifsMetadataFilter:
 
     def _get_qualityscore(self, qualityscore=4):
         """
-        Filter KLIFS dataset by structures with a KLIFS quality score higher or equal to given value.
+        Filter KLIFS dataset by structures with a KLIFS quality score higher or equal to given
+        value.
 
         Parameters
         ----------
@@ -647,7 +654,8 @@ class KlifsMetadataFilter:
 
     def _get_clean_residue_ids(self, path_klifs_download):
         """
-        Drop entries in KLIFS metadata that are linked to mol2 files that contain underscores in their residue IDs.
+        Drop entries in KLIFS metadata that are linked to mol2 files that contain underscores in
+        their residue IDs.
 
         Parameters
         ----------
@@ -670,7 +678,8 @@ class KlifsMetadataFilter:
             # Get first entry of each residue ID
             firsts = molecule.df.groupby(by="res_id", as_index=False).first()
 
-            # Originally in mol2 file '_', but converted to '-' during mol2 file loading, see auxiliary.MoleculeLoader
+            # Originally in mol2 file '_', but converted to '-' during mol2 file loading,
+            # see auxiliary.MoleculeLoader
             if any([i < 0 for i in firsts.res_id]):
                 indices_to_be_dropped.append(index)
                 logger.info(f"Contains underscored residue(s): {row.filepath}")
@@ -691,9 +700,10 @@ class KlifsMetadataFilter:
 
     def _get_existing_important_klifs_regions(self):
         """
-        Get all KLIFS metadata that have no X residue (modified residue) at important KLIFS position.
-        Important KLIFS positions are xDFG (DFG-motif plus one preceding amino acid residue), GK (gatekeeper), hinge
-        (hinge region), and g.l (G-rich loop).
+        Get all KLIFS metadata that have no X residue (modified residue) at important KLIFS
+        position.
+        Important KLIFS positions are xDFG (DFG-motif plus one preceding amino acid residue),
+        GK (gatekeeper), hinge (hinge region), and g.l (G-rich loop).
         """
 
         # Get important KLIFS
@@ -720,7 +730,7 @@ class KlifsMetadataFilter:
                 if shared_residues:
                     indices_to_be_dropped.append(index)
                     logger.info(
-                        f"Contains modified residue (X) at important KLIFS position: {row.filepath}"
+                        f"Contains modified residue (X) at important KLIFS position:{row.filepath}"
                     )
 
         klifs_metadata.drop(indices_to_be_dropped, inplace=True)
@@ -739,7 +749,8 @@ class KlifsMetadataFilter:
 
     def _get_unique_kinase_pdbid_pair(self):
         """
-        Filter KLIFS dataset by keeping only the KLIFS entry per kinase-PDB ID combination with the best quality score.
+        Filter KLIFS dataset by keeping only the KLIFS entry per kinase-PDB ID combination with
+        the best quality score.
         """
 
         klifs_metadata = self.filtered.copy()
@@ -769,8 +780,8 @@ class KlifsMetadataFilter:
 
 class Mol2FormatScreener:
     """
-    Screen all structures for irregular residues, i.e. underscored residues, non-standard residues, and residues
-    with duplicated atom names.
+    Screen all structures for irregular residues, i.e. underscored residues, non-standard residues,
+    and residues with duplicated atom names.
 
     Attributes
     ----------
@@ -965,7 +976,8 @@ class Mol2FormatScreener:
 
 class Mol2KlifsToPymolConverter:
     """
-    Convert KLIFS mol2 files to PyMol readable mol2 files, i.e. replace underscored with negative residue IDs.
+    Convert KLIFS mol2 files to PyMol readable mol2 files, i.e. replace underscored with negative
+    residue IDs.
 
     Attributes
     ----------
@@ -982,7 +994,8 @@ class Mol2KlifsToPymolConverter:
 
     def from_metadata(self, klifs_metadata, path_klifs_download):
         """
-        Convert KLIFS mol2 files to PyMol readable mol2 files, e.g. replace underscored with negative residue IDs.
+        Convert KLIFS mol2 files to PyMol readable mol2 files, e.g. replace underscored with
+        negative residue IDs.
 
         Parameters
         ----------
@@ -1058,7 +1071,8 @@ class Mol2KlifsToPymolConverter:
     @staticmethod
     def _convert_mol2(lines_mol2, filepath=None):
         """
-        Convert KLIFS mol2 file to PyMol readable mol2 file, i.e. replace underscored with negative residue IDs.
+        Convert KLIFS mol2 file to PyMol readable mol2 file, i.e. replace underscored with
+        negative residue IDs.
 
         Parameters
         ----------
@@ -1070,7 +1084,8 @@ class Mol2KlifsToPymolConverter:
         Returns
         -------
         tuple of list of str and pandas.DataFrame
-            New lines (original and converted) from KLIFS mol2 file, and converted lines for reporting purposes.
+            New lines (original and converted) from KLIFS mol2 file, and converted lines for
+            reporting purposes.
         """
 
         headers = {
@@ -1089,7 +1104,8 @@ class Mol2KlifsToPymolConverter:
         # KLIFS mol2 file have 4 sections: MOLECULE, ATOM, BOND, SUBSTRUCTURE
         for line in lines_mol2:
 
-            # Set flag to sections that have been visited, lasted True flag is currently visited section
+            # Set flag to sections that have been visited, lasted True flag is currently
+            # visited section
             if line.startswith("@<TRIPOS>MOLECULE"):
                 headers["@<TRIPOS>MOLECULE"] = True
 
@@ -1231,7 +1247,7 @@ class Mol2KlifsToPymolConverter:
                                         "SUBSTRUCTURE_residue_underscored_chain_irregular",
                                         line,
                                         line_new,
-                                        "SUBSTRUCTURE section: Underscored residue and irregular chain ID",
+                                        "SUBSTRUCTURE section: Irregular chain ID",
                                     ]
                                 ],
                                 columns=["path_mol2", "conversion", "line", "line_new", "details"],
@@ -1263,8 +1279,8 @@ class Mol2ToPdbConverter:
     Attributes
     ----------
     inconsistent_conversions : pandas.DataFrame
-        Inconsistencies between mol2 and pdb file, i.e. unequal number of atoms, unequal coordinates,
-        differing residue IDs/names.
+        Inconsistencies between mol2 and pdb file, i.e. unequal number of atoms, unequal
+        coordinates, differing residue IDs/names.
     """
 
     def __init__(self):
@@ -1333,7 +1349,8 @@ class Mol2ToPdbConverter:
             Path to mol2 file.
         path_pdb : None or pathlib.Path or str
             Path to pdb file (= converted mol2 file). Directory must exist.
-            Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
+            Default is None - saves pdb file next to the mol2 file in same directory with the
+            same filename.
         """
 
         # Set mol2 path
@@ -1571,14 +1588,15 @@ class Mol2ToPdbConverter:
     @staticmethod
     def _set_path_pdb(path_mol2, path_pdb):
         """
-        Test if input directory for pdb file exists and has a pdb suffix - and if so, return to be set as class
-        attribute.
+        Test if input directory for pdb file exists and has a pdb suffix - and if so, return to
+        be set as class attribute.
 
         Parameters
         ----------
         path_pdb : None or pathlib.Path or str
             Path to pdb file (= converted mol2 file). Directory must exist.
-            Default is None - saves pdb file next to the mol2 file in same directory with the same filename.
+            Default is None - saves pdb file next to the mol2 file in same directory with the
+            same filename.
 
         Returns
         -------
@@ -1586,7 +1604,8 @@ class Mol2ToPdbConverter:
             Path to pdb file (= converted mol2 file).
         """
 
-        # If mol2 path is not set, do not continue to set pdb path (otherwise we cannot convert mol2 to pdb)
+        # If mol2 path is not set, do not continue to set pdb path
+        # (otherwise we cannot convert mol2 to pdb)
         if path_mol2 is None:
             raise ValueError(f"Set mol2 path (class attribute) first.")
 

@@ -62,7 +62,8 @@ class TestsPharmacophoreSizeFeatures:
     )
     def test_from_residue(self, residue_name, feature_name, feature):
         """
-        Test function for retrieval of residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
+        Test function for retrieval of residue's size and pharmacophoric features
+        (i.e. number of hydrogen bond donor,
         hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
 
         Parameters
@@ -330,7 +331,8 @@ class TestsExposureFeature:
         missing_exposure,
     ):
         """
-        Test KLIFS ID subset of molecule exposure values and correct selection of HSExposureCB and HSExposureCA values as
+        Test KLIFS ID subset of molecule exposure values and correct selection of HSExposureCB and
+        HSExposureCA values as
         final exposure value (use CB, but if not available use CA).
 
         Parameters
@@ -901,7 +903,8 @@ class TestsSideChainOrientationFeature:
         self, path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean
     ):
         """
-        Test if vertex angles are calculated correctly (check mean angle), and if returned DataFrame contains correct column
+        Test if vertex angles are calculated correctly (check mean angle), and if returned
+        DataFrame contains correct column
         name.
 
         Parameters
@@ -1000,11 +1003,11 @@ class TestsSideChainOrientationFeature:
         Parameters
         ----------
         vertex_angle : float
-            Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket centroid. Ranges between
-            0.0 and 180.0.
+            Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket
+            centroid. Ranges between 0.0 and 180.0.
         category : float
-            Side chain orientation towards pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards
-            (category 2.0).
+            Side chain orientation towards pocket:
+            Inwards (category 0.0), intermediate (category 1.0), and outwards (category 2.0).
         """
 
         feature = SideChainOrientationFeature()
@@ -1029,7 +1032,8 @@ class TestsSideChainOrientationFeature:
     )
     def test_from_molecule(self, path_klifs_metadata, path_mol2, path_pdb, chain_id):
         """
-        Test if SideChainOrientation attributes features and features_verbose contain the correct column names.
+        Test if SideChainOrientation attributes features and features_verbose contain the correct
+        column names.
         Values are tested already in other test_sidechainorientation_* unit tests.
 
         Parameters
@@ -1054,7 +1058,16 @@ class TestsSideChainOrientationFeature:
 
         # Check column names
         features_columns = ["sco"]
-        features_verbose_columns = "klifs_id res_id res_name ca side_chain_centroid pocket_centroid vertex_angle sco".split()
+        features_verbose_columns = [
+            "klifs_id",
+            "res_id",
+            "res_name",
+            "ca",
+            "side_chain_centroid",
+            "pocket_centroid",
+            "vertex_angle",
+            "sco",
+        ]
 
         # Test column names
         assert list(feature.features.columns) == features_columns
@@ -1190,7 +1203,8 @@ class TestsSpatialFeatures:
         x_coordinate,
     ):
         """
-        Test function that calculates the anchor atoms for different scenarios (missing anchor residues, missing neighbors)
+        Test function that calculates the anchor atoms for different scenarios
+        (missing anchor residues, missing neighbors)
 
         Parameters
         ----------
@@ -1298,8 +1312,8 @@ class TestsFingerprint:
     )
     def test_from_molecule(self, path_klifs_metadata, path_mol2, path_pdb, chain_id):
         """
-        Test if Fingerprint class attributes (accessed via property function) have correct DataFrame shape, column and
-        index names.
+        Test if Fingerprint class attributes (accessed via property function) have correct
+        DataFrame shape, column and index names.
 
         Parameters
         ----------
@@ -1629,9 +1643,11 @@ class TestsFingerprint:
         value : float or int
                 Value to be normalized.
         minimum : float or int
-            Minimum value for normalization, values equal or greater than this minimum are set to 0.0.
+            Minimum value for normalization, values equal or greater than this minimum are set
+            to 0.0.
         maximum : float or int
-            Maximum value for normalization, values equal or greater than this maximum are set to 1.0.
+            Maximum value for normalization, values equal or greater than this maximum are set
+            to 1.0.
         value_normalized : float
             Normalized value.
         """

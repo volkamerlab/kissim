@@ -210,7 +210,8 @@ class FeatureDistributions:
     @staticmethod
     def _get_features_by_type(fingerprints, features_type):
         """
-        Get fingerprint features by feature type and return with updated columns/indices suitable as plot label names.
+        Get fingerprint features by feature type and return with updated columns/indices suitable
+        as plot label names.
 
         Parameters
         ----------

@@ -16,18 +16,66 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
 AMINO_ACIDS = pd.DataFrame(
     [
-        "ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET MSE PHE PRO SER THR TRP TYR VAL _".split(),
-        "A R N D C Q E G H I L K M X F P S T W Y V _".split(),
+        [
+            "ALA",
+            "ARG",
+            "ASN",
+            "ASP",
+            "CYS",
+            "GLN",
+            "GLU",
+            "GLY",
+            "HIS",
+            "ILE",
+            "LEU",
+            "LYS",
+            "MET",
+            "MSE",
+            "PHE",
+            "PRO",
+            "SER",
+            "THR",
+            "TRP",
+            "TYR",
+            "VAL",
+            "_",
+        ],
+        [
+            "A",
+            "R",
+            "N",
+            "D",
+            "C",
+            "Q",
+            "E",
+            "G",
+            "H",
+            "I",
+            "L",
+            "K",
+            "M",
+            "X",
+            "F",
+            "P",
+            "S",
+            "T",
+            "W",
+            "Y",
+            "V",
+            "_",
+        ],
     ],
-    index="aa_three aa_one".split(),
+    index=["aa_three", "aa_one"],
 ).transpose()
 
 
 class MoleculeLoader:
     """
-    Class used to load molecule data from mol2 and pdb files in the form of unified BioPandas objects.
+    Class used to load molecule data from mol2 and pdb files in the form of unified BioPandas
+    objects.
 
     Attributes
     ----------
@@ -55,7 +103,8 @@ class MoleculeLoader:
         Returns
         -------
         list of biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            List of BioPandas objects containing metadata and structural data of molecule(s) in mol2 file.
+            List of BioPandas objects containing metadata and structural data of molecule(s) in
+            mol2 file.
         """
 
         if self.molecule_path.exists():
@@ -71,7 +120,8 @@ class MoleculeLoader:
             molecules = self._load_mol2(self.remove_solvent)
         else:
             raise IOError(
-                f"Unsupported file format {self.molecule_path.suffix}, only pdb and mol2 are supported."
+                f"Unsupported file format {self.molecule_path.suffix}, "
+                f"only pdb and mol2 are supported."
             )
 
         return molecules
@@ -88,7 +138,8 @@ class MoleculeLoader:
         Returns
         -------
         list of biopandas.mol2.pandas_mol2.PandasMol2
-            List of BioPandas objects containing metadata and structural data of molecule(s) in mol2 file.
+            List of BioPandas objects containing metadata and structural data of molecule(s) in
+            mol2 file.
         """
 
         # In case of multiple entries in one mol2 file, include iteration step
@@ -142,13 +193,14 @@ class MoleculeLoader:
 
                 # Some subst_name entries in the KLIFs mol2 files contain underscores.
                 # Examples
-                # - 5YKS: Residues on the N-terminus of (before) the first amino acid, i.e. 3C protease cutting site
+                # - 5YKS: Residues on the N-terminus of (before) the first amino acid,
+                #   i.e. 3C protease cutting site
                 # - 2J5E: Mutated residue (CYO_797)
                 # Convert these underscores into a minus sign (so that it can still be cast to int)
                 subst_name = subst_name.replace("_", "-")
 
-                # Some subst_name entries in the KLIFS mol2 files (in accordance with the original PDB files)
-                # contain a letter after the residue ID
+                # Some subst_name entries in the KLIFS mol2 files (in accordance with the original
+                # PDB files) contain a letter after the residue ID
                 # Examples
                 # - 3HLL: Irregular residue ID (56A, 93B)
                 # Remove letter from end of string
@@ -207,7 +259,8 @@ class MoleculeLoader:
         Returns
         -------
         list of biopandas.pdb.pandas_pdb.PandasPdb
-            List of BioPandas objects containing metadata and structural data of molecule(s) in pdb file.
+            List of BioPandas objects containing metadata and structural data of molecule(s) in
+            pdb file.
         """
 
         molecule = PandasPdb().read_pdb(
@@ -292,8 +345,8 @@ class KlifsMoleculeLoader:
         Get molecule including KLIFS position IDs from a mol2 file path.
 
         This molecule has the form of a biopandas object, containing (i) the molecule code and
-        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns), including
-        KLIFS position IDs from the KLIFS metadata as additional property (column).
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns),
+        including KLIFS position IDs from the KLIFS metadata as additional property (column).
 
         Parameters
         ----------
@@ -316,8 +369,8 @@ class KlifsMoleculeLoader:
         Get molecule including KLIFS position IDs from a KLIFS metadata entry.
 
         This molecule has the form of a biopandas object, containing (i) the molecule code and
-        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns), including
-        KLIFS position IDs from the KLIFS metadata as additional property (column).
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns),
+        including KLIFS position IDs from the KLIFS metadata as additional property (column).
 
         Parameters
         ----------
@@ -337,8 +390,9 @@ class KlifsMoleculeLoader:
 
     def _load_molecule(self, klifs_metadata_entry, path_pocket_mol2):
         """
-        Load molecule from mol2 file in the form of a biopandas object, containing (i) the molecule code and
-        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns).
+        Load molecule from mol2 file in the form of a biopandas object, containing
+        (i) the molecule code and
+        (ii) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns).
         Add KLIFS position IDs from the KLIFS metadata as additional property (column).
 
         Parameters
@@ -435,7 +489,8 @@ class KlifsMoleculeLoader:
 
         if len(klifs_metadata_entry) != 1:
             raise ValueError(
-                f"Unvalid number of entries ({len(klifs_metadata_entry)}) in metadata for file: {path_pocket_mol2}"
+                f"Unvalid number of entries ({len(klifs_metadata_entry)}) in metadata for file: "
+                f"{path_pocket_mol2}"
             )
 
         # Squeeze casts one row DataFrame to Series
@@ -597,8 +652,8 @@ def get_amino_acids_3to1(three_letter_amino_acid):
 
 def split_klifs_code(klifs_code):
     """
-    Split KLIFS molecule code into its components, i.e. species name, kinase group name, PDB ID, alternate model ID,
-    and chain ID.
+    Split KLIFS molecule code into its components, i.e. species name, kinase group name, PDB ID,
+    alternate model ID, and chain ID.
 
     Parameters
     ----------
@@ -609,7 +664,8 @@ def split_klifs_code(klifs_code):
     Returns
     -------
     list of str
-        KLIFS molecule code components: species name, kinase name, PDB ID, alternate model ID, and chain ID.
+        KLIFS molecule code components: species name, kinase name, PDB ID, alternate model ID, and
+        chain ID.
     """
 
     code = klifs_code.replace("/", "_").split("_")
@@ -668,7 +724,8 @@ def get_klifs_residues_mol2topdb(molecule):
     residue_ids = [int(i) for i in molecule.df.res_id.unique()]
 
     # Load PDB file and get residues
-    path_pdb = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
+    # TBA = home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download??? TODO
+    path_pdb = f'/TBA/{code["pdb_id"]}.cif'  # TODO!!!!!!!!!!!!!!
 
     if not Path(path_pdb).exists():
         raise IOError(f"PDB file does not exist: {path_pdb}")
@@ -696,7 +753,8 @@ def center_of_mass(entity, geometric=False):
     ----------
     entity : Bio.PDB.Entity.Entity or list of Bio.PDB.Atom.Atom
         Contains atoms for which the center of mass / centroid needs to be calculated:
-        a) Basic container object for PDB heirachy. Structure, Model, Chain and Residue are subclasses of Entity.
+        a) Basic container object for PDB heirachy. Structure, Model, Chain and Residue are
+           subclasses of Entity.
         b) List of container objects for atoms.
 
     geometric : bool
@@ -767,7 +825,8 @@ def get_aminoacids_by_molecularweight(path_to_results):
     References
     ----------
     Molecular weight is taken from:
-    https://www.sigmaaldrich.com/life-science/metabolomics/learning-center/amino-acid-reference-chart.html
+    https://www.sigmaaldrich.com/life-science/metabolomics/learning-center/
+    amino-acid-reference-chart.html
     """
 
     molecular_weight = pd.read_csv(path_to_results / "amino_acids_molecular_weight.csv")

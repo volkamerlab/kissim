@@ -36,9 +36,11 @@ class Preprocessing:
     Attributes
     ----------
     path_klifs_overview : str or pathlib.Path or None
-        Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+        Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+        metadata.
     path_klifs_export : str or pathlib.Path or None
-        Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+        Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+        structure-related metadata.
     path_klifs_download : pathlib.Path or str or None
         Path to directory of KLIFS dataset files.
     path_results : pathlib.Path or str or None
@@ -60,15 +62,17 @@ class Preprocessing:
         3. Convert KLIFS protein.mol files to PyMol readable protein_pymol.mol2 files
          (residues with underscores are transformed to residues with negative sign).
         4. Convert protein_pymol.mol2 file to protein_pymol.pdb file.
-        5. Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in), resolution
-        (<=4), KLIFS quality score (>=4) and existent/parsable mol2 and pdb files.
+        5. Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation
+        (in), resolution (<=4), KLIFS quality score (>=4) and existent/parsable mol2 and pdb files.
 
         Parameters
         ----------
         path_klifs_overview : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         path_klifs_export : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         path_klifs_download : pathlib.Path or str
             Path to directory of KLIFS dataset files.
         path_results : pathlib.Path or str
@@ -130,7 +134,8 @@ class Preprocessing:
 
     def _load_klifs_metadata(self):
         """
-        Load KLIFS metadata from metadata files and save KlifsMetadataLoader class object to results folder.
+        Load KLIFS metadata from metadata files and save KlifsMetadataLoader class object to
+        results folder.
         """
 
         klifs_metadata_loader = KlifsMetadataLoader()
@@ -140,8 +145,8 @@ class Preprocessing:
 
     def _screen_mol2_format(self, klifs_metadata_loader):
         """
-        Screen KLIFS protein mol2 file for irregular row formats and save Mol2FormatScreener class object to results
-        folder.
+        Screen KLIFS protein mol2 file for irregular row formats and save Mol2FormatScreener
+        class object to results folder.
 
         Parameters
         ----------
@@ -228,7 +233,8 @@ class Encoding:
 
     def execute(self, klifs_metadata_filter, path_klifs_download, path_results):
         """
-        Encode KLIFS dataset, i.e. generate fingerprints for each KLIFS entry in filtered KLIFS metadata.
+        Encode KLIFS dataset, i.e. generate fingerprints for each KLIFS entry in filtered
+        KLIFS metadata.
 
         Parameters
         ----------
@@ -285,8 +291,8 @@ class Similarity:
         self, fingerprint_generator, distance_measures, feature_weighting_schemes, path_results
     ):
         """
-        Calculate all-against-all feature and fingerprint distances for different distance measures and feature
-        weighting schemes.
+        Calculate all-against-all feature and fingerprint distances for different distance measures
+        and feature weighting schemes.
 
         Parameters
         ----------
@@ -295,7 +301,8 @@ class Similarity:
         distance_measures : dict of str
             Distance measures: Key is name for file name, value is name as implemented in package.
         feature_weighting_schemes : dict of (dict or None)
-            Feature weighting schemes: Key is name for file name, value is formatting as required for package.
+            Feature weighting schemes: Key is name for file name, value is formatting as required
+            for package.
         path_results : pathlib.Path or str
             Path to results folder.
         """
