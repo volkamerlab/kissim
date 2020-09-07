@@ -5,13 +5,6 @@ Subpocket-based structural fingerprint for kinase pocket comparison
 Handles the primary functions
 """
 
-"""
-kissim.py
-Subpocket-based structural fingerprint for kinase pocket comparison
-
-Handles the primary functions
-"""
-
 import logging
 from pathlib import Path
 import pickle
@@ -23,7 +16,7 @@ from kissim.preprocessing import (
     Mol2KlifsToPymolConverter,
     Mol2ToPdbConverter,
 )
-from kissim.encoding import FingerprintGenerator
+from kissim.encoding.api import FingerprintGenerator
 from kissim.similarity import FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 logger = logging.getLogger(__name__)
