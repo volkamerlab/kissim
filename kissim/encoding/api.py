@@ -10,11 +10,7 @@ import pandas as pd
 from scipy.special import cbrt
 from scipy.stats.stats import moment
 
-from .features import (
-    SideChainOrientationFeature,
-    SpatialFeatures,
-    PhysicoChemicalFeatures
-)
+from .features import SideChainOrientationFeature, SpatialFeatures, PhysicoChemicalFeatures
 from .definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
 from ..auxiliary import KlifsMoleculeLoader, PdbChainLoader
 
