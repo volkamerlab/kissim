@@ -13,6 +13,7 @@ dependencies:
     # Package dependencies
   - biopandas
   - biopython
+  - numpy
   - nglview
   - pmw
   - pymol
