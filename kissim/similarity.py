@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 
-from kissim.encoding import FEATURE_NAMES
+from kissim.encoding.definitions import FEATURE_NAMES
 
 logger = logging.getLogger(__name__)
 

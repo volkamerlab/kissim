@@ -11,17 +11,15 @@ import pandas as pd
 import pytest
 
 from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kissim.encoding import (
+from kissim.encoding.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS, FEATURE_NAMES
+from kissim.encoding.features import (
     PharmacophoreSizeFeatures,
     ExposureFeature,
     SideChainOrientationFeature,
     PhysicoChemicalFeatures,
     SpatialFeatures,
-    Fingerprint,
-    DISTANCE_CUTOFFS,
-    MOMENT_CUTOFFS,
-    FEATURE_NAMES,
 )
+from kissim.encoding.api import Fingerprint
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
