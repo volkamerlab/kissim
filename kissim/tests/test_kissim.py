@@ -3,8 +3,6 @@ Unit and regression test for the kissim package.
 """
 
 # Import package, test suite, and other packages as needed
-import kissim
-import pytest
 import sys
 
 
