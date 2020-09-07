@@ -2,8 +2,6 @@
 kissim.encoding.definitions TODO
 """
 
-from pathlib import Path
-
 import pandas as pd
 
 SIDE_CHAIN_REPRESENTATIVE = {
@@ -28,11 +26,7 @@ SIDE_CHAIN_REPRESENTATIVE = {
     "VAL": "CB",
 }
 
-SITEALIGN_FEATURES = pd.read_csv(
-    Path(__name__).parent / "kissim" / "data" / "sitealign_features.csv", index_col=0
-)
-
-SITEALIGN_FEATURES = pd.DataFrame(
+SITEALIGN_FEATURES = pd.DataFrame.from_dict(
     {
         "ALA": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
         "ARG": [3.0, 3.0, 0.0, 1.0, 0.0, 0.0],
@@ -55,6 +49,7 @@ SITEALIGN_FEATURES = pd.DataFrame(
         "TYR": [3.0, 1.0, 1.0, 0.0, 1.0, 0.0],
         "VAL": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
     },
+    orient="index",
     columns=["size", "hbd", "hba", "charge", "aromatic", "aliphatic"],
 )
 
