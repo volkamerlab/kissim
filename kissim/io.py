@@ -1,12 +1,12 @@
 """
 kissim.io
 
-Defines input/output classes used in kissim (TODO may be moved to opencadd.io?)
+Defines input/output classes used in kissim (TODO maybe move to opencadd.io?)
 """
 
 from pathlib import Path
 
-from Bio.PDB import Chain, Residue, Atom
+from Bio.PDB import Structure, Model, Chain, Residue, Atom
 from Bio.PDB.PDBExceptions import PDBConstructionException
 import numpy as np
 from opencadd.io import DataFrame
@@ -14,17 +14,15 @@ from opencadd.io import DataFrame
 from .schema import STANDARD_AMINO_ACIDS
 
 
-class BiopythonChain:
+class BiopythonStructure:
     """
-    Parse structural data into a BioPython object.
-
-    TODO Include Structure and Model objects?
+    Parse structural data into the BioPython Structure object (Bio.PDB.Structure.Structure).
     """
 
     @classmethod
     def from_file(cls, filepath):
         """
-        Load structures as DataFrame from file.
+        Load BioPython Structure object (Bio.PDB.Structure.Structure) from file.
 
         Parameters
         ----------
@@ -36,59 +34,77 @@ class BiopythonChain:
         format = filepath.suffix[1:]
 
         if format == "mol2":
-            chain = Mol2ToBiopythonChain.from_file(filepath)
+            structure = Mol2ToBiopythonStructure.from_file(filepath)
         else:
-            raise ValueError(f"The {format} format is not suppored or invalid.")
+            raise ValueError(f"The {format} format is not supported or invalid.")
 
-        return chain
+        return structure
 
 
-class Mol2ToBiopythonChain:
+class Mol2ToBiopythonStructure:
     """
-    Parse structural data into a BioPython object.
+    Parse structural data from mol2 file into the BioPython Structure object 
+    (Bio.PDB.Structure.Structure).
 
-    TODO Include Structure and Model objects?
+    Note: Mol2 files can only contain one molecule, i.e. one model and chain.
     """
 
     @classmethod
-    def from_file(cls, mol2_file):
+    def from_file(cls, mol2_file, structure_id="", model_id="", chain_id=""):
         """
-        Get Biopython Chain object from file.
+        Get Biopython Structure object (Bio.PDB.Structure.Structure) from mol2 file.
 
         Parameters
         ----------
         mol2_file : str or pathlib.Path
             Path to mol2 file.
+        structure_id : str
+            Structure ID (default " ").
+        model_id : str
+            Model ID (default " ").
+        chain_id : str
+            Chain ID (default "").
+
+        Returns
+        -------
+        Bio.PDB.Structure.Structure
+            Structure data.
         """
 
         dataframe = DataFrame.from_file(mol2_file)
         mol2_to_bpy = cls()
-        chain = mol2_to_bpy.from_dataframe(dataframe)
+        structure = mol2_to_bpy.from_dataframe(dataframe, structure_id, model_id, chain_id)
 
-        return chain
+        return structure
 
-    def from_dataframe(self, dataframe):
+    def from_dataframe(self, dataframe, structure_id="", model_id="", chain_id=""):
         """
-        Get Biopython Chain object from dataframe.
+        Get Biopython Structure object (Bio.PDB.Structure.Structure) from DataFrame.
 
         Parameters
         ----------
         dataframe : pandas.DataFrame
             Structural chain data.
+        structure_id : str
+            Structure ID (default " ").
+        model_id : str
+            Model ID (default " ").
+        chain_id : str
+            Chain ID (default "").
 
         Returns
         -------
-        Bio.PDB.Chain.Chain
-            Structural chain data as biopython chain.
+        Bio.PDB.Structure.Structure
+            Structure data.
         """
 
         # Format the input DataFrame (clean up residue PDB ID, add insertion code)
         dataframe = self._format_dataframe(dataframe)
 
         # Get chain
-        chain = self._chain(dataframe)
+        structure = self._structure(dataframe, structure_id, model_id, chain_id)
 
-        return chain
+        return structure
 
     @staticmethod
     def _format_dataframe(dataframe):
@@ -153,22 +169,74 @@ class Mol2ToBiopythonChain:
 
         return dataframe
 
-    def _chain(self, dataframe):
+    def _structure(self, dataframe, structure_id="", model_id="", chain_id=""):
         """
-        Get Biopython Chain object from DataFrame.
+        Get Biopython Structure object (Bio.PDB.Structure.Structure) from DataFrame.
 
         Parameters
         ----------
         dataframe : pandas.DataFrame
             Structural chain data.
+        structure_id : str
+            Structure ID (default " ").
+        model_id : str
+            Model ID (default " ").
+        chain_id : str
+            Chain ID (default "").
+
+        Returns
+        -------
+        Bio.PDB.Structure.Structure
+            Structure data.
+        """
+        
+        structure = Structure.Structure(id=structure_id)
+        model = self._model(dataframe, model_id, chain_id)
+        structure.add(model)
+        return structure
+
+    def _model(self, dataframe, model_id="", chain_id=""):
+        """
+        Get Biopython Model object (Bio.PDB.Model.Model) from DataFrame.
+
+        Parameters
+        ----------
+        dataframe : pandas.DataFrame
+            Structural chain data.
+        model_id : str
+            Model ID (default "").
+        chain_id : str
+            Chain ID (default "").
+
+        Returns
+        -------
+        Bio.PDB.Model.Model
+            Model data.
+        """
+        
+        model = Model.Model(id=model_id)
+        chain = self._chain(dataframe, chain_id)
+        model.add(chain)
+        return model
+
+    def _chain(self, dataframe, chain_id=""):
+        """
+        Get Biopython Chain object (Bio.PDB.Chain.Chain) from DataFrame.
+
+        Parameters
+        ----------
+        dataframe : pandas.DataFrame
+            Structural chain data.
+        chain_id : str
+            Chain ID (default "").
 
         Returns
         -------
         Bio.PDB.Chain.Chain
-            Structural chain data as biopython chain.
+            Chain data.
         """
 
-        chain = Chain.Chain(id="")
+        chain = Chain.Chain(id=chain_id)
         for (residue_pdb_id, residue_name, residue_insertion), residue_df in dataframe.groupby(
             ["residue.pdb_id", "residue.name", "residue.insertion"], sort=False
         ):
@@ -206,7 +274,7 @@ class Mol2ToBiopythonChain:
         Returns
         -------
         Bio.PDB.Residue.Residue
-            Structural residue data as Biopython residue.
+            Residue data.
         """
 
         # Set hetero atom flag
@@ -242,7 +310,7 @@ class Mol2ToBiopythonChain:
         Returns
         -------
         Bio.PDB.Atom.Atom
-            Structural atom data as Biopython atom.
+            Atom data.
         """
 
         atom = Atom.Atom(

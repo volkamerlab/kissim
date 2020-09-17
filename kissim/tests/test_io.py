@@ -8,39 +8,15 @@ import pytest
 import Bio
 import pandas as pd
 
-from kissim.io import BiopythonChain, Mol2ToBiopythonChain
+from kissim.io import BiopythonStructure, Mol2ToBiopythonStructure
 
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
 
-class TestBiopythonChain:
+class TestBiopythonStructure:
     """
-    Test BiopythonChain class.
-    """
-
-    @pytest.mark.parametrize(
-        "filepath",
-        [
-            PATH_TEST_DATA
-            / "KLIFS_download"
-            / "HUMAN"
-            / "AAK1"
-            / "4wsq_altA_chainA"
-            / "pocket.mol2"
-        ],
-    )
-    def test_from_file(self, filepath):
-
-        bpy = BiopythonChain()
-        chain = bpy.from_file(filepath)
-
-        assert isinstance(chain, Bio.PDB.Chain.Chain)
-
-
-class TestsMol2ToBiopythonChain:
-    """
-    Test Mol2ToBiopythonChain class.
+    Test BiopythonStructure class.
     """
 
     @pytest.mark.parametrize(
@@ -55,11 +31,48 @@ class TestsMol2ToBiopythonChain:
         ],
     )
     def test_from_file(self, filepath):
+        """
+        Test if Bio.PDB.Structure.Structure is set correctly. 
+        """
 
-        bpy = Mol2ToBiopythonChain()
-        chain = bpy.from_file(filepath)
+        bpy = BiopythonStructure()
+        structure = bpy.from_file(filepath)
+        assert isinstance(structure, Bio.PDB.Structure.Structure)
 
+
+class TestsMol2ToBiopythonStructure:
+    """
+    Test Mol2ToBiopythonStructure class.
+    """
+
+    @pytest.mark.parametrize(
+        "filepath",
+        [
+            PATH_TEST_DATA
+            / "KLIFS_download"
+            / "HUMAN"
+            / "AAK1"
+            / "4wsq_altA_chainA"
+            / "pocket.mol2"
+        ],
+    )
+    def test_from_file(self, filepath):
+        """
+        Test if Bio.PDB.Structure.Structure is set correctly. 
+        """
+
+        bpy = Mol2ToBiopythonStructure()
+        structure = bpy.from_file(filepath)
+
+        assert isinstance(structure, Bio.PDB.Structure.Structure)
+        model = structure[""]
+        assert isinstance(model, Bio.PDB.Model.Model)
+        chain = structure[""][""]
         assert isinstance(chain, Bio.PDB.Chain.Chain)
+        residue = [i for i in structure[""][""].get_residues()][0]
+        assert isinstance(residue, Bio.PDB.Residue.Residue)
+        atom = [i for i in structure[""][""].get_atoms()][0]
+        assert isinstance(atom, Bio.PDB.Atom.Atom)
 
     @pytest.mark.parametrize(
         "dataframe",
@@ -83,11 +96,14 @@ class TestsMol2ToBiopythonChain:
         ],
     )
     def test_from_dataframe(self, dataframe):
+        """
+        Test if Bio.PDB.Structure.Structure is set correctly. 
+        """
 
-        bpy = Mol2ToBiopythonChain()
-        chain = bpy.from_dataframe(dataframe)
+        bpy = Mol2ToBiopythonStructure()
+        structure = bpy.from_dataframe(dataframe)
 
-        assert isinstance(chain, Bio.PDB.Chain.Chain)
+        assert isinstance(structure, Bio.PDB.Structure.Structure)
 
     @pytest.mark.parametrize(
         "residue_pdb_ids, residue_pdb_ids_out, residue_insertions_out",
@@ -100,10 +116,13 @@ class TestsMol2ToBiopythonChain:
         ],
     )
     def test_format_dataframe(self, residue_pdb_ids, residue_pdb_ids_out, residue_insertions_out):
+        """
+        Test if the DataFrame created from the mol2 input file is formatted correctly.
+        """
 
         dataframe = pd.DataFrame([residue_pdb_ids], index=["residue.pdb_id"]).transpose()
 
-        bpy = Mol2ToBiopythonChain()
+        bpy = Mol2ToBiopythonStructure()
         dataframe = bpy._format_dataframe(dataframe)
 
         assert dataframe["residue.pdb_id"].to_list() == residue_pdb_ids_out
@@ -135,8 +154,11 @@ class TestsMol2ToBiopythonChain:
         ],
     )
     def test_chain(self, dataframe, residue_names, residue_pdb_ids):
+        """
+        Test if Bio.PDB.Chain.Chain is set correctly.
+        """
 
-        bpy = Mol2ToBiopythonChain()
+        bpy = Mol2ToBiopythonStructure()
         chain = bpy._chain(dataframe)
 
         assert isinstance(chain, Bio.PDB.Chain.Chain)
@@ -152,8 +174,11 @@ class TestsMol2ToBiopythonChain:
         ],
     )
     def test_residue(self, residue_name, residue_pdb_id, residue_insertion, residue_id):
+        """
+        Test if Bio.PDB.Residue.Residue is set correctly.
+        """
 
-        bpy = Mol2ToBiopythonChain()
+        bpy = Mol2ToBiopythonStructure()
         residue = bpy._residue(residue_name, residue_pdb_id, residue_insertion)
 
         assert isinstance(residue, Bio.PDB.Residue.Residue)
@@ -162,8 +187,11 @@ class TestsMol2ToBiopythonChain:
 
     @pytest.mark.parametrize("name, x, y, z", [("CA", 1, 2, 3)])
     def test_atom(self, name, x, y, z):
+        """
+        Test if Bio.PDB.Atom.Atom is set correctly.
+        """
 
-        bpy = Mol2ToBiopythonChain()
+        bpy = Mol2ToBiopythonStructure()
         atom = bpy._atom(name, x, y, z)
 
         assert isinstance(atom, Bio.PDB.Atom.Atom)
