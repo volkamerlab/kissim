@@ -15,11 +15,11 @@ dependencies:
   - biopython
   - numpy
   - nglview
-  - pmw
-  - pymol
   - scipy
   - matplotlib
   - seaborn
+  - jupyter
+  - jupyterlab
   # Testing
   - pytest
   - pytest-cov
@@ -28,4 +28,12 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - nbsphinx
+
+  # Remove when opencadd is conda-installable
+  - rdkit
+  - bravado
+  - tqdm
+
+  - pip:
+    - https://github.com/volkamerlab/opencadd/archive/add_io_klifs_subpockets.tar.gz
 
