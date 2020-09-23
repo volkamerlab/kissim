@@ -3,7 +3,6 @@ name: test
 channels:
   - conda-forge
   - defaults
-  - samoturk
 
 dependencies:
 
@@ -20,6 +19,7 @@ dependencies:
   - seaborn
   - jupyter
   - jupyterlab
+  - ipywidgets>=7.5
   # Testing
   - pytest
   - pytest-cov
