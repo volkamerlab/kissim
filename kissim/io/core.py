@@ -1,50 +1,45 @@
 """
-kissim.encoding.features.core
+kissim.io.core
+
+Defines a basic class for structural objects for this package.
 """
 
-from opencadd.io import DataFrame
 import pandas as pd
+from Bio.PDB.HSExposure import HSExposureCB
 
-from ...io import BiopythonChain
 
-
-class Structure:
+class Base:
     """
-    TODO
+    Class defining the base for structural objects for this package.
+
+    Attributes
+    ----------
+    dataframe : pandas.DataFrame
+        Structure as DataFrame.
+    _biopython : Bio.PDB.Structure.Structure
+        Structure as biopython Structure object.
+    _hse : dict of int: list [int, int, float]
+        Half-sphere exposure per residues as defined by biopython:
+        [TODO, TODO, TODO]
     """
 
-    def __init__(self):
-        """
-        TODO dataframe must be full protein.
-        """
-
-        self.dataframe = None
-        self.chain = None
-        self._hse_cb = None
-
-    def from_file(self, filepath):
-        """
-        TODO
-        """
-
-        dataframe = DataFrame.from_file(filepath)
-        chain = BiopythonChain.from_file(filepath)
+    def __init__(self, dataframe, biopython, hse):
 
         self.dataframe = dataframe
-        self.chain = chain
-        self.hse_cb = HSExposureCB(chain)
+        self._biopython = biopython
+        self._hse = hse
 
     @property
     def ca_atoms(self):
         """
-        TODO
+        Get CA atoms.
         """
 
         ca_atoms = []
         for residue_pdb_id, dataframe in self.dataframe.groupby("residue.pdb_id", sort=False):
             ca_atom = self.ca_atom(residue_pdb_id)
             ca_atoms.append(ca_atom)
-        ca_atoms = pd.concat(ca_atoms)
+        ca_atoms = pd.concat(ca_atoms).reset_index(drop=True)
 
         return ca_atoms
 
@@ -79,9 +74,9 @@ class Structure:
         TODO
         """
 
-        return self._hse_cb
+        return self._hse
 
-        def pcb_atom(self, residue, chain):
+    def pcb_atom(self, residue, chain):
         """
         Get pseudo-CB atom coordinate for non-GLY residue.
 
