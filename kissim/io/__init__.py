@@ -2,5 +2,8 @@
 kissim.io
 """
 
-from .complex import Complex
-from .pocket import Pocket
+from .dataframes.complex import ComplexDataframe
+from .dataframes.pocket import PocketDataframe
+
+from .biopython.complex import ComplexBiopython
+from .biopython.pocket import PocketBiopython
