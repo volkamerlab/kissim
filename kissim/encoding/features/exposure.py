@@ -4,7 +4,6 @@ kissim.encoding.features.exposure TODO
 
 import logging
 
-from Bio.PDB import HSExposureCA, HSExposureCB
 import numpy as np
 import pandas as pd
 
@@ -30,10 +29,11 @@ class ExposureFeature:
 
     def __init__(self):
 
+        self.residue_pdb_ids = None
         self.features = None
         self.features_verbose = None
 
-    def from_molecule(self, molecule, chain, radius=12.0):
+    def from_pocket_biopython(self, pocket, radius=12.0):
         """
         Get exposure for each residue of a molecule.
 
@@ -47,27 +47,17 @@ class ExposureFeature:
             Sphere radius to be used for half sphere exposure calculation.
         """
 
+        self.residue_pdb_ids = pocket.residue_pdb_ids
+
         # Get exposure data for all molecule's residues calculated based on
         # HSExposureCA and HSExposureCB
-        exposures_molecule = self.get_molecule_exposures(chain, radius)
-
-        # Get residues IDs belonging to KLIFS binding site
-        klifs_res_ids = molecule.df.groupby(by=["res_id", "klifs_id"], sort=False).groups.keys()
-        klifs_res_ids = pd.DataFrame(klifs_res_ids, columns=["res_id", "klifs_id"])
-        klifs_res_ids.set_index("res_id", inplace=True, drop=False)
-
-        # Keep only KLIFS residues
-        # i.e. remove non-KLIFS residues and add KLIFS residues that were skipped in exposure
-        # calculation
-        exposures = klifs_res_ids.join(exposures_molecule, how="left")
-
-        # Set index (from residue IDs) to KLIFS IDs
-        exposures.set_index("klifs_id", inplace=True, drop=True)
+        exposures = self.get_exposures(pocket, radius)
 
         # Add column with CB exposure values, but with CA exposure values if CB exposure values
         # are missing
         exposures["exposure"] = exposures.apply(
-            lambda row: row.ca_exposure if np.isnan(row.cb_exposure) else row.cb_exposure, axis=1
+            lambda row: row["ca.exposure"] if np.isnan(row["cb.exposure"]) else row["cb.exposure"],
+            axis=1,
         )
 
         self.features = pd.DataFrame(
@@ -75,7 +65,7 @@ class ExposureFeature:
         )
         self.features_verbose = exposures
 
-    def get_molecule_exposures(self, chain, radius=12.0):
+    def get_exposures(self, pocket, radius=12.0):
         """
         Get half sphere exposure calculation based on CB and CA atoms for full molecule.
 
@@ -95,8 +85,8 @@ class ExposureFeature:
         """
 
         # Calculate exposure values
-        exposures_cb = self.get_molecule_exposure_by_method(chain, radius, method="HSExposureCB")
-        exposures_ca = self.get_molecule_exposure_by_method(chain, radius, method="HSExposureCA")
+        exposures_cb = self.get_exposures_by_method(pocket, radius, method="HSExposureCB")
+        exposures_ca = self.get_exposures_by_method(pocket, radius, method="HSExposureCA")
 
         # Join both exposures calculations
         exposures_both = exposures_ca.join(exposures_cb, how="outer")
@@ -104,7 +94,7 @@ class ExposureFeature:
         return exposures_both
 
     @staticmethod
-    def get_molecule_exposure_by_method(chain, radius=12.0, method="HSExposureCB"):
+    def get_exposures_by_method(pocket, radius=12.0, method="HSExposureCB"):
         """
         Get exposure values for a given Half Sphere Exposure method,
         i.e. HSExposureCA or HSExposureCB.
@@ -125,21 +115,23 @@ class ExposureFeature:
             for each molecule residue (index: residue ID).
         """
 
-        methods = "HSExposureCB HSExposureCA".split()
+        methods = ["HSExposureCB", "HSExposureCA"]
 
         # Calculate exposure values
         if method == methods[0]:
-            exposures = HSExposureCB(chain, radius)
+            exposures = pocket._hse_cb
         elif method == methods[1]:
-            exposures = HSExposureCA(chain, radius)
+            exposures = pocket._hse_ca
         else:
             raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
 
+        # Select pocket residues only
+
         # Define column names
-        up = f"{method[-2:].lower()}_up"
-        down = f"{method[-2:].lower()}_down"
-        angle = f"{method[-2:].lower()}_angle_CB-CA-pCB"
-        exposure = f"{method[-2:].lower()}_exposure"
+        up = f"{method[-2:].lower()}.up"
+        down = f"{method[-2:].lower()}.down"
+        angle = f"{method[-2:].lower()}.angle_cb_ca_pcb"
+        exposure = f"{method[-2:].lower()}.exposure"
 
         # Transform into DataFrame
         exposures = pd.DataFrame(
