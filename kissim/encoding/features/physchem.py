@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from . import PharmacophoreSizeFeatures, SideChainOrientationFeature, ExposureFeature
+from . import SideChainOrientationFeature, ExposureFeature
 
 logger = logging.getLogger(__name__)
 
