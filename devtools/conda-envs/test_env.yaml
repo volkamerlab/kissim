@@ -1,11 +1,8 @@
 name: test
-
 channels:
   - conda-forge
   - defaults
-
 dependencies:
-
     # Base depends
   - python>=3.6
   - pip
@@ -20,6 +17,8 @@ dependencies:
   - jupyter
   - jupyterlab
   - ipywidgets>=7.5
+  # Tutorials
+  - jupyterlab
   # Testing
   - pytest
   - pytest-cov
@@ -28,12 +27,13 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - nbsphinx
-
   # Remove when opencadd is conda-installable
   - rdkit
   - bravado
   - tqdm
-
   - pip:
     - https://github.com/volkamerlab/opencadd/archive/add_io_klifs_subpockets.tar.gz
+## For Jupyter lab extensions, run:
+# conda install nodejs
+# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc
 
