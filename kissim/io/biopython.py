@@ -1,67 +1,58 @@
 """
-kissim.io.biopython.core
+kissim.io.biopython
 
-Defines a basic class for structural objects for this package.
+Defines a Biopython-based pocket class.
 """
 
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
-from opencadd.io import Biopython
-
-from ...definitions import SIDE_CHAIN_REPRESENTATIVE
 
 
-class StructureBiopython:
+from ..definitions import SIDE_CHAIN_REPRESENTATIVE
+from .core import Pocket
+
+
+class PocketBiopython(Pocket):
     """
     Class defining the base for structural objects for this package. TODO
     """
 
     def __init__(self):
 
-        self._data = None
-        self._residue_pdb_ids = None
+        self._data_complex = None
+        self._pocket_residue_ids = None
         self._hse_ca = None
         self._hse_cb = None
 
-    def from_file(self, filepath):
-        """TODO"""
-        raise NotImplementedError("Implement in your subclass!")
-
-    def from_structure_id(self, structure_id):
-        """TODO"""
-        raise NotImplementedError("Implement in your subclass!")
-
-    def _set_data(self, filepath):
+    @classmethod
+    def from_local(cls, local, structure_id):
         """TODO"""
 
-        data = Biopython.from_file(filepath)
-        self._data = data
+        return cls._from_backend(local, structure_id)
 
-    def _set_residue_pdb_ids(self, structure_id):
-        """TODO"""
-        raise NotImplementedError("Implement in your subclass!")
-
-    def _set_hse(self):
+    @classmethod
+    def from_remote(cls, remote, structure_id):
         """TODO"""
 
-        self._hse_ca = HSExposure.HSExposureCA(self._data)
-        self._hse_cb = HSExposure.HSExposureCB(self._data)
+        return cls._from_backend(remote, structure_id)
 
-    def _residue_from_residue_pdb_id(self, residue_pdb_id):
+    @classmethod
+    def _from_backend(cls, backend, structure_id):
         """TODO"""
 
-        residues = list(self._data.get_residues())
-        residue = [residue for residue in residues if residue.get_id()[1] == residue_pdb_id]
-
-        if len(residue) == 1:
-            return residue[0]
-        else:
-            raise KeyError(f"{len(residue)} residues were found, only 1 allowed.")
+        pocket = cls()
+        pocket._data_complex = pocket._get_biopython(backend, structure_id)
+        pocket._pocket_residue_ids = pocket._get_pocket_residue_ids(backend, structure_id)
+        # Cast residue IDs str > int (necessary for Biopython where they are int)
+        pocket._pocket_residue_ids = [int(i) for i in pocket._pocket_residue_ids]
+        pocket._hse_ca = HSExposure.HSExposureCA(pocket._data_complex)
+        pocket._hse_cb = HSExposure.HSExposureCB(pocket._data_complex)
+        return pocket
 
     @property
-    def residue_pdb_ids(self):
+    def residue_ids(self):
         """TODO"""
-        return self._residue_pdb_ids
+        return self._pocket_residue_ids
 
     @property
     def centroid(self):
@@ -80,10 +71,10 @@ class StructureBiopython:
         """TODO"""
 
         ca_atoms = []
-        for residue_pdb_id in self.residue_pdb_ids:
-            ca_atom = self.ca_atom(residue_pdb_id)
-            ca_atoms.append([residue_pdb_id, ca_atom])
-        ca_atoms = pd.DataFrame(ca_atoms, columns=["residue.pdb_id", "ca.atom"])
+        for residue_id in self.residue_ids:
+            ca_atom = self._ca_atom(residue_id)
+            ca_atoms.append([residue_id, ca_atom])
+        ca_atoms = pd.DataFrame(ca_atoms, columns=["residue.id", "ca.atom"])
 
         # Add vectors
         ca_atom_vectors = []
@@ -96,31 +87,52 @@ class StructureBiopython:
 
         return ca_atoms
 
-    def ca_atom(self, residue_pdb_id):
-        """TODO"""
-        residue = self._residue_from_residue_pdb_id(residue_pdb_id)
-        try:
-            return residue["CA"]
-        except KeyError:
-            return None
-
     @property
     def pcb_atoms(self):
         """TODO"""
 
         pcb_atoms = []
-        for residue_pdb_id in self.residue_pdb_ids:
-            pcb_atom = self.pcb_atom(residue_pdb_id)
-            pcb_atoms.append([residue_pdb_id, pcb_atom])
-        pcb_atoms = pd.DataFrame(pcb_atoms, columns=["residue.pdb_id", "pcb.vector"])
+        for residue_id in self.residue_ids:
+            pcb_atom = self._pcb_atom(residue_id)
+            pcb_atoms.append([residue_id, pcb_atom])
+        pcb_atoms = pd.DataFrame(pcb_atoms, columns=["residue.id", "pcb.vector"])
 
         return pcb_atoms
 
-    def pcb_atom(self, residue_pdb_id):
+    @property
+    def side_chain_representatives(self):
+        """TODO"""
+
+        sc_atoms = []
+        for residue_id in self.residue_ids:
+            sc_atom = self._side_chain_representative(residue_id)
+            sc_atoms.append([residue_id, sc_atom])
+        sc_atoms = pd.DataFrame(sc_atoms, columns=["residue.id", "sc.atom"])
+
+        # Add vectors
+        sc_atom_vectors = []
+        for sc_atom in sc_atoms["sc.atom"]:
+            try:
+                sc_atom_vectors.append(sc_atom.get_vector())
+            except AttributeError:
+                sc_atom_vectors.append(None)
+        sc_atoms["sc.vector"] = sc_atom_vectors
+
+        return sc_atoms
+
+    def _ca_atom(self, residue_id):
+        """TODO"""
+        residue = self._residue_from_residue_id(residue_id)
+        try:
+            return residue["CA"]
+        except KeyError:
+            return None
+
+    def _pcb_atom(self, residue_id):
         """TODO"""
 
         # Get biopython residue object
-        residue = self._residue_from_residue_pdb_id(residue_pdb_id)
+        residue = self._residue_from_residue_id(residue_id)
 
         # Get pCB atom
         if residue.get_resname() == "GLY":
@@ -140,15 +152,15 @@ class StructureBiopython:
     def _pcb_atom_from_non_gly(self, residue):
         """TODO"""
 
-        residue_pdb_id = residue.id[1]
+        residue_id = residue.id[1]
 
         if residue.get_resname() == "GLY":
             raise ValueError(f"Residue cannot be GLY.")
         else:
             # Get residue before and after input residue
             try:
-                residue_before = self._residue_from_residue_pdb_id(residue_pdb_id - 1)
-                residue_after = self._residue_from_residue_pdb_id(residue_pdb_id + 1)
+                residue_before = self._residue_from_residue_id(residue_id - 1)
+                residue_after = self._residue_from_residue_id(residue_id + 1)
             # If residue before or after do not exist, return None
             except KeyError:
                 return None
@@ -167,32 +179,11 @@ class StructureBiopython:
             pcb = self._hse_cb._get_gly_cb_vector(residue)
             return pcb
 
-    @property
-    def side_chain_representatives(self):
-        """TODO"""
-
-        sc_atoms = []
-        for residue_pdb_id in self.residue_pdb_ids:
-            sc_atom = self.side_chain_representative(residue_pdb_id)
-            sc_atoms.append([residue_pdb_id, sc_atom])
-        sc_atoms = pd.DataFrame(sc_atoms, columns=["residue.pdb_id", "sc.atom"])
-
-        # Add vectors
-        sc_atom_vectors = []
-        for sc_atom in sc_atoms["sc.atom"]:
-            try:
-                sc_atom_vectors.append(sc_atom.get_vector())
-            except AttributeError:
-                sc_atom_vectors.append(None)
-        sc_atoms["sc.vector"] = sc_atom_vectors
-
-        return sc_atoms
-
-    def side_chain_representative(self, residue_pdb_id):
+    def _side_chain_representative(self, residue_id):
         """TODO"""
 
         # Get biopython residue object
-        residue = self._residue_from_residue_pdb_id(residue_pdb_id)
+        residue = self._residue_from_residue_id(residue_id)
         residue_name = residue.get_resname()
 
         try:
@@ -201,6 +192,17 @@ class StructureBiopython:
             return atom
         except KeyError:
             return None
+
+    def _residue_from_residue_id(self, residue_id):
+        """TODO"""
+
+        residues = list(self._data_complex.get_residues())
+        residue = [residue for residue in residues if residue.get_id()[1] == residue_id]
+
+        if len(residue) == 1:
+            return residue[0]
+        else:
+            raise KeyError(f"{len(residue)} residues were found, but must be 1.")
 
     def center_of_mass(self, entity, geometric=False):
         """
