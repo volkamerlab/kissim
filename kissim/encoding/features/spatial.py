@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from ...auxiliary import KlifsMoleculeLoader
-from ..definitions import ANCHOR_RESIDUES, HINGE_KLIFS_IDS, DFG_KLIFS_IDS
+from ...definitions import ANCHOR_RESIDUES, HINGE_KLIFS_IDS, DFG_KLIFS_IDS
 
 logger = logging.getLogger(__name__)
 

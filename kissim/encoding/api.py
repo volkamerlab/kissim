@@ -11,7 +11,7 @@ from scipy.special import cbrt
 from scipy.stats.stats import moment
 
 from .features import SideChainOrientationFeature, SpatialFeatures, PhysicoChemicalFeatures
-from .definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
+from ..definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
 from ..auxiliary import KlifsMoleculeLoader, PdbChainLoader
 
 logger = logging.getLogger(__name__)
