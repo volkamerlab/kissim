@@ -32,14 +32,15 @@ class SideChainOrientationFeature:
 
     def __init__(self):
 
-        self.residue_pdb_ids = None
+        self.residue_ids = None
         self._categories = None
         self._vertex_angles = None
         self._centroid = None
         self._ca_atoms = None
         self._sc_atoms = None
 
-    def from_pocket_biopython(self, pocket):
+    @classmethod
+    def from_pocket_biopython(cls, pocket):
         """
         Get side chain orientation for each residue in a molecule (pocket).
         Side chain orientation of a residue is defined by the vertex angle formed by
@@ -54,37 +55,40 @@ class SideChainOrientationFeature:
             TODO
         """
 
-        self.residue_pdb_ids = pocket.residue_pdb_ids
+        feature = cls()
+        feature.residue_ids = pocket.residue_ids
 
-        centroid = self._get_centroid(pocket)
+        centroid = feature._get_centroid(pocket)
         ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
         sc_atoms = [
-            self._get_side_chain_representative(pocket, residue_pdb_id)
-            for residue_pdb_id in self.residue_pdb_ids
+            feature._get_side_chain_representative(pocket, residue_id)
+            for residue_id in feature.residue_ids
         ]
 
         vertex_angles = [
-            self._calculate_vertex_angle(sc_atom, ca_atom, centroid)
+            feature._calculate_vertex_angle(sc_atom, ca_atom, centroid)
             if all([sc_atom, ca_atom, centroid])
             else None
             for ca_atom, sc_atom in zip(ca_atoms, sc_atoms)
         ]
         categories = [
-            self._get_category(vertex_angle) if vertex_angle else None
+            feature._get_category(vertex_angle) if vertex_angle else None
             for vertex_angle in vertex_angles
         ]
 
-        self._categories = categories
-        self._vertex_angles = vertex_angles
-        self._centroid = centroid
-        self._ca_atoms = ca_atoms
-        self._sc_atoms = sc_atoms
+        feature._categories = categories
+        feature._vertex_angles = vertex_angles
+        feature._centroid = centroid
+        feature._ca_atoms = ca_atoms
+        feature._sc_atoms = sc_atoms
+
+        return feature
 
     @property
     def features(self):
         """TODO"""
 
-        features = pd.DataFrame(self._categories, columns=["sco"], index=self.residue_pdb_ids)
+        features = pd.DataFrame(self._categories, columns=["sco"], index=self.residue_ids)
 
         return features
 
@@ -99,21 +103,21 @@ class SideChainOrientationFeature:
                 "ca.vector": self._ca_atoms,
                 "sc.vector": self._sc_atoms,
             },
-            index=self.residue_pdb_ids,
+            index=self.residue_ids,
         )
         features["centroid"] = self._centroid
 
         return features
 
-    def _get_side_chain_representative(self, pocket, residue_pdb_id):
+    def _get_side_chain_representative(self, pocket, residue_id):
         """TODO"""
 
-        atom = pocket.side_chain_representative(residue_pdb_id)
+        atom = pocket._side_chain_representative(residue_id)
         if atom:
             vector = atom.get_vector()
             return vector
         else:
-            vector = pocket.pcb_atom(residue_pdb_id)
+            vector = pocket._pcb_atom(residue_id)
             return vector
 
         return vector

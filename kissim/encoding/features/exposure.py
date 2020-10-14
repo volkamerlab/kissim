@@ -1,5 +1,7 @@
 """
-kissim.encoding.features.exposure TODO
+kissim.encoding.features.exposure
+
+Defines exposure feature.
 """
 
 import logging
@@ -20,6 +22,7 @@ class ExposureFeature:
     ----------
     features : pandas.DataFrame
         1 feature (columns) for 85 residues (rows).
+    TODO
 
     References
     ----------
@@ -29,11 +32,12 @@ class ExposureFeature:
 
     def __init__(self):
 
-        self.residue_pdb_ids = None
+        self.residue_ids = None
         self.features = None
         self.features_verbose = None
 
-    def from_pocket_biopython(self, pocket, radius=12.0):
+    @classmethod
+    def from_pocket_biopython(cls, pocket, radius=12.0):
         """
         Get exposure for each residue of a molecule.
 
@@ -47,11 +51,13 @@ class ExposureFeature:
             Sphere radius to be used for half sphere exposure calculation.
         """
 
-        self.residue_pdb_ids = pocket.residue_pdb_ids
+        feature = cls()
+
+        feature.residue_ids = pocket.residue_ids
 
         # Get exposure data for all molecule's residues calculated based on
         # HSExposureCA and HSExposureCB
-        exposures = self.get_exposures(pocket, radius)
+        exposures = feature.get_exposures(pocket, radius)
 
         # Add column with CB exposure values, but with CA exposure values if CB exposure values
         # are missing
@@ -60,10 +66,12 @@ class ExposureFeature:
             axis=1,
         )
 
-        self.features = pd.DataFrame(
+        feature.features = pd.DataFrame(
             exposures.exposure, index=exposures.exposure.index, columns=["exposure"]
         )
-        self.features_verbose = exposures
+        feature.features_verbose = exposures
+
+        return feature
 
     def get_exposures(self, pocket, radius=12.0):
         """
