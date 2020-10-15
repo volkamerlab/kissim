@@ -1,5 +1,8 @@
 """
 kissim.encoding.feature.sitealign
+
+Defines the SiteAlign features: Size, hydrogen bond donor, hydrogen bond acceptors, charge, 
+aliphatic, and aromatic.
 """
 
 import logging
@@ -12,32 +15,92 @@ logger = logging.getLogger(__name__)
 
 
 class SiteAlignFeature:
-    """TODO"""
+    """
+    SiteAlign features for each residue: Size, hydrogen bond donors, hydrogen bond acceptors,
+    charge, alipathic, and aromatic features.
+
+    Attributes
+    ----------
+    _residue_ids : list of int
+        Residue IDs.
+    _values : dict (str: list of float)
+        Feature values (dict values) for different SiteAlign features (dict key).
+
+    References
+    ----------
+    Schalon et al., "A simple and fuzzy method to align and compare druggable ligand-binding
+    sites", Proteins, 71:1755-78 (2008).
+    """
 
     def __init__(self):
 
         self._residue_ids = None
-        self._features = None
+        self._values = {
+            "hba": None,
+            "hbd": None,
+            "size": None,
+            "charge": None,
+            "aliphatic": None,
+            "aromatic": None,
+        }
 
     @classmethod
-    def from_pocket_dataframe(cls, pocket, feature_name):
-        """TODO"""
+    def from_pocket_dataframe(cls, pocket):
+        """
+        Get SiteAlign features for each residue of a pocket.
+
+        Parameters
+        ----------
+        pocket : kissim.io.biopython.pocket.PocketDataFrame
+            DataFrame-based pocket object.
+
+        Returns
+        -------
+        kissim.encoding.features.SiteAlignFeature
+            SiteAlign features object.
+        """
 
         feature = cls()
-        pocket_residues = feature._pocket_to_values(pocket, feature_name)
-        feature._residue_ids = pocket_residues["residue.id"].to_list()
-        feature._features = pocket_residues["feature"].to_list()
+        feature._residue_ids = pocket.data["residue.id"].drop_duplicates().to_list()
+        for feature_name, values in feature._values.items():
+            values = feature._pocket_to_values(pocket, feature_name)
+            values = values["feature"].to_list()
+            feature._values[feature_name] = values
         return feature
 
     @property
     def features(self):
-        """TODO"""
+        """
+        SiteAlign features for pocket residues.
 
-        features = pd.DataFrame(self._features, columns=["feature"], index=self._residue_ids)
+        Returns
+        -------
+        pandas.DataFrame
+            SiteAlign features for pocket residues (index).
+        """
+
+        features = pd.DataFrame(self._values, index=self._residue_ids)
         return features
 
     def _pocket_to_values(self, pocket, feature_name):
-        """TODO"""
+        """
+        Get feature values for pocket residues by feature name.
+
+        Parameters
+        ----------
+        pocket : kissim.io.biopython.pocket.PocketDataFrame
+            DataFrame-based pocket object.
+        feature_name : str
+            Feature name.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Residues (rows) with the following columns:
+            - "residue.id": Residue ID
+            - "residue.name": Residue name
+            - "feature": Feature value
+        """
 
         pocket_residues = (
             pocket.data[["residue.id", "residue.name"]].drop_duplicates().reset_index(drop=True)
@@ -45,15 +108,11 @@ class SiteAlignFeature:
         pocket_residues["feature"] = pocket_residues.apply(
             lambda x: self._residue_to_value(x["residue.name"], feature_name), axis=1
         )
-
         return pocket_residues
 
     def _residue_to_value(self, residue_name, feature_name):
         """
-        Get feature value for residue's size and pharmacophoric features
-        (i.e. number of hydrogen  bond donor, hydrogen bond acceptors, charge features,
-        aromatic features or aliphatic features)
-        (according to SiteAlign feature encoding).
+        Get a feature value (by feature name) for a residue (by residue name).
 
         Parameters
         ----------
@@ -64,26 +123,30 @@ class SiteAlignFeature:
 
         Returns
         -------
-        int
-            Residue's size value according to SiteAlign feature encoding.
+        float
+            Feature value.
         """
 
         self.check_valid_feature_name(feature_name)
-
         try:
-
             feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
-
         except KeyError:
             residue_name = _convert_modified_residue(residue_name)
             if residue_name:
                 feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
             else:
                 feature_value = None
-
         return feature_value
 
     def check_valid_feature_name(self, feature_name):
+        """
+        Check if feature name is part of the SiteAlign feature definitions.
+
+        Parameters
+        ----------
+        residue_name : str
+            Three-letter code for residue.
+        """
 
         if feature_name not in SITEALIGN_FEATURES.columns:
             raise KeyError(
@@ -92,8 +155,19 @@ class SiteAlignFeature:
             )
 
     def _convert_modified_residue(self, residue_name):
+        """
+        Convert a non-standard residue in a standard residue if possible (if not return None).
 
-        # TODO check that input is not standard residue
+        Parameters
+        ----------
+        residue_name : str
+            Three-letter code for non-standard residue.
+
+        Returns
+        -------
+        str or None
+            Three-letter code for converted standard residue or None if conversion not possible.
+        """
 
         try:
             residue_name_new = MODIFIED_RESIDUE_CONVERSION[residue_name]
