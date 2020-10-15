@@ -1,5 +1,7 @@
 """
-kissim.encoding.features.sco TODO
+kissim.encoding.features.sco 
+
+Defines the side chain orientation feature.
 """
 
 import logging
@@ -23,16 +25,23 @@ class SideChainOrientationFeature:
 
     Attributes
     ----------
-    features : pandas.DataFrame
-        1 feature, i.e. side chain orientation, (column) for 85 residues (rows).
-    features_verbose : pandas.DataFrame
-        Feature, Ca, Cb, and centroid vectors as well as metadata information (columns)
-        for 85 residues (row).
+    _residue_ids : list of int
+        Residue IDs.
+    _categories : list of float or None
+        Pocket residues' side chain orientation categories.
+    _vertex_angles : list of float or None
+        Pocket residues' side chain orientation angles.
+    _centroid : Bio.PDB.Vector.Vector
+        Coordinates for the pocket's centroid.
+    _ca_atoms : list of Bio.PDB.Vector.Vector or None
+        Coordinates for the pocket residues' CA atoms.
+    _sc_atoms : list of Bio.PDB.Vector.Vector or None
+        Coordinates for the pocket residues' side chain representatives.
     """
 
     def __init__(self):
 
-        self.residue_ids = None
+        self._residue_ids = None
         self._categories = None
         self._vertex_angles = None
         self._centroid = None
@@ -42,7 +51,7 @@ class SideChainOrientationFeature:
     @classmethod
     def from_pocket_biopython(cls, pocket):
         """
-        Get side chain orientation for each residue in a molecule (pocket).
+        Get side chain orientation for each residue in a pocket.
         Side chain orientation of a residue is defined by the vertex angle formed by
         (i) the residue's CA atom,
         (ii) the residue's side chain centroid, and
@@ -52,17 +61,22 @@ class SideChainOrientationFeature:
         Parameters
         ----------
         pocket : kissim.io.biopython.pocket.PocketBiopython
-            TODO
+            Biopython-based pocket object.
+
+        Returns
+        -------
+        kissim.encoding.features.SideChainOrientationFeature
+            Side chain orientation feature object.
         """
 
         feature = cls()
-        feature.residue_ids = pocket.residue_ids
+        feature._residue_ids = pocket.residue_ids
 
         centroid = feature._get_centroid(pocket)
         ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
         sc_atoms = [
             feature._get_side_chain_representative(pocket, residue_id)
-            for residue_id in feature.residue_ids
+            for residue_id in feature._residue_ids
         ]
 
         vertex_angles = [
@@ -86,15 +100,32 @@ class SideChainOrientationFeature:
 
     @property
     def features(self):
-        """TODO"""
+        """
+        Side chain orientation features for pocket residues.
 
-        features = pd.DataFrame(self._categories, columns=["sco"], index=self.residue_ids)
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation features for pocket residues (index).
+        """
 
+        features = pd.DataFrame(self._categories, columns=["sco"], index=self._residue_ids)
         return features
 
     @property
     def features_verbose(self):
-        """TODO"""
+        """
+        Side chain orientation features for pocket residues (verbose).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation features for pocket residues (rows) with the following columns:
+            - "sco.category": Side chain orientation categories
+            - "sco.angle": Side chain orientation angles
+            - "ca.vector", "sc.vector", and "centroid": Coordinates used for the angle calculation,
+              i.e. the pocket centroid, pocket CA atoms, and pocket side chain representative.
+        """
 
         features = pd.DataFrame(
             {
@@ -103,14 +134,27 @@ class SideChainOrientationFeature:
                 "ca.vector": self._ca_atoms,
                 "sc.vector": self._sc_atoms,
             },
-            index=self.residue_ids,
+            index=self._residue_ids,
         )
         features["centroid"] = self._centroid
-
         return features
 
     def _get_side_chain_representative(self, pocket, residue_id):
-        """TODO"""
+        """
+        Get the side chain representative for a residue.
+
+        Parameters
+        ----------
+        pocket : kissim.io.biopython.pocket.PocketBiopython
+            Biopython-based pocket object.
+        residue_id : int
+            Residue ID.
+
+        Returns
+        -------
+        Bio.PDB.Vector.Vector or None
+            Coordinates for the residue's side chain representative.
+        """
 
         atom = pocket._side_chain_representative(residue_id)
         if atom:
@@ -123,7 +167,19 @@ class SideChainOrientationFeature:
         return vector
 
     def _get_centroid(self, pocket):
-        """TODO"""
+        """
+        Get the pocket's centroid (based on all pocket residues' CA atoms).
+
+        Parameters
+        ----------
+        pocket : kissim.io.biopython.pocket.PocketBiopython
+            Biopython-based pocket object.
+
+        Returns
+        -------
+        Bio.PDB.Vector.Vector
+            Coordinates for the pocket's centroid.
+        """
 
         vector = pocket.centroid
         return vector
@@ -131,6 +187,20 @@ class SideChainOrientationFeature:
     def _calculate_vertex_angle(self, vector1, vector2, vector3):
         """
         Calculate a vertex angle between three vectors (vertex = second vector).
+
+        Parameters
+        ----------
+        vector1 : Bio.PDB.Vector.Vector
+            Coordinates.
+        vector2 : Bio.PDB.Vector.Vector
+            Coordinates (defined as vertex of angle).
+        vector2 : Bio.PDB.Vector.Vector
+            Coordinates.
+
+        Returns
+        -------
+        float
+            Vertex angle between the three points.
         """
 
         vertex_angle = np.degrees(calc_angle(vector1, vector2, vector3))

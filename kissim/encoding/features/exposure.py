@@ -1,7 +1,7 @@
 """
 kissim.encoding.features.exposure
 
-Defines exposure feature.
+Defines the exposure feature.
 """
 
 import logging
@@ -20,67 +20,100 @@ class ExposureFeature:
 
     Attributes
     ----------
-    features : pandas.DataFrame
-        1 feature (columns) for 85 residues (rows).
-    TODO
+    _residue_ids : list of int
+        Residue IDs.
+    _ratio : list of float
+        Exposure values: Ratio of CA atoms in upper sphere / full sphere.
+    _ratio_ca : list of float
+        CA exposures: Ratio of CA atoms in upper sphere / full sphere (based on HSExposureCA).
+    _ratio_cb : list of float
+        CA exposures: Ratio of CA atoms in upper sphere / full sphere  (based on HSExposureCB).
 
     References
     ----------
-    Hamelryck, "An Amino Acid Has Two Sides: ANew 2D Measure Provides a Different View of Solvent
-    Exposure", PROTEINS: Structure, Function, and Bioinformatics 59:38–48 (2005).
+    Hamelryck, "An Amino Acid Has Two Sides: A New 2D Measure Provides a Different View of Solvent
+    Exposure", Proteins, 59:38–48 (2005).
     """
 
     def __init__(self):
 
-        self.residue_ids = None
-        self.features = None
-        self.features_verbose = None
+        self._residue_ids = None
+        self._ratio = None
+        self._ratio_ca = None
+        self._ratio_cb = None
 
     @classmethod
     def from_pocket_biopython(cls, pocket, radius=12.0):
         """
-        Get exposure for each residue of a molecule.
+        Get exposure for each residue of a pocket.
 
         Parameters
         ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
+        pocket : kissim.io.biopython.pocket.PocketBiopython
+            Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
+
+        Returns
+        -------
+        kissim.encoding.features.ExposureFeature
+            Exposure feature object.
         """
 
         feature = cls()
-
-        feature.residue_ids = pocket.residue_ids
-
-        # Get exposure data for all molecule's residues calculated based on
-        # HSExposureCA and HSExposureCB
-        exposures = feature.get_exposures(pocket, radius)
-
-        # Add column with CB exposure values, but with CA exposure values if CB exposure values
-        # are missing
-        exposures["exposure"] = exposures.apply(
-            lambda row: row["ca.exposure"] if np.isnan(row["cb.exposure"]) else row["cb.exposure"],
-            axis=1,
-        )
-
-        feature.features = pd.DataFrame(
-            exposures.exposure, index=exposures.exposure.index, columns=["exposure"]
-        )
-        feature.features_verbose = exposures
-
+        feature._residue_ids = pocket.residue_ids
+        exposures = feature._get_exposures(pocket, radius)
+        feature._ratio = exposures["exposure"].to_list()
+        feature._ratio_ca = exposures["ca.exposure"].to_list()
+        feature._ratio_cb = exposures["cb.exposure"].to_list()
         return feature
 
-    def get_exposures(self, pocket, radius=12.0):
+    @property
+    def features(self):
+        """
+        Exposure features for pocket residues.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Exposure for pocket residues (index).
+        """
+
+        features = pd.DataFrame(self._ratio, columns=["exposure"], index=self._residue_ids)
+        return features
+
+    @property
+    def features_verbose(self):
+        """
+        Exposure features for pocket residues (verbose).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Side chain orientation features for pocket residues (rows) with the following columns:
+            - "exposure": Exposure ratio
+            - "ca.exposure": Exposure ratio (based on HSExposureCA)
+            - "cb.exposure": Exposure ratio (based on HSExposureCB)
+        """
+
+        features = pd.DataFrame(
+            {
+                "exposure": self._ratio,
+                "ca.exposure": self._ratio_ca,
+                "cb.exposure": self._ratio_cb,
+            },
+            index=self._residue_ids,
+        )
+        return features
+
+    def _get_exposures(self, pocket, radius=12.0):
         """
         Get half sphere exposure calculation based on CB and CA atoms for full molecule.
 
         Parameters
         ----------
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
+        pocket : kissim.io.biopython.pocket.PocketBiopython
+            Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
 
@@ -89,28 +122,34 @@ class ExposureFeature:
         pandas.DataFrame
             Half sphere exposure data for both HSExposureCA and HSExposureCB calculation
             (columns for both methods each: up, down, angle CB-CA-pCB, and exposure ratio)
-            for each molecule residue (index: residue ID).
+            for each pocket residue (index: residue ID).
         """
 
         # Calculate exposure values
-        exposures_cb = self.get_exposures_by_method(pocket, radius, method="HSExposureCB")
-        exposures_ca = self.get_exposures_by_method(pocket, radius, method="HSExposureCA")
+        exposures_cb = self._get_exposures_by_method(pocket, radius, method="HSExposureCB")
+        exposures_ca = self._get_exposures_by_method(pocket, radius, method="HSExposureCA")
 
         # Join both exposures calculations
         exposures_both = exposures_ca.join(exposures_cb, how="outer")
 
+        # Select exposure value (CB values except CA values if CB is missing)
+        exposures_both["exposure"] = exposures_both.apply(
+            lambda row: row["ca.exposure"] if np.isnan(row["cb.exposure"]) else row["cb.exposure"],
+            axis=1,
+        )
+
         return exposures_both
 
     @staticmethod
-    def get_exposures_by_method(pocket, radius=12.0, method="HSExposureCB"):
+    def _get_exposures_by_method(pocket, radius=12.0, method="HSExposureCB"):
         """
         Get exposure values for a given Half Sphere Exposure method,
         i.e. HSExposureCA or HSExposureCB.
 
         Parameters
         ----------
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
+        pocket : kissim.io.biopython.pocket.PocketBiopython
+            Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
         method : str
@@ -127,9 +166,9 @@ class ExposureFeature:
 
         # Calculate exposure values
         if method == methods[0]:
-            exposures = pocket._hse_cb
+            exposures = pocket.hse_cb
         elif method == methods[1]:
-            exposures = pocket._hse_ca
+            exposures = pocket.hse_ca
         else:
             raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
 
@@ -142,9 +181,7 @@ class ExposureFeature:
         exposure = f"{method[-2:].lower()}.exposure"
 
         # Transform into DataFrame
-        exposures = pd.DataFrame(
-            exposures.property_dict, index=[up, down, angle], dtype=float
-        ).transpose()
+        exposures = pd.DataFrame(exposures, index=[up, down, angle], dtype=float).transpose()
         exposures.index = [i[1][1] for i in exposures.index]
 
         # Calculate exposure value: up / (up + down)
