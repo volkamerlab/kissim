@@ -1,23 +1,24 @@
 """
 kissim.encoding.feature.sitealign
 
-Defines the SiteAlign features: Size, hydrogen bond donor, hydrogen bond acceptors, charge, 
-aliphatic, and aromatic.
+Defines the SiteAlign features.
 """
 
 import logging
 
 import pandas as pd
 
-from ...definitions import MODIFIED_RESIDUE_CONVERSION, SITEALIGN_FEATURES
+from opencadd.databases.klifs import setup_remote
+from kissim.io import PocketDataframe
+from kissim.definitions import MODIFIED_RESIDUE_CONVERSION, SITEALIGN_FEATURES
 
 logger = logging.getLogger(__name__)
 
 
 class SiteAlignFeature:
     """
-    SiteAlign features for each residue: Size, hydrogen bond donors, hydrogen bond acceptors,
-    charge, alipathic, and aromatic features.
+    SiteAlign features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
+    residues.
 
     Attributes
     ----------
@@ -25,6 +26,12 @@ class SiteAlignFeature:
         Residue IDs.
     _values : dict (str: list of float)
         Feature values (dict values) for different SiteAlign features (dict key).
+
+    Notes
+    -----
+    SiteAlign features include size, hydrogen bond donors, hydrogen bond acceptors,
+    charge, alipathic, and aromatic features. Each residue is assigned to a category per SiteAlign
+    feature.
 
     References
     ----------
@@ -45,9 +52,31 @@ class SiteAlignFeature:
         }
 
     @classmethod
-    def from_pocket_dataframe(cls, pocket):
+    def from_structure_id(cls, structure_id):
         """
-        Get SiteAlign features for each residue of a pocket.
+        Get SiteAlign features for each pocket residue from a KLIFS structure ID.
+        TODO At the moment only remotely, in the future allow also locally.
+
+        Parameters
+        ----------
+        structure_id : int
+            KLIFS structure ID.
+
+        Returns
+        -------
+        kissim.encoding.features.SiteAlignFeature
+            SiteAlign features object.
+        """
+
+        remote = setup_remote()
+        pocket_dataframe = PocketDataframe.from_remote(remote, structure_id)
+        feature = cls.from_pocket(pocket_dataframe)
+        return feature
+
+    @classmethod
+    def from_pocket(cls, pocket):
+        """
+        Get SiteAlign features for each pocket residue.
 
         Parameters
         ----------

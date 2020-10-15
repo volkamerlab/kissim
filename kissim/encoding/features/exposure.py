@@ -9,14 +9,15 @@ import logging
 import numpy as np
 import pandas as pd
 
+from opencadd.databases.klifs import setup_remote
+from kissim.io import PocketBiopython
+
 logger = logging.getLogger(__name__)
 
 
 class ExposureFeature:
     """
     Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
-    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the
-    CA-CB vector divided by the all CA atoms (given a sphere radius).
 
     Attributes
     ----------
@@ -28,6 +29,11 @@ class ExposureFeature:
         CA exposures: Ratio of CA atoms in upper sphere / full sphere (based on HSExposureCA).
     _ratio_cb : list of float
         CA exposures: Ratio of CA atoms in upper sphere / full sphere  (based on HSExposureCB).
+
+    Notes
+    -----
+    Exposure of a residue describes the ratio of CA atoms in the upper sphere half around the
+    CA-CB vector divided by the all CA atoms (given a sphere radius).
 
     References
     ----------
@@ -43,9 +49,32 @@ class ExposureFeature:
         self._ratio_cb = None
 
     @classmethod
-    def from_pocket_biopython(cls, pocket, radius=12.0):
+    def from_structure_id(cls, structure_id):
         """
-        Get exposure for each residue of a pocket.
+        Get exposure for each pocket residue from a KLIFS structure ID.
+        TODO At the moment only remotely, in the future allow also locally.
+
+        Parameters
+        ----------
+        structure_id : int
+            KLIFS structure ID.
+
+        Returns
+        -------
+        kissim.encoding.features.ExposureFeature
+            Exposure feature object.
+        """
+
+        remote = setup_remote()
+        pocket_biopython = PocketBiopython.from_remote(remote, structure_id)
+        feature = cls.from_pocket(pocket_biopython)
+        return feature
+
+    @classmethod
+    def from_pocket(cls, pocket, radius=12.0):
+        """
+        Get exposure for each pocket residue from a Biopython-based pocket object.
+
 
         Parameters
         ----------

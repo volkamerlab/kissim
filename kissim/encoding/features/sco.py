@@ -10,6 +10,9 @@ import pandas as pd
 import numpy as np
 from Bio.PDB import calc_angle
 
+from opencadd.databases.klifs import setup_remote
+from kissim.io import PocketBiopython
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,11 +20,6 @@ class SideChainOrientationFeature:
     """
     Side chain orientation for each residue in the KLIFS-defined kinase binding site
     of 85 pre-aligned residues.
-    Side chain orientation of a residue is defined by the vertex angle formed by
-    (i) the residue's CA atom,
-    (ii) the residue's side chain centroid, and
-    (iii) the pocket centroid (calculated based on its CA atoms), whereby the CA atom forms the
-    vertex.
 
     Attributes
     ----------
@@ -37,6 +35,14 @@ class SideChainOrientationFeature:
         Coordinates for the pocket residues' CA atoms.
     _sc_atoms : list of Bio.PDB.Vector.Vector or None
         Coordinates for the pocket residues' side chain representatives.
+
+    Notes
+    -----
+    Side chain orientation of a residue is defined by the vertex angle formed by
+    (i) the residue's CA atom,
+    (ii) the residue's side chain centroid, and
+    (iii) the pocket centroid (calculated based on its CA atoms), whereby the CA atom forms the
+    vertex.
     """
 
     def __init__(self):
@@ -49,14 +55,31 @@ class SideChainOrientationFeature:
         self._sc_atoms = None
 
     @classmethod
-    def from_pocket_biopython(cls, pocket):
+    def from_structure_id(cls, structure_id):
         """
-        Get side chain orientation for each residue in a pocket.
-        Side chain orientation of a residue is defined by the vertex angle formed by
-        (i) the residue's CA atom,
-        (ii) the residue's side chain centroid, and
-        (iii) the pocket centroid (calculated based on its CA atoms), whereby the CA atom forms the
-        vertex.
+        Get side chain orientation for each pocket residue from a KLIFS structure ID.
+        TODO At the moment only remotely, in the future allow also locally.
+
+        Parameters
+        ----------
+        structure_id : int
+            KLIFS structure ID.
+
+        Returns
+        -------
+        kissim.encoding.features.SideChainOrientationFeature
+            Side chain orientation feature object.
+        """
+
+        remote = setup_remote()
+        pocket_biopython = PocketBiopython.from_remote(remote, structure_id)
+        feature = cls.from_pocket(pocket_biopython)
+        return feature
+
+    @classmethod
+    def from_pocket(cls, pocket):
+        """
+        Get side chain orientation for each pocket residue from a Biopython-based pocket object.
 
         Parameters
         ----------
@@ -67,6 +90,14 @@ class SideChainOrientationFeature:
         -------
         kissim.encoding.features.SideChainOrientationFeature
             Side chain orientation feature object.
+
+        Notes
+        -----
+        Side chain orientation of a residue is defined by the vertex angle formed by
+        (i) the residue's CA atom,
+        (ii) the residue's side chain centroid, and
+        (iii) the pocket centroid (calculated based on its CA atoms), whereby the CA atom forms the
+        vertex.
         """
 
         feature = cls()
