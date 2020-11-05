@@ -36,26 +36,6 @@ class PocketBiopython(Pocket):
         self._hse_cb_complex = None
 
     @classmethod
-    def from_local(cls, local, structure_id):
-        """
-        Get Biopython-based pocket object from a KLIFS structure ID (locally).
-
-        Parameters
-        ----------
-        local : opencadd.databases.klifs.session.Session
-            Local KLIFS session.
-        structure_id : int
-            KLIFS structure ID.
-
-        Returns
-        -------
-        kissim.io.dataframe.PocketDataframe
-            Biopython-based pocket object.
-        """
-
-        return cls._from_backend(local, structure_id)
-
-    @classmethod
     def from_remote(cls, remote, structure_id):
         """
         Get Biopython-based pocket object from a KLIFS structure ID (remotely).
