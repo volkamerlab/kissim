@@ -130,7 +130,7 @@ class Pocket:
             Pocket residues.
         """
 
-        pocket_residues = backend.pockets.by_structure_id(structure_id)
+        pocket_residues = backend.pockets.by_structure_klifs_id(structure_id)
         pocket_residue_ids = pocket_residues["residue.id"].to_list()
         pocket_residue_ids = [i for i in pocket_residue_ids if i != "_"]
         return pocket_residue_ids
