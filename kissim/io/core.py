@@ -15,16 +15,16 @@ class Pocket:
     """
 
     @classmethod
-    def from_local(cls, local, structure_id):
+    def from_local(cls, structure_id, local):
         """
         Get pocket object from a KLIFS structure ID (locally).
 
         Parameters
         ----------
-        local : opencadd.databases.klifs.session.Session
-            Local KLIFS session.
         structure_id : int
             KLIFS structure ID.
+        local : opencadd.databases.klifs.session.Session
+            Local KLIFS session.
 
         Returns
         -------
@@ -34,16 +34,16 @@ class Pocket:
         raise NotImplementedError("Implement in your subclass!")
 
     @classmethod
-    def from_remote(cls, remote, structure_id):
+    def from_remote(cls, structure_id, remote=None):
         """
         Get pocket object from a KLIFS structure ID (remotely).
 
         Parameters
         ----------
-        remote : opencadd.databases.klifs.session.Session
-            Local KLIFS session.
         structure_id : int
             KLIFS structure ID.
+        remote : None or opencadd.databases.klifs.session.Session
+            Remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------

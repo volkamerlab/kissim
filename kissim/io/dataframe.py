@@ -5,8 +5,8 @@ Defines a DataFrame-based pocket class.
 """
 
 import pandas as pd
+from opencadd.databases.klifs import setup_remote
 
-from opencadd.databases.klifs import setup_local, setup_remote
 from .core import Pocket
 
 
@@ -28,16 +28,16 @@ class PocketDataframe(Pocket):
         self._data_complex = None
 
     @classmethod
-    def from_remote(cls, remote, structure_id):
+    def from_remote(cls, structure_id, remote=None):
         """
         Get DataFrame-based pocket object from a KLIFS structure ID (remotely).
 
         Parameters
         ----------
-        local : opencadd.databases.klifs.session.Session
-            Remote KLIFS session.
         structure_id : int
             KLIFS structure ID.
+        remote : None or opencadd.databases.klifs.session.Session
+            Remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -45,6 +45,8 @@ class PocketDataframe(Pocket):
             DataFrame-based pocket object.
         """
 
+        if not remote:
+            remote = setup_remote()
         return cls._from_backend(remote, structure_id)
 
     @classmethod

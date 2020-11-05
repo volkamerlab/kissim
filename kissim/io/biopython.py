@@ -6,7 +6,7 @@ Defines a Biopython-based pocket class.
 
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
-
+from opencadd.databases.klifs import setup_remote
 
 from ..definitions import SIDE_CHAIN_REPRESENTATIVE
 from .core import Pocket
@@ -36,16 +36,16 @@ class PocketBiopython(Pocket):
         self._hse_cb_complex = None
 
     @classmethod
-    def from_remote(cls, remote, structure_id):
+    def from_remote(cls, structure_id, remote=None):
         """
         Get Biopython-based pocket object from a KLIFS structure ID (remotely).
 
         Parameters
         ----------
-        local : opencadd.databases.klifs.session.Session
-            Remote KLIFS session.
         structure_id : int
             KLIFS structure ID.
+        remote : None or opencadd.databases.klifs.session.Session
+            Remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -53,6 +53,8 @@ class PocketBiopython(Pocket):
             Biopython-based pocket object.
         """
 
+        if not remote:
+            remote = setup_remote()
         return cls._from_backend(remote, structure_id)
 
     @classmethod
