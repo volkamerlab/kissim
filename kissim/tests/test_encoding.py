@@ -11,7 +11,8 @@ import pandas as pd
 import pytest
 
 from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kissim.encoding.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS, FEATURE_NAMES
+from kissim.encoding.schema import FEATURE_NAMES
+from kissim.encoding.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
 from kissim.encoding.features import (
     PharmacophoreSizeFeatures,
     ExposureFeature,
