@@ -10,7 +10,7 @@ from opencadd.databases.klifs import setup_remote
 from .core import Pocket
 
 
-class PocketDataframe(Pocket):
+class PocketDataFrame(Pocket):
     """
     Class defining the DataFrame-based pocket object.
 
@@ -75,7 +75,7 @@ class PocketDataframe(Pocket):
     @property
     def data(self):
         """
-        Pocket atoms.
+        Pocket data.
 
         Returns
         -------
@@ -84,13 +84,25 @@ class PocketDataframe(Pocket):
             - "atom.id" and "atom.name": Atom ID and name
             - "atom.x", "atom.y", "atom.z": Atom x/y/z coordinates
             - "residue.id" and "residue.name": Residue ID and name
-            - "residue.klifs_ids": Residue KLIFS ID
+            - "residue.klifs_id": Residue KLIFS ID
             - "residue.klifs_region_id": Residue KLIFS region ID (e.g. xDFG.80)
             - "residue.klifs_region": Residue KLIFS region (e.g. xDFG)
             - "residue.klifs_color": Residue KLIFS color
         """
 
-        return self._data_complex[self._data_complex["residue.id"].isin(self._residue_ids)]
+        data_pocket = self._data_complex[self._data_complex["residue.id"].isin(self._residue_ids)]
+
+        # Check if number of residues correct?
+        n_residues_data = data_pocket["residue.id"].unique().shape[0]
+        n_residue_ids = len(self._residue_ids)
+        if not n_residues_data == n_residue_ids:
+            raise ValueError(
+                f"PocketDataFrame: "
+                f"Number of residues is unequal in the properties `data` ({n_residues_data}) "
+                f"and `residue_ids` ({n_residue_ids})"
+            )
+
+        return data_pocket
 
     @property
     def residue_ids(self):

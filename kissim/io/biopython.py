@@ -12,7 +12,7 @@ from ..definitions import SIDE_CHAIN_REPRESENTATIVE
 from .core import Pocket
 
 
-class PocketBiopython(Pocket):
+class PocketBioPython(Pocket):
     """
     Class defining the Biopython-based pocket object.
 
@@ -83,6 +83,13 @@ class PocketBiopython(Pocket):
         pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
         pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
         return pocket
+
+    @property
+    def data(self):
+        """
+        Pocket data.
+        """
+        raise NotImplementedError("Not implemented yet for PocketBioPython!")
 
     @property
     def residue_ids(self):

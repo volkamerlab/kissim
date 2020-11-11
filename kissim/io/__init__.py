@@ -2,5 +2,5 @@
 kissim.io
 """
 
-from .dataframe import PocketDataframe
-from .biopython import PocketBiopython
+from .dataframe import PocketDataFrame
+from .biopython import PocketBioPython
