@@ -11,7 +11,7 @@ import numpy as np
 from Bio.PDB import calc_angle
 
 from opencadd.databases.klifs import setup_remote
-from kissim.io import PocketBiopython
+from kissim.io import PocketBioPython
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class SideChainOrientationFeature:
         """
 
         remote = setup_remote()
-        pocket_biopython = PocketBiopython.from_remote(remote, structure_id)
+        pocket_biopython = PocketBioPython.from_remote(remote, structure_id)
         feature = cls.from_pocket(pocket_biopython)
         return feature
 
@@ -83,7 +83,7 @@ class SideChainOrientationFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBiopython
+        pocket : kissim.io.biopython.pocket.PocketBioPython
             Biopython-based pocket object.
 
         Returns
@@ -176,7 +176,7 @@ class SideChainOrientationFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBiopython
+        pocket : kissim.io.biopython.pocket.PocketBioPython
             Biopython-based pocket object.
         residue_id : int
             Residue ID.
@@ -203,7 +203,7 @@ class SideChainOrientationFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBiopython
+        pocket : kissim.io.biopython.pocket.PocketBioPython
             Biopython-based pocket object.
 
         Returns

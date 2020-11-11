@@ -9,7 +9,7 @@ import logging
 import pandas as pd
 
 from opencadd.databases.klifs import setup_remote
-from kissim.io import PocketDataframe
+from kissim.io import PocketDataFrame
 from kissim.definitions import MODIFIED_RESIDUE_CONVERSION, SITEALIGN_FEATURES
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class SiteAlignFeature:
         """
 
         remote = setup_remote()
-        pocket_dataframe = PocketDataframe.from_remote(remote, structure_id)
+        pocket_dataframe = PocketDataFrame.from_remote(remote, structure_id)
         feature = cls.from_pocket(pocket_dataframe)
         return feature
 

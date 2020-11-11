@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from opencadd.databases.klifs import setup_remote
-from kissim.io import PocketBiopython
+from kissim.io import PocketBioPython
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class ExposureFeature:
         """
 
         remote = setup_remote()
-        pocket_biopython = PocketBiopython.from_remote(remote, structure_id)
+        pocket_biopython = PocketBioPython.from_remote(remote, structure_id)
         feature = cls.from_pocket(pocket_biopython)
         return feature
 
@@ -78,7 +78,7 @@ class ExposureFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBiopython
+        pocket : kissim.io.biopython.pocket.PocketBioPython
             Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
@@ -141,7 +141,7 @@ class ExposureFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBiopython
+        pocket : kissim.io.biopython.pocket.PocketBioPython
             Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
@@ -177,7 +177,7 @@ class ExposureFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBiopython
+        pocket : kissim.io.biopython.pocket.PocketBioPython
             Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
