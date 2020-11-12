@@ -1,5 +1,5 @@
 """
-kissim.dataset.filter
+kissim.dataset.filters
 
 Defines filters for the KLIFS dataset.
 """

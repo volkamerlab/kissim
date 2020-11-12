@@ -1,5 +1,5 @@
 """
-kissim.dataset.explore
+kissim.dataset.explorer
 
 Explores the KLIFS dataset with common plotting functionalities.
 """
