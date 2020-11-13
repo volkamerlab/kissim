@@ -1,5 +1,7 @@
 """
-kissim.encoding.definitions TODO
+kissim.encoding.definitions 
+
+Handles kissim-specific definitions.
 """
 
 import pandas as pd
@@ -53,66 +55,7 @@ SITEALIGN_FEATURES = pd.DataFrame.from_dict(
     columns=["size", "hbd", "hba", "charge", "aromatic", "aliphatic"],
 )
 
-MODIFIED_RESIDUE_CONVERSION = {
-    "CAF": "CYS",
-    "CME": "CYS",
-    "CSS": "CYS",
-    "OCY": "CYS",
-    "KCX": "LYS",
-    "MSE": "MET",
-    "PHD": "ASP",
-    "PTR": "TYR",
-}
-
 EXPOSURE_RADIUS = 12.0
-
-N_HEAVY_ATOMS = {
-    "GLY": 0,
-    "ALA": 1,
-    "CYS": 2,
-    "SER": 2,
-    "PRO": 3,
-    "THR": 3,
-    "VAL": 3,
-    "ASN": 4,
-    "ASP": 4,
-    "ILE": 4,
-    "LEU": 4,
-    "MET": 4,
-    "GLN": 5,
-    "GLU": 5,
-    "LYS": 5,
-    "HIS": 6,
-    "ARG": 7,
-    "PHE": 7,
-    "TYR": 8,
-    "TRP": 10,
-}
-
-N_HEAVY_ATOMS_CUTOFF = (
-    {  # Number of heavy atoms needed for side chain centroid calculation (>75% coverage)
-        "GLY": 0,
-        "ALA": 1,
-        "CYS": 2,
-        "SER": 2,
-        "PRO": 3,
-        "THR": 3,
-        "VAL": 3,
-        "ASN": 3,
-        "ASP": 3,
-        "ILE": 3,
-        "LEU": 3,
-        "MET": 3,
-        "GLN": 4,
-        "GLU": 4,
-        "LYS": 4,
-        "HIS": 5,
-        "ARG": 6,
-        "PHE": 6,
-        "TYR": 6,
-        "TRP": 8,
-    }
-)
 
 ANCHOR_RESIDUES = {
     "hinge_region": [16, 47, 80],

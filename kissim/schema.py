@@ -1,5 +1,7 @@
 """
 kissim.schema
+
+Defines basic schema.
 """
 
 STANDARD_AMINO_ACIDS = [
@@ -24,3 +26,14 @@ STANDARD_AMINO_ACIDS = [
     "TYR",
     "VAL",
 ]
+
+NON_STANDARD_AMINO_ACID_CONVERSION = {
+    "CAF": "CYS",
+    "CME": "CYS",
+    "CSS": "CYS",
+    "OCY": "CYS",
+    "KCX": "LYS",
+    "MSE": "MET",
+    "PHD": "ASP",
+    "PTR": "TYR",
+}
