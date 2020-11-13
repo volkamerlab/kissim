@@ -119,6 +119,26 @@ class TestPocketBioPython:
             assert isinstance(ca_vector, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
+        "structure_id, remote, residue_id, ca_atom_mean",
+        [
+            (5399, REMOTE, 1272, 18.5630),  # Residue has CA
+            (5399, REMOTE, 1273, None),  # Residue has no CA
+        ],
+    )
+    def test_ca_atom(self, structure_id, remote, residue_id, ca_atom_mean):
+        """
+        Test if CA atom is retrieved correctly from a residue ID (test if-else cases).
+        """
+        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        ca_atom_calculated = pocket_bp._ca_atom(residue_id)
+        if ca_atom_mean:
+            assert isinstance(ca_atom_calculated, Bio.PDB.Atom.Atom)
+            ca_atom_mean_calculated = ca_atom_calculated.get_vector().get_array().mean()
+            assert ca_atom_mean == pytest.approx(ca_atom_mean_calculated)
+        else:
+            assert ca_atom_mean == ca_atom_calculated
+
+    @pytest.mark.parametrize(
         "structure_id, remote",
         [(12347, REMOTE)],
     )
@@ -133,6 +153,57 @@ class TestPocketBioPython:
         for pcb_vector in pocket_bp.pcb_atoms["pcb.vector"]:
             if pcb_vector is not None:
                 assert isinstance(pcb_vector, Bio.PDB.vectors.Vector)
+
+    @pytest.mark.parametrize(
+        "structure_id, remote, residue_id, pcb_atom_mean",
+        [(9122, REMOTE, 272, 0.706664)],  # GLY
+    )
+    def test_pcb_atom_from_gly(self, structure_id, remote, residue_id, pcb_atom_mean):
+        """
+        Test pseudo-CB calculation for GLY.
+        """
+        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        residue = pocket_bp._residue_from_residue_id(residue_id)
+        pcb_atom_calculated = pocket_bp._pcb_atom_from_gly(residue)
+        pcb_atom_mean_calculated = pcb_atom_calculated.get_array().mean()
+        assert pcb_atom_mean == pytest.approx(pcb_atom_mean_calculated)
+
+    @pytest.mark.parametrize(
+        "structure_id, remote, residue_id",
+        [
+            (9122, REMOTE, 337),  # ALA
+            (9122, REMOTE, 357),  # Non-standard residue
+        ],
+    )
+    def test_pcb_atom_from_gly_valueerror(self, structure_id, remote, residue_id):
+        """
+        Test exceptions in pseudo-CB calculation for GLY.
+        """
+        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        residue = pocket_bp._residue_from_residue_id(residue_id)
+        with pytest.raises(ValueError):
+            pocket_bp._pcb_atom_from_gly(residue)
+
+    @pytest.mark.parametrize(
+        "structure_id, remote, residue_id, pcb_atom",
+        [
+            (9122, REMOTE, 272, np.array([12.22, 8.37, 31.38])),  # GLY
+            (9122, REMOTE, 337, np.array([4.89, 12.19, 43.60])),  # Residue with +- residue
+            (9122, REMOTE, 19, None),  # Residue without + residue
+        ],
+    )
+    def test_pcb_atom(self, structure_id, remote, residue_id, pcb_atom):
+        """
+        Test pseudo-CB calculation for a residue.
+        """
+
+        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pcb_atom_calculated = pocket_bp._pcb_atom(residue_id)
+
+        if pcb_atom is None:
+            assert pcb_atom_calculated is None
+        else:
+            assert np.isclose(pcb_atom_calculated.get_array().mean(), pcb_atom.mean(), rtol=1e-04)
 
     @pytest.mark.parametrize(
         "structure_id, remote",
@@ -160,6 +231,30 @@ class TestPocketBioPython:
         for sc_vector in pocket_bp.side_chain_representatives["sc.vector"]:
             if sc_vector is not None:
                 assert isinstance(sc_vector, Bio.PDB.vectors.Vector)
+
+    @pytest.mark.parametrize(
+        "structure_id, remote, residue_id, sc_atom_mean",
+        [
+            (9122, REMOTE, 272, None),  # GLY
+            (9122, REMOTE, 337, 20.31),  # ALA (with CB)
+            (1641, REMOTE, 19, None),  # ALA (without CB)
+            (9122, REMOTE, 336, 22.122666),  # PHE (with CZ)
+            (9122, REMOTE, 357, 27.526666),  # MSE > MET (with CE)
+        ],
+    )
+    def test_side_chain_representative_tmp(self, structure_id, remote, residue_id, sc_atom_mean):
+        """
+        Test if side chain representative is retrieved correctly from a residue.
+        """
+        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        sc_atom_calculated = pocket_bp._side_chain_representative(residue_id)
+
+        if sc_atom_mean is not None:
+            assert isinstance(sc_atom_calculated, Bio.PDB.Atom.Atom)
+            sc_atom_mean_calculated = sc_atom_calculated.get_vector().get_array().mean()
+            assert sc_atom_mean == pytest.approx(sc_atom_mean_calculated)
+        else:
+            assert sc_atom_calculated == None
 
 
 class TestsPocketDataFrame:
