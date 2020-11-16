@@ -55,7 +55,7 @@ class SideChainOrientationFeature:
         self._sc_atoms = None
 
     @classmethod
-    def from_structure_id(cls, structure_id):
+    def from_structure_klifs_id(cls, structure_id):
         """
         Get side chain orientation for each pocket residue from a KLIFS structure ID.
         TODO At the moment only remotely, in the future allow also locally.
@@ -72,7 +72,7 @@ class SideChainOrientationFeature:
         """
 
         remote = setup_remote()
-        pocket_biopython = PocketBioPython.from_remote(remote, structure_id)
+        pocket_biopython = PocketBioPython.from_remote(structure_id, remote)
         feature = cls.from_pocket(pocket_biopython)
         return feature
 
@@ -102,49 +102,32 @@ class SideChainOrientationFeature:
 
         feature = cls()
         feature._residue_ids = pocket.residue_ids
-
-        centroid = feature._get_centroid(pocket)
-        ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
-        sc_atoms = [
-            feature._get_side_chain_representative(pocket, residue_id)
-            for residue_id in feature._residue_ids
+        feature._centroid = pocket.centroid
+        feature._ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
+        feature._sc_atoms = pocket.side_chain_representatives["sc.vector"].to_list()
+        feature._vertex_angles = [
+            feature._calculate_vertex_angle(sc_atom, ca_atom, feature._centroid)
+            for ca_atom, sc_atom in zip(feature._ca_atoms, feature._sc_atoms)
         ]
-
-        vertex_angles = [
-            feature._calculate_vertex_angle(sc_atom, ca_atom, centroid)
-            if all([sc_atom, ca_atom, centroid])
-            else None
-            for ca_atom, sc_atom in zip(ca_atoms, sc_atoms)
+        feature._categories = [
+            feature._get_category(vertex_angle) for vertex_angle in feature._vertex_angles
         ]
-        categories = [
-            feature._get_category(vertex_angle) if vertex_angle else None
-            for vertex_angle in vertex_angles
-        ]
-
-        feature._categories = categories
-        feature._vertex_angles = vertex_angles
-        feature._centroid = centroid
-        feature._ca_atoms = ca_atoms
-        feature._sc_atoms = sc_atoms
-
         return feature
 
     @property
-    def features(self):
+    def values(self):
         """
         Side chain orientation features for pocket residues.
 
         Returns
         -------
-        pandas.DataFrame
-            Side chain orientation features for pocket residues (index).
+        list of float
+            Side chain orientation features for pocket residues.
         """
-
-        features = pd.DataFrame(self._categories, columns=["sco"], index=self._residue_ids)
-        return features
+        return self._categories
 
     @property
-    def features_verbose(self):
+    def details(self):
         """
         Side chain orientation features for pocket residues (verbose).
 
@@ -170,73 +153,30 @@ class SideChainOrientationFeature:
         features["centroid"] = self._centroid
         return features
 
-    def _get_side_chain_representative(self, pocket, residue_id):
-        """
-        Get the side chain representative for a residue.
-
-        Parameters
-        ----------
-        pocket : kissim.io.biopython.pocket.PocketBioPython
-            Biopython-based pocket object.
-        residue_id : int
-            Residue ID.
-
-        Returns
-        -------
-        Bio.PDB.Vector.Vector or None
-            Coordinates for the residue's side chain representative.
-        """
-
-        atom = pocket._side_chain_representative(residue_id)
-        if atom:
-            vector = atom.get_vector()
-            return vector
-        else:
-            vector = pocket._pcb_atom(residue_id)
-            return vector
-
-        return vector
-
-    def _get_centroid(self, pocket):
-        """
-        Get the pocket's centroid (based on all pocket residues' CA atoms).
-
-        Parameters
-        ----------
-        pocket : kissim.io.biopython.pocket.PocketBioPython
-            Biopython-based pocket object.
-
-        Returns
-        -------
-        Bio.PDB.Vector.Vector
-            Coordinates for the pocket's centroid.
-        """
-
-        vector = pocket.centroid
-        return vector
-
     def _calculate_vertex_angle(self, vector1, vector2, vector3):
         """
         Calculate a vertex angle between three vectors (vertex = second vector).
 
         Parameters
         ----------
-        vector1 : Bio.PDB.Vector.Vector
+        vector1 : Bio.PDB.Vector.Vector or None
             Coordinates.
-        vector2 : Bio.PDB.Vector.Vector
+        vector2 : Bio.PDB.Vector.Vector or None
             Coordinates (defined as vertex of angle).
-        vector2 : Bio.PDB.Vector.Vector
+        vector2 : Bio.PDB.Vector.Vector or None
             Coordinates.
 
         Returns
         -------
-        float
-            Vertex angle between the three points.
+        float or np.nan
+            Vertex angle between the three points. None if any of the input vectors are None.
         """
-
-        vertex_angle = np.degrees(calc_angle(vector1, vector2, vector3))
-        vertex_angles = vertex_angle.round(2)
-        return vertex_angle
+        if all([vector1, vector2, vector2]):
+            vertex_angle = np.degrees(calc_angle(vector1, vector2, vector3))
+            vertex_angles = vertex_angle.round(2)
+            return vertex_angle
+        else:
+            return np.nan
 
     def _get_category(self, vertex_angle):
         """
@@ -248,17 +188,20 @@ class SideChainOrientationFeature:
 
         Parameters
         ----------
-        vertex_angle : float
+        vertex_angle : float or None
             Vertex angle between a residue's CA atom (vertex), side chain representative and pocket
             centroid. Ranges between 0.0 and 180.0.
 
         Returns
         -------
-        float
+        float or None
             Category for side chain orientation towards pocket.
+            None if any of the input vectors are None.
         """
 
-        if 0.0 <= vertex_angle <= 45.0:  # Inwards
+        if np.isnan(vertex_angle):
+            return np.nan
+        elif 0.0 <= vertex_angle <= 45.0:  # Inwards
             return 0.0
         elif 45.0 < vertex_angle <= 90.0:  # Intermediate
             return 1.0
