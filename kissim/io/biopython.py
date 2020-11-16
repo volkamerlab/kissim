@@ -385,21 +385,18 @@ class PocketBioPython(Pocket):
         # Get biopython residue object
         residue = self._residue_from_residue_id(residue_id)
         residue_name = residue.get_resname()
-        print(residue_name)
 
+        # Convert non-standard amino acids if applicable
         if residue_name not in STANDARD_AMINO_ACIDS:
             try:
                 residue_name = NON_STANDARD_AMINO_ACID_CONVERSION[residue_name]
             except KeyError:
                 return None
 
-        print(residue_name)
-
+        # Get side chain representative
         try:
             atom_name = SIDE_CHAIN_REPRESENTATIVE[residue_name]
-            print(atom_name)
             atom = residue[atom_name]
-            print(atom.get_vector().get_array())
             return atom
         except KeyError:
             return None
