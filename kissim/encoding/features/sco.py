@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 from Bio.PDB import calc_angle
 
-from opencadd.databases.klifs import setup_remote
 from kissim.io import PocketBioPython
 
 logger = logging.getLogger(__name__)
@@ -55,7 +54,7 @@ class SideChainOrientationFeature:
         self._sc_atoms = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_id):
+    def from_structure_klifs_id(cls, structure_id, remote=None):
         """
         Get side chain orientation for each pocket residue from a KLIFS structure ID.
         TODO At the moment only remotely, in the future allow also locally.
@@ -64,6 +63,8 @@ class SideChainOrientationFeature:
         ----------
         structure_id : int
             KLIFS structure ID.
+        remote : None or opencadd.databases.klifs.session.Session
+            Remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -71,7 +72,6 @@ class SideChainOrientationFeature:
             Side chain orientation feature object.
         """
 
-        remote = setup_remote()
         pocket_biopython = PocketBioPython.from_remote(structure_id, remote)
         feature = cls.from_pocket(pocket_biopython)
         return feature

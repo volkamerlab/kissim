@@ -9,7 +9,6 @@ import logging
 import numpy as np
 import pandas as pd
 
-from opencadd.databases.klifs import setup_remote
 from kissim.io import PocketBioPython
 
 logger = logging.getLogger(__name__)
@@ -49,7 +48,7 @@ class ExposureFeature:
         self._ratio_cb = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_id):
+    def from_structure_klifs_id(cls, structure_id, remote=None):
         """
         Get exposure for each pocket residue from a KLIFS structure ID.
         TODO At the moment only remotely, in the future allow also locally.
@@ -58,6 +57,8 @@ class ExposureFeature:
         ----------
         structure_id : int
             KLIFS structure ID.
+        remote : None or opencadd.databases.klifs.session.Session
+            Remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -65,7 +66,6 @@ class ExposureFeature:
             Exposure feature object.
         """
 
-        remote = setup_remote()
         pocket_biopython = PocketBioPython.from_remote(structure_id, remote)
         feature = cls.from_pocket(pocket_biopython)
         return feature
