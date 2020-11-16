@@ -49,7 +49,7 @@ class ExposureFeature:
         self._ratio_cb = None
 
     @classmethod
-    def from_structure_id(cls, structure_id):
+    def from_structure_klifs_id(cls, structure_id):
         """
         Get exposure for each pocket residue from a KLIFS structure ID.
         TODO At the moment only remotely, in the future allow also locally.
@@ -66,7 +66,7 @@ class ExposureFeature:
         """
 
         remote = setup_remote()
-        pocket_biopython = PocketBioPython.from_remote(remote, structure_id)
+        pocket_biopython = PocketBioPython.from_remote(structure_id, remote)
         feature = cls.from_pocket(pocket_biopython)
         return feature
 
@@ -74,7 +74,6 @@ class ExposureFeature:
     def from_pocket(cls, pocket, radius=12.0):
         """
         Get exposure for each pocket residue from a Biopython-based pocket object.
-
 
         Parameters
         ----------
@@ -98,21 +97,20 @@ class ExposureFeature:
         return feature
 
     @property
-    def features(self):
+    def values(self):
         """
         Exposure features for pocket residues.
 
         Returns
         -------
-        pandas.DataFrame
-            Exposure for pocket residues (index).
+        list of float
+            Exposure for pocket residues.
         """
 
-        features = pd.DataFrame(self._ratio, columns=["exposure"], index=self._residue_ids)
-        return features
+        return self._ratio
 
     @property
-    def features_verbose(self):
+    def details(self):
         """
         Exposure features for pocket residues (verbose).
 
@@ -127,9 +125,9 @@ class ExposureFeature:
 
         features = pd.DataFrame(
             {
-                "exposure": self._ratio,
-                "ca.exposure": self._ratio_ca,
-                "cb.exposure": self._ratio_cb,
+                "exposure.ratio": self._ratio,
+                "exposure.ratio_ca": self._ratio_ca,
+                "exposure.ratio_cb": self._ratio_cb,
             },
             index=self._residue_ids,
         )
