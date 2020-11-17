@@ -172,6 +172,9 @@ class ExposureFeature:
         """
         Get exposure values for a given Half Sphere Exposure method,
         i.e. HSExposureCA or HSExposureCB.
+        The exposure is defined as the ratio between the number of CA atoms in the lower half
+        sphere (down) and the total number of CA atoms in the full sphere
+        (high exposure = CA atoms are predominantly in the lower half sphere).
 
         Parameters
         ----------
@@ -211,7 +214,7 @@ class ExposureFeature:
         exposures = pd.DataFrame(exposures, index=[up, down, angle], dtype=float).transpose()
         exposures.index = [i[1][1] for i in exposures.index]
 
-        # Calculate exposure value: up / (up + down)
-        exposures[exposure] = exposures[up] / (exposures[up] + exposures[down])
+        # Calculate exposure value: down / (up + down)
+        exposures[exposure] = exposures[down] / (exposures[up] + exposures[down])
 
         return exposures

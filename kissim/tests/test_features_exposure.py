@@ -41,7 +41,7 @@ class TestsExposureFeature:
 
     @pytest.mark.parametrize(
         "structure_id, remote, values_mean",
-        [(12347, REMOTE, 0.447877)],
+        [(12347, REMOTE, 0.552123)],
     )
     def test_values(self, structure_id, remote, values_mean):
         """
@@ -124,10 +124,10 @@ class TestsExposureFeature:
         # Test for example residue the exposure ratio calculation
         example_residue = exposures_calculated.iloc[0]
         ratio = example_residue[f"{prefix}.exposure"]
-        ratio_calculated = example_residue[f"{prefix}.up"] / (
+        ratio_calculated = example_residue[f"{prefix}.down"] / (
             example_residue[f"{prefix}.up"] + example_residue[f"{prefix}.down"]
         )
-        assert np.isclose(ratio_calculated, ratio, rtol=1e-04)
+        assert ratio == pytest.approx(ratio_calculated)
 
     @pytest.mark.parametrize(
         "structure_id, remote, radius, n_residues, missing_exposure",
