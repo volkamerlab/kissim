@@ -85,7 +85,7 @@ class SiteAlignFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketDataFrame
+        pocket : kissim.io.PocketDataFrame
             DataFrame-based pocket object.
         feature_name : str
             Feature name:
@@ -134,7 +134,7 @@ class SiteAlignFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketDataFrame
+        pocket : kissim.io.PocketDataFrame
             DataFrame-based pocket object.
         feature_name : str
             Feature name.

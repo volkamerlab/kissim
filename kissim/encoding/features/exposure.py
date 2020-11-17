@@ -78,7 +78,7 @@ class SolventExposureFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBioPython
+        pocket : kissim.io.PocketBioPython
             Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
@@ -140,7 +140,7 @@ class SolventExposureFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBioPython
+        pocket : kissim.io.PocketBioPython
             Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.
@@ -179,7 +179,7 @@ class SolventExposureFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBioPython
+        pocket : kissim.io.PocketBioPython
             Biopython-based pocket object.
         radius : float
             Sphere radius to be used for half sphere exposure calculation.

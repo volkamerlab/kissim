@@ -28,7 +28,7 @@ class Pocket:
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe or kissim.io.dataframe.PocketBiopython
+        kissim.io.PocketDataframe or kissim.io.PocketBiopython
             Pocket object.
         """
         raise NotImplementedError("Implement in your subclass!")
@@ -47,7 +47,7 @@ class Pocket:
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe or kissim.io.dataframe.PocketBiopython
+        kissim.io.PocketDataframe or kissim.io.PocketBiopython
             Pocket object.
         """
         raise NotImplementedError("Implement in your subclass!")
@@ -66,7 +66,7 @@ class Pocket:
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe or kissim.io.dataframe.PocketBiopython
+        kissim.io.PocketDataframe or kissim.io.PocketBiopython
             Pocket object.
         """
         raise NotImplementedError("Implement in your subclass!")

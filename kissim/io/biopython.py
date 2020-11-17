@@ -50,7 +50,7 @@ class PocketBioPython(Pocket):
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe
+        kissim.io.PocketDataframe
             Biopython-based pocket object.
         """
 
@@ -72,7 +72,7 @@ class PocketBioPython(Pocket):
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe
+        kissim.io.PocketDataframe
             Biopython-based pocket object.
         """
 

@@ -83,7 +83,7 @@ class SideChainOrientationFeature:
 
         Parameters
         ----------
-        pocket : kissim.io.biopython.pocket.PocketBioPython
+        pocket : kissim.io.PocketBioPython
             Biopython-based pocket object.
 
         Returns

@@ -41,7 +41,7 @@ class PocketDataFrame(Pocket):
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe
+        kissim.io.PocketDataframe
             DataFrame-based pocket object.
         """
 
@@ -63,7 +63,7 @@ class PocketDataFrame(Pocket):
 
         Returns
         -------
-        kissim.io.dataframe.PocketDataframe
+        kissim.io.PocketDataframe
             DataFrame-based pocket object.
         """
 
