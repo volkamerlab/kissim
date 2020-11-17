@@ -9,14 +9,14 @@ import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
 from kissim.io import PocketBioPython
-from kissim.encoding.features import ExposureFeature
+from kissim.encoding.features import SolventExposureFeature
 
 REMOTE = setup_remote()
 
 
-class TestsExposureFeature:
+class TestsSolventExposureFeature:
     """
-    Test ExposureFeature class methods.
+    Test SolventExposureFeature class methods.
     """
 
     @pytest.mark.parametrize(
@@ -25,10 +25,10 @@ class TestsExposureFeature:
     )
     def test_from_structure_klifs_id(self, structure_id, remote):
         """
-        Test if ExposureFeature can be set from KLIFS ID.
+        Test if SolventExposureFeature can be set from KLIFS ID.
         """
-        feature = ExposureFeature.from_structure_klifs_id(structure_id)
-        assert isinstance(feature, ExposureFeature)
+        feature = SolventExposureFeature.from_structure_klifs_id(structure_id)
+        assert isinstance(feature, SolventExposureFeature)
         # Test class attributes
         assert isinstance(feature._residue_ids, list)
         for residue_id in feature._residue_ids:
@@ -48,7 +48,7 @@ class TestsExposureFeature:
         Test class property: side chain orientation values.
         The mean refers to the mean of non-NaN values.
         """
-        feature = ExposureFeature.from_structure_klifs_id(structure_id)
+        feature = SolventExposureFeature.from_structure_klifs_id(structure_id)
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
@@ -61,7 +61,7 @@ class TestsExposureFeature:
         """
         Test class property: side chain orientation details.
         """
-        feature = ExposureFeature.from_structure_klifs_id(structure_id)
+        feature = SolventExposureFeature.from_structure_klifs_id(structure_id)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
             "exposure.ratio",
@@ -103,7 +103,9 @@ class TestsExposureFeature:
 
         # Calculate exposure
         pocket = PocketBioPython.from_remote(structure_id, remote)
-        exposures_calculated = ExposureFeature._get_exposures_by_method(pocket, radius, method)
+        exposures_calculated = SolventExposureFeature._get_exposures_by_method(
+            pocket, radius, method
+        )
 
         # Test DataFrame length
         assert len(exposures_calculated) == n_residues
@@ -153,7 +155,7 @@ class TestsExposureFeature:
 
         # Get exposure
         pocket = PocketBioPython.from_remote(structure_id, remote)
-        feature = ExposureFeature()
+        feature = SolventExposureFeature()
         exposures_calculated = feature._get_exposures(pocket, radius)
 
         # Test DataFrame length

@@ -14,9 +14,10 @@ from kissim.io import PocketBioPython
 logger = logging.getLogger(__name__)
 
 
-class ExposureFeature:
+class SolventExposureFeature:
     """
-    Exposure for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned residues.
+    Exposure to the solvent for each residue in the KLIFS-defined kinase binding site of 85
+    pre-aligned residues.
 
     Attributes
     ----------
@@ -62,7 +63,7 @@ class ExposureFeature:
 
         Returns
         -------
-        kissim.encoding.features.ExposureFeature
+        kissim.encoding.features.SolventExposureFeature
             Exposure feature object.
         """
 
@@ -84,7 +85,7 @@ class ExposureFeature:
 
         Returns
         -------
-        kissim.encoding.features.ExposureFeature
+        kissim.encoding.features.SolventExposureFeature
             Exposure feature object.
         """
 

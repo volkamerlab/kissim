@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from . import SideChainOrientationFeature, ExposureFeature
+from . import SideChainOrientationFeature, SolventExposureFeature
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class PhysicoChemicalFeatures:
         side_chain_orientation = SideChainOrientationFeature()
         side_chain_orientation.from_molecule(molecule, chain)
 
-        exposure = ExposureFeature()
+        exposure = SolventExposureFeature()
         exposure.from_molecule(molecule, chain, radius=12.0)
 
         # Concatenate all physicochemical features
