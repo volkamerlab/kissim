@@ -11,11 +11,12 @@ import pandas as pd
 from kissim.io import PocketDataFrame
 from kissim.schema import NON_STANDARD_AMINO_ACID_CONVERSION
 from kissim.definitions import SITEALIGN_FEATURES
+from kissim.encoding.features import BaseFeature
 
 logger = logging.getLogger(__name__)
 
 
-class SiteAlignFeature:
+class SiteAlignFeature(BaseFeature):
     """
     SiteAlign features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
     residues.
@@ -70,7 +71,7 @@ class SiteAlignFeature:
 
         Returns
         -------
-        kissim.encoding.features.SiteAlignFeature
+        kissim.encoding.SiteAlignFeature
             SiteAlign features object.
         """
 
@@ -98,7 +99,7 @@ class SiteAlignFeature:
 
         Returns
         -------
-        kissim.encoding.features.SiteAlignFeature
+        kissim.encoding.SiteAlignFeature
             SiteAlign features object.
         """
 

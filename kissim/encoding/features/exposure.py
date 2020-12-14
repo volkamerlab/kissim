@@ -10,11 +10,12 @@ import numpy as np
 import pandas as pd
 
 from kissim.io import PocketBioPython
+from kissim.encoding.features import BaseFeature
 
 logger = logging.getLogger(__name__)
 
 
-class SolventExposureFeature:
+class SolventExposureFeature(BaseFeature):
     """
     Exposure to the solvent for each residue in the KLIFS-defined kinase binding site of 85
     pre-aligned residues.
@@ -63,7 +64,7 @@ class SolventExposureFeature:
 
         Returns
         -------
-        kissim.encoding.features.SolventExposureFeature
+        kissim.encoding.SolventExposureFeature
             Exposure feature object.
         """
 
@@ -85,7 +86,7 @@ class SolventExposureFeature:
 
         Returns
         -------
-        kissim.encoding.features.SolventExposureFeature
+        kissim.encoding.SolventExposureFeature
             Exposure feature object.
         """
 

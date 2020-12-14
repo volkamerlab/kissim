@@ -11,11 +11,12 @@ import numpy as np
 from Bio.PDB import calc_angle
 
 from kissim.io import PocketBioPython
+from kissim.encoding.features import BaseFeature
 
 logger = logging.getLogger(__name__)
 
 
-class SideChainOrientationFeature:
+class SideChainOrientationFeature(BaseFeature):
     """
     Side chain orientation for each residue in the KLIFS-defined kinase binding site
     of 85 pre-aligned residues.
@@ -68,7 +69,7 @@ class SideChainOrientationFeature:
 
         Returns
         -------
-        kissim.encoding.features.SideChainOrientationFeature
+        kissim.encoding.SideChainOrientationFeature
             Side chain orientation feature object.
         """
 
@@ -88,7 +89,7 @@ class SideChainOrientationFeature:
 
         Returns
         -------
-        kissim.encoding.features.SideChainOrientationFeature
+        kissim.encoding.SideChainOrientationFeature
             Side chain orientation feature object.
 
         Notes
