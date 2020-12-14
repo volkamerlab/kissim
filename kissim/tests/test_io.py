@@ -187,12 +187,17 @@ class TestPocketBioPython:
     @pytest.mark.parametrize(
         "structure_id, remote, residue_id, pcb_atom",
         [
-            (9122, REMOTE, 272, np.array([12.22, 8.37, 31.38])),  # GLY
-            (9122, REMOTE, 337, np.array([4.89, 12.19, 43.60])),  # Residue with +- residue
+            (9122, REMOTE, 272, np.array([12.223623, 8.544623, 32.441623])),  # GLY
+            (
+                9122,
+                REMOTE,
+                337,
+                np.array([4.887966, 11.028965, 42.998965]),
+            ),  # Residue with +- residue
             (9122, REMOTE, 19, None),  # Residue without + residue
         ],
     )
-    def test_pcb_atom(self, structure_id, remote, residue_id, pcb_atom):
+    def test_pcb_atomd(self, structure_id, remote, residue_id, pcb_atom):
         """
         Test pseudo-CB calculation for a residue.
         """
@@ -203,7 +208,11 @@ class TestPocketBioPython:
         if pcb_atom is None:
             assert pcb_atom_calculated is None
         else:
-            assert np.isclose(pcb_atom_calculated.get_array().mean(), pcb_atom.mean(), rtol=1e-04)
+            pcb_atom_calculated = pcb_atom_calculated.get_array()
+            print(pcb_atom_calculated)
+            assert pcb_atom[0] == pytest.approx(pcb_atom_calculated[0])
+            assert pcb_atom[1] == pytest.approx(pcb_atom_calculated[1])
+            assert pcb_atom[2] == pytest.approx(pcb_atom_calculated[2])
 
     @pytest.mark.parametrize(
         "structure_id, remote",
