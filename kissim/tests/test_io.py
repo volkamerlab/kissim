@@ -42,9 +42,6 @@ class TestPocketBioPython:
         # Complex data
         assert isinstance(pocket_bp._data_complex, Bio.PDB.Structure.Structure)
         assert len(list(pocket_bp._data_complex.get_atoms())) == n_atoms_complex
-        # Pocket data
-        with pytest.raises(NotImplementedError):
-            pocket_bp.data
 
     @pytest.mark.parametrize(
         "structure_id, remote, n_hse_ca_complex, n_hse_cb_complex, n_hse_ca_pocket, n_hse_cb_pocket",

@@ -66,13 +66,6 @@ class PocketBioPython(Pocket):
         return pocket
 
     @property
-    def data(self):
-        """
-        Pocket data.
-        """
-        raise NotImplementedError("Not implemented yet for PocketBioPython!")
-
-    @property
     def residue_ids(self):
         """
         Pocket residue IDs.

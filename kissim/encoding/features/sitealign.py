@@ -82,7 +82,7 @@ class SiteAlignFeature(BaseFeature):
         return feature
 
     @classmethod
-    def from_pocket(cls, pocket, feature_name):
+    def from_pocket(cls, pocket, feature_name):  # pylint: disable=W0221
         """
         Get SiteAlign features of a given type for each pocket residue.
 

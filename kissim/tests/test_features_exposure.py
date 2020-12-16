@@ -4,7 +4,6 @@ Unit and regression test for kissim.encoding.features.exposure class methods.
 
 import pytest
 
-import numpy as np
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
