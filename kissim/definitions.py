@@ -60,8 +60,8 @@ EXPOSURE_RADIUS = 12.0
 ANCHOR_RESIDUES = {
     "hinge_region": [16, 47, 80],
     "dfg_region": [19, 24, 81],
-    "front_pocket": [6, 48, 75],
-}  # Are the same as in Eva's implementation
+    "front_pocket": [10, 48, 72],
+}
 
 DISTANCE_CUTOFFS = {  # 99% percentile of all distances
     "distance_to_centroid": (3.05, 21.38),
