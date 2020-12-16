@@ -102,7 +102,7 @@ class TestsSolventExposureFeature:
         """
 
         # Calculate exposure
-        pocket = PocketBioPython.from_remote(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         exposures_calculated = SolventExposureFeature._get_exposures_by_method(
             pocket, radius, method
         )
@@ -154,7 +154,7 @@ class TestsSolventExposureFeature:
         """
 
         # Get exposure
-        pocket = PocketBioPython.from_remote(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SolventExposureFeature()
         exposures_calculated = feature._get_exposures(pocket, radius)
 

@@ -22,11 +22,11 @@ class TestPocketBioPython:
         "structure_id, remote",
         [(12347, None), (12347, REMOTE)],
     )
-    def test_from_remote(self, structure_id, remote):
+    def test_from_structure_klifs_id(self, structure_id, remote):
         """
         Test if PocketBioPython can be set remotely.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_bp, PocketBioPython)
 
     @pytest.mark.parametrize(
@@ -38,7 +38,7 @@ class TestPocketBioPython:
         Test class attribute (complex data) and property (pocket data).
         """
 
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         # Complex data
         assert isinstance(pocket_bp._data_complex, Bio.PDB.Structure.Structure)
         assert len(list(pocket_bp._data_complex.get_atoms())) == n_atoms_complex
@@ -62,7 +62,7 @@ class TestPocketBioPython:
         """
         Test class attributes and properties regarding the HSExposure.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
 
         # HSE for full complex
         assert isinstance(pocket_bp._hse_ca_complex, Bio.PDB.HSExposure.HSExposureCA)
@@ -83,7 +83,7 @@ class TestPocketBioPython:
         """
         Test the class attribute and property regarding the residue IDs.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_bp._residue_ids[0], int)
         assert len(pocket_bp._residue_ids) == n_residues
         assert len(pocket_bp.residue_ids) == n_residues
@@ -97,7 +97,7 @@ class TestPocketBioPython:
         """
         Test the class property regarding the pocket centroid.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_bp.centroid, Bio.PDB.vectors.Vector)
         assert pocket_bp.centroid.get_array().mean() == pytest.approx(pocket_centroid_mean)
 
@@ -109,7 +109,7 @@ class TestPocketBioPython:
         """
         Test the class property regarding the pocket's CA atoms.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert pocket_bp.ca_atoms.shape == (n_ca_atoms, 3)
         assert pocket_bp.ca_atoms.columns.to_list() == ["residue.id", "ca.atom", "ca.vector"]
         assert pocket_bp.ca_atoms.dtypes.to_list() == ["int64", "object", "object"]
@@ -129,7 +129,7 @@ class TestPocketBioPython:
         """
         Test if CA atom is retrieved correctly from a residue ID (test if-else cases).
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         ca_atom_calculated = pocket_bp._ca_atom(residue_id)
         if ca_atom_mean:
             assert isinstance(ca_atom_calculated, Bio.PDB.Atom.Atom)
@@ -146,7 +146,7 @@ class TestPocketBioPython:
         """
         Test the class property regarding the pocket's pCB atoms.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert pocket_bp.pcb_atoms.shape == (78, 2)
         assert pocket_bp.pcb_atoms.columns.to_list() == ["residue.id", "pcb.vector"]
         assert pocket_bp.pcb_atoms.dtypes.to_list() == ["int64", "object"]
@@ -162,7 +162,7 @@ class TestPocketBioPython:
         """
         Test pseudo-CB calculation for GLY.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         residue = pocket_bp._residue_from_residue_id(residue_id)
         pcb_atom_calculated = pocket_bp._pcb_atom_from_gly(residue)
         pcb_atom_mean_calculated = pcb_atom_calculated.get_array().mean()
@@ -179,7 +179,7 @@ class TestPocketBioPython:
         """
         Test exceptions in pseudo-CB calculation for GLY.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         residue = pocket_bp._residue_from_residue_id(residue_id)
         with pytest.raises(ValueError):
             pocket_bp._pcb_atom_from_gly(residue)
@@ -194,22 +194,21 @@ class TestPocketBioPython:
                 337,
                 np.array([4.887966, 11.028965, 42.998965]),
             ),  # Residue with +- residue
-            (9122, REMOTE, 19, None),  # Residue without + residue
+            (9122, REMOTE, 261, None),  # Residue without + residue
         ],
     )
-    def test_pcb_atomd(self, structure_id, remote, residue_id, pcb_atom):
+    def test_pcb_atoms(self, structure_id, remote, residue_id, pcb_atom):
         """
         Test pseudo-CB calculation for a residue.
         """
 
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         pcb_atom_calculated = pocket_bp._pcb_atom(residue_id)
 
         if pcb_atom is None:
             assert pcb_atom_calculated is None
         else:
             pcb_atom_calculated = pcb_atom_calculated.get_array()
-            print(pcb_atom_calculated)
             assert pcb_atom[0] == pytest.approx(pcb_atom_calculated[0])
             assert pcb_atom[1] == pytest.approx(pcb_atom_calculated[1])
             assert pcb_atom[2] == pytest.approx(pcb_atom_calculated[2])
@@ -222,7 +221,7 @@ class TestPocketBioPython:
         """
         Test the class property regarding the pocket's side chain representatives.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_bp.side_chain_representatives, pd.DataFrame)
         assert pocket_bp.side_chain_representatives.columns.to_list() == [
             "residue.id",
@@ -255,7 +254,7 @@ class TestPocketBioPython:
         """
         Test if side chain representative is retrieved correctly from a residue.
         """
-        pocket_bp = PocketBioPython.from_remote(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         sc_atom_calculated = pocket_bp._side_chain_representative(residue_id)
 
         if sc_atom_mean is not None:
@@ -275,11 +274,11 @@ class TestsPocketDataFrame:
         "structure_id, remote",
         [(12347, None), (12347, REMOTE)],
     )
-    def test_from_remote(self, structure_id, remote):
+    def test_from_structure_klifs_id(self, structure_id, remote):
         """
         Test if PocketDataFrame can be set remotely.
         """
-        pocket_df = PocketDataFrame.from_remote(structure_id, remote)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_df, PocketDataFrame)
 
     @pytest.mark.parametrize(
@@ -290,7 +289,7 @@ class TestsPocketDataFrame:
         """
         Test the class attribute (complex data) and property (pocket data).
         """
-        pocket_df = PocketDataFrame.from_remote(structure_id, remote)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
         # Complex data
         assert pocket_df._data_complex.shape == (n_atoms_complex, 11)
         # Pocket data
@@ -304,7 +303,7 @@ class TestsPocketDataFrame:
         """
         Test the class attribute and property regarding the residue IDs.
         """
-        pocket_df = PocketDataFrame.from_remote(structure_id, remote)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_df._residue_ids[0], str)  # TODO in the future: cast to int?
         assert len(pocket_df._residue_ids) == n_residues
         assert len(pocket_df.residue_ids) == n_residues
@@ -318,7 +317,7 @@ class TestsPocketDataFrame:
         """
         Test the class property regarding the pocket centroid.
         """
-        pocket_df = PocketDataFrame.from_remote(structure_id, remote)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
         assert np.array(pocket_df.centroid).mean() == pytest.approx(pocket_centroid_mean)
 
     @pytest.mark.parametrize(
@@ -329,7 +328,7 @@ class TestsPocketDataFrame:
         """
         Test the class property regarding the pocket's CA atoms.
         """
-        pocket_df = PocketDataFrame.from_remote(structure_id, remote)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
         assert pocket_df.ca_atoms.shape == (n_ca_atoms, 11)
         assert pocket_df.ca_atoms.columns.to_list() == [
             "atom.id",

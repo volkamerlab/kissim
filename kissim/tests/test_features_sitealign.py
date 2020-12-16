@@ -4,7 +4,6 @@ Unit and regression test for kissim.encoding.features.sitealign class methods.
 
 import pytest
 
-import numpy as np
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
@@ -19,21 +18,21 @@ class TestsSiteAlignFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_id, feature_name, remote",
+        "structure_id, remote, feature_name",
         [
-            (12347, "hba", REMOTE),
-            (12347, "hbd", REMOTE),
-            (12347, "size", REMOTE),
-            (12347, "charge", REMOTE),
-            (12347, "aliphatic", REMOTE),
-            (12347, "aromatic", REMOTE),
+            (12347, REMOTE, "hba"),
+            (12347, REMOTE, "hbd"),
+            (12347, REMOTE, "size"),
+            (12347, REMOTE, "charge"),
+            (12347, REMOTE, "aliphatic"),
+            (12347, REMOTE, "aromatic"),
         ],
     )
-    def test_from_structure_klifs_id(self, structure_id, feature_name, remote):
+    def test_from_structure_klifs_id(self, structure_id, remote, feature_name):
         """
         Test if SiteAlignFeature can be set from KLIFS ID.
         """
-        feature = SiteAlignFeature.from_structure_klifs_id(structure_id, feature_name, remote)
+        feature = SiteAlignFeature.from_structure_klifs_id(structure_id, remote, feature_name)
         assert isinstance(feature, SiteAlignFeature)
         # Test class attributes
         assert isinstance(feature._residue_ids, list)
@@ -53,15 +52,15 @@ class TestsSiteAlignFeature:
         assert feature.details.columns.to_list() == ["residue.name", "sitealign.category"]
 
     @pytest.mark.parametrize(
-        "structure_id, feature_name, remote",
-        [(12347, "xxx", REMOTE)],
+        "structure_id, remote, feature_name",
+        [(12347, REMOTE, "xxx")],
     )
-    def test_from_structure_klifs_id_raises(self, structure_id, feature_name, remote):
+    def test_from_structure_klifs_id_raises(self, structure_id, remote, feature_name):
         """
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
-            SiteAlignFeature.from_structure_klifs_id(structure_id, feature_name, remote)
+            SiteAlignFeature.from_structure_klifs_id(structure_id, remote, feature_name)
 
     @pytest.mark.parametrize(
         "residue_name, feature_name, value",
