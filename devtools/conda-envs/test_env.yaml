@@ -34,7 +34,7 @@ dependencies:
   - tqdm
   - pip:
     - black-nb
-    - https://github.com/volkamerlab/opencadd/archive/c860671ae88eb84afdd6ef599a4ecea9587c123c.zip
+    - https://github.com/volkamerlab/opencadd/archive/ac5e9816b835bcd757e1e33f2dcabe55b5ec7ef0.zip
 ## For Jupyter lab extensions, run:
 # conda install nodejs
 # jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc @ijmbarr/jupyterlab_spellchecker
