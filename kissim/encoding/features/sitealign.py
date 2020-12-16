@@ -49,14 +49,16 @@ class SiteAlignFeature(BaseFeature):
         self._categories = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_id, feature_name, remote=None):
+    def from_structure_klifs_id(
+        cls, structure_klifs_id, remote=None, feature_name="hba"
+    ):  # pylint: disable=W0221
         """
         Get SiteAlign features of a given type for each pocket residue from a KLIFS structure ID.
         TODO At the moment only remotely, in the future allow also locally.
 
         Parameters
         ----------
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
         feature_name : str
             Feature name:
@@ -75,7 +77,7 @@ class SiteAlignFeature(BaseFeature):
             SiteAlign features object.
         """
 
-        pocket_dataframe = PocketDataFrame.from_remote(structure_id, remote)
+        pocket_dataframe = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, remote)
         feature = cls.from_pocket(pocket_dataframe, feature_name)
         return feature
 

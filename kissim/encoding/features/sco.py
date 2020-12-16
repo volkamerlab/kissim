@@ -55,14 +55,14 @@ class SideChainOrientationFeature(BaseFeature):
         self._sc_atoms = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_id, remote=None):
+    def from_structure_klifs_id(cls, structure_klifs_id, remote=None):
         """
         Get side chain orientation for each pocket residue from a KLIFS structure ID.
         TODO At the moment only remotely, in the future allow also locally.
 
         Parameters
         ----------
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
         remote : None or opencadd.databases.klifs.session.Session
             Remote KLIFS session. If None, generate new remote session.
@@ -73,7 +73,7 @@ class SideChainOrientationFeature(BaseFeature):
             Side chain orientation feature object.
         """
 
-        pocket_biopython = PocketBioPython.from_remote(structure_id, remote)
+        pocket_biopython = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = cls.from_pocket(pocket_biopython)
         return feature
 
