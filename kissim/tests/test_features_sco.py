@@ -9,7 +9,7 @@ import pandas as pd
 import Bio
 from opencadd.databases.klifs import setup_remote
 
-from kissim.encoding.features import SideChainOrientationFeature
+from kissim.encoding.features import SideChainOrientationFeature, SideChainOrientationFeatureKlifs
 
 REMOTE = setup_remote()
 
@@ -27,7 +27,7 @@ class TestsSideChainOrientationFeature:
         """
         Test if SideChainOrientationFeature can be set from KLIFS ID.
         """
-        feature = SideChainOrientationFeature.from_structure_klifs_id(structure_id)
+        feature = SideChainOrientationFeatureKlifs.from_structure_klifs_id(structure_id)
         assert isinstance(feature, SideChainOrientationFeature)
         # Test class attributes
         assert isinstance(feature._residue_ids, list)
@@ -58,7 +58,7 @@ class TestsSideChainOrientationFeature:
         Test class property: side chain orientation values.
         The mean refers to the mean of non-NaN values.
         """
-        feature = SideChainOrientationFeature.from_structure_klifs_id(structure_id)
+        feature = SideChainOrientationFeatureKlifs.from_structure_klifs_id(structure_id)
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
@@ -71,7 +71,7 @@ class TestsSideChainOrientationFeature:
         """
         Test class property: side chain orientation details.
         """
-        feature = SideChainOrientationFeature.from_structure_klifs_id(structure_id)
+        feature = SideChainOrientationFeatureKlifs.from_structure_klifs_id(structure_id)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
             "sco.category",

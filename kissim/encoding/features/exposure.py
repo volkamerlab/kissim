@@ -50,28 +50,6 @@ class SolventExposureFeature(BaseFeature):
         self._ratio_cb = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):  # pylint: disable=W0221
-        """
-        Get exposure for each pocket residue from a KLIFS structure ID.
-
-        Parameters
-        ----------
-        structure_klifs_id : int
-            KLIFS structure ID.
-        klifs_session : None or opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session. If None, generate new remote session.
-
-        Returns
-        -------
-        kissim.encoding.SolventExposureFeature
-            Exposure feature object.
-        """
-
-        pocket_biopython = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
-        feature = cls.from_pocket(pocket_biopython)
-        return feature
-
-    @classmethod
     def from_pocket(cls, pocket, radius=12.0):  # pylint: disable=W0221
         """
         Get exposure for each pocket residue from a Biopython-based pocket object.
@@ -219,3 +197,28 @@ class SolventExposureFeature(BaseFeature):
         exposures[exposure] = exposures[down] / (exposures[up] + exposures[down])
 
         return exposures
+
+
+class SolventExposureFeatureKlifs(SolventExposureFeature):
+
+    @classmethod
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):  # pylint: disable=W0221
+        """
+        Get exposure for each pocket residue from a KLIFS structure ID.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            KLIFS structure ID.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
+
+        Returns
+        -------
+        kissim.encoding.SolventExposureFeature
+            Exposure feature object.
+        """
+
+        pocket_biopython = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
+        feature = cls.from_pocket(pocket_biopython)
+        return feature

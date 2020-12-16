@@ -7,7 +7,7 @@ import pytest
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
-from kissim.encoding.features import SiteAlignFeature
+from kissim.encoding.features import SiteAlignFeature, SiteAlignFeatureKlifs
 
 REMOTE = setup_remote()
 
@@ -32,7 +32,7 @@ class TestsSiteAlignFeature:
         """
         Test if SiteAlignFeature can be set from KLIFS ID.
         """
-        feature = SiteAlignFeature.from_structure_klifs_id(structure_id, remote, feature_name)
+        feature = SiteAlignFeatureKlifs.from_structure_klifs_id(structure_id, remote, feature_name)
         assert isinstance(feature, SiteAlignFeature)
         # Test class attributes
         assert isinstance(feature._residue_ids, list)
@@ -60,7 +60,7 @@ class TestsSiteAlignFeature:
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
-            SiteAlignFeature.from_structure_klifs_id(structure_id, remote, feature_name)
+            SiteAlignFeatureKlifs.from_structure_klifs_id(structure_id, remote, feature_name)
 
     @pytest.mark.parametrize(
         "residue_name, feature_name, value",
