@@ -15,54 +15,16 @@ class Pocket:
     """
 
     @classmethod
-    def from_local(cls, structure_id, local):
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session):
         """
         Get pocket object from a KLIFS structure ID (locally).
 
         Parameters
         ----------
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
-        local : opencadd.databases.klifs.session.Session
-            Local KLIFS session.
-
-        Returns
-        -------
-        kissim.io.PocketDataframe or kissim.io.PocketBiopython
-            Pocket object.
-        """
-        raise NotImplementedError("Implement in your subclass!")
-
-    @classmethod
-    def from_remote(cls, structure_id, remote=None):
-        """
-        Get pocket object from a KLIFS structure ID (remotely).
-
-        Parameters
-        ----------
-        structure_id : int
-            KLIFS structure ID.
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
-
-        Returns
-        -------
-        kissim.io.PocketDataframe or kissim.io.PocketBiopython
-            Pocket object.
-        """
-        raise NotImplementedError("Implement in your subclass!")
-
-    @classmethod
-    def _from_backend(cls, backend, structure_id):
-        """
-        Get pocket object from a KLIFS structure ID.
-
-        Parameters
-        ----------
-        backend : opencadd.databases.klifs.session.Session
+        klifs_session : opencadd.databases.klifs.session.Session
             Local or remote KLIFS session.
-        structure_id : int
-            KLIFS structure ID.
 
         Returns
         -------
@@ -71,16 +33,16 @@ class Pocket:
         """
         raise NotImplementedError("Implement in your subclass!")
 
-    def _get_dataframe(self, backend, structure_id):
+    def _get_dataframe(self, structure_klifs_id, klifs_session):
         """
         Get structural data for a complex from a KLIFS structure ID as DataFrame.
 
         Parameters
         ----------
-        backend : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
 
         Returns
         -------
@@ -88,19 +50,19 @@ class Pocket:
             Structural data for a complex.
         """
 
-        dataframe = backend.coordinates.to_dataframe(structure_id, "complex", "pdb")
+        dataframe = klifs_session.coordinates.to_dataframe(structure_klifs_id, "complex", "pdb")
         return dataframe
 
-    def _get_biopython(self, backend, structure_id):
+    def _get_biopython(self, structure_klifs_id, klifs_session):
         """
         Get structural data for a complex from a KLIFS structure ID as Biopython Structure object.
 
         Parameters
         ----------
-        backend : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
 
         Returns
         -------
@@ -109,20 +71,20 @@ class Pocket:
         """
 
         with enter_temp_directory():
-            filepath = backend.coordinates.to_pdb(structure_id, "complex")
+            filepath = klifs_session.coordinates.to_pdb(structure_klifs_id, "complex")
             biopython = Biopython.from_file(filepath)
             return biopython
 
-    def _get_pocket_residue_ids(self, backend, structure_id):
+    def _get_pocket_residue_ids(self, structure_klifs_id, klifs_session):
         """
         Get pocket residues.
 
         Parameters
         ----------
-        backend : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
 
         Returns
         -------
@@ -130,7 +92,7 @@ class Pocket:
             Pocket residues.
         """
 
-        pocket_residues = backend.pockets.by_structure_klifs_id(structure_id)
+        pocket_residues = klifs_session.pockets.by_structure_klifs_id(structure_klifs_id)
         pocket_residue_ids = pocket_residues["residue.id"].to_list()
         pocket_residue_ids = [i for i in pocket_residue_ids if i != "_"]
         return pocket_residue_ids

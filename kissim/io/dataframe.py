@@ -28,16 +28,16 @@ class PocketDataFrame(Pocket):
         self._data_complex = None
 
     @classmethod
-    def from_remote(cls, structure_id, remote=None):
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
         Get DataFrame-based pocket object from a KLIFS structure ID (remotely).
 
         Parameters
         ----------
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -45,31 +45,11 @@ class PocketDataFrame(Pocket):
             DataFrame-based pocket object.
         """
 
-        if not remote:
-            remote = setup_remote()
-        return cls._from_backend(remote, structure_id)
-
-    @classmethod
-    def _from_backend(cls, backend, structure_id):
-        """
-        Get DataFrame-based pocket object from a KLIFS structure ID.
-
-        Parameters
-        ----------
-        backend : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-        structure_id : int
-            KLIFS structure ID.
-
-        Returns
-        -------
-        kissim.io.PocketDataframe
-            DataFrame-based pocket object.
-        """
-
+        if not klifs_session:
+            klifs_session = setup_remote()
         pocket = cls()
-        pocket._data_complex = pocket._get_dataframe(backend, structure_id)
-        pocket._residue_ids = pocket._get_pocket_residue_ids(backend, structure_id)
+        pocket._data_complex = pocket._get_dataframe(structure_klifs_id, klifs_session)
+        pocket._residue_ids = pocket._get_pocket_residue_ids(structure_klifs_id, klifs_session)
         return pocket
 
     @property

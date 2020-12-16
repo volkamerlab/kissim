@@ -37,7 +37,7 @@ class PocketBioPython(Pocket):
         self._hse_cb_complex = None
 
     @classmethod
-    def from_remote(cls, structure_id, remote=None):
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
         Get Biopython-based pocket object from a KLIFS structure ID (remotely).
 
@@ -45,8 +45,8 @@ class PocketBioPython(Pocket):
         ----------
         structure_id : int
             KLIFS structure ID.
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -54,31 +54,11 @@ class PocketBioPython(Pocket):
             Biopython-based pocket object.
         """
 
-        if not remote:
-            remote = setup_remote()
-        return cls._from_backend(remote, structure_id)
-
-    @classmethod
-    def _from_backend(cls, backend, structure_id):
-        """
-        Get Biopython-based pocket object from a KLIFS structure ID.
-
-        Parameters
-        ----------
-        backend : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-        structure_id : int
-            KLIFS structure ID.
-
-        Returns
-        -------
-        kissim.io.PocketDataframe
-            Biopython-based pocket object.
-        """
-
+        if not klifs_session:
+            klifs_session = setup_remote()
         pocket = cls()
-        pocket._data_complex = pocket._get_biopython(backend, structure_id)
-        pocket._residue_ids = pocket._get_pocket_residue_ids(backend, structure_id)
+        pocket._data_complex = pocket._get_biopython(structure_klifs_id, klifs_session)
+        pocket._residue_ids = pocket._get_pocket_residue_ids(structure_klifs_id, klifs_session)
         # Cast residue IDs str > int (necessary for Biopython where they are int)
         pocket._residue_ids = [int(i) for i in pocket._residue_ids]
         pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
