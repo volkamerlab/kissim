@@ -50,11 +50,10 @@ class SiteAlignFeature(BaseFeature):
 
     @classmethod
     def from_structure_klifs_id(
-        cls, structure_klifs_id, remote=None, feature_name="hba"
+        cls, structure_klifs_id, klifs_session=None, feature_name="hba"
     ):  # pylint: disable=W0221
         """
         Get SiteAlign features of a given type for each pocket residue from a KLIFS structure ID.
-        TODO At the moment only remotely, in the future allow also locally.
 
         Parameters
         ----------
@@ -68,8 +67,8 @@ class SiteAlignFeature(BaseFeature):
             - "charge": Charge feature
             - "aliphatic": Aliphatic feature
             - "aromatic": Aromatic feature
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -77,7 +76,7 @@ class SiteAlignFeature(BaseFeature):
             SiteAlign features object.
         """
 
-        pocket_dataframe = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, remote)
+        pocket_dataframe = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session)
         feature = cls.from_pocket(pocket_dataframe, feature_name)
         return feature
 

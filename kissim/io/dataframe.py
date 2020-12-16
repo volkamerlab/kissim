@@ -30,7 +30,7 @@ class PocketDataFrame(Pocket):
     @classmethod
     def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
-        Get DataFrame-based pocket object from a KLIFS structure ID (remotely).
+        Get DataFrame-based pocket object from a KLIFS structure ID.
 
         Parameters
         ----------

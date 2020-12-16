@@ -50,17 +50,16 @@ class SolventExposureFeature(BaseFeature):
         self._ratio_cb = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_klifs_id, remote=None):  # pylint: disable=W0221
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):  # pylint: disable=W0221
         """
         Get exposure for each pocket residue from a KLIFS structure ID.
-        TODO At the moment only remotely, in the future allow also locally.
 
         Parameters
         ----------
         structure_klifs_id : int
             KLIFS structure ID.
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
 
         Returns
         -------
@@ -68,7 +67,7 @@ class SolventExposureFeature(BaseFeature):
             Exposure feature object.
         """
 
-        pocket_biopython = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
+        pocket_biopython = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
         feature = cls.from_pocket(pocket_biopython)
         return feature
 

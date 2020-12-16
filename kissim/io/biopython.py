@@ -39,7 +39,7 @@ class PocketBioPython(Pocket):
     @classmethod
     def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
-        Get Biopython-based pocket object from a KLIFS structure ID (remotely).
+        Get Biopython-based pocket object from a KLIFS structure ID.
 
         Parameters
         ----------

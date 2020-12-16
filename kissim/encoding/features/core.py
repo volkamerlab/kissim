@@ -26,17 +26,16 @@ class BaseFeature:
         self._residue_ids = None
 
     @classmethod
-    def from_structure_klifs_id(cls, structure_klifs_id, remote=None):
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
         Get feature from a KLIFS structure ID.
-        TODO At the moment only remotely, in the future allow also locally.
 
         Parameters
         ----------
         structure_klifs_id : int
             KLIFS structure ID.
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
         """
         raise NotImplementedError("Implement in your subclass!")
 
