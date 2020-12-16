@@ -8,7 +8,7 @@ dependencies:
   - pip
     # Package dependencies
   - biopandas
-  - biopython
+  - biopython 1.77
   - numpy
   - nglview
   - scipy
@@ -17,8 +17,6 @@ dependencies:
   - jupyter
   - jupyterlab
   - ipywidgets>=7.5
-  # Tutorials
-  - jupyterlab
   # Testing
   - pytest
   - pytest-cov
@@ -27,13 +25,17 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - nbsphinx
+  # Developement
+  - black
+  - pylint
   # Remove when opencadd is conda-installable
   - rdkit
   - bravado
   - tqdm
   - pip:
-    - https://github.com/volkamerlab/opencadd/archive/add_io_klifs_subpockets.tar.gz
+    - black-nb
+    - https://github.com/volkamerlab/opencadd/archive/c860671ae88eb84afdd6ef599a4ecea9587c123c.zip
 ## For Jupyter lab extensions, run:
 # conda install nodejs
-# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc
+# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc @ijmbarr/jupyterlab_spellchecker
 
