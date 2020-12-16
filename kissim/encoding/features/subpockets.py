@@ -11,9 +11,9 @@ from kissim.encoding.features import BaseFeature
 logger = logging.getLogger(__name__)
 
 
-class Feature(BaseFeature):
+class SubpocketsFeature(BaseFeature):
     """
-    Side chain orientation for each residue in the KLIFS-defined kinase binding site
+    Distances between all subpocket and all residues in the KLIFS-defined kinase binding site
     of 85 pre-aligned residues.
 
     Attributes
@@ -30,21 +30,6 @@ class Feature(BaseFeature):
         self._residue_ids = None
         self._distances = None
         self._moments = None
-
-    @classmethod
-    def from_structure_klifs_id(cls, structure_id, remote=None):
-        """
-        Get feature from a KLIFS structure ID.
-        TODO At the moment only remotely, in the future allow also locally.
-
-        Parameters
-        ----------
-        structure_id : int
-            KLIFS structure ID.
-        remote : None or opencadd.databases.klifs.session.Session
-            Remote KLIFS session. If None, generate new remote session.
-        """
-        raise NotImplementedError("Implement in your subclass!")
 
     @classmethod
     def from_pocket(cls, pocket):
@@ -79,5 +64,21 @@ class Feature(BaseFeature):
         -------
         pandas.DataFrame
             Feature details for pocket residues.
+        """
+        raise NotImplementedError("Implement in your subclass!")
+
+class SubpocketsFeatureKlifs(SubpocketsFeature):
+
+    @classmethod
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
+        """
+        Get feature from a KLIFS structure ID.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            KLIFS structure ID.
+        klifs_session : None or opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session. If None, generate new remote session.
         """
         raise NotImplementedError("Implement in your subclass!")
