@@ -6,21 +6,27 @@ Defines a Biopython-based pocket class.
 
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
+from opencadd.io import Biopython
 from opencadd.databases.klifs import setup_remote
+from opencadd.structure.pocket import BasePocket
 
 from ..definitions import SIDE_CHAIN_REPRESENTATIVE
 from ..schema import STANDARD_AMINO_ACIDS, NON_STANDARD_AMINO_ACID_CONVERSION
-from .core import Pocket
+from ..utils import enter_temp_directory
 
 
-class PocketBioPython(Pocket):
+class PocketBioPython(BasePocket):
     """
     Class defining the Biopython-based pocket object.
 
     Attributes
     ----------
+    name : str
+        Name of protein.
     _residue_ids : list of int
         Pocket residue IDs.
+    _residue_ixs : list of int
+        Pocket residue indices.
     _data_complex : Bio.PDB.Structure.Structure
         Structural data for the full complex (not the pocket only).
     _hse_ca_complex : Bio.PDB.HSExposure.HSExposureCA
@@ -31,7 +37,9 @@ class PocketBioPython(Pocket):
 
     def __init__(self):
 
+        self.name = None
         self._residue_ids = None
+        self._residue_ixs = None
         self._data_complex = None
         self._hse_ca_complex = None
         self._hse_cb_complex = None
@@ -57,26 +65,61 @@ class PocketBioPython(Pocket):
         if not klifs_session:
             klifs_session = setup_remote()
         pocket = cls()
+        pocket.name = structure_klifs_id
         pocket._data_complex = pocket._get_biopython(structure_klifs_id, klifs_session)
-        pocket._residue_ids = pocket._get_pocket_residue_ids(structure_klifs_id, klifs_session)
+        pocket._residue_ids, pocket._residue_ixs = pocket._get_pocket_residue_ids(structure_klifs_id, klifs_session)
         # Cast residue IDs str > int (necessary for Biopython where they are int)
-        pocket._residue_ids = [int(i) for i in pocket._residue_ids]
+        pocket._residue_ids = pocket._residue_ids
         pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
         pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
         return pocket
 
-    @property
-    def residue_ids(self):
+    def _get_biopython(self, structure_klifs_id, klifs_session):
         """
-        Pocket residue IDs.
+        Get structural data for a complex from a KLIFS structure ID as Biopython Structure object.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            KLIFS structure ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
 
         Returns
         -------
-        list of int
-            Pocket residue IDs.
+        pandas.DataFrame
+            Structural data for a complex.
         """
 
-        return self._residue_ids
+        with enter_temp_directory():
+            filepath = klifs_session.coordinates.to_pdb(structure_klifs_id, "complex")
+            biopython = Biopython.from_file(filepath)
+            return biopython
+
+    def _get_pocket_residue_ids(self, structure_klifs_id, klifs_session):
+        """
+        Get pocket residues.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            KLIFS structure ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
+
+        Returns
+        -------
+        residue_ids : list of int
+            Pocket residue PDB IDs.
+        residue_ixs : list of int
+            Pocket residues indices.
+        """
+
+        residues = klifs_session.pockets.by_structure_klifs_id(structure_klifs_id)
+        residue_ids = residues["residue.id"].to_list()
+        residue_ixs = residues["residue.klifs_id"].to_list()
+        residue_ids, residue_ixs = self._format_residue_ids_and_ixs(residue_ids, residue_ids, "set pocket residues")
+        return residue_ids, residue_ixs
 
     @property
     def centroid(self):
@@ -112,7 +155,7 @@ class PocketBioPython(Pocket):
         """
 
         ca_atoms = []
-        for residue_id in self.residue_ids:
+        for residue_id in self.residues["residue.id"]:
             ca_atom = self._ca_atom(residue_id)
             ca_atoms.append([residue_id, ca_atom])
         ca_atoms = pd.DataFrame(ca_atoms, columns=["residue.id", "ca.atom"])
@@ -142,7 +185,7 @@ class PocketBioPython(Pocket):
         """
 
         pcb_atoms = []
-        for residue_id in self.residue_ids:
+        for residue_id in self.residues["residue.id"]:
             pcb_atom = self._pcb_atom(residue_id)
             pcb_atoms.append([residue_id, pcb_atom])
         pcb_atoms = pd.DataFrame(pcb_atoms, columns=["residue.id", "pcb.vector"])
@@ -164,7 +207,7 @@ class PocketBioPython(Pocket):
         """
 
         sc_atoms = []
-        for residue_id in self.residue_ids:
+        for residue_id in self.residues["residue.id"]:
             sc_atom = self._side_chain_representative(residue_id)
             sc_atoms.append([residue_id, sc_atom])
         sc_atoms = pd.DataFrame(sc_atoms, columns=["residue.id", "sc.atom"])
@@ -207,7 +250,7 @@ class PocketBioPython(Pocket):
         return {
             residue: exposure
             for residue, exposure in self._hse_ca_complex.property_dict.items()
-            if residue[1][1] in self.residue_ids
+            if residue[1][1] in self.residues["residue.id"].to_list()
         }
 
     @property
@@ -228,7 +271,7 @@ class PocketBioPython(Pocket):
         return {
             residue: exposure
             for residue, exposure in self._hse_cb_complex.property_dict.items()
-            if residue[1][1] in self.residue_ids
+            if residue[1][1] in self.residues["residue.id"].to_list()
         }
 
     def _ca_atom(self, residue_id):
