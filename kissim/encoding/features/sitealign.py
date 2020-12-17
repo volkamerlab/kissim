@@ -8,7 +8,6 @@ import logging
 
 import pandas as pd
 
-from kissim.io import PocketDataFrame
 from kissim.schema import NON_STANDARD_AMINO_ACID_CONVERSION
 from kissim.definitions import SITEALIGN_FEATURES
 from kissim.encoding.features import BaseFeature

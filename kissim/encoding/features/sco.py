@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 from Bio.PDB import calc_angle
 
-from kissim.io import PocketBioPython
 from kissim.encoding.features import BaseFeature
 
 logger = logging.getLogger(__name__)
