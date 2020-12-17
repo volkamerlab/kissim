@@ -9,7 +9,6 @@ import logging
 import numpy as np
 import pandas as pd
 
-from kissim.io import PocketBioPython
 from kissim.encoding.features import BaseFeature
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,7 @@ class SolventExposureFeature(BaseFeature):
         """
 
         feature = cls()
-        feature._residue_ids = pocket.residue_ids
+        feature._residue_ids = pocket.residues["residue.id"].to_list()
         exposures = feature._get_exposures(pocket, radius)
         feature._ratio = exposures["exposure"].to_list()
         feature._ratio_ca = exposures["ca.exposure"].to_list()

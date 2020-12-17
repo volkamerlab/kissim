@@ -33,7 +33,7 @@ class TestsSiteAlignFeature:
         """
         Test if SiteAlignFeature can be set from KLIFS ID.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
         feature = SiteAlignFeature.from_pocket(pocket, feature_name)
         assert isinstance(feature, SiteAlignFeature)
         # Test class attributes
@@ -43,7 +43,7 @@ class TestsSiteAlignFeature:
         for residue_id, residue_name, category in zip(
             feature._residue_ids, feature._residue_names, feature._categories
         ):
-            assert isinstance(residue_id, str)  # TODO: Cast this to int at some point
+            assert isinstance(residue_id, int)
             assert isinstance(feature_name, str)
             assert isinstance(category, float)
         # Test class properties
@@ -62,7 +62,7 @@ class TestsSiteAlignFeature:
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
-            pocket = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
+            pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
             SiteAlignFeature.from_pocket(pocket, feature_name)
 
     @pytest.mark.parametrize(

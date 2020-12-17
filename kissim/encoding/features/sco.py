@@ -79,7 +79,7 @@ class SideChainOrientationFeature(BaseFeature):
         """
 
         feature = cls()
-        feature._residue_ids = pocket.residue_ids
+        feature._residue_ids = pocket.residues["residue.id"].to_list()
         feature._centroid = pocket.centroid
         feature._ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
         feature._sc_atoms = pocket.side_chain_representatives["sc.vector"].to_list()
