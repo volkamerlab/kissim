@@ -332,7 +332,7 @@ class TestsPocketDataFrame:
             "atom.y",
             "atom.z",
             "residue.id",
-            "residue.name"
+            "residue.name",
         ]
         assert pocket_df.ca_atoms.dtypes.to_list() == [
             "int32",
@@ -341,5 +341,5 @@ class TestsPocketDataFrame:
             "float32",
             "float32",
             "int32",
-            "string"
+            "string",
         ]
