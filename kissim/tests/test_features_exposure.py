@@ -8,7 +8,7 @@ import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
 from kissim.io import PocketBioPython
-from kissim.encoding.features import SolventExposureFeature, SolventExposureFeatureKlifs
+from kissim.encoding.features import SolventExposureFeature
 
 REMOTE = setup_remote()
 
@@ -26,8 +26,9 @@ class TestsSolventExposureFeature:
         """
         Test if SolventExposureFeature can be set from KLIFS ID.
         """
-        feature = SolventExposureFeatureKlifs.from_structure_klifs_id(structure_id)
-        assert isinstance(feature, SolventExposureFeatureKlifs)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        feature = SolventExposureFeature.from_pocket(pocket)
+        assert isinstance(feature, SolventExposureFeature)
         # Test class attributes
         assert isinstance(feature._residue_ids, list)
         for residue_id in feature._residue_ids:
@@ -47,7 +48,8 @@ class TestsSolventExposureFeature:
         Test class property: side chain orientation values.
         The mean refers to the mean of non-NaN values.
         """
-        feature = SolventExposureFeatureKlifs.from_structure_klifs_id(structure_id)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        feature = SolventExposureFeature.from_pocket(pocket)
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
@@ -60,7 +62,8 @@ class TestsSolventExposureFeature:
         """
         Test class property: side chain orientation details.
         """
-        feature = SolventExposureFeatureKlifs.from_structure_klifs_id(structure_id)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        feature = SolventExposureFeature.from_pocket(pocket)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
             "exposure.ratio",

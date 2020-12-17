@@ -189,37 +189,3 @@ class SiteAlignFeature(BaseFeature):
         except KeyError:
             logger.info(f"Non-standard residue {residue_name} is set to None.")
             return None
-
-class SiteAlignFeatureKlifs(SiteAlignFeature):
-
-    @classmethod
-    def from_structure_klifs_id(
-        cls, structure_klifs_id, klifs_session=None, feature_name="hba"
-    ):  # pylint: disable=W0221
-        """
-        Get SiteAlign features of a given type for each pocket residue from a KLIFS structure ID.
-
-        Parameters
-        ----------
-        structure_klifs_id : int
-            KLIFS structure ID.
-        feature_name : str
-            Feature name:
-            - "hba": Hydrogen bond acceptor feature
-            - "hbd": Hydrogen bond donor feature
-            - "size": Size feature
-            - "charge": Charge feature
-            - "aliphatic": Aliphatic feature
-            - "aromatic": Aromatic feature
-        klifs_session : None or opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session. If None, generate new remote session.
-
-        Returns
-        -------
-        kissim.encoding.SiteAlignFeature
-            SiteAlign features object.
-        """
-
-        pocket_dataframe = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session)
-        feature = cls.from_pocket(pocket_dataframe, feature_name)
-        return feature

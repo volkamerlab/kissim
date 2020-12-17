@@ -9,7 +9,8 @@ import pandas as pd
 import Bio
 from opencadd.databases.klifs import setup_remote
 
-from kissim.encoding.features import SideChainOrientationFeature, SideChainOrientationFeatureKlifs
+from kissim.io import PocketBioPython
+from kissim.encoding.features import SideChainOrientationFeature
 
 REMOTE = setup_remote()
 
@@ -27,7 +28,8 @@ class TestsSideChainOrientationFeature:
         """
         Test if SideChainOrientationFeature can be set from KLIFS ID.
         """
-        feature = SideChainOrientationFeatureKlifs.from_structure_klifs_id(structure_id)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature, SideChainOrientationFeature)
         # Test class attributes
         assert isinstance(feature._residue_ids, list)
@@ -58,7 +60,8 @@ class TestsSideChainOrientationFeature:
         Test class property: side chain orientation values.
         The mean refers to the mean of non-NaN values.
         """
-        feature = SideChainOrientationFeatureKlifs.from_structure_klifs_id(structure_id)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
@@ -71,7 +74,8 @@ class TestsSideChainOrientationFeature:
         """
         Test class property: side chain orientation details.
         """
-        feature = SideChainOrientationFeatureKlifs.from_structure_klifs_id(structure_id)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
             "sco.category",

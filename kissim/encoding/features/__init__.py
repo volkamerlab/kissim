@@ -3,6 +3,6 @@ kissim.encoding.features
 """
 
 from .core import BaseFeature
-from .exposure import SolventExposureFeature, SolventExposureFeatureKlifs
-from .sco import SideChainOrientationFeature, SideChainOrientationFeatureKlifs
-from .sitealign import SiteAlignFeature, SiteAlignFeatureKlifs
+from .exposure import SolventExposureFeature
+from .sco import SideChainOrientationFeature
+from .sitealign import SiteAlignFeature

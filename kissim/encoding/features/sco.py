@@ -192,28 +192,3 @@ class SideChainOrientationFeature(BaseFeature):
                 f"Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. "
                 f"Only values between 0.0 and 180.0 allowed."
             )
-
-
-class SideChainOrientationFeatureKlifs(SideChainOrientationFeature):
-
-    @classmethod
-    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
-        """
-        Get side chain orientation for each pocket residue from a KLIFS structure ID.
-
-        Parameters
-        ----------
-        structure_klifs_id : int
-            KLIFS structure ID.
-        klifs_session : None or opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session. If None, generate new remote session.
-
-        Returns
-        -------
-        kissim.encoding.SideChainOrientationFeature
-            Side chain orientation feature object.
-        """
-
-        pocket_biopython = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
-        feature = cls.from_pocket(pocket_biopython)
-        return feature
