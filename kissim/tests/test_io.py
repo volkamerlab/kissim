@@ -83,8 +83,8 @@ class TestPocketBioPython:
         pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         assert isinstance(pocket_bp._residue_ids[0], int)
         assert len(pocket_bp._residue_ids) == n_residues
-        assert len(pocket_bp.residue_ids) == n_residues
-        assert pocket_bp.residue_ids == pocket_bp._residue_ids
+        assert len(pocket_bp.residues["residue.id"]) == n_residues
+        assert pocket_bp.residues["residue.id"].to_list() == pocket_bp._residue_ids
 
     @pytest.mark.parametrize(
         "structure_id, remote, pocket_centroid_mean",
@@ -95,8 +95,8 @@ class TestPocketBioPython:
         Test the class property regarding the pocket centroid.
         """
         pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
-        assert isinstance(pocket_bp.centroid, Bio.PDB.vectors.Vector)
-        assert pocket_bp.centroid.get_array().mean() == pytest.approx(pocket_centroid_mean)
+        assert isinstance(pocket_bp.center, Bio.PDB.vectors.Vector)
+        assert pocket_bp.center.get_array().mean() == pytest.approx(pocket_centroid_mean)
 
     @pytest.mark.parametrize(
         "structure_id, remote, n_ca_atoms",
@@ -275,7 +275,7 @@ class TestsPocketDataFrame:
         """
         Test if PocketDataFrame can be set remotely.
         """
-        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
         assert isinstance(pocket_df, PocketDataFrame)
 
     @pytest.mark.parametrize(
@@ -286,11 +286,9 @@ class TestsPocketDataFrame:
         """
         Test the class attribute (complex data) and property (pocket data).
         """
-        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
-        # Complex data
-        assert pocket_df._data_complex.shape == (n_atoms_complex, 11)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
         # Pocket data
-        assert pocket_df.data.shape == (n_atoms_pocket, 11)
+        assert pocket_df.data.shape == (n_atoms_pocket, 7)
 
     @pytest.mark.parametrize(
         "structure_id, remote, n_residues",
@@ -300,11 +298,11 @@ class TestsPocketDataFrame:
         """
         Test the class attribute and property regarding the residue IDs.
         """
-        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
-        assert isinstance(pocket_df._residue_ids[0], str)  # TODO in the future: cast to int?
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        assert isinstance(pocket_df._residue_ids[0], int)
         assert len(pocket_df._residue_ids) == n_residues
-        assert len(pocket_df.residue_ids) == n_residues
-        assert pocket_df.residue_ids == pocket_df._residue_ids
+        assert len(pocket_df.residues["residue.id"]) == n_residues
+        assert pocket_df.residues["residue.id"].to_list() == pocket_df._residue_ids
 
     @pytest.mark.parametrize(
         "structure_id, remote, pocket_centroid_mean",
@@ -314,8 +312,8 @@ class TestsPocketDataFrame:
         """
         Test the class property regarding the pocket centroid.
         """
-        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
-        assert np.array(pocket_df.centroid).mean() == pytest.approx(pocket_centroid_mean)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        assert np.array(pocket_df.center).mean() == pytest.approx(pocket_centroid_mean)
 
     @pytest.mark.parametrize(
         "structure_id, remote, n_ca_atoms",
@@ -325,8 +323,8 @@ class TestsPocketDataFrame:
         """
         Test the class property regarding the pocket's CA atoms.
         """
-        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, remote)
-        assert pocket_df.ca_atoms.shape == (n_ca_atoms, 11)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        assert pocket_df.ca_atoms.shape == (n_ca_atoms, 7)
         assert pocket_df.ca_atoms.columns.to_list() == [
             "atom.id",
             "atom.name",
@@ -334,11 +332,7 @@ class TestsPocketDataFrame:
             "atom.y",
             "atom.z",
             "residue.id",
-            "residue.name",
-            "residue.klifs_id",
-            "residue.klifs_region_id",
-            "residue.klifs_region",
-            "residue.klifs_color",
+            "residue.name"
         ]
         assert pocket_df.ca_atoms.dtypes.to_list() == [
             "int32",
@@ -346,10 +340,6 @@ class TestsPocketDataFrame:
             "float32",
             "float32",
             "float32",
-            "object",
-            "string",
-            "Int64",
-            "object",
-            "object",
-            "object",
+            "int32",
+            "string"
         ]

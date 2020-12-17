@@ -41,7 +41,7 @@ class TestsSideChainOrientationFeature:
         assert isinstance(feature._vertex_angles, list)
         for vertex_angle in feature._vertex_angles:
             assert isinstance(vertex_angle, float)
-        assert isinstance(feature._centroid, Bio.PDB.vectors.Vector)
+        assert isinstance(feature._pocket_center, Bio.PDB.vectors.Vector)
         assert isinstance(feature._ca_atoms, list)
         for ca_atom in feature._ca_atoms:
             if ca_atom:
@@ -82,7 +82,7 @@ class TestsSideChainOrientationFeature:
             "sco.angle",
             "ca.vector",
             "sc.vector",
-            "centroid",
+            "pocket_center.vector",
         ]
         assert feature.details.index.to_list() == feature._residue_ids
 

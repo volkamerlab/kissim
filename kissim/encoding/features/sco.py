@@ -29,7 +29,7 @@ class SideChainOrientationFeature(BaseFeature):
         Pocket residues' side chain orientation categories.
     _vertex_angles : list of float or None
         Pocket residues' side chain orientation angles.
-    _centroid : Bio.PDB.Vector.Vector
+    _pocket_center : Bio.PDB.Vector.Vector
         Coordinates for the pocket's centroid.
     _ca_atoms : list of Bio.PDB.Vector.Vector or None
         Coordinates for the pocket residues' CA atoms.
@@ -50,7 +50,7 @@ class SideChainOrientationFeature(BaseFeature):
         self._residue_ids = None
         self._categories = None
         self._vertex_angles = None
-        self._centroid = None
+        self._pocket_center = None
         self._ca_atoms = None
         self._sc_atoms = None
 
@@ -80,11 +80,11 @@ class SideChainOrientationFeature(BaseFeature):
 
         feature = cls()
         feature._residue_ids = pocket.residues["residue.id"].to_list()
-        feature._centroid = pocket.centroid
+        feature._pocket_center = pocket.center
         feature._ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
         feature._sc_atoms = pocket.side_chain_representatives["sc.vector"].to_list()
         feature._vertex_angles = [
-            feature._calculate_vertex_angle(sc_atom, ca_atom, feature._centroid)
+            feature._calculate_vertex_angle(sc_atom, ca_atom, feature._pocket_center)
             for ca_atom, sc_atom in zip(feature._ca_atoms, feature._sc_atoms)
         ]
         feature._categories = [
@@ -115,7 +115,7 @@ class SideChainOrientationFeature(BaseFeature):
             Side chain orientation features for pocket residues (rows) with the following columns:
             - "sco.category": Side chain orientation categories
             - "sco.angle": Side chain orientation angles
-            - "ca.vector", "sc.vector", and "centroid": Coordinates used for the angle calculation,
+            - "ca.vector", "sc.vector", and "pocket_center.vector": Coordinates used for the angle calculation,
               i.e. the pocket centroid, pocket CA atoms, and pocket side chain representative.
         """
 
@@ -128,7 +128,7 @@ class SideChainOrientationFeature(BaseFeature):
             },
             index=self._residue_ids,
         )
-        features["centroid"] = self._centroid
+        features["pocket_center.vector"] = self._pocket_center
         return features
 
     def _calculate_vertex_angle(self, vector1, vector2, vector3):

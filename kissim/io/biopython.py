@@ -126,7 +126,7 @@ class PocketBioPython(BasePocket):
         return residue_ids, residue_ixs
 
     @property
-    def centroid(self):
+    def center(self):
         """
         Pocket centroid.
 
