@@ -67,7 +67,9 @@ class PocketBioPython(BasePocket):
         pocket = cls()
         pocket.name = structure_klifs_id
         pocket._data_complex = pocket._get_biopython(structure_klifs_id, klifs_session)
-        pocket._residue_ids, pocket._residue_ixs = pocket._get_pocket_residue_ids(structure_klifs_id, klifs_session)
+        pocket._residue_ids, pocket._residue_ixs = pocket._get_pocket_residue_ids(
+            structure_klifs_id, klifs_session
+        )
         # Cast residue IDs str > int (necessary for Biopython where they are int)
         pocket._residue_ids = pocket._residue_ids
         pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
@@ -118,7 +120,9 @@ class PocketBioPython(BasePocket):
         residues = klifs_session.pockets.by_structure_klifs_id(structure_klifs_id)
         residue_ids = residues["residue.id"].to_list()
         residue_ixs = residues["residue.klifs_id"].to_list()
-        residue_ids, residue_ixs = self._format_residue_ids_and_ixs(residue_ids, residue_ids, "set pocket residues")
+        residue_ids, residue_ixs = self._format_residue_ids_and_ixs(
+            residue_ids, residue_ids, "set pocket residues"
+        )
         return residue_ids, residue_ixs
 
     @property
