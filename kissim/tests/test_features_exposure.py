@@ -32,14 +32,13 @@ class TestsSolventExposureFeature:
         # Test class attributes
         for residue_id, residue_ix, ratio, ratio_ca, ratio_cb in zip(
             feature._residue_ids,
-            feature._residue_ids,
+            feature._residue_ixs,
             feature._ratio,
             feature._ratio_ca,
             feature._ratio_cb,
         ):
             assert isinstance(residue_id, int)
-            if residue_ix:
-                assert isinstance(residue_ix, int)
+            assert isinstance(residue_ix, int)
             assert isinstance(ratio, float)
             assert isinstance(ratio_ca, float)
             assert isinstance(ratio_cb, float)
