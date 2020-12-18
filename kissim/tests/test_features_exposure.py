@@ -30,11 +30,16 @@ class TestsSolventExposureFeature:
         feature = SolventExposureFeature.from_pocket(pocket)
         assert isinstance(feature, SolventExposureFeature)
         # Test class attributes
-        assert isinstance(feature._residue_ids, list)
-        for residue_id in feature._residue_ids:
+        for residue_id, residue_ix, ratio, ratio_ca, ratio_cb in zip(
+            feature._residue_ids,
+            feature._residue_ids,
+            feature._ratio,
+            feature._ratio_ca,
+            feature._ratio_cb,
+        ):
             assert isinstance(residue_id, int)
-        assert isinstance(feature._ratio_ca, list)
-        for ratio, ratio_ca, ratio_cb in zip(feature._ratio, feature._ratio_ca, feature._ratio_cb):
+            if residue_ix:
+                assert isinstance(residue_ix, int)
             assert isinstance(ratio, float)
             assert isinstance(ratio_ca, float)
             assert isinstance(ratio_cb, float)

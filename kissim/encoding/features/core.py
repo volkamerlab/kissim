@@ -13,6 +13,8 @@ class BaseFeature:
     ----------
     _residue_ids : list of int
         Residue IDs.
+    _residue_ixs : list of int
+        Residue indices.
 
     Properties
     ----------

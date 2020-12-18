@@ -19,6 +19,8 @@ class SubpocketsFeature(BaseFeature):
     ----------
     _residue_ids : list of int
         Residue IDs.
+    _residue_ixs : list of int
+        Residue indices.
     _distances : dict of (str: list of float)
         TODO
     _moments : dict of (str: list of float)
@@ -27,6 +29,7 @@ class SubpocketsFeature(BaseFeature):
 
     def __init__(self):
         self._residue_ids = None
+        self._residue_ixs = None
         self._distances = None
         self._moments = None
 

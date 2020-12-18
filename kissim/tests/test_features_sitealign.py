@@ -40,10 +40,12 @@ class TestsSiteAlignFeature:
         assert isinstance(feature._residue_ids, list)
         assert isinstance(feature._residue_names, list)
         assert isinstance(feature._categories, list)
-        for residue_id, residue_name, category in zip(
-            feature._residue_ids, feature._residue_names, feature._categories
+        for residue_id, residue_ix, residue_name, category in zip(
+            feature._residue_ids, feature._residue_ixs, feature._residue_names, feature._categories
         ):
             assert isinstance(residue_id, int)
+            if residue_ix:
+                assert isinstance(residue_ix, int)
             assert isinstance(feature_name, str)
             assert isinstance(category, float)
         # Test class properties

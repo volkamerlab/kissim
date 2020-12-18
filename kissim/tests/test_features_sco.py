@@ -32,14 +32,13 @@ class TestsSideChainOrientationFeature:
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature, SideChainOrientationFeature)
         # Test class attributes
-        assert isinstance(feature._residue_ids, list)
-        for residue_id in feature._residue_ids:
+        for residue_id, residue_ix, category, vertex_angle in zip(
+            feature._residue_ids, feature._residue_ids, feature._categories, feature._vertex_angles
+        ):
             assert isinstance(residue_id, int)
-        assert isinstance(feature._categories, list)
-        for category in feature._categories:
+            if residue_ix:
+                assert isinstance(residue_ix, int)
             assert isinstance(category, float)
-        assert isinstance(feature._vertex_angles, list)
-        for vertex_angle in feature._vertex_angles:
             assert isinstance(vertex_angle, float)
         assert isinstance(feature._pocket_center, Bio.PDB.vectors.Vector)
         assert isinstance(feature._ca_atoms, list)

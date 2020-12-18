@@ -23,6 +23,8 @@ class SiteAlignFeature(BaseFeature):
     ----------
     _residue_ids : list of int
         Residue IDs.
+    _residue_ixs : list of int
+        Residue indices.
     _residue_names : list of str
         Residue names (3-letter code).
     _categories : list of float
@@ -43,6 +45,7 @@ class SiteAlignFeature(BaseFeature):
     def __init__(self):
 
         self._residue_ids = None
+        self._residue_ixs = None
         self._residue_names = None
         self._categories = None
 
@@ -75,6 +78,7 @@ class SiteAlignFeature(BaseFeature):
         )
         feature = cls()
         feature._residue_ids = pocket_residues["residue.id"].to_list()
+        feature._residue_ixs = pocket.residues["residue.ix"].to_list()
         feature._residue_names = pocket_residues["residue.name"].to_list()
         feature._categories = [
             feature._residue_to_value(residue_name, feature_name)

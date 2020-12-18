@@ -22,6 +22,8 @@ class SolventExposureFeature(BaseFeature):
     ----------
     _residue_ids : list of int
         Residue IDs.
+    _residue_ixs : list of int
+        Residue indices.
     _ratio : list of float
         Exposure values: Ratio of CA atoms in upper sphere / full sphere.
     _ratio_ca : list of float
@@ -43,6 +45,7 @@ class SolventExposureFeature(BaseFeature):
     def __init__(self):
 
         self._residue_ids = None
+        self._residue_ixs = None
         self._ratio = None
         self._ratio_ca = None
         self._ratio_cb = None
@@ -67,6 +70,7 @@ class SolventExposureFeature(BaseFeature):
 
         feature = cls()
         feature._residue_ids = pocket.residues["residue.id"].to_list()
+        feature._residue_ixs = pocket.residues["residue.ix"].to_list()
         exposures = feature._get_exposures(pocket, radius)
         feature._ratio = exposures["exposure"].to_list()
         feature._ratio_ca = exposures["ca.exposure"].to_list()

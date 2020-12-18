@@ -23,6 +23,8 @@ class SideChainOrientationFeature(BaseFeature):
     ----------
     _residue_ids : list of int
         Residue IDs.
+    _residue_ixs : list of int
+        Residue indices.
     _categories : list of float or None
         Pocket residues' side chain orientation categories.
     _vertex_angles : list of float or None
@@ -46,6 +48,7 @@ class SideChainOrientationFeature(BaseFeature):
     def __init__(self):
 
         self._residue_ids = None
+        self._residue_ixs = None
         self._categories = None
         self._vertex_angles = None
         self._pocket_center = None
@@ -78,6 +81,7 @@ class SideChainOrientationFeature(BaseFeature):
 
         feature = cls()
         feature._residue_ids = pocket.residues["residue.id"].to_list()
+        feature._residue_ixs = pocket.residues["residue.ix"].to_list()
         feature._pocket_center = pocket.center
         feature._ca_atoms = pocket.ca_atoms["ca.vector"].to_list()
         feature._sc_atoms = pocket.side_chain_representatives["sc.vector"].to_list()
