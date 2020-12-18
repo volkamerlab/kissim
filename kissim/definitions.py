@@ -63,6 +63,13 @@ ANCHOR_RESIDUES = {
     "front_pocket": [10, 48, 72],
 }
 
+SUBPOCKETS = {
+    "anchor_residue.klifs_ids": ANCHOR_RESIDUES.values(),
+    "subpocket.name": ANCHOR_RESIDUES.keys(),
+    "subpocket.color": ["magenta", "cornflowerblue", "green"],
+}
+
+# TODO remove
 DISTANCE_CUTOFFS = {  # 99% percentile of all distances
     "distance_to_centroid": (3.05, 21.38),
     "distance_to_hinge_region": (4.10, 23.07),
@@ -70,12 +77,9 @@ DISTANCE_CUTOFFS = {  # 99% percentile of all distances
     "distance_to_front_pocket": (5.46, 23.55),
 }
 
+# TODO remove
 MOMENT_CUTOFFS = {  # 99% percentile of all moments
     "moment1": (11.68, 14.14),
     "moment2": (3.29, 5.29),
     "moment3": (-1.47, 4.66),
 }
-
-# KLIFS IDs for hinge/DFG region (taken from KLIFS website)
-HINGE_KLIFS_IDS = [46, 47, 48]
-DFG_KLIFS_IDS = [81, 82, 83]
