@@ -7,7 +7,7 @@ import pytest
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
-from kissim.io import PocketDataFrame
+from kissim.io import PocketBioPython
 from kissim.encoding.features import SiteAlignFeature
 
 REMOTE = setup_remote()
@@ -33,13 +33,10 @@ class TestsSiteAlignFeature:
         """
         Test if SiteAlignFeature can be set from KLIFS ID.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
         feature = SiteAlignFeature.from_pocket(pocket, feature_name)
         assert isinstance(feature, SiteAlignFeature)
         # Test class attributes
-        assert isinstance(feature._residue_ids, list)
-        assert isinstance(feature._residue_names, list)
-        assert isinstance(feature._categories, list)
         for residue_id, residue_ix, residue_name, category in zip(
             feature._residue_ids, feature._residue_ixs, feature._residue_names, feature._categories
         ):
@@ -64,7 +61,7 @@ class TestsSiteAlignFeature:
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
-            pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+            pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
             SiteAlignFeature.from_pocket(pocket, feature_name)
 
     @pytest.mark.parametrize(

@@ -56,8 +56,8 @@ class SiteAlignFeature(BaseFeature):
 
         Parameters
         ----------
-        pocket : kissim.io.PocketDataFrame
-            DataFrame-based pocket object.
+        pocket : kissim.io.PocketBioPython
+            Biopython-based pocket object.
         feature_name : str
             Feature name:
             - "hba": Hydrogen bond acceptor feature
@@ -72,14 +72,12 @@ class SiteAlignFeature(BaseFeature):
         kissim.encoding.SiteAlignFeature
             SiteAlign features object.
         """
-
-        pocket_residues = (
-            pocket.data[["residue.id", "residue.name"]].drop_duplicates().reset_index(drop=True)
-        )
         feature = cls()
-        feature._residue_ids = pocket_residues["residue.id"].to_list()
+        feature._residue_ids = pocket.residues["residue.id"].to_list()
         feature._residue_ixs = pocket.residues["residue.ix"].to_list()
-        feature._residue_names = pocket_residues["residue.name"].to_list()
+        feature._residue_names = [
+            pocket._data_complex[residue_id].resname for residue_id in feature._residue_ids
+        ]
         feature._categories = [
             feature._residue_to_value(residue_name, feature_name)
             for residue_name in feature._residue_names
