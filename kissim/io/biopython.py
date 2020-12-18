@@ -121,7 +121,7 @@ class PocketBioPython(BasePocket):
         residue_ids = residues["residue.id"].to_list()
         residue_ixs = residues["residue.klifs_id"].to_list()
         residue_ids, residue_ixs = self._format_residue_ids_and_ixs(
-            residue_ids, residue_ids, "set pocket residues"
+            residue_ids, residue_ixs, "set pocket residues"
         )
         return residue_ids, residue_ixs
 

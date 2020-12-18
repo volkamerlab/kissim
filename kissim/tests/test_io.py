@@ -73,18 +73,24 @@ class TestPocketBioPython:
         assert len(pocket_bp.hse_cb) == n_hse_cb_pocket
 
     @pytest.mark.parametrize(
-        "structure_id, remote, n_residues",
-        [(12347, REMOTE, 78)],
+        "structure_id, remote, n_residues, residue_ids_sum, residue_ixs_sum",
+        [(12347, REMOTE, 78, 41198, 3381)],
     )
-    def test_residue_ids(self, structure_id, remote, n_residues):
+    def test_residues(self, structure_id, remote, n_residues, residue_ids_sum, residue_ixs_sum):
         """
         Test the class attribute and property regarding the residue IDs.
         """
         pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        assert isinstance(pocket_bp.residues, pd.DataFrame)
+        assert len(pocket_bp.residues) == n_residues
+        assert pocket_bp.residues["residue.id"].sum() == residue_ids_sum
+        assert pocket_bp.residues["residue.ix"].sum() == residue_ixs_sum
         assert isinstance(pocket_bp._residue_ids[0], int)
         assert len(pocket_bp._residue_ids) == n_residues
-        assert len(pocket_bp.residues["residue.id"]) == n_residues
-        assert pocket_bp.residues["residue.id"].to_list() == pocket_bp._residue_ids
+        assert sum(pocket_bp._residue_ids) == residue_ids_sum
+        assert isinstance(pocket_bp._residue_ixs[0], int)
+        assert len(pocket_bp._residue_ixs) == n_residues
+        assert sum(pocket_bp._residue_ixs) == residue_ixs_sum
 
     @pytest.mark.parametrize(
         "structure_id, remote, pocket_centroid_mean",
