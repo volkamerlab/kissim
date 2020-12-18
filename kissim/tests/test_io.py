@@ -40,7 +40,7 @@ class TestPocketBioPython:
 
         pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         # Complex data
-        assert isinstance(pocket_bp._data_complex, Bio.PDB.Structure.Structure)
+        assert isinstance(pocket_bp._data_complex, Bio.PDB.Chain.Chain)
         assert len(list(pocket_bp._data_complex.get_atoms())) == n_atoms_complex
 
     @pytest.mark.parametrize(

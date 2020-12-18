@@ -27,7 +27,7 @@ class PocketBioPython(BasePocket):
         Pocket residue IDs.
     _residue_ixs : list of int
         Pocket residue indices.
-    _data_complex : Bio.PDB.Structure.Structure
+    _data_complex : Bio.PDB.Chain.Chain
         Structural data for the full complex (not the pocket only).
     _hse_ca_complex : Bio.PDB.HSExposure.HSExposureCA
         CA exposures for the full complex (not the pocket only).
@@ -66,7 +66,14 @@ class PocketBioPython(BasePocket):
             klifs_session = setup_remote()
         pocket = cls()
         pocket.name = structure_klifs_id
-        pocket._data_complex = pocket._get_biopython(structure_klifs_id, klifs_session)
+        # Load structure as biopython Chain object
+        structure = pocket._get_biopython(structure_klifs_id, klifs_session)
+        # KLIFS PDB files contain only one model and one chain - get their IDs
+        model_id = next(structure.get_models()).id
+        chain_id = next(structure.get_chains()).id
+        chain = structure[model_id][chain_id]
+        pocket._data_complex = chain
+        # Get pocket residues
         pocket._residue_ids, pocket._residue_ixs = pocket._get_pocket_residue_ids(
             structure_klifs_id, klifs_session
         )
