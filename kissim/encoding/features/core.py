@@ -7,7 +7,7 @@ Defines the core classes and functions.
 
 class BaseFeature:
     """
-    Base class for kissim features that encode the KLIFS-defined kinase binding site residues.
+    Base class for features that encode pocket residues.
 
     Attributes
     ----------

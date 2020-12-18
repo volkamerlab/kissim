@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SubpocketsFeature(BaseFeature):
     """
-    Distances between all subpocket and all residues in the KLIFS-defined kinase binding site
-    of 85 pre-aligned residues.
+    Distances between all subpockets and all pocket residues.
 
     Attributes
     ----------

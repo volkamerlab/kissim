@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SolventExposureFeature(BaseFeature):
     """
-    Exposure to the solvent for each residue in the KLIFS-defined kinase binding site of 85
-    pre-aligned residues.
+    Exposure to the solvent for each pocket residue.
 
     Attributes
     ----------

@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SideChainOrientationFeature(BaseFeature):
     """
-    Side chain orientation for each residue in the KLIFS-defined kinase binding site
-    of 85 pre-aligned residues.
+    Side chain orientation for each pocket residue.
 
     Attributes
     ----------

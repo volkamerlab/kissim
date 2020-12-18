@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SiteAlignFeature(BaseFeature):
     """
-    SiteAlign features for each residue in the KLIFS-defined kinase binding site of 85 pre-aligned
-    residues.
+    SiteAlign features for each pocket residue.
 
     Attributes
     ----------
