@@ -1,5 +1,11 @@
 """
 Unit and regression test for kissim.io.PocketBioPython class methods.
+
+Note that class 
+- methods (`from_structure_klifs_id`)
+- attribute (`_residue_ids`, `residue_ixs`) and 
+- property (`residues`)
+are tested in test_io.py.
 """
 
 import pytest
@@ -17,21 +23,6 @@ class TestPocketBioPython:
     """
     Test PocketBioPython class.
     """
-
-    @pytest.mark.parametrize(
-        "structure_id, remote",
-        [(12347, None), (12347, REMOTE)],
-    )
-    def test_from_structure_klifs_id(self, structure_id, remote):
-        """
-        Test if PocketBioPython can be set remotely (from_structure_klifs_id()).
-        Test attribute `name`.
-        """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
-        assert isinstance(pocket_bp, PocketBioPython)
-
-        # Test attribute name
-        assert pocket_bp.name == structure_id
 
     @pytest.mark.parametrize(
         "structure_id, remote, n_atoms_complex, n_atoms_pocket",
@@ -61,9 +52,9 @@ class TestPocketBioPython:
         n_hse_cb_pocket,
     ):
         """
-        Test class 
-        - attributes (`_hse_ca_complex`, `_hse_cb_complex`) and 
-        - properties (`hse_ca`, `hse_cb`) 
+        Test class
+        - attributes (`_hse_ca_complex`, `_hse_cb_complex`) and
+        - properties (`hse_ca`, `hse_cb`)
         regarding the HSExposure.
         """
         pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
@@ -78,38 +69,6 @@ class TestPocketBioPython:
         assert len(pocket_bp.hse_ca) == n_hse_ca_pocket
         assert isinstance(pocket_bp.hse_cb, dict)
         assert len(pocket_bp.hse_cb) == n_hse_cb_pocket
-
-    @pytest.mark.parametrize(
-        "structure_id, remote, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum",
-        [(12347, REMOTE, 85, 78, 41198, 3655)],
-    )
-    def test_residues(
-        self, structure_id, remote, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum
-    ):
-        """
-        Test the class 
-        - attribute (`_residue_ids`, `residue_ixs`) and 
-        - property (`residues`)
-        regarding the residue IDs.
-        """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
-
-        # Test property residues
-        assert isinstance(pocket_bp.residues, pd.DataFrame)
-        assert len(pocket_bp.residues) == n_residues
-        assert len(pocket_bp.residues.dropna(axis=0, subset=["residue.id"])) == n_residues_wo_na
-        assert pocket_bp.residues["residue.id"].sum() == residue_ids_sum
-        assert pocket_bp.residues["residue.ix"].sum() == residue_ixs_sum
-
-        # Test attribute _residue_ids
-        assert isinstance(pocket_bp._residue_ids[0], int)
-        assert len(pocket_bp._residue_ids) == n_residues
-        assert sum([i for i in pocket_bp._residue_ids if i]) == residue_ids_sum
-
-        # Test attribute _residue_ix
-        assert isinstance(pocket_bp._residue_ixs[0], int)
-        assert len(pocket_bp._residue_ixs) == n_residues
-        assert sum([i for i in pocket_bp._residue_ixs if i]) == residue_ixs_sum
 
     @pytest.mark.parametrize(
         "structure_id, remote, pocket_centroid_mean",
@@ -263,7 +222,7 @@ class TestPocketBioPython:
     )
     def test_side_chain_representatives(self, structure_id, remote):
         """
-        Test the class property regarding the pocket's side chain representatives, 
+        Test the class property regarding the pocket's side chain representatives,
         i.e. `side_chain_representatives`.
         """
         pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
