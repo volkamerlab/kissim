@@ -9,5 +9,6 @@ are tested in test_io.py.
 
 Note also that PocketDataFrame is a subclass of opencadd's KlifsPocket class, 
 which is tested thouroughly in opencadd:
-- properties (`data`, `center`, `ca_atoms`)
+- attributes (`data`, `center`)
+- properties (`ca_atoms`)
 """
