@@ -245,7 +245,9 @@ class SubpocketsFeature(BaseFeature):
         return moments
 
     @staticmethod
-    def calculate_first_second_third_moments(values):  # TODO Could be moved to something like utils
+    def calculate_first_second_third_moments(
+        values,
+    ):  # TODO Could be moved to something like utils
         """
         Get first, second, and third moment (mean, standard deviation, and skewness)
         for a distribution of values.

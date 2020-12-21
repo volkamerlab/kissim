@@ -120,8 +120,8 @@ class SiteAlignFeature(BaseFeature):
         features = pd.DataFrame(
             {
                 "residue.id": self._residue_ids,
-                "residue.name": self._residue_names, 
-                "sitealign.category": self._categories
+                "residue.name": self._residue_names,
+                "sitealign.category": self._categories,
             },
             index=self._residue_ixs,
         )

@@ -136,7 +136,7 @@ class TestsSubpocketsFeature:
             ([0], [0, 0, 0]),
             ([0, 0], [0, 0, 0]),
             ([1, 0], [0.5, 0.5, 0]),
-            ([3, 0, 0], [1, 1.4142135, 1.2599210])
+            ([3, 0, 0], [1, 1.4142135, 1.2599210]),
         ],
     )
     def test_calculate_first_second_third_moment(self, values, moments):
