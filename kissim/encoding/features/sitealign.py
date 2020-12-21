@@ -73,10 +73,12 @@ class SiteAlignFeature(BaseFeature):
             SiteAlign features object.
         """
         feature = cls()
-        feature._residue_ids = pocket.residues["residue.id"].to_list()
-        feature._residue_ixs = pocket.residues["residue.ix"].to_list()
+        feature._residue_ids = pocket._residue_ids
+        feature._residue_ixs = pocket._residue_ixs
+            
         feature._residue_names = [
-            pocket._data_complex[residue_id].resname for residue_id in feature._residue_ids
+            pocket._data_complex[residue_id].resname if residue_id is not None else None
+            for residue_id in feature._residue_ids
         ]
         feature._categories = [
             feature._residue_to_value(residue_name, feature_name)
@@ -126,7 +128,7 @@ class SiteAlignFeature(BaseFeature):
             index=self._residue_ixs,
         )
         features.index.name = "residue.ix"
-        return features
+        return features.astype({"residue.id": "Int32", "sitealign.category": "Int32"})
 
     def _residue_to_value(self, residue_name, feature_name):
         """
@@ -146,6 +148,10 @@ class SiteAlignFeature(BaseFeature):
         """
 
         self._raise_invalid_feature_name(feature_name)
+
+        if residue_name is None:
+            return None
+
         try:
             feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
         except KeyError:
