@@ -33,6 +33,15 @@ class PocketBioPython(BasePocket):
         CA exposures for the full complex (not the pocket only).
     _hse_cb_complex : Bio.PDB.HSExposure.HSExposureCB
         CB exposures for the full complex (not the pocket only).
+
+    Properties
+    ----------
+    center
+    ca_atoms
+    pcb_atoms
+    side_chain_representatives
+    hse_ca
+    hse_cb
     """
 
     def __init__(self):
@@ -62,7 +71,7 @@ class PocketBioPython(BasePocket):
             Biopython-based pocket object.
         """
 
-        if not klifs_session:
+        if klifs_session is None:
             klifs_session = setup_remote()
         pocket = cls()
         pocket.name = structure_klifs_id
@@ -77,8 +86,7 @@ class PocketBioPython(BasePocket):
         pocket._residue_ids, pocket._residue_ixs = pocket._get_pocket_residue_ids(
             structure_klifs_id, klifs_session
         )
-        # Cast residue IDs str > int (necessary for Biopython where they are int)
-        pocket._residue_ids = pocket._residue_ids
+        # Get HSE data
         pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
         pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
         return pocket
@@ -145,7 +153,7 @@ class PocketBioPython(BasePocket):
 
         ca_atoms = self.ca_atoms
         ca_atom_vectors = ca_atoms["ca.atom"].to_list()
-        ca_atom_vectors = [i for i in ca_atom_vectors if i != None]
+        ca_atom_vectors = [i for i in ca_atom_vectors if i is not None]
         centroid = self.center_of_mass(ca_atom_vectors, geometric=False)
         centroid = Vector(centroid)
 
@@ -166,7 +174,7 @@ class PocketBioPython(BasePocket):
         """
 
         ca_atoms = []
-        for residue_id in self.residues["residue.id"]:
+        for residue_id in self._residue_ids:
             ca_atom = self._ca_atom(residue_id)
             ca_atoms.append([residue_id, ca_atom])
         ca_atoms = pd.DataFrame(ca_atoms, columns=["residue.id", "ca.atom"])
@@ -180,7 +188,7 @@ class PocketBioPython(BasePocket):
                 ca_atom_vectors.append(None)
         ca_atoms["ca.vector"] = ca_atom_vectors
 
-        return ca_atoms
+        return ca_atoms.astype({"residue.id": "Int32"})
 
     @property
     def pcb_atoms(self):
@@ -192,16 +200,16 @@ class PocketBioPython(BasePocket):
         pandas.DataFrame
             Pocket pseudo-CB atoms (rows) with the following columns:
             - "residue.id": Residue ID
-            - "ca.vector": Pseudo-CB atom vector (Bio.PDB.vectors.Vector)
+            - "pcb.vector": Pseudo-CB atom vector (Bio.PDB.vectors.Vector)
         """
 
         pcb_atoms = []
-        for residue_id in self.residues["residue.id"]:
+        for residue_id in self._residue_ids:
             pcb_atom = self._pcb_atom(residue_id)
             pcb_atoms.append([residue_id, pcb_atom])
         pcb_atoms = pd.DataFrame(pcb_atoms, columns=["residue.id", "pcb.vector"])
 
-        return pcb_atoms
+        return pcb_atoms.astype({"residue.id": "Int32"})
 
     @property
     def side_chain_representatives(self):
@@ -218,7 +226,7 @@ class PocketBioPython(BasePocket):
         """
 
         sc_atoms = []
-        for residue_id in self.residues["residue.id"]:
+        for residue_id in self._residue_ids:
             sc_atom = self._side_chain_representative(residue_id)
             sc_atoms.append([residue_id, sc_atom])
         sc_atoms = pd.DataFrame(sc_atoms, columns=["residue.id", "sc.atom"])
@@ -232,7 +240,7 @@ class PocketBioPython(BasePocket):
                 sc_atom_vectors.append(None)
         sc_atoms["sc.vector"] = sc_atom_vectors
 
-        return sc_atoms
+        return sc_atoms.astype({"residue.id": "Int32"})
 
     @property
     def hse_ca(self):
@@ -242,7 +250,8 @@ class PocketBioPython(BasePocket):
         Returns
         -------
         dict of tuple: tuple
-            CA exposures (values) for pocket residues (keys):
+            CA exposures (values) for pocket residues (keys).
+            Example key-value pair: ('A', (' ', 461, ' ')): (0, 16, 0.4655905486374442)
 
         Notes
         -----
@@ -261,7 +270,7 @@ class PocketBioPython(BasePocket):
         return {
             residue: exposure
             for residue, exposure in self._hse_ca_complex.property_dict.items()
-            if residue[1][1] in self.residues["residue.id"].to_list()
+            if residue[1][1] in self._residue_ids
         }
 
     @property
@@ -272,7 +281,8 @@ class PocketBioPython(BasePocket):
         Returns
         -------
         dict of tuple: tuple
-            CA exposures (values) for pocket residues (keys):
+            CA exposures (values) for pocket residues (keys).
+            Example key-value pair: ('A', (' ', 461, ' ')): (2, 14, 0.0)
 
         Notes
         -----
@@ -282,7 +292,7 @@ class PocketBioPython(BasePocket):
         return {
             residue: exposure
             for residue, exposure in self._hse_cb_complex.property_dict.items()
-            if residue[1][1] in self.residues["residue.id"].to_list()
+            if residue[1][1] in self._residue_ids
         }
 
     def _ca_atom(self, residue_id):
@@ -303,7 +313,7 @@ class PocketBioPython(BasePocket):
         residue = self._residue_from_residue_id(residue_id)
         try:
             return residue["CA"]
-        except KeyError:
+        except (KeyError, TypeError):
             return None
 
     def _pcb_atom(self, residue_id):
@@ -323,20 +333,24 @@ class PocketBioPython(BasePocket):
 
         # Get biopython residue object
         residue = self._residue_from_residue_id(residue_id)
-        # Get pCB atom
-        if residue.get_resname() == "GLY":
-            pcb = self._pcb_atom_from_gly(residue)
-        else:
-            pcb = self._pcb_atom_from_non_gly(residue)
 
-        if pcb:
-            # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
-            ca = residue["CA"].get_vector()
-            ca_pcb = ca + pcb[0]
-            return ca_pcb
-        else:
-            # If GLY's CA, N, or C is missing
+        if residue is None:
             return None
+        else:
+            # Get pCB atom
+            if residue.get_resname() == "GLY":
+                pcb = self._pcb_atom_from_gly(residue)
+            else:
+                pcb = self._pcb_atom_from_non_gly(residue)
+
+            if pcb:
+                # Center pseudo-CB vector at CA atom to get pseudo-CB coordinate
+                ca = residue["CA"].get_vector()
+                ca_pcb = ca + pcb[0]
+                return ca_pcb
+            else:
+                # If GLY's CA, N, or C is missing
+                return None
 
     def _pcb_atom_from_non_gly(self, residue):
         """
@@ -359,18 +373,18 @@ class PocketBioPython(BasePocket):
             raise ValueError(f"Residue cannot be GLY.")
         else:
             # Get residue before and after input residue
-            try:
-                residue_before = self._residue_from_residue_id(residue_id - 1)
-                residue_after = self._residue_from_residue_id(residue_id + 1)
-            # If residue before or after do not exist, return None
-            except KeyError:
-                return None
+            residue_before = self._residue_from_residue_id(residue_id - 1)
+            residue_after = self._residue_from_residue_id(residue_id + 1)
 
-            # Get pseudo-CB for non-GLY residue
-            pcb = self._hse_ca_complex._get_cb(residue_before, residue, residue_after)
-            # Keep only pseudo-CB coordinates (drop angle between CA-CB and CA-pCB)
-            pcb = pcb[0]
-            return pcb
+            # If residue before or after do not exist, return None
+            if residue_before is None or residue_after is None:
+                return None
+            else:
+                # Get pseudo-CB for non-GLY residue
+                pcb = self._hse_ca_complex._get_cb(residue_before, residue, residue_after)
+                # Keep only pseudo-CB coordinates (drop angle between CA-CB and CA-pCB)
+                pcb = pcb[0]
+                return pcb
 
     def _pcb_atom_from_gly(self, residue):
         """
@@ -411,6 +425,10 @@ class PocketBioPython(BasePocket):
 
         # Get biopython residue object
         residue = self._residue_from_residue_id(residue_id)
+        if residue is None:
+            return None
+
+        # Get residue name
         residue_name = residue.get_resname()
 
         # Convert non-standard amino acids if applicable
@@ -439,8 +457,8 @@ class PocketBioPython(BasePocket):
 
         Returns
         -------
-        Bio.PDB.Residue.Residue
-            Residue.
+        Bio.PDB.Residue.Residue or None
+            Residue (None if input residue ID is not known).
         """
 
         residues = list(self._data_complex.get_residues())
@@ -448,8 +466,10 @@ class PocketBioPython(BasePocket):
 
         if len(residue) == 1:
             return residue[0]
+        elif len(residue) == 0:
+            return None
         else:
-            raise KeyError(f"{len(residue)} residues were found, but must be 1.")
+            raise KeyError(f"{len(residue)} residues were found, but must be 1 or 0.")
 
     def center_of_mass(self, entity, geometric=False):
         """
