@@ -106,12 +106,14 @@ class SolventExposureFeature(BaseFeature):
 
         features = pd.DataFrame(
             {
+                "residue.id": self._residue_ids,
                 "exposure.ratio": self._ratio,
                 "exposure.ratio_ca": self._ratio_ca,
                 "exposure.ratio_cb": self._ratio_cb,
             },
-            index=self._residue_ids,
+            index=self._residue_ixs,
         )
+        features.index.name = "residue.ix"
         return features
 
     def _get_exposures(self, pocket, radius=12.0):

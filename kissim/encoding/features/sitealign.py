@@ -117,10 +117,16 @@ class SiteAlignFeature(BaseFeature):
             - "sitealign.category": Feature value
         """
 
-        return pd.DataFrame(
-            {"residue.name": self._residue_names, "sitealign.category": self._categories},
-            index=self._residue_ids,
+        features = pd.DataFrame(
+            {
+                "residue.id": self._residue_ids,
+                "residue.name": self._residue_names, 
+                "sitealign.category": self._categories
+            },
+            index=self._residue_ixs,
         )
+        features.index.name = "residue.ix"
+        return features
 
     def _residue_to_value(self, residue_name, feature_name):
         """

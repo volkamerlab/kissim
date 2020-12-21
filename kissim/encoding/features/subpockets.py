@@ -100,7 +100,10 @@ class SubpocketsFeature(BaseFeature):
             Feature details for pocket residues.
         """
         distances = pd.DataFrame(self._distances, index=self._residue_ixs)
+        distances.insert(loc=0, column="residue.id", value=self._residue_ids)
+        distances.index.name = "residue.ix"
         moments = pd.DataFrame(self._moments, index=[1, 2, 3])
+        moments.index.name = "moment"
         return {"distances": distances, "moments": moments}
 
     def add_subpockets(self, pocket, subpockets):

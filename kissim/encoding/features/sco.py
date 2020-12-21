@@ -123,14 +123,16 @@ class SideChainOrientationFeature(BaseFeature):
 
         features = pd.DataFrame(
             {
+                "residue.id": self._residue_ids,
                 "sco.category": self._categories,
                 "sco.angle": self._vertex_angles,
                 "ca.vector": self._ca_atoms,
                 "sc.vector": self._sc_atoms,
             },
-            index=self._residue_ids,
+            index=self._residue_ixs,
         )
         features["pocket_center.vector"] = self._pocket_center
+        features.index.name = "residue.ix"
         return features
 
     def _calculate_vertex_angle(self, vector1, vector2, vector3):
