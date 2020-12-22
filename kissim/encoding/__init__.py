@@ -2,4 +2,4 @@
 kissim.encoding
 """
 
-# from .api import Fingerprint, FingerprintGenerator
+from .fingerprint import Fingerprint, FingerprintGenerator

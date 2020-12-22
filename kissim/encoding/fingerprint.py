@@ -1,18 +1,22 @@
 """
-kissim.encoding.api TODO
+kissim.encoding.fingerprint
 """
 
 import datetime
 import logging
+
 from multiprocessing import cpu_count, Pool
 import numpy as np
 import pandas as pd
-from scipy.special import cbrt
-from scipy.stats.stats import moment
+from opencadd.databases.klifs import setup_remote
 
-from .features import SideChainOrientationFeature, SpatialFeatures, PhysicoChemicalFeatures
-from ..definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
-from ..auxiliary import KlifsMoleculeLoader, PdbChainLoader
+from kissim.io import PocketBioPython, PocketDataFrame
+from kissim.encoding.features import (
+    SiteAlignFeature,
+    SideChainOrientationFeature,
+    SolventExposureFeature,
+    SubpocketsFeature,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,188 +36,72 @@ class FingerprintGenerator:
     def __init__(self):
 
         self.data = None
-        self.path_klifs_download = None
+        self.structure_klifs_ids = None
 
-    def from_metadata(self, klifs_metadata, path_klifs_download):
+    @classmethod
+    def from_structure_klifs_ids(cls, *structure_klifs_ids, klifs_session=None):
         """
-        Generate fingerprints for multiple molecules described in KLIFS metadata.
+        Calculate fingerprints for one or more KLIFS structures (by structure KLIFS IDs).
+        Uses parallelization.
 
         Parameters
         ----------
-        klifs_metadata : pandas.DataFrame
-            Metadata (columns) for KLIFS molecules (rows).
+        TODO
         """
 
         start = datetime.datetime.now()
-
-        logger.info(f"ENCODING: FingerprintGenerator")
-
-        # Set path to KLIFS download
-        self.path_klifs_download = path_klifs_download
-
         # Number of CPUs on machine
         num_cores = cpu_count() - 1
         logger.info(f"Number of cores used: {num_cores}")
-
         # Create pool with `num_processes` processes
         pool = Pool(processes=num_cores)
 
-        # Get KLIFS entries as list
-        entry_list = [j for i, j in klifs_metadata.iterrows()]
-
+        # TODO
+        fingerprint_generator = cls()
+        fingerprint_generator.structure_klifs_ids = structure_klifs_ids
         # Apply function to each chunk in list
-        fingerprints_list = pool.map(self._get_fingerprint, entry_list)
+        fingerprints_list = pool.map(
+            fingerprint_generator._get_fingerprint, structure_klifs_ids
+        )
+        fingerprint_generator.data = {
+            i.name: i for i in fingerprints_list if i is not None  # Removes emtpy fingerprints
+        }
 
         # Close and join pool
         pool.close()
         pool.join()
-
         logger.info(f"Number of fingerprints: {len(fingerprints_list)}")
-
-        # Transform to dict
-        self.data = {
-            i.molecule_code: i
-            for i in fingerprints_list
-            if i is not None  # Removes emtpy fingerprints
-        }
-
         end = datetime.datetime.now()
-
         logger.info(f"Start of fingerprint generation: {start}")
         logger.info(f"End of fingerprint generation: {end}")
 
-    def _get_fingerprint(self, klifs_metadata_entry):
+        return fingerprint_generator
+
+    def _get_fingerprint(self, structure_klifs_id, klifs_session):
         """
         Get fingerprint.
 
         Parameters
         ----------
-        klifs_metadata_entry : pandas.Series
-            KLIFS metadata describing a pocket entry in the KLIFS dataset.
+        TODO
 
         Returns
         -------
-        kissim.similarity.Fingerprint
-            Fingerprint
+        TODO
         """
 
+        print(structure_klifs_id)
+
         try:
-
-            fingerprint = Fingerprint()
-            fingerprint.from_metadata_entry(klifs_metadata_entry, self.path_klifs_download)
-
+            fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
             return fingerprint
 
-        except Exception as e:
+        except Exception as e:  # TODO too generic!
 
-            logger.info(f"Molecule with empty fingerprint: {klifs_metadata_entry.filepath}")
-            logger.error(e)
-
-            return None
-
-
-class SideChainOrientationGenerator:
-    """
-    Generate side chain orientations for multiple molecules. Uses parallel computing of
-    fingerprint pairs.
-
-    Attributes
-    ----------
-    data : dict of kissim.encoding.SideChainOrientationFeature
-        Fingerprints for multiple molecules.
-    path_klifs_download : pathlib.Path or str
-        Path to directory of KLIFS dataset files.
-    """
-
-    def __init__(self):
-
-        self.data = None
-        self.path_klifs_download = None
-
-    def from_metadata(self, klifs_metadata, path_klifs_download):
-        """
-        Generate side chain orientation features for multiple molecules described in
-        KLIFS metadata.
-
-        Parameters
-        ----------
-        klifs_metadata : pandas.DataFrame
-            Metadata (columns) for KLIFS molecules (rows).
-        path_klifs_download : pathlib.Path or str
-            Path to directory of KLIFS dataset files.
-        """
-
-        # Get start time of script
-        start = datetime.datetime.now()
-
-        logger.info(f"Calculate side chain orientations...")
-
-        # Set path to KLIFS download
-        self.path_klifs_download = path_klifs_download
-
-        # Number of CPUs on machine
-        num_cores = cpu_count() - 1
-        logger.info(f"Number of cores used: {num_cores}")
-
-        # Create pool with `num_processes` processes
-        pool = Pool(processes=num_cores)
-
-        # Get KLIFS entries as list
-        entry_list = [j for i, j in klifs_metadata.iterrows()]
-
-        # Apply function to each chunk in list
-        fingerprints_list = pool.map(self._get_sco, entry_list)
-
-        # Close and join pool
-        pool.close()
-        pool.join()
-
-        logger.info(f"Number of fingerprints: {len(fingerprints_list)}")
-
-        # Transform to dict
-        self.data = {i.molecule_code: i for i in fingerprints_list}
-
-        # Get end time of script
-        end = datetime.datetime.now()
-
-        logger.info(start)
-        logger.info(end)
-
-    def _get_sco(self, klifs_metadata_entry):
-        """
-        Get side chain orientation.
-
-        Parameters
-        ----------
-        klifs_metadata_entry : pandas.Series
-            KLIFS metadata describing a pocket entry in the KLIFS dataset.
-
-        Returns
-        -------
-        kissim.similarity.SideChainOrientationFeature
-            Side chain orientation.
-        """
-
-        try:
-
-            klifs_molecule_loader = KlifsMoleculeLoader()
-            klifs_molecule_loader.from_metadata_entry(
-                klifs_metadata_entry, self.path_klifs_download
+            logger.info(
+                f"Fingerprint for structure with KLIFS ID {structure_klifs_id} could not "
+                f"be generated."
             )
-            molecule = klifs_molecule_loader.molecule
-
-            pdb_chain_loader = PdbChainLoader()
-            pdb_chain_loader.from_metadata_entry(klifs_metadata_entry, self.path_klifs_download)
-            chain = pdb_chain_loader.chain
-
-            feature = SideChainOrientationFeature()
-            feature.from_molecule(molecule, chain)
-
-            return feature
-
-        except Exception as e:
-
-            logger.info(f"Molecule with empty fingerprint: {klifs_metadata_entry.filepath}")
             logger.error(e)
 
             return None
@@ -221,7 +109,7 @@ class SideChainOrientationGenerator:
 
 class Fingerprint:
     """
-    Kinase pocket is defined by 85 pre-aligned residues in KLIFS, which are described each with
+    The KLIFS kinase pocket is defined by 85 pre-aligned residues, which are described each with
     (i) 8 physicochemical and
     (ii) 4 distance features as well as
     (iii) the first three moments of aforementioned feature distance distributions.
@@ -230,12 +118,10 @@ class Fingerprint:
 
     Attributes
     ----------
-    molecule_code : str
-        Molecule code as defined by KLIFS in mol2 file.
-    fingerprint : dict of pandas.DataFrame
-        Fingerprint, consisting of physicochemical, distance and moment features.
-    fingerprint_normalized : dict of pandas.DataFrame
-        Normalized fingerprint, consisting of physicochemical, distance and moment features.
+    structure_klifs_id : str
+        Structure KLIFS ID.
+    values : dict of pandas.DataFrame
+        Fingerprint values, consisting of physicochemical, distance and moment features.
 
     Notes
     -----
@@ -245,184 +131,162 @@ class Fingerprint:
     - Pharmacophoric features:
       Hydrogen bond donor, hydrogen bond acceptor, aromatic, aliphatic and charge feature
     - Side chain orientation
-    - Half sphere exposure
+    - Solvent exposure
 
     SPATIAL features:
 
     - DISTANCE of each residue to 4 reference points (85 x 4 matrix = 340 bits):
-      - Binding site centroid
-      - Hinge region
-      - DFG region
-      - Front pocket
+      - Pocket center
+      - Hinge region (subpocket center)
+      - DFG region (subpocket center)
+      - Front pocket (subpocket center)
     - MOMENTS for distance distributions for the 4 reference points (4 x 3 matrix = 12 bits):
       - Moment 1: Mean
       - Moment 2: Standard deviation
       - Moment 3: Skewness (cube root)
 
     The terminology used for the feature hierarchy is the following:
-    Feature category, e.g. spatial or physicochemical
-    - Feature type, e.g. distance or physicochemical
-      - Feature, e.g. distance to centroid or size
+    - Feature category, e.g. spatial or physicochemical
+    - Feature type, e.g. distance to centroid or size
     """
 
     def __init__(self):
 
-        self.molecule_code = None
-
-        self.fingerprint = {"physicochemical": None, "distances": None, "moments": None}
-        self.fingerprint_normalized = {"physicochemical": None, "distances": None, "moments": None}
-
-        self.features_verbose = {
-            "reference_points": None,
-            "side_chain_orientation": None,
-            "exposure": None,
-        }
+        self.structure_klifs_id = None
+        self.values_dict = None
+        self.residue_ids = None
+        self.residue_ixs = None
 
     @property
     def physicochemical(self):
-        return self.fingerprint["physicochemical"]
+        """TODO"""
+        features = self.values_dict["physicochemical"]
+        features = pd.DataFrame(features, index=self.residue_ixs)
+        features.index.name = "residue.ix"
+        return features
 
     @property
     def distances(self):
-        return self.fingerprint["distances"]
+        """TODO"""
+        features = self.values_dict["spatial"]["distances"]
+        features = pd.DataFrame(features, index=self.residue_ixs)
+        features.index.name = "residue.ix"
+        return features
 
     @property
     def moments(self):
-        return self.fingerprint["moments"]
+        """TODO"""
+        features = self.values_dict["spatial"]["moments"]
+        features = pd.DataFrame(features, index=[1, 2, 3])
+        features.index.name = "moments"
+        return features
 
-    @property
-    def physicochemical_distances(self):
-        return self._get_fingerprint("physicochemical_distances", normalized=False)
-
-    @property
-    def physicochemical_moments(self):
-        return self._get_fingerprint("physicochemical_moments", normalized=False)
-
-    @property
-    def physicochemical_normalized(self):
-        return self.fingerprint_normalized["physicochemical"]
-
-    @property
-    def distances_normalized(self):
-        return self.fingerprint_normalized["distances"]
-
-    @property
-    def moments_normalized(self):
-        return self.fingerprint_normalized["moments"]
-
-    @property
-    def physicochemical_distances_normalized(self):
-        return self._get_fingerprint("physicochemical_distances", normalized=True)
-
-    @property
-    def physicochemical_moments_normalized(self):
-        return self._get_fingerprint("physicochemical_moments", normalized=True)
-
-    def from_metadata_entry(self, klifs_metadata_entry, path_klifs_download):
+    @classmethod
+    def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
-        Get kinase fingerprint from KLIFS metadata entry.
+        Calculate fingerprint for a KLIFS structure (by structure KLIFS ID).
 
         Parameters
         ----------
-        klifs_metadata_entry : pandas.Series
-            KLIFS metadata describing a pocket entry in the KLIFS dataset.
-        path_klifs_download : pathlib.Path or str
-            Path to directory of KLIFS dataset files.
+        structure_klifs_id : int
+            Structure KLIFS ID.
         """
+        if klifs_session is None:
+            klifs_session = setup_remote()
 
-        klifs_molecule_loader = KlifsMoleculeLoader()
-        klifs_molecule_loader.from_metadata_entry(klifs_metadata_entry, path_klifs_download)
-        molecule = klifs_molecule_loader.molecule
+        fingerprint = cls()
 
-        pdb_chain_loader = PdbChainLoader()
-        pdb_chain_loader.from_metadata_entry(klifs_metadata_entry, path_klifs_download)
-        chain = pdb_chain_loader.chain
+        pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, klifs_session)
+        # Check if residues are consistent between pockets
+        if pocket_bp._residue_ids != pocket_df._residue_ids:
+            raise ValueError(f"Residue PDB IDs are not the same for df and bp pockets.")
+        if pocket_bp._residue_ixs != pocket_df._residue_ixs:
+            raise ValueError(f"Residue indices are not the same for df and bp pockets.")
+        # Set residue attributes
+        fingerprint.residue_ids = pocket_bp._residue_ids
+        fingerprint.residue_ixs = pocket_bp._residue_ixs
 
-        self.from_molecule(molecule, chain)
+        values_dict = {}
+        values_dict["physicochemical"] = fingerprint._get_physicochemical_features_dict(pocket_bp)
+        values_dict["spatial"] = fingerprint._get_spatial_features_dict(pocket_df)
+        fingerprint.values_dict = values_dict
 
-    def from_molecule(self, molecule, chain):
-        """
-        Get kinase fingerprint from molecule.
+        return fingerprint
 
-        Parameters
-        ----------
-        molecule : biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            Content of mol2 or pdb file as BioPandas object.
-        chain : Bio.PDB.Chain.Chain
-            Chain from PDB file.
-        """
+    def values_array(self, physicochemical=True, spatial_distances=False, spatial_moments=True):
+        """TODO Cast dictionaries to 1D numpy array"""
 
-        self.molecule_code = molecule.code
+        features = []
 
-        physicochemical_features = PhysicoChemicalFeatures()
-        physicochemical_features.from_molecule(molecule, chain)
+        if physicochemical:
+            physchem_features = self.values_dict["physicochemical"]
+            physchem_features = np.array(list(physchem_features.values())).flatten()
+            features.append(physchem_features)
 
-        spatial_features = SpatialFeatures()
-        spatial_features.from_molecule(molecule)
+        if spatial_distances:
+            distances_features = self.values_dict["spatial"]["distances"]
+            distances_features = np.array(list(distances_features.values())).flatten()
+            features.append(distances_features)
 
-        self.fingerprint["physicochemical"] = physicochemical_features.features
-        self.fingerprint["distances"] = spatial_features.features
-        self.fingerprint["moments"] = self._calc_moments(spatial_features.features)
+        if spatial_moments:
+            moments_features = self.values_dict["spatial"]["moments"]
+            moments_features = np.array(list(moments_features.values())).flatten()
+            features.append(moments_features)
 
-        self.fingerprint_normalized["physicochemical"] = self._normalize_physicochemical_bits()
-        self.fingerprint_normalized["distances"] = self._normalize_distances_bits()
-        self.fingerprint_normalized["moments"] = self._normalize_moments_bits()
-
-        # Add verbose feature details
-        self.features_verbose["reference_points"] = spatial_features.reference_points
-        self.features_verbose["exposure"] = physicochemical_features.features_verbose["exposure"]
-        self.features_verbose[
-            "side_chain_orientation"
-        ] = physicochemical_features.features_verbose["side_chain_orientation"]
-
-    def _get_fingerprint(self, fingerprint_type, normalized=True):
-        """
-        Get fingerprint containing both physicochemical and spatial bits
-        (available types: distances or moments).
-
-        Parameters
-        ----------
-        fingerprint_type : str
-            Type of fingerprint, i.e. fingerprint with
-            physicochemical and either distances or moments bits
-            (physicochemical + distances or physicochemical + moments).
-        normalized : bool
-            Normalized or non-normalized form of fingerprint (default: normalized).
-
-        Returns
-        -------
-        dict of pandas.DataFrames
-            Fingerprint containing physicochemical and spatial bits.
-        """
-
-        fingerprint_types = "physicochemical_distances physicochemical_moments".split()
-
-        if fingerprint_type == "physicochemical_distances":
-
-            if normalized:
-                return {
-                    "physicochemical": self.physicochemical_normalized,
-                    "distances": self.distances_normalized,
-                }
-            else:
-                return {"physicochemical": self.physicochemical, "distances": self.distances}
-
-        elif fingerprint_type == "physicochemical_moments":
-
-            if normalized:
-                return {
-                    "physicochemical": self.physicochemical_normalized,
-                    "moments": self.moments_normalized,
-                }
-            else:
-                return {"physicochemical": self.physicochemical, "moments": self.moments}
+        # Concatenate physicochemical and spatial features
+        if len(features) > 0:
+            features = np.concatenate(features, axis=0)
         else:
-            raise ValueError(
-                f'Fingerprint type unknown. Please choose from {", ".join(fingerprint_types)}.'
-            )
+            features = np.array([])
+
+        return features
+
+    def _get_pocket(self, structure_klifs_id, klifs_session):
+        """TODO"""
+
+        # Set up BioPython-based pocket
+        pocket_bp = PocketBioPython.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
+        # Set up DataFrame-based pocket
+        pocket_df = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
+        return pocket_bp, pocket_df
+
+    def _get_physicochemical_features_dict(self, pocket_bp):
+        """TODO"""
+
+        # Set up physicochemical features
+        features = {}
+        # Add SiteAlign features
+        for sitealign_feature_name in ["size", "hbd", "hba", "charge", "aromatic", "aliphatic"]:
+            feature = SiteAlignFeature.from_pocket(pocket_bp, "hba")
+            features[sitealign_feature_name] = feature.values
+        # Add side chain orientation feature
+        feature = SideChainOrientationFeature.from_pocket(pocket_bp)
+        features["sco"] = feature.values
+        # Add solvent exposure feature
+        feature = SolventExposureFeature.from_pocket(pocket_bp)
+        features["exposure"] = feature.values
+
+        return features
+
+    def _get_spatial_features_dict(self, pocket_df):
+        """TODO"""
+
+        # Set up spatial features
+        features = {}
+        # Add subpockets features
+        feature = SubpocketsFeature.from_pocket(pocket_df)
+        features["distances"] = feature._distances
+        features["moments"] = feature._moments
+
+        return features
 
     def _normalize_physicochemical_bits(self):
         """
+        TODO adapt to new class structure!
         Normalize physicochemical bits.
 
         Returns
@@ -460,6 +324,7 @@ class Fingerprint:
 
     def _normalize_distances_bits(self):
         """
+        TODO adapt to new class structure!
         Normalize distances bits.
 
         Returns
@@ -510,6 +375,7 @@ class Fingerprint:
 
     def _normalize_moments_bits(self):
         """
+        TODO adapt to new class structure!
         Normalize moments bits.
 
         Returns
@@ -548,6 +414,7 @@ class Fingerprint:
     @staticmethod
     def _normalize(value, minimum, maximum):
         """
+        TODO adapt to new class structure!
         Normalize a value using minimum-maximum normalization.
         Values equal or lower / greater than the minimum / maximum value are set to 0.0 / 1.0.
 
@@ -576,40 +443,3 @@ class Fingerprint:
             return np.nan
         else:
             raise ValueError(f"Unexpected value to be normalized: {value}")
-
-    @staticmethod
-    def _calc_moments(distances):
-        """
-        Calculate first, second, and third moment (mean, standard deviation, and skewness)
-        for a distance distribution.
-
-        Parameters
-        ----------
-        distances : pandas.DataFrame
-            Distance distribution, i.e. distances (rows) from reference point (columns)
-            to all representatives/points.
-
-        Returns
-        -------
-        pandas.DataFrame
-            First, second, and third moment (column) of distance distribution (row).
-        """
-
-        # Get first, second, and third moment (mean, standard deviation, and skewness)
-        # for a distance distribution
-        # Second and third moment: delta degrees of freedom = 0 (divisor N)
-        if len(distances) > 0:
-            m1 = distances.mean()
-            m2 = distances.std(ddof=0)
-            m3 = pd.Series(
-                cbrt(moment(distances, moment=3, nan_policy="omit")),
-                index=distances.columns.tolist(),
-            )
-        else:
-            raise ValueError(f"No data available to calculate moments.")
-
-        # Store all moments in DataFrame
-        moments = pd.concat([m1, m2, m3], axis=1)
-        moments.columns = ["moment1", "moment2", "moment3"]
-
-        return moments
