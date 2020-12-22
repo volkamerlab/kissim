@@ -64,8 +64,8 @@ ANCHOR_RESIDUES = {
 }
 
 SUBPOCKETS = {
-    "anchor_residue.klifs_ids": ANCHOR_RESIDUES.values(),
-    "subpocket.name": ANCHOR_RESIDUES.keys(),
+    "anchor_residue.klifs_ids": list(ANCHOR_RESIDUES.values()),
+    "subpocket.name": list(ANCHOR_RESIDUES.keys()),
     "subpocket.color": ["magenta", "cornflowerblue", "green"],
 }
 
