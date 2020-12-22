@@ -1,5 +1,5 @@
 """
-Unit and regression test for kissim.encoding.features.sitealign class methods.
+Unit and regression test for the kissim.encoding.features.sitealign.SiteAlignFeature class.
 """
 
 import pytest
@@ -30,13 +30,15 @@ class TestsSiteAlignFeature:
             (12347, REMOTE, "aromatic"),
         ],
     )
-    def test_from_structure_klifs_id(self, structure_id, remote, feature_name):
+    def test_from_pocket(self, structure_id, remote, feature_name):
         """
-        Test if SiteAlignFeature can be set from KLIFS ID.
+        Test if SiteAlignFeature can be set from a Pocket object.
+        Test object attribues.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
         feature = SiteAlignFeature.from_pocket(pocket, feature_name)
         assert isinstance(feature, SiteAlignFeature)
+
         # Test class attributes
         for residue_id, residue_ix, residue_name, category in zip(
             feature._residue_ids, feature._residue_ixs, feature._residue_names, feature._categories
@@ -46,28 +48,53 @@ class TestsSiteAlignFeature:
             assert isinstance(residue_ix, int)
             assert isinstance(feature_name, str)
             assert isinstance(category, float)
-        # Test class properties
-        assert isinstance(feature.values, list)
-        for value in feature.values:
-            assert isinstance(value, float)
-        assert isinstance(feature.details, pd.DataFrame)
-        assert feature.details.columns.to_list() == [
-            "residue.id",
-            "residue.name",
-            "sitealign.category",
-        ]
 
     @pytest.mark.parametrize(
         "structure_id, remote, feature_name",
         [(12347, REMOTE, "xxx")],
     )
-    def test_from_structure_klifs_id_raises(self, structure_id, remote, feature_name):
+    def test_from_pocket_raises(self, structure_id, remote, feature_name):
         """
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
             pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
             SiteAlignFeature.from_pocket(pocket, feature_name)
+
+    @pytest.mark.parametrize(
+        "structure_id, remote",
+        [(12347, REMOTE)],
+    )
+    def test_values(self, structure_id, remote):
+        """
+        Test class property: values.
+        """
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
+        # Use example feature type
+        feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
+
+        assert isinstance(feature.values, list)
+        for value in feature.values:
+            assert isinstance(value, float)
+
+    @pytest.mark.parametrize(
+        "structure_id, remote",
+        [(12347, REMOTE)],
+    )
+    def test_details(self, structure_id, remote):
+        """
+        Test class property: details.
+        """
+        pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
+        # Use example feature type
+        feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
+
+        assert isinstance(feature.details, pd.DataFrame)
+        assert feature.details.columns.to_list() == [
+            "residue.id",
+            "residue.name",
+            "sitealign.category",
+        ]
 
     @pytest.mark.parametrize(
         "residue_name, feature_name, value",
@@ -125,3 +152,34 @@ class TestsSiteAlignFeature:
             assert np.isnan(value_calculated)
         else:
             assert value_calculated == value
+
+    @pytest.mark.parametrize(
+        "feature_name",
+        [("XXX"), (1)],
+    )
+    def test_raise_invalid_feature_name(self, feature_name):
+        """
+        Test if KeyError is raised if user passes an incorrect SiteAlign feature string.
+        """
+
+        feature = SiteAlignFeature()
+
+        with pytest.raises(KeyError):
+            feature._raise_invalid_feature_name(feature_name)
+
+    @pytest.mark.parametrize(
+        "residue_name, residue_name_converted",
+        [
+            ("MSE", "MET"),
+            ("ALA", None),
+            ("XXX", None),
+        ],
+    )
+    def test_convert_modified_residue(self, residue_name, residue_name_converted):
+        """
+        Test if modified residues are converted into standard residues correctly.
+        If conversion is not possible, test if None is returned.
+        """
+
+        feature = SiteAlignFeature()
+        assert feature._convert_modified_residue(residue_name) == residue_name_converted

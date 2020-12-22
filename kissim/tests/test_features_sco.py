@@ -1,5 +1,5 @@
 """
-Unit and regression test for kissim.encoding.features.sco class methods.
+Unit and regression test for the kissim.encoding.features.sco.SideChainOrientationFeature class.
 """
 
 import pytest
@@ -24,31 +24,34 @@ class TestsSideChainOrientationFeature:
         "structure_id, remote",
         [(12347, REMOTE)],
     )
-    def test_from_structure_klifs_id(self, structure_id, remote):
+    def test_from_pocket(self, structure_id, remote):
         """
-        Test if SideChainOrientationFeature can be set from KLIFS ID.
+        Test if SideChainOrientationFeature can be set from a Pocket object.
+        Test object attribues.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature, SideChainOrientationFeature)
+
         # Test class attributes
-        for residue_id, residue_ix, category, vertex_angle in zip(
-            feature._residue_ids, feature._residue_ixs, feature._categories, feature._vertex_angles
+        for residue_id, residue_ix, category, vertex_angle, ca_atom, sc_atom in zip(
+            feature._residue_ids,
+            feature._residue_ixs,
+            feature._categories,
+            feature._vertex_angles,
+            feature._ca_atoms,
+            feature._sc_atoms,
         ):
             if residue_id is not None:
                 assert isinstance(residue_id, int)
             assert isinstance(residue_ix, int)
             assert isinstance(category, float)
             assert isinstance(vertex_angle, float)
-        assert isinstance(feature._pocket_center, Bio.PDB.vectors.Vector)
-        assert isinstance(feature._ca_atoms, list)
-        for ca_atom in feature._ca_atoms:
-            if ca_atom:
+            if ca_atom is not None:
                 assert isinstance(ca_atom, Bio.PDB.vectors.Vector)
-        assert isinstance(feature._sc_atoms, list)
-        for sc_atom in feature._sc_atoms:
             if sc_atom:
                 assert isinstance(sc_atom, Bio.PDB.vectors.Vector)
+        assert isinstance(feature._pocket_center, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
         "structure_id, remote, values_mean",
@@ -56,7 +59,7 @@ class TestsSideChainOrientationFeature:
     )
     def test_values(self, structure_id, remote, values_mean):
         """
-        Test class property: side chain orientation values.
+        Test class property: values.
         The mean refers to the mean of non-NaN values.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
@@ -71,7 +74,7 @@ class TestsSideChainOrientationFeature:
     )
     def test_details(self, structure_id, remote):
         """
-        Test class property: side chain orientation details.
+        Test class property: details.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SideChainOrientationFeature.from_pocket(pocket)

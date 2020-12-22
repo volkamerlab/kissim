@@ -1,5 +1,5 @@
 """
-Unit and regression test for kissim.encoding.features.exposure class methods.
+Unit and regression test for the kissim.encoding.features.exposure.SolventExposureFeature class.
 """
 
 import pytest
@@ -22,13 +22,15 @@ class TestsSolventExposureFeature:
         "structure_id, remote",
         [(12347, REMOTE)],
     )
-    def test_from_structure_klifs_id(self, structure_id, remote):
+    def test_from_pocket(self, structure_id, remote):
         """
-        Test if SolventExposureFeature can be set from KLIFS ID.
+        Test if SolventExposureFeature can be set from a Pocket object.
+        Test object attribues.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
         assert isinstance(feature, SolventExposureFeature)
+
         # Test class attributes
         for residue_id, residue_ix, ratio, ratio_ca, ratio_cb in zip(
             feature._residue_ids,
@@ -38,7 +40,6 @@ class TestsSolventExposureFeature:
             feature._ratio_cb,
         ):
             if residue_id is not None:
-                print(type(residue_id))
                 assert isinstance(residue_id, int)
             assert isinstance(residue_ix, int)
             assert isinstance(ratio, float)
@@ -51,11 +52,12 @@ class TestsSolventExposureFeature:
     )
     def test_values(self, structure_id, remote, values_mean):
         """
-        Test class property: side chain orientation values.
+        Test class property: values.
         The mean refers to the mean of non-NaN values.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
+
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
@@ -66,7 +68,7 @@ class TestsSolventExposureFeature:
     )
     def test_details(self, structure_id, remote):
         """
-        Test class property: side chain orientation details.
+        Test class property: details.
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
