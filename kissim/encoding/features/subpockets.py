@@ -50,7 +50,7 @@ class SubpocketsFeature(BaseFeature):
             Pocket object.
         subpockets : dict
             Dictionary with the following keys and values:
-            "anchor_residue.klifs_id" : list of int
+            "anchor_residue.klifs_ids" : list of int
                 List of anchor residues (KLIFS residue IDs) whose centroid defines the subpocket
                 center.
             "subpocket.name" : str
@@ -67,13 +67,13 @@ class SubpocketsFeature(BaseFeature):
         feature._residue_ixs = pocket._residue_ixs
 
         # Add subpockets
-        pocket = feature.add_subpockets(pocket, subpockets)
+        pocket = feature._add_subpockets(pocket, subpockets)
 
         # Calculate distances
-        feature._distances = feature.calculate_distances(pocket)
+        feature._distances = feature._calculate_distances(pocket)
 
         # Calculate moments
-        feature._moments = feature.calculate_moments()
+        feature._moments = feature._calculate_moments()
 
         return feature
 
@@ -111,7 +111,8 @@ class SubpocketsFeature(BaseFeature):
 
         return {"distances": distances, "moments": moments}
 
-    def add_subpockets(self, pocket, subpockets):
+    @staticmethod
+    def _add_subpockets(pocket, subpockets):
         """
         Add subpockets to pocket object.
 
@@ -120,13 +121,13 @@ class SubpocketsFeature(BaseFeature):
         pocket : kissim.io.PocketDataFrame
             Pocket object.
         subpockets : dict
-            Dictionary with the following keys and values:
-            "anchor_residue.klifs_id" : list of int
+            Dictionary with the following keys and values (value lists must be of same length):
+            "anchor_residue.klifs_id" : list of list of int
                 List of anchor residues (KLIFS residue IDs) whose centroid defines the subpocket
                 center.
-            "subpocket.name" : str
+            "subpocket.name" : list of str
                 Subpocket name.
-            "subpocket.color" : str
+            "subpocket.color" : list of str
                 Subpocket color.
 
         Returns
@@ -153,7 +154,7 @@ class SubpocketsFeature(BaseFeature):
 
         return pocket
 
-    def calculate_distances(self, pocket):
+    def _calculate_distances(self, pocket):
         """
         Calculate distances between all subpocket centers and all pocket residues (CA atoms).
 
@@ -213,7 +214,7 @@ class SubpocketsFeature(BaseFeature):
             distances.append(distance)
         return np.array(distances)
 
-    def calculate_moments(self):
+    def _calculate_moments(self):
         """
         Calculate moments of distributions of distances between all subpocket centers and all
         pocket residues (CA atoms).
