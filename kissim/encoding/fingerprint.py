@@ -60,9 +60,7 @@ class FingerprintGenerator:
         fingerprint_generator = cls()
         fingerprint_generator.structure_klifs_ids = structure_klifs_ids
         # Apply function to each chunk in list
-        fingerprints_list = pool.map(
-            fingerprint_generator._get_fingerprint, structure_klifs_ids
-        )
+        fingerprints_list = pool.map(fingerprint_generator._get_fingerprint, structure_klifs_ids)
         fingerprint_generator.data = {
             i.name: i for i in fingerprints_list if i is not None  # Removes emtpy fingerprints
         }
