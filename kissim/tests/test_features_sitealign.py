@@ -20,7 +20,7 @@ class TestsSiteAlignFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_id, remote, feature_name",
+        "structure_klifs_id, remote, feature_name",
         [
             (12347, REMOTE, "hba"),
             (12347, REMOTE, "hbd"),
@@ -30,12 +30,12 @@ class TestsSiteAlignFeature:
             (12347, REMOTE, "aromatic"),
         ],
     )
-    def test_from_pocket(self, structure_id, remote, feature_name):
+    def test_from_pocket(self, structure_klifs_id, remote, feature_name):
         """
         Test if SiteAlignFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SiteAlignFeature.from_pocket(pocket, feature_name)
         assert isinstance(feature, SiteAlignFeature)
 
@@ -50,26 +50,28 @@ class TestsSiteAlignFeature:
             assert isinstance(category, float)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, feature_name",
+        "structure_klifs_id, remote, feature_name",
         [(12347, REMOTE, "xxx")],
     )
-    def test_from_pocket_raises(self, structure_id, remote, feature_name):
+    def test_from_pocket_raises(self, structure_klifs_id, remote, feature_name):
         """
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
-            pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
+            pocket = PocketBioPython.from_structure_klifs_id(
+                structure_klifs_id, klifs_session=remote
+            )
             SiteAlignFeature.from_pocket(pocket, feature_name)
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_values(self, structure_id, remote):
+    def test_values(self, structure_klifs_id, remote):
         """
         Test class property: values.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         # Use example feature type
         feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
 
@@ -78,14 +80,14 @@ class TestsSiteAlignFeature:
             assert isinstance(value, float)
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_details(self, structure_id, remote):
+    def test_details(self, structure_klifs_id, remote):
         """
         Test class property: details.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         # Use example feature type
         feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
 

@@ -25,26 +25,26 @@ class TestPocketBioPython:
     """
 
     @pytest.mark.parametrize(
-        "structure_id, remote, n_atoms_complex, n_atoms_pocket",
+        "structure_klifs_id, remote, n_atoms_complex, n_atoms_pocket",
         [(12347, REMOTE, 1819, 577)],
     )
-    def test_data_complex(self, structure_id, remote, n_atoms_complex, n_atoms_pocket):
+    def test_data_complex(self, structure_klifs_id, remote, n_atoms_complex, n_atoms_pocket):
         """
         Test class attribute handling the complex data, i.e. `_data_complex`.
         """
 
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         # Complex data
         assert isinstance(pocket_bp._data_complex, Bio.PDB.Chain.Chain)
         assert len(list(pocket_bp._data_complex.get_atoms())) == n_atoms_complex
 
     @pytest.mark.parametrize(
-        "structure_id, remote, n_hse_ca_complex, n_hse_cb_complex, n_hse_ca_pocket, n_hse_cb_pocket",
+        "structure_klifs_id, remote, n_hse_ca_complex, n_hse_cb_complex, n_hse_ca_pocket, n_hse_cb_pocket",
         [(12347, REMOTE, 246, 254, 75, 78)],
     )
     def test_hse_ca_cb(
         self,
-        structure_id,
+        structure_klifs_id,
         remote,
         n_hse_ca_complex,
         n_hse_cb_complex,
@@ -57,7 +57,7 @@ class TestPocketBioPython:
         - properties (`hse_ca`, `hse_cb`)
         regarding the HSExposure.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
 
         # HSE for full complex
         assert isinstance(pocket_bp._hse_ca_complex, Bio.PDB.HSExposure.HSExposureCA)
@@ -71,28 +71,28 @@ class TestPocketBioPython:
         assert len(pocket_bp.hse_cb) == n_hse_cb_pocket
 
     @pytest.mark.parametrize(
-        "structure_id, remote, pocket_centroid_mean",
+        "structure_klifs_id, remote, pocket_centroid_mean",
         [(12347, REMOTE, 19.63254)],
     )
-    def test_center(self, structure_id, remote, pocket_centroid_mean):
+    def test_center(self, structure_klifs_id, remote, pocket_centroid_mean):
         """
         Test the class property regarding the pocket centroid, i.e. `center`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
 
         # Test property center
         assert isinstance(pocket_bp.center, Bio.PDB.vectors.Vector)
         assert pocket_bp.center.get_array().mean() == pytest.approx(pocket_centroid_mean)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, n_ca_atoms, n_ca_atoms_wo_na",
+        "structure_klifs_id, remote, n_ca_atoms, n_ca_atoms_wo_na",
         [(12347, REMOTE, 85, 78)],
     )
-    def test_ca_atoms(self, structure_id, remote, n_ca_atoms, n_ca_atoms_wo_na):
+    def test_ca_atoms(self, structure_klifs_id, remote, n_ca_atoms, n_ca_atoms_wo_na):
         """
         Test the class property regarding the pocket's CA atoms, i.e. `ca_atoms`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
 
         # Test property ca_atoms
         # Shape
@@ -112,18 +112,18 @@ class TestPocketBioPython:
                 assert isinstance(ca_vector, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, residue_id, ca_atom_mean",
+        "structure_klifs_id, remote, residue_id, ca_atom_mean",
         [
             (5399, REMOTE, 1272, 18.5630),  # Residue has CA
             (5399, REMOTE, 1273, None),  # Residue has no CA
         ],
     )
-    def test_ca_atom(self, structure_id, remote, residue_id, ca_atom_mean):
+    def test_ca_atom(self, structure_klifs_id, remote, residue_id, ca_atom_mean):
         """
         Test if CA atom is retrieved correctly from a residue ID (test if-else cases),
         i.e. `_ca_atom` method.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         ca_atom_calculated = pocket_bp._ca_atom(residue_id)
 
         # Check CA atom mean
@@ -135,14 +135,14 @@ class TestPocketBioPython:
             assert ca_atom_mean == ca_atom_calculated
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_pcb_atoms(self, structure_id, remote):
+    def test_pcb_atoms(self, structure_klifs_id, remote):
         """
         Test the class property regarding the pocket's pCB atoms, i.e. `pcb_atoms`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
 
         # Test property pcb_atoms
         # Shape
@@ -155,14 +155,14 @@ class TestPocketBioPython:
                 assert isinstance(pcb_vector, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, residue_id, pcb_atom_mean",
+        "structure_klifs_id, remote, residue_id, pcb_atom_mean",
         [(9122, REMOTE, 272, 0.706664)],  # GLY
     )
-    def test_pcb_atom_from_gly(self, structure_id, remote, residue_id, pcb_atom_mean):
+    def test_pcb_atom_from_gly(self, structure_klifs_id, remote, residue_id, pcb_atom_mean):
         """
         Test pseudo-CB calculation for GLY, i.e. method `_pcb_atom_from_gly`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         residue = pocket_bp._residue_from_residue_id(residue_id)
 
         # Check pCB atom mean
@@ -171,24 +171,24 @@ class TestPocketBioPython:
         assert pcb_atom_mean == pytest.approx(pcb_atom_mean_calculated)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, residue_id",
+        "structure_klifs_id, remote, residue_id",
         [
             (9122, REMOTE, 337),  # ALA
             (9122, REMOTE, 357),  # Non-standard residue
         ],
     )
-    def test_pcb_atom_from_gly_valueerror(self, structure_id, remote, residue_id):
+    def test_pcb_atom_from_gly_valueerror(self, structure_klifs_id, remote, residue_id):
         """
         Test exceptions in pseudo-CB calculation for GLY, i.e. method `_pcb_atom_from_gly`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         residue = pocket_bp._residue_from_residue_id(residue_id)
 
         with pytest.raises(ValueError):
             pocket_bp._pcb_atom_from_gly(residue)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, residue_id, pcb_atom",
+        "structure_klifs_id, remote, residue_id, pcb_atom",
         [
             (9122, REMOTE, 272, np.array([12.223623, 8.544623, 32.441623])),  # GLY
             (
@@ -200,12 +200,12 @@ class TestPocketBioPython:
             (9122, REMOTE, 261, None),  # Residue without + residue
         ],
     )
-    def test_pcb_atoms(self, structure_id, remote, residue_id, pcb_atom):
+    def test_pcb_atoms(self, structure_klifs_id, remote, residue_id, pcb_atom):
         """
         Test pseudo-CB calculation for a residue, i.e. method `_pcb_atom`.
         """
 
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         pcb_atom_calculated = pocket_bp._pcb_atom(residue_id)
 
         if pcb_atom is None:
@@ -217,15 +217,15 @@ class TestPocketBioPython:
             assert pcb_atom[2] == pytest.approx(pcb_atom_calculated[2])
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_side_chain_representatives(self, structure_id, remote):
+    def test_side_chain_representatives(self, structure_klifs_id, remote):
         """
         Test the class property regarding the pocket's side chain representatives,
         i.e. `side_chain_representatives`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         assert isinstance(pocket_bp.side_chain_representatives, pd.DataFrame)
 
         # Test property side_chain_representatives
@@ -248,7 +248,7 @@ class TestPocketBioPython:
                 assert isinstance(sc_vector, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, residue_id, sc_atom_mean",
+        "structure_klifs_id, remote, residue_id, sc_atom_mean",
         [
             (9122, REMOTE, 272, None),  # GLY
             (9122, REMOTE, 337, 20.31),  # ALA (with CB)
@@ -257,12 +257,12 @@ class TestPocketBioPython:
             (9122, REMOTE, 357, 27.526666),  # MSE > MET (with CE)
         ],
     )
-    def test_side_chain_representative(self, structure_id, remote, residue_id, sc_atom_mean):
+    def test_side_chain_representative(self, structure_klifs_id, remote, residue_id, sc_atom_mean):
         """
         Test if side chain representative is retrieved correctly from a residue,
         i.e. method `_side_chain_representative`.
         """
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         sc_atom_calculated = pocket_bp._side_chain_representative(residue_id)
 
         # Check side chain representative mean

@@ -18,22 +18,22 @@ class TestPocketBioPython:
     """
 
     @pytest.mark.parametrize(
-        "pocket_class, structure_id, remote",
+        "pocket_class, structure_klifs_id, remote",
         [(PocketBioPython, 12347, None), (PocketDataFrame, 12347, REMOTE)],
     )
-    def test_from_structure_klifs_id(self, pocket_class, structure_id, remote):
+    def test_from_structure_klifs_id(self, pocket_class, structure_klifs_id, remote):
         """
         Test if PocketBioPython can be set remotely (from_structure_klifs_id()).
         Test attribute `name`.
         """
-        pocket = pocket_class.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = pocket_class.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         assert isinstance(pocket, pocket_class)
 
         # Test attribute name
-        assert pocket.name == structure_id
+        assert pocket.name == structure_klifs_id
 
     @pytest.mark.parametrize(
-        "pocket_class, structure_id, remote, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum",
+        "pocket_class, structure_klifs_id, remote, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum",
         [
             (PocketBioPython, 12347, REMOTE, 85, 78, 41198, 3655),
             (PocketDataFrame, 12347, REMOTE, 85, 78, 41198, 3655),
@@ -42,7 +42,7 @@ class TestPocketBioPython:
     def test_residues(
         self,
         pocket_class,
-        structure_id,
+        structure_klifs_id,
         remote,
         n_residues,
         n_residues_wo_na,
@@ -55,7 +55,7 @@ class TestPocketBioPython:
         - property (`residues`)
         regarding the residue IDs.
         """
-        pocket = pocket_class.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = pocket_class.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         # Test property residues
         assert isinstance(pocket.residues, pd.DataFrame)
         assert len(pocket.residues) == n_residues

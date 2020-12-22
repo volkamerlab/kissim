@@ -20,17 +20,17 @@ class TestsSubpocketsFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [
             (12347, REMOTE),
         ],
     )
-    def test_from_pocket(self, structure_id, remote):
+    def test_from_pocket(self, structure_klifs_id, remote):
         """
         Test if SubpocketsFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
         assert isinstance(feature, SubpocketsFeature)
 
@@ -42,7 +42,7 @@ class TestsSubpocketsFeature:
             assert isinstance(residue_ix, int)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, distances_mean, moments_mean",
+        "structure_klifs_id, remote, distances_mean, moments_mean",
         [
             (
                 12347,
@@ -63,7 +63,7 @@ class TestsSubpocketsFeature:
         ],
     )
     def test_calculate_distances_and_moments(
-        self, structure_id, remote, distances_mean, moments_mean
+        self, structure_klifs_id, remote, distances_mean, moments_mean
     ):
         """
         Test calculation of distances and moments for all subpockets.
@@ -72,7 +72,7 @@ class TestsSubpocketsFeature:
         return values from the class methods calculate_distance and calculate_moments.
         """
 
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
 
         # Test distances
@@ -92,14 +92,14 @@ class TestsSubpocketsFeature:
         assert pytest.approx(moments_mean_calculated, abs=1e-6) == moments_mean
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_values(self, structure_id, remote):
+    def test_values(self, structure_klifs_id, remote):
         """
         Test class property: values.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
 
         assert isinstance(feature.values, dict)
@@ -107,14 +107,14 @@ class TestsSubpocketsFeature:
         # More tests on attribute _moments in test_calculate_distances_and_moments()
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_details(self, structure_id, remote):
+    def test_details(self, structure_klifs_id, remote):
         """
         Test class property: details.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
 
         assert isinstance(feature.details, dict)
@@ -131,7 +131,7 @@ class TestsSubpocketsFeature:
         assert feature.details["moments"].index.to_list() == [1, 2, 3]
 
     @pytest.mark.parametrize(
-        "structure_id, remote, subpockets, subpocket_center",
+        "structure_klifs_id, remote, subpockets, subpocket_center",
         [
             (
                 12347,
@@ -145,12 +145,12 @@ class TestsSubpocketsFeature:
             )
         ],
     )
-    def test_add_subpockets(self, structure_id, remote, subpockets, subpocket_center):
+    def test_add_subpockets(self, structure_klifs_id, remote, subpockets, subpocket_center):
         """
         Test if subpockets are added correctly.
         """
 
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature()
 
         pocket = feature._add_subpockets(pocket, subpockets)
@@ -166,18 +166,18 @@ class TestsSubpocketsFeature:
             assert pytest.approx(i, abs=1e-4) == j
 
     @pytest.mark.parametrize(
-        "structure_id, remote, subpocket_center, mean_distance",
+        "structure_klifs_id, remote, subpocket_center, mean_distance",
         [
             (12347, REMOTE, [0, 0, 0], 43.866110),
         ],
     )
     def test_calculate_distances_to_center(
-        self, structure_id, remote, subpocket_center, mean_distance
+        self, structure_klifs_id, remote, subpocket_center, mean_distance
     ):
         """
         Test calculation of distances between a subpocket center and all pocket residues.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
         distances_calculated = feature._calculate_distances_to_center(pocket, subpocket_center)
         mean_distance_calculated = np.nanmean(np.array(distances_calculated))

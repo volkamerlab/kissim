@@ -21,15 +21,15 @@ class TestsSideChainOrientationFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_from_pocket(self, structure_id, remote):
+    def test_from_pocket(self, structure_klifs_id, remote):
         """
         Test if SideChainOrientationFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature, SideChainOrientationFeature)
 
@@ -54,29 +54,29 @@ class TestsSideChainOrientationFeature:
         assert isinstance(feature._pocket_center, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, values_mean",
+        "structure_klifs_id, remote, values_mean",
         [(12347, REMOTE, 1.440678)],
     )
-    def test_values(self, structure_id, remote, values_mean):
+    def test_values(self, structure_klifs_id, remote, values_mean):
         """
         Test class property: values.
         The mean refers to the mean of non-NaN values.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_details(self, structure_id, remote):
+    def test_details(self, structure_klifs_id, remote):
         """
         Test class property: details.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [

@@ -19,15 +19,15 @@ class TestsSolventExposureFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_from_pocket(self, structure_id, remote):
+    def test_from_pocket(self, structure_klifs_id, remote):
         """
         Test if SolventExposureFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
         assert isinstance(feature, SolventExposureFeature)
 
@@ -47,15 +47,15 @@ class TestsSolventExposureFeature:
             assert isinstance(ratio_cb, float)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, values_mean",
+        "structure_klifs_id, remote, values_mean",
         [(12347, REMOTE, 0.552123)],
     )
-    def test_values(self, structure_id, remote, values_mean):
+    def test_values(self, structure_klifs_id, remote, values_mean):
         """
         Test class property: values.
         The mean refers to the mean of non-NaN values.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
 
         assert isinstance(feature.values, list)
@@ -63,14 +63,14 @@ class TestsSolventExposureFeature:
         assert values_mean == pytest.approx(values_mean_calculated)
 
     @pytest.mark.parametrize(
-        "structure_id, remote",
+        "structure_klifs_id, remote",
         [(12347, REMOTE)],
     )
-    def test_details(self, structure_id, remote):
+    def test_details(self, structure_klifs_id, remote):
         """
         Test class property: details.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
 
         # Test DataFrame shape, columns, indices
@@ -84,21 +84,21 @@ class TestsSolventExposureFeature:
         assert feature.details.index.to_list() == feature._residue_ixs
 
     @pytest.mark.parametrize(
-        "structure_id, remote, radius, method, n_residues, up_mean, down_mean",
+        "structure_klifs_id, remote, radius, method, n_residues, up_mean, down_mean",
         [
             (3833, REMOTE, 12.0, "HSExposureCA", 85, 13.505882, 17.235294),
             (3833, REMOTE, 12.0, "HSExposureCB", 85, 14.470588, 16.270588),
         ],
     )
     def test_get_exposure_by_method(
-        self, structure_id, remote, radius, method, n_residues, up_mean, down_mean
+        self, structure_klifs_id, remote, radius, method, n_residues, up_mean, down_mean
     ):
         """
         Test half sphere exposure and exposure ratio calculation as well as the result format.
 
         Parameters
         ----------
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
         remote : None or opencadd.databases.klifs.session.Session
             Remote KLIFS session. If None, generate new remote session.
@@ -115,7 +115,7 @@ class TestsSolventExposureFeature:
         """
 
         # Calculate exposure
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         exposures_calculated = SolventExposureFeature._get_exposures_by_method(
             pocket, radius, method
         )
@@ -145,7 +145,7 @@ class TestsSolventExposureFeature:
         assert ratio == pytest.approx(ratio_calculated)
 
     @pytest.mark.parametrize(
-        "structure_id, remote, radius, n_residues, missing_exposure",
+        "structure_klifs_id, remote, radius, n_residues, missing_exposure",
         [
             (
                 12347,
@@ -156,13 +156,13 @@ class TestsSolventExposureFeature:
             )
         ],
     )
-    def test_get_exposures(self, structure_id, remote, radius, n_residues, missing_exposure):
+    def test_get_exposures(self, structure_klifs_id, remote, radius, n_residues, missing_exposure):
         """
         Test join of HSExposureCA and HSExposureCB data.
 
         Parameters
         ----------
-        structure_id : int
+        structure_klifs_id : int
             KLIFS structure ID.
         remote : None or opencadd.databases.klifs.session.Session
             Remote KLIFS session. If None, generate new remote session.
@@ -175,7 +175,7 @@ class TestsSolventExposureFeature:
         """
 
         # Get exposure
-        pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
         feature = SolventExposureFeature()
         exposures_calculated = feature._get_exposures(pocket, radius)
 
