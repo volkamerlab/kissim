@@ -4,6 +4,7 @@ Unit and regression test for kissim.encoding.features.sitealign class methods.
 
 import pytest
 
+import numpy as np
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
@@ -40,7 +41,8 @@ class TestsSiteAlignFeature:
         for residue_id, residue_ix, residue_name, category in zip(
             feature._residue_ids, feature._residue_ixs, feature._residue_names, feature._categories
         ):
-            assert isinstance(residue_id, int)
+            if residue_id is not None:
+                assert isinstance(residue_id, int)
             assert isinstance(residue_ix, int)
             assert isinstance(feature_name, str)
             assert isinstance(category, float)
@@ -49,7 +51,11 @@ class TestsSiteAlignFeature:
         for value in feature.values:
             assert isinstance(value, float)
         assert isinstance(feature.details, pd.DataFrame)
-        assert feature.details.columns.to_list() == ["residue.name", "sitealign.category"]
+        assert feature.details.columns.to_list() == [
+            "residue.id",
+            "residue.name",
+            "sitealign.category",
+        ]
 
     @pytest.mark.parametrize(
         "structure_id, remote, feature_name",
@@ -66,30 +72,30 @@ class TestsSiteAlignFeature:
     @pytest.mark.parametrize(
         "residue_name, feature_name, value",
         [
-            ("ALA", "size", 1),  # Size
-            ("ASN", "size", 2),
-            ("ARG", "size", 3),
-            ("PTR", "size", 3),  # Converted non-standard
-            ("MSE", "size", 2),  # Converted non-standard
-            ("XXX", "size", None),  # Non-convertable non-standard
-            ("ALA", "hbd", 0),
-            ("ASN", "hbd", 1),
-            ("ARG", "hbd", 3),
-            ("XXX", "hbd", None),
-            ("ALA", "hba", 0),
-            ("ASN", "hba", 1),
-            ("ASP", "hba", 2),
-            ("XXX", "hba", None),
-            ("ALA", "charge", 0),
-            ("ARG", "charge", 1),
-            ("ASP", "charge", -1),
-            ("XXX", "charge", None),
-            ("ALA", "aromatic", 0),
-            ("HIS", "aromatic", 1),
-            ("XXX", "aromatic", None),
-            ("ARG", "aliphatic", 0),
-            ("ALA", "aliphatic", 1),
-            ("XXX", "aliphatic", None),
+            ("ALA", "size", np.float(1.0)),  # Size
+            ("ASN", "size", np.float(2.0)),
+            ("ARG", "size", np.float(3.0)),
+            ("PTR", "size", np.float(3.0)),  # Converted non-standard
+            ("MSE", "size", np.float(2.0)),  # Converted non-standard
+            ("XXX", "size", np.nan),  # Non-convertable non-standard
+            ("ALA", "hbd", np.float(0.0)),
+            ("ASN", "hbd", np.float(1.0)),
+            ("ARG", "hbd", np.float(3.0)),
+            ("XXX", "hbd", np.nan),
+            ("ALA", "hba", np.float(0.0)),
+            ("ASN", "hba", np.float(1.0)),
+            ("ASP", "hba", np.float(2.0)),
+            ("XXX", "hba", np.nan),
+            ("ALA", "charge", np.float(0.0)),
+            ("ARG", "charge", np.float(1.0)),
+            ("ASP", "charge", np.float(-1.0)),
+            ("XXX", "charge", np.nan),
+            ("ALA", "aromatic", np.float(0.0)),
+            ("HIS", "aromatic", np.float(1.0)),
+            ("XXX", "aromatic", np.nan),
+            ("ARG", "aliphatic", np.float(0.0)),
+            ("ALA", "aliphatic", np.float(1.0)),
+            ("XXX", "aliphatic", np.nan),
         ],
     )
     def test_residue_to_value(self, residue_name, feature_name, value):
@@ -114,4 +120,8 @@ class TestsSiteAlignFeature:
         value_calculated = feature._residue_to_value(residue_name, feature_name)
         if value_calculated:  # If not None
             assert isinstance(value_calculated, float)
-        assert value == value_calculated
+        # Note: Cannot use == to compare np.nan values
+        if np.isnan(value):
+            assert np.isnan(value_calculated)
+        else:
+            assert value_calculated == value

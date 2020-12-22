@@ -6,6 +6,7 @@ Defines the SiteAlign features.
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 from kissim.schema import NON_STANDARD_AMINO_ACID_CONVERSION
@@ -75,7 +76,7 @@ class SiteAlignFeature(BaseFeature):
         feature = cls()
         feature._residue_ids = pocket._residue_ids
         feature._residue_ixs = pocket._residue_ixs
-            
+
         feature._residue_names = [
             pocket._data_complex[residue_id].resname if residue_id is not None else None
             for residue_id in feature._residue_ids
@@ -150,7 +151,7 @@ class SiteAlignFeature(BaseFeature):
         self._raise_invalid_feature_name(feature_name)
 
         if residue_name is None:
-            return None
+            return np.nan
 
         try:
             feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
@@ -159,7 +160,7 @@ class SiteAlignFeature(BaseFeature):
             if residue_name:
                 feature_value = SITEALIGN_FEATURES.loc[residue_name, feature_name]
             else:
-                feature_value = None
+                feature_value = np.nan
         return feature_value
 
     def _raise_invalid_feature_name(self, feature_name):
