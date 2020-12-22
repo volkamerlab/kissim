@@ -63,8 +63,8 @@ class SubpocketsFeature(BaseFeature):
         subpockets = subpockets or SUBPOCKETS
 
         feature = cls()
-        feature._residue_ids = pocket.residues["residue.id"].to_list()
-        feature._residue_ixs = pocket.residues["residue.ix"].to_list()
+        feature._residue_ids = pocket._residue_ids
+        feature._residue_ixs = pocket._residue_ixs
 
         # Add subpockets
         pocket = feature.add_subpockets(pocket, subpockets)
@@ -99,11 +99,16 @@ class SubpocketsFeature(BaseFeature):
         dict of pandas.DataFrame
             Feature details for pocket residues.
         """
+        # Distances
         distances = pd.DataFrame(self._distances, index=self._residue_ixs)
         distances.insert(loc=0, column="residue.id", value=self._residue_ids)
         distances.index.name = "residue.ix"
+        distances = distances.astype({"residue.id": "Int32"})
+
+        # Moments
         moments = pd.DataFrame(self._moments, index=[1, 2, 3])
         moments.index.name = "moment"
+
         return {"distances": distances, "moments": moments}
 
     def add_subpockets(self, pocket, subpockets):
@@ -167,58 +172,44 @@ class SubpocketsFeature(BaseFeature):
 
         # Distances to subpockets
         for _, subpocket in pocket.subpockets.iterrows():
-            distances[subpocket["subpocket.name"]] = self._calculate_distances_to_subpocket_center(
+            distances[subpocket["subpocket.name"]] = self._calculate_distances_to_center(
                 pocket, subpocket["subpocket.center"]
             )
 
         # Distances to pocket center
-        distances["center"] = self._calculate_distances_to_pocket_center(pocket)
+        distances["center"] = self._calculate_distances_to_center(pocket, pocket.center)
 
         return distances
 
-    def _calculate_distances_to_subpocket_center(self, pocket, subpocket_center):
+    def _calculate_distances_to_center(self, pocket, center):
         """
-        Calculate distances between a subpocket center and all pocket residues (CA atoms).
+        Calculate distances between a subpocket or pocket center and all pocket residues (CA
+        atoms).
 
         Parameters
         ----------
         pocket : kissim.io.PocketDataFrame
             Pocket object.
-        subpocket_center : numpy.array
-            Subpocket center.
+        center : numpy.array
+            Subpocket or pocket center.
 
         Returns
         -------
         list of float
-            Distances between a subpocket center and all pocket residues.
+            Distances between a subpocket or pocket center and all pocket residues.
         """
 
         distances = []
-        for _, ca_atom in pocket.ca_atoms.iterrows():
-            ca_atom_coord = ca_atom[["atom.x", "atom.y", "atom.z"]].to_numpy()
-            distance = np.linalg.norm(ca_atom_coord - subpocket_center)
-            distances.append(distance)
-        return np.array(distances)
+        ca_atoms = pocket.ca_atoms
 
-    def _calculate_distances_to_pocket_center(self, pocket):
-        """
-        Calculate distances between a pocket center and all pocket residues (CA atoms).
-
-        Parameters
-        ----------
-        pocket : kissim.io.PocketDataFrame
-            Pocket object.
-
-        Returns
-        -------
-        list of float
-            Distances between a pocket center and all pocket residues.
-        """
-
-        distances = []
-        for _, ca_atom in pocket.ca_atoms.iterrows():
-            ca_atom_coord = ca_atom[["atom.x", "atom.y", "atom.z"]].to_numpy()
-            distance = np.linalg.norm(ca_atom_coord - pocket.center)
+        for residue_id in pocket._residue_ids:
+            if residue_id is None:
+                distance = np.nan
+            else:
+                ca_atom_coord = ca_atoms[ca_atoms["residue.id"] == residue_id][
+                    ["atom.x", "atom.y", "atom.z"]
+                ].to_numpy()
+                distance = np.linalg.norm(ca_atom_coord - center)
             distances.append(distance)
         return np.array(distances)
 
@@ -251,6 +242,7 @@ class SubpocketsFeature(BaseFeature):
         """
         Get first, second, and third moment (mean, standard deviation, and skewness)
         for a distribution of values.
+        Note: Moments are based only on non-NaN values.
 
         Parameters
         ----------
@@ -261,9 +253,9 @@ class SubpocketsFeature(BaseFeature):
         values = np.array(values)
 
         if len(values) > 0:
-            moment1 = values.mean()
+            moment1 = np.nanmean(values)
             # Second and third moment: delta degrees of freedom = 0 (divisor N)
-            moment2 = values.std(ddof=0)
+            moment2 = np.nanstd(values, ddof=0)
             moment3 = cbrt(moment(values, moment=3, nan_policy="omit"))
             return moment1, moment2, moment3
         else:

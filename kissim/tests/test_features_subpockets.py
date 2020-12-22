@@ -35,7 +35,8 @@ class TestsSubpocketsFeature:
         assert isinstance(feature, SubpocketsFeature)
         # Test class attributes (_distances and _moments are tested separately)
         for residue_id, residue_ix in zip(feature._residue_ids, feature._residue_ixs):
-            assert isinstance(residue_id, int)
+            if residue_id is not None:
+                assert isinstance(residue_id, int)
             assert isinstance(residue_ix, int)
         # Test subpockets
         assert pocket.subpockets["subpocket.name"].to_list() == list(SUBPOCKETS["subpocket.name"])
@@ -84,7 +85,7 @@ class TestsSubpocketsFeature:
 
         # Test distances
         distances_mean_calculated = {
-            name: distances.mean() for name, distances in feature._distances.items()
+            name: np.nanmean(distances) for name, distances in feature._distances.items()
         }
         assert pytest.approx(distances_mean_calculated, abs=1e-6) == distances_mean
 
@@ -100,7 +101,7 @@ class TestsSubpocketsFeature:
             (12347, REMOTE, [0, 0, 0], 43.866110),
         ],
     )
-    def test_calculate_distances_to_subpocket_center(
+    def test_calculate_distances_to_center(
         self, structure_id, remote, subpocket_center, mean_distance
     ):
         """
@@ -108,26 +109,8 @@ class TestsSubpocketsFeature:
         """
         pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
-        distances_calculated = feature._calculate_distances_to_subpocket_center(
-            pocket, subpocket_center
-        )
-        mean_distance_calculated = np.array(distances_calculated).mean()
-        assert pytest.approx(mean_distance_calculated, abs=1e-6) == mean_distance
-
-    @pytest.mark.parametrize(
-        "structure_id, remote, mean_distance",
-        [
-            (12347, REMOTE, 12.2359484),
-        ],
-    )
-    def test_calculate_distances_to_pocket_center(self, structure_id, remote, mean_distance):
-        """
-        Test calculation of distances between a pocket center and all pocket residues.
-        """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_id, klifs_session=remote)
-        feature = SubpocketsFeature.from_pocket(pocket)
-        distances_calculated = feature._calculate_distances_to_pocket_center(pocket)
-        mean_distance_calculated = np.array(distances_calculated).mean()
+        distances_calculated = feature._calculate_distances_to_center(pocket, subpocket_center)
+        mean_distance_calculated = np.nanmean(np.array(distances_calculated))
         assert pytest.approx(mean_distance_calculated, abs=1e-6) == mean_distance
 
     @pytest.mark.parametrize(
