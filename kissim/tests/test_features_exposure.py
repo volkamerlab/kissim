@@ -37,7 +37,9 @@ class TestsSolventExposureFeature:
             feature._ratio_ca,
             feature._ratio_cb,
         ):
-            assert isinstance(residue_id, int)
+            if residue_id is not None:
+                print(type(residue_id))
+                assert isinstance(residue_id, int)
             assert isinstance(residue_ix, int)
             assert isinstance(ratio, float)
             assert isinstance(ratio_ca, float)
@@ -68,13 +70,16 @@ class TestsSolventExposureFeature:
         """
         pocket = PocketBioPython.from_structure_klifs_id(structure_id, remote)
         feature = SolventExposureFeature.from_pocket(pocket)
+
+        # Test DataFrame shape, columns, indices
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
+            "residue.id",
             "exposure.ratio",
             "exposure.ratio_ca",
             "exposure.ratio_cb",
         ]
-        assert feature.details.index.to_list() == feature._residue_ids
+        assert feature.details.index.to_list() == feature._residue_ixs
 
     @pytest.mark.parametrize(
         "structure_id, remote, radius, method, n_residues, up_mean, down_mean",
@@ -139,7 +144,15 @@ class TestsSolventExposureFeature:
 
     @pytest.mark.parametrize(
         "structure_id, remote, radius, n_residues, missing_exposure",
-        [(12347, REMOTE, 12.0, 78, {"ca": [463, 468, 595], "cb": []})],
+        [
+            (
+                12347,
+                REMOTE,
+                12.0,
+                85,
+                {"ca": [3, 4, 5, 6, 7, 8, 82, 83, 84, 85], "cb": [4, 5, 6, 7, 83, 84, 85]},
+            )
+        ],
     )
     def test_get_exposures(self, structure_id, remote, radius, n_residues, missing_exposure):
         """
@@ -175,10 +188,10 @@ class TestsSolventExposureFeature:
 
         # Test missing residues in HSExposureCA and HSExposureCB calculation
         assert (
-            missing_exposure["ca"]
-            == exposures_calculated[exposures_calculated["ca.exposure"].isna()].index.to_list()
+            exposures_calculated[exposures_calculated["ca.exposure"].isna()].index.to_list()
+            == missing_exposure["ca"]
         )
         assert (
-            missing_exposure["cb"]
-            == exposures_calculated[exposures_calculated["cb.exposure"].isna()].index.to_list()
+            exposures_calculated[exposures_calculated["cb.exposure"].isna()].index.to_list()
+            == missing_exposure["cb"]
         )

@@ -69,8 +69,8 @@ class SolventExposureFeature(BaseFeature):
         """
 
         feature = cls()
-        feature._residue_ids = pocket.residues["residue.id"].to_list()
-        feature._residue_ixs = pocket.residues["residue.ix"].to_list()
+        feature._residue_ids = pocket._residue_ids
+        feature._residue_ixs = pocket._residue_ixs
         exposures = feature._get_exposures(pocket, radius)
         feature._ratio = exposures["exposure"].to_list()
         feature._ratio_ca = exposures["ca.exposure"].to_list()
@@ -185,8 +185,6 @@ class SolventExposureFeature(BaseFeature):
         else:
             raise ValueError(f'Method {method} unknown. Please choose from: {", ".join(methods)}')
 
-        # Select pocket residues only
-
         # Define column names
         up = f"{method[-2:].lower()}.up"
         down = f"{method[-2:].lower()}.down"
@@ -195,9 +193,26 @@ class SolventExposureFeature(BaseFeature):
 
         # Transform into DataFrame
         exposures = pd.DataFrame(exposures, index=[up, down, angle], dtype=float).transpose()
-        exposures.index = [i[1][1] for i in exposures.index]
+        exposures.insert(loc=0, column="residue.id", value=[i[1][1] for i in exposures.index])
+        exposures.reset_index(drop=True, inplace=True)
 
         # Calculate exposure value: down / (up + down)
         exposures[exposure] = exposures[down] / (exposures[up] + exposures[down])
+
+        # So far, exposures only contains data for non-None residues, however we need to add
+        # these None residues to homogenize feature and residue list lengths.
+        # Let's use a trick:
+        # 1. Merge exposures and residues (PDB IDs/indices without NaN residue PDB IDs)
+        # by residue PDB ID in order to add residue indices to residue PDB IDs
+        exposures = exposures.merge(
+            pocket.residues.dropna(axis=0, subset=["residue.id"]), how="left", on="residue.id"
+        )
+        # 2. Merge residues (PDB IDs/indices WITH NaN residue PDB IDs) and exposures
+        # by residue indices in order to add also residues with NaN residue PDB IDs
+        exposures = pocket.residues.merge(
+            exposures.drop(["residue.id"], axis=1), how="left", on="residue.ix"
+        )
+        # 3. Set residue indices as index
+        exposures = exposures.drop(["residue.id"], axis=1).set_index("residue.ix")
 
         return exposures
