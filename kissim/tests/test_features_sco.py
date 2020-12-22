@@ -35,7 +35,8 @@ class TestsSideChainOrientationFeature:
         for residue_id, residue_ix, category, vertex_angle in zip(
             feature._residue_ids, feature._residue_ixs, feature._categories, feature._vertex_angles
         ):
-            assert isinstance(residue_id, int)
+            if residue_id is not None:
+                assert isinstance(residue_id, int)
             assert isinstance(residue_ix, int)
             assert isinstance(category, float)
             assert isinstance(vertex_angle, float)
@@ -76,13 +77,14 @@ class TestsSideChainOrientationFeature:
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
+            "residue.id",
             "sco.category",
             "sco.angle",
             "ca.vector",
             "sc.vector",
             "pocket_center.vector",
         ]
-        assert feature.details.index.to_list() == feature._residue_ids
+        assert feature.details.index.to_list() == feature._residue_ixs
 
     @pytest.mark.parametrize(
         "vector1, vector2, vector3, vertex_angle",

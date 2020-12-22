@@ -4,9 +4,7 @@ PocketBioPython and PocketDataFrame have in common.
 """
 
 import pytest
-import numpy as np
 import pandas as pd
-import Bio
 from opencadd.databases.klifs import setup_remote
 
 from kissim.io import PocketBioPython, PocketDataFrame
