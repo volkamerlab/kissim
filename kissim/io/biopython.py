@@ -108,8 +108,16 @@ class PocketBioPython(BasePocket):
             Structural data for a complex.
         """
 
-        with enter_temp_directory():
-            filepath = klifs_session.coordinates.to_pdb(structure_klifs_id, "complex")
+        if klifs_session._client:
+            with enter_temp_directory():
+                filepath = klifs_session.coordinates.to_pdb(structure_klifs_id, "complex")
+                biopython = Biopython.from_file(filepath)
+                return biopython
+        else:
+            filepath = klifs_session.structures.by_structure_klifs_id(structure_klifs_id)[
+                "structure.filepath"
+            ][0]
+            filepath = klifs_session._path_to_klifs_download / filepath / "complex.pdb"
             biopython = Biopython.from_file(filepath)
             return biopython
 
