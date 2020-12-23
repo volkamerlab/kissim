@@ -1,11 +1,11 @@
 """
 kissim.encoding.fingerprint
+
+Defines the kissim fingerprint.
 """
 
-import datetime
 import logging
 
-from multiprocessing import cpu_count, Pool
 import numpy as np
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
@@ -19,90 +19,6 @@ from kissim.encoding.features import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class FingerprintGenerator:
-    """
-    Generate fingerprints for multiple molecules. Uses parallel computing of fingerprint pairs.
-
-    Attributes
-    ----------
-    data : dict of kissim.encoding.Fingerprint
-        Fingerprints for multiple molecules.
-    path_klifs_download : pathlib.Path or str
-        Path to directory of KLIFS dataset files.
-    """
-
-    def __init__(self):
-
-        self.data = None
-        self.structure_klifs_ids = None
-
-    @classmethod
-    def from_structure_klifs_ids(cls, *structure_klifs_ids, klifs_session=None):
-        """
-        Calculate fingerprints for one or more KLIFS structures (by structure KLIFS IDs).
-        Uses parallelization.
-
-        Parameters
-        ----------
-        TODO
-        """
-
-        start = datetime.datetime.now()
-        # Number of CPUs on machine
-        num_cores = cpu_count() - 1
-        logger.info(f"Number of cores used: {num_cores}")
-        # Create pool with `num_processes` processes
-        pool = Pool(processes=num_cores)
-
-        # TODO
-        fingerprint_generator = cls()
-        fingerprint_generator.structure_klifs_ids = structure_klifs_ids
-        # Apply function to each chunk in list
-        fingerprints_list = pool.map(fingerprint_generator._get_fingerprint, structure_klifs_ids)
-        fingerprint_generator.data = {
-            i.name: i for i in fingerprints_list if i is not None  # Removes emtpy fingerprints
-        }
-
-        # Close and join pool
-        pool.close()
-        pool.join()
-        logger.info(f"Number of fingerprints: {len(fingerprints_list)}")
-        end = datetime.datetime.now()
-        logger.info(f"Start of fingerprint generation: {start}")
-        logger.info(f"End of fingerprint generation: {end}")
-
-        return fingerprint_generator
-
-    def _get_fingerprint(self, structure_klifs_id, klifs_session):
-        """
-        Get fingerprint.
-
-        Parameters
-        ----------
-        TODO
-
-        Returns
-        -------
-        TODO
-        """
-
-        print(structure_klifs_id)
-
-        try:
-            fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
-            return fingerprint
-
-        except Exception as e:  # TODO too generic!
-
-            logger.info(
-                f"Fingerprint for structure with KLIFS ID {structure_klifs_id} could not "
-                f"be generated."
-            )
-            logger.error(e)
-
-            return None
 
 
 class Fingerprint:
