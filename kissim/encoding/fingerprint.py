@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class Fingerprint:
     """
-    Fingerprint encoding each of the 85 pre-aligned residues of a KLIFS kinase pocket 
+    Fingerprint encoding each of the 85 pre-aligned residues of a KLIFS kinase pocket
     w.r.t. the following features:
     - 8 physicochemical properties (8*85 = 680 bits)
     - Distances to 4 subpocket centers (4*85 = 340 bits)
@@ -98,7 +98,7 @@ class Fingerprint:
         Returns
         -------
         pandas.DataFrame
-            Feature per physicochemical property (columns) and pocket residue by KLIFS index 
+            Feature per physicochemical property (columns) and pocket residue by KLIFS index
             (rows).
         """
         features = self.values_dict["physicochemical"]
@@ -171,9 +171,9 @@ class Fingerprint:
 
     def values_array(self, physicochemical=True, spatial_distances=False, spatial_moments=True):
         """
-        Get the full set or subset of features as 1D array. 
+        Get the full set or subset of features as 1D array.
         Default set of features includes physicochemical and spatial moments features.
-        
+
         Parameters
         ----------
         physicochemical : bool
@@ -247,7 +247,7 @@ class Fingerprint:
     def _get_physicochemical_features_dict(self, pocket_bp):
         """
         Get physicochemical features.
-        
+
         Parameters
         ----------
         pocket_bp : kissim.io.PocketBioPython
@@ -277,7 +277,7 @@ class Fingerprint:
     def _get_spatial_features_dict(self, pocket_df):
         """
         Get spatial features (distances and moments).
-        
+
         Parameters
         ----------
         pocket_df : kissim.io.PocketDataFrame
