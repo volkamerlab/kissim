@@ -67,7 +67,7 @@ class PocketBioPython(BasePocket):
 
         Returns
         -------
-        kissim.io.PocketDataframe
+        kissim.io.PocketBioPython
             Biopython-based pocket object.
         """
 
