@@ -23,19 +23,38 @@ logger = logging.getLogger(__name__)
 
 class Fingerprint:
     """
-    The KLIFS kinase pocket is defined by 85 pre-aligned residues, which are described each with
-    (i) 8 physicochemical and
-    (ii) 4 distance features as well as
-    (iii) the first three moments of aforementioned feature distance distributions.
-    Fingerprints can consist of all or a subset of these three feature types.
-
+    Fingerprint encoding each of the 85 pre-aligned residues of a KLIFS kinase pocket 
+    w.r.t. the following features:
+    - 8 physicochemical properties (8*85 = 680 bits)
+    - Distances to 4 subpocket centers (4*85 = 340 bits)
+    - The first 3 moments of respective per-subpocket distance distributions (3*4 = 12 bits)
+    The default fingerprint consists of the physicochemical and spatial moment features.
 
     Attributes
     ----------
     structure_klifs_id : str
         Structure KLIFS ID.
-    values : dict of pandas.DataFrame
-        Fingerprint values, consisting of physicochemical, distance and moment features.
+    values_dict : dict of pandas.DataFrame
+        Fingerprint values, grouped in a nested dictionary by the following keys
+        - "physicochemical"
+          - "size", "hbd", "hba", "charge", "aromatic", "aliphatic", "sco", "exposure"
+        - "spatial"
+          - "distances"
+            - "hinge_region", "dfg_region", "front_pocket", "center"
+          - "moments"
+            - "hinge_region", "dfg_region", "front_pocket", "center"
+    residue_ids : list of int
+        Pocket residue PDB IDs.
+    residue_ixs : list of int
+        Pocket residue KLIFS indices (alignment numbering).
+
+    Properties
+    ----------
+    physicochemical
+    distances
+    moments
+
+
 
     Notes
     -----
@@ -73,7 +92,15 @@ class Fingerprint:
 
     @property
     def physicochemical(self):
-        """TODO"""
+        """
+        Physicochemical features.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Feature per physicochemical property (columns) and pocket residue by KLIFS index 
+            (rows).
+        """
         features = self.values_dict["physicochemical"]
         features = pd.DataFrame(features, index=self.residue_ixs)
         features.index.name = "residue.ix"
@@ -81,7 +108,14 @@ class Fingerprint:
 
     @property
     def distances(self):
-        """TODO"""
+        """
+        Spatial distance features.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances per subpocket (columns) and pocket residue by KLIFS index (rows).
+        """
         features = self.values_dict["spatial"]["distances"]
         features = pd.DataFrame(features, index=self.residue_ixs)
         features.index.name = "residue.ix"
@@ -89,7 +123,14 @@ class Fingerprint:
 
     @property
     def moments(self):
-        """TODO"""
+        """
+        Spatial moments features.
+
+        Returns
+        -------
+        pandas.DataFrame
+            First 3 moments (rows) of distance distributions per subpocket (columns).
+        """
         features = self.values_dict["spatial"]["moments"]
         features = pd.DataFrame(features, index=[1, 2, 3])
         features.index.name = "moments"
@@ -129,7 +170,24 @@ class Fingerprint:
         return fingerprint
 
     def values_array(self, physicochemical=True, spatial_distances=False, spatial_moments=True):
-        """TODO Cast dictionaries to 1D numpy array"""
+        """
+        Get the full set or subset of features as 1D array. 
+        Default set of features includes physicochemical and spatial moments features.
+        
+        Parameters
+        ----------
+        physicochemical : bool
+            Include physicochemical features (default: yes).
+        spatial_distances : bool
+            Include spatial distances features (default: no).
+        spatial_moments : bool
+            Include spatial moments features (default: yes).
+
+        Returns
+        -------
+        numpy.ndarray
+            1D fingerprint values.
+        """
 
         features = []
 
@@ -157,7 +215,24 @@ class Fingerprint:
         return features
 
     def _get_pocket(self, structure_klifs_id, klifs_session):
-        """TODO"""
+        """
+        Get DataFrame and BioPython-based pocket objects from a structure KLIFS ID.
+        TODO do not fetch data from KLIFS twice!!!
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            Structure KLIFS ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
+
+        Returns
+        -------
+        pocket_bp : kissim.io.PocketBioPython
+            Biopython-based pocket object.
+        pocket_df : kissim.io.PocketDataFrame
+            DataFrame-based pocket object.
+        """
 
         # Set up BioPython-based pocket
         pocket_bp = PocketBioPython.from_structure_klifs_id(
@@ -170,13 +245,25 @@ class Fingerprint:
         return pocket_bp, pocket_df
 
     def _get_physicochemical_features_dict(self, pocket_bp):
-        """TODO"""
+        """
+        Get physicochemical features.
+        
+        Parameters
+        ----------
+        pocket_bp : kissim.io.PocketBioPython
+            Biopython-based pocket object.
+
+        Returns
+        -------
+        dict of list of float
+            Feature values (values) for physicochemical properties (keys).
+        """
 
         # Set up physicochemical features
         features = {}
         # Add SiteAlign features
         for sitealign_feature_name in ["size", "hbd", "hba", "charge", "aromatic", "aliphatic"]:
-            feature = SiteAlignFeature.from_pocket(pocket_bp, "hba")
+            feature = SiteAlignFeature.from_pocket(pocket_bp, sitealign_feature_name)
             features[sitealign_feature_name] = feature.values
         # Add side chain orientation feature
         feature = SideChainOrientationFeature.from_pocket(pocket_bp)
@@ -188,7 +275,19 @@ class Fingerprint:
         return features
 
     def _get_spatial_features_dict(self, pocket_df):
-        """TODO"""
+        """
+        Get spatial features (distances and moments).
+        
+        Parameters
+        ----------
+        pocket_df : kissim.io.PocketDataFrame
+            DataFrame-based pocket object.
+
+        Returns
+        -------
+        dict of list of float
+            Per-subpocket feature values (values) for distances and moments (keys).
+        """
 
         # Set up spatial features
         features = {}
