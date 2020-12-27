@@ -109,6 +109,7 @@ class Fingerprint:
             klifs_session = setup_remote()
 
         fingerprint = cls()
+        fingerprint.structure_klifs_id = structure_klifs_id
 
         pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, klifs_session)
         # Check if residues are consistent between pockets
