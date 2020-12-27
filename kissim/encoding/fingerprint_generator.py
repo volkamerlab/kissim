@@ -11,6 +11,8 @@ from itertools import repeat
 from multiprocessing import cpu_count, Pool
 from opencadd.databases.klifs import setup_remote
 
+from kissim.encoding import Fingerprint
+
 logger = logging.getLogger(__name__)
 
 
@@ -105,8 +107,6 @@ class FingerprintGenerator:
     def _process_fingerprints_in_parallel(self, n_cores):
         """TODO"""
 
-        print(list(zip(self.structure_klifs_ids, repeat(self.klifs_session))))
-
         pool = Pool(processes=n_cores)
         fingerprints_list = pool.starmap(
             self._get_fingerprint, zip(self.structure_klifs_ids, repeat(self.klifs_session))
@@ -118,13 +118,5 @@ class FingerprintGenerator:
     def _get_fingerprint(self, structure_klifs_id, klifs_session):
         """TODO"""
 
-        try:
-            fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
-            return fingerprint
-        except Exception as e:  # TODO too generic!
-            logger.info(
-                f"Fingerprint for structure with KLIFS ID {structure_klifs_id} could not "
-                f"be generated."
-            )
-            logger.error(e)
-            return None
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
+        return fingerprint
