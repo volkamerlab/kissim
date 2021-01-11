@@ -240,7 +240,7 @@ class Fingerprint:
         )
         # Set up DataFrame-based pocket
         pocket_df = PocketDataFrame.from_structure_klifs_id(
-            structure_klifs_id, klifs_session=klifs_session
+            structure_klifs_id, extension="pdb", klifs_session=klifs_session
         )
         return pocket_bp, pocket_df
 
