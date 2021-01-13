@@ -212,7 +212,11 @@ class SubpocketsFeature(BaseFeature):
                 ].to_numpy()
                 distance = np.linalg.norm(ca_atom_coord - center)
             distances.append(distance)
-        return np.array(distances)
+
+        # Must be cast to list of floats (removing all numpy data types) to allow json dump
+        distances = np.array(distances).tolist()
+
+        return distances
 
     def _calculate_moments(self):
         """
@@ -233,7 +237,8 @@ class SubpocketsFeature(BaseFeature):
         moments = {}
         for name, distances in self._distances.items():
             moment1, moment2, moment3 = self.calculate_first_second_third_moments(distances)
-            moments[name] = np.array([moment1, moment2, moment3])
+            # Must be cast to list of floats (removing all numpy data types) to allow json dump
+            moments[name] = np.array([moment1, moment2, moment3]).tolist()
         return moments
 
     @staticmethod
