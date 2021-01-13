@@ -143,7 +143,9 @@ class PocketBioPython(BasePocket):
         if klifs_session._client:
             residues = klifs_session.pockets.by_structure_klifs_id(structure_klifs_id)
         else:
-            residues = klifs_session.pockets.by_structure_klifs_id(structure_klifs_id, extension="pdb")
+            residues = klifs_session.pockets.by_structure_klifs_id(
+                structure_klifs_id, extension="pdb"
+            )
         residue_ids = residues["residue.id"].to_list()
         residue_ixs = residues["residue.klifs_id"].to_list()
         residue_ids, residue_ixs = self._format_residue_ids_and_ixs(
