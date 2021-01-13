@@ -4,7 +4,9 @@ kissim.encoding.fingerprint
 Defines the kissim fingerprint.
 """
 
+import json
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -25,7 +27,7 @@ class FingerprintBase:
     ----------
     structure_klifs_id : str
         Structure KLIFS ID.
-    values_dict : dict of pandas.DataFrame
+    values_dict : dict of dict (of dict) of list of floats
         Fingerprint values, grouped in a nested dictionary by the following keys
         - "physicochemical"
           - "size", "hbd", "hba", "charge", "aromatic", "aliphatic", "sco", "exposure"
@@ -169,3 +171,54 @@ class FingerprintBase:
             features = np.array([])
 
         return features
+
+    @classmethod
+    def from_json(cls, filepath):
+        """
+        Initiate the fingerprint from a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+        """
+
+        filepath = Path(filepath)
+        with open(filepath, "r") as f:
+            json_string = f.read()
+        fingerprint_dict = json.loads(json_string)
+
+        return cls._from_dict(fingerprint_dict)
+
+    @classmethod
+    def _from_dict(cls, fingerprint_dict):
+        """
+        Initiate the fingerprint from a dictionary containing the fingerprint class attributes.
+
+        Parameters
+        ----------
+        fingerprint_dict : dict
+            Fingerprint attributes in the form of a dictionary.
+        """
+
+        fingerprint = cls()
+        fingerprint.structure_klifs_id = fingerprint_dict["structure_klifs_id"]
+        fingerprint.values_dict = fingerprint_dict["values_dict"]
+        fingerprint.residue_ids = fingerprint_dict["residue_ids"]
+        fingerprint.residue_ixs = fingerprint_dict["residue_ixs"]
+        return fingerprint
+
+    def to_json(self, filepath):
+        """
+        Write Fingerprint class attributes to a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+        """
+
+        json_string = json.dumps(self.__dict__, indent=4)
+        filepath = Path(filepath)
+        with open(filepath, "w") as f:
+            f.write(json_string)
