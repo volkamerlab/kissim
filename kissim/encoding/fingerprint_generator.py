@@ -22,14 +22,19 @@ class FingerprintGenerator:
 
     Attributes
     ----------
-    TODO
+    structure_klifs_id : int
+        Structure KLIFS ID.
+    klifs_session : opencadd.databases.klifs.session.Session
+        Local or remote KLIFS session.
+    data : dict of int: kissim.encoding.Fingerprint
+        Fingerprints for input structures (by KLIFS ID).
     """
 
     def __init__(self):
 
         self.structure_klifs_ids = None
         self.klifs_session = None
-        self.data = None
+        self.data = None  # TODO omit and return dict directly?
 
     @classmethod
     def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=None):
@@ -38,7 +43,17 @@ class FingerprintGenerator:
 
         Parameters
         ----------
-        TODO
+        structure_klifs_id : int
+            Structure KLIFS ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
+
+        Returns
+        -------
+        kissim.encoding.fingerprint_generator  # TODO return dict (structure KLIFS ID: fingerprint)
+            Fingerprint generator object containing fingerprints.
         """
 
         start_time = datetime.datetime.now()
@@ -82,7 +97,26 @@ class FingerprintGenerator:
         return fingerprint_generator
 
     def _set_n_cores(self, n_cores):
-        """TODO"""
+        """
+        Set the number of cores to be used for fingerprint generation.
+
+        Parameters
+        ----------
+        n_cores : int or None
+            Number of cores as defined by the user.
+            If no number is given, use all available CPUs - 1.
+            If a number is given, raise error if it exceeds the number of available CPUs - 1.
+
+        Returns
+        -------
+        int
+            Number of cores to be used for fingerprint generation.
+
+        Raises
+        ------
+        ValueError
+            If input number of cores exceeds the number of available CPUs - 1.
+        """
 
         max_n_cores = cpu_count() - 1
         if n_cores is None:
@@ -96,7 +130,14 @@ class FingerprintGenerator:
         return n_cores
 
     def _process_fingerprints_in_sequence(self):
-        """TODO"""
+        """
+        Generate fingerprints in sequence.
+
+        Returns
+        -------
+        list of kissim.encoding.fingerprint
+            List of fingerprints
+        """
 
         fingerprints_list = [
             self._get_fingerprint(structure_klifs_id, self.klifs_session)
@@ -105,7 +146,19 @@ class FingerprintGenerator:
         return fingerprints_list
 
     def _process_fingerprints_in_parallel(self, n_cores):
-        """TODO"""
+        """
+        Generate fingerprints in parallel.
+
+        Parameters
+        ----------
+        n_cores : int
+            Number of cores.
+
+        Returns
+        -------
+        list of kissim.encoding.fingerprint
+            List of fingerprints
+        """
 
         pool = Pool(processes=n_cores)
         fingerprints_list = pool.starmap(
@@ -116,7 +169,21 @@ class FingerprintGenerator:
         return fingerprints_list
 
     def _get_fingerprint(self, structure_klifs_id, klifs_session):
-        """TODO"""
+        """
+        Generate a fingerprint.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            Structure KLIFS ID.
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
+
+        Returns
+        -------
+        kissim.encoding.fingerprint
+            Fingerprint.
+        """
 
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
         return fingerprint
