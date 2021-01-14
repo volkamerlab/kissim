@@ -1,5 +1,5 @@
 """
-Unit and regression test for kissim.encoding.fingerprint_normalized.FingerprintNormalized.
+Unit and regression test for kissim.encoding.FingerprintNormalized.
 """
 
 import pytest

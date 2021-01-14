@@ -1,6 +1,6 @@
 """
-Unit and regression test for kissim.encoding.fingerprint.Fingerprint and its
-parent class kissim.encoding.base.FingerprintBase.
+Unit and regression test for kissim.encoding.Fingerprint and its
+parent class kissim.encoding.FingerprintBase.
 """
 
 from pathlib import Path
