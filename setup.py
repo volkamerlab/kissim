@@ -41,7 +41,8 @@ setup(
     # Comment out this line to prevent the files from being packaged with your software
     package_data={'kissim': ["data/*.dat"]
                   },
-
+    # Entry points
+    entry_points={"console_scripts": ["kissim-encoder = kissim.encoding.cli:main"]},
     # Allows `setup.py test` to work correctly with pytest
     setup_requires=[] + pytest_runner,
 

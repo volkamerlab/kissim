@@ -108,7 +108,7 @@ def parse_structure_klifs_ids(args_input):
     return structure_klifs_ids
 
 
-if __name__ == "__main__":
+def main():
 
     args = parse_arguments()
     setup_logs(args.output)
