@@ -51,7 +51,6 @@ class TestFingerprintGenerator:
             == fingerprints_values_array_sum
         )
 
-
     @pytest.mark.parametrize(
         "structure_klifs_ids, values_array_sum",
         [([109, 110, 118], 14627.0178)],
@@ -60,7 +59,6 @@ class TestFingerprintGenerator:
         """
         Test if saving/loading a fingerprint to/from a json file.
         """
-
 
         fingerprints = FingerprintGenerator.from_structure_klifs_ids(
             structure_klifs_ids, REMOTE, 1
@@ -75,7 +73,7 @@ class TestFingerprintGenerator:
 
             # Load json file
             fingerprints_reloaded = FingerprintGenerator.from_json(json_filepath)
-        
+
         assert isinstance(fingerprints_reloaded, FingerprintGenerator)
         # Attribute data
         assert list(fingerprints.data.keys()) == list(fingerprints_reloaded.data.keys())
@@ -85,7 +83,4 @@ class TestFingerprintGenerator:
                 for structure_klifs_id, fingerprint in fingerprints_reloaded.data.items()
             ]
         )
-        assert (
-            pytest.approx(values_array_sum_calculated, abs=1e-4)
-            == values_array_sum
-        )
+        assert pytest.approx(values_array_sum_calculated, abs=1e-4) == values_array_sum
