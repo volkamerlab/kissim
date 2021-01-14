@@ -16,6 +16,7 @@ REMOTE = setup_remote()
 LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 print(LOCAL._database)
 
+
 class TestFingerprint:
     """
     Test common functionalities in the PocketBioPython and PocketDataFrame classes.
@@ -36,4 +37,3 @@ class TestFingerprint:
         v1 = fingerprint1.values_array()
         v2 = fingerprint2.values_array()
         assert np.allclose(v1, v2, rtol=0, atol=0, equal_nan=True)
-
