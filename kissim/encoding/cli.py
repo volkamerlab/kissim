@@ -56,33 +56,23 @@ def parse_arguments():
         default=1,
     )
     args = parser.parse_args()
-    print(type(args))
     return args
 
+def configure_logger(filename, level=logging.INFO):
+    """TODO"""
 
-def setup_logs(args_output):
-    """
-    Set up logging.
-    """
-
-    args_output = Path(args_output)
-
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        filename=args_output.parent / f"{args_output.stem}.log",
-        filemode="w",
-        level=logging.INFO,
-    )
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    logging.getLogger("").addHandler(console)
+    filename = Path(filename)
+    logger = logging.getLogger("kissim")
+    logger.setLevel(level)
+    s_handler = logging.StreamHandler()
+    f_handler = logging.FileHandler(filename.parent / f"{filename.stem}.log")
+    logger.addHandler(s_handler)
+    logger.addHandler(f_handler)
 
 
 def setup_klifs_session(args_local):
     """
-    Set up KLIFS session
+    Set up KLIFS session. TODO
     """
 
     if args_local:
@@ -94,7 +84,7 @@ def setup_klifs_session(args_local):
 
 def parse_structure_klifs_ids(args_input):
     """
-    Parse structure KLIFS IDs
+    Parse structure KLIFS IDs. TODO
     """
 
     if len(args_input) == 1:
@@ -111,7 +101,7 @@ def parse_structure_klifs_ids(args_input):
 def main():
 
     args = parse_arguments()
-    setup_logs(args.output)
+    configure_logger(args.output)
     klifs_session = setup_klifs_session(args.local)
     structure_klifs_ids = parse_structure_klifs_ids(args.input)
 
