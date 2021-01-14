@@ -10,12 +10,6 @@ dependencies:
     # Base depends
   - python>=3.6
   - pip
-
-    # Testing
-  - pytest
-  - pytest-cov
-  - codecov
-
     # Package dependencies
   - biopandas
   - biopython
@@ -23,8 +17,14 @@ dependencies:
   - pmw
   - pymol
   - scipy
-
-    # Pip-only installs
-  #- pip:
-  #  - codecov
+  - matplotlib
+  - seaborn
+  # Testing
+  - pytest
+  - pytest-cov
+  - codecov
+  # Docs
+  - sphinx
+  - sphinx_rtd_theme
+  - nbsphinx
 

@@ -16,17 +16,66 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
 AMINO_ACIDS = pd.DataFrame(
     [
-        'ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET MSE PHE PRO SER THR TRP TYR VAL _'.split(),
-        'A R N D C Q E G H I L K M X F P S T W Y V _'.split()
+        [
+            "ALA",
+            "ARG",
+            "ASN",
+            "ASP",
+            "CYS",
+            "GLN",
+            "GLU",
+            "GLY",
+            "HIS",
+            "ILE",
+            "LEU",
+            "LYS",
+            "MET",
+            "MSE",
+            "PHE",
+            "PRO",
+            "SER",
+            "THR",
+            "TRP",
+            "TYR",
+            "VAL",
+            "_",
+        ],
+        [
+            "A",
+            "R",
+            "N",
+            "D",
+            "C",
+            "Q",
+            "E",
+            "G",
+            "H",
+            "I",
+            "L",
+            "K",
+            "M",
+            "X",
+            "F",
+            "P",
+            "S",
+            "T",
+            "W",
+            "Y",
+            "V",
+            "_",
+        ],
     ],
-    index='aa_three aa_one'.split()).transpose()
+    index=["aa_three", "aa_one"],
+).transpose()
 
 
 class MoleculeLoader:
     """
-    Class used to load molecule data from mol2 and pdb files in the form of unified BioPandas objects.
+    Class used to load molecule data from mol2 and pdb files in the form of unified BioPandas
+    objects.
 
     Attributes
     ----------
@@ -54,22 +103,26 @@ class MoleculeLoader:
         Returns
         -------
         list of biopandas.mol2.pandas_mol2.PandasMol2 or biopandas.pdb.pandas_pdb.PandasPdb
-            List of BioPandas objects containing metadata and structural data of molecule(s) in mol2 file.
+            List of BioPandas objects containing metadata and structural data of molecule(s) in
+            mol2 file.
         """
 
         if self.molecule_path.exists():
             pass
         else:
-            #logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
-            raise FileNotFoundError(f'File not found: {self.molecule_path}')
+            # logger.error(f'File not found: {self.molecule_path}', extra={'molecule_id': 'all'})
+            raise FileNotFoundError(f"File not found: {self.molecule_path}")
 
         # Load molecule data
-        if self.molecule_path.suffix == '.pdb':
+        if self.molecule_path.suffix == ".pdb":
             molecules = self._load_pdb(self.remove_solvent)
-        elif self.molecule_path.suffix == '.mol2':
+        elif self.molecule_path.suffix == ".mol2":
             molecules = self._load_mol2(self.remove_solvent)
         else:
-            raise IOError(f'Unsupported file format {self.molecule_path.suffix}, only pdb and mol2 are supported.')
+            raise IOError(
+                f"Unsupported file format {self.molecule_path.suffix}, "
+                f"only pdb and mol2 are supported."
+            )
 
         return molecules
 
@@ -85,61 +138,69 @@ class MoleculeLoader:
         Returns
         -------
         list of biopandas.mol2.pandas_mol2.PandasMol2
-            List of BioPandas objects containing metadata and structural data of molecule(s) in mol2 file.
+            List of BioPandas objects containing metadata and structural data of molecule(s) in
+            mol2 file.
         """
 
         # In case of multiple entries in one mol2 file, include iteration step
         molecules = []
 
-        for mol2 in split_multimol2(str(self.molecule_path)):  # biopandas not compatible with pathlib
+        for mol2 in split_multimol2(
+            str(self.molecule_path)
+        ):  # biopandas not compatible with pathlib
 
             # Mol2 files can have 9 or 10 columns.
             try:  # Try 9 columns.
                 molecule = PandasMol2().read_mol2_from_list(
-                                                            mol2_code=mol2[0],
-                                                            mol2_lines=mol2[1],
-                                                            columns={0: ('atom_id', int),
-                                                                     1: ('atom_name', str),
-                                                                     2: ('x', float),
-                                                                     3: ('y', float),
-                                                                     4: ('z', float),
-                                                                     5: ('atom_type', str),
-                                                                     6: ('subst_id', str),
-                                                                     7: ('subst_name', str),
-                                                                     8: ('charge', float)}
-                                                            )
+                    mol2_code=mol2[0],
+                    mol2_lines=mol2[1],
+                    columns={
+                        0: ("atom_id", int),
+                        1: ("atom_name", str),
+                        2: ("x", float),
+                        3: ("y", float),
+                        4: ("z", float),
+                        5: ("atom_type", str),
+                        6: ("subst_id", str),
+                        7: ("subst_name", str),
+                        8: ("charge", float),
+                    },
+                )
 
             except (AttributeError, ValueError):  # If 9 columns did not work, try 10 columns.
                 molecule = PandasMol2().read_mol2_from_list(
-                                                            mol2_code=mol2[0],
-                                                            mol2_lines=mol2[1],
-                                                            columns={0: ('atom_id', int),
-                                                                     1: ('atom_name', str),
-                                                                     2: ('x', float),
-                                                                     3: ('y', float),
-                                                                     4: ('z', float),
-                                                                     5: ('atom_type', str),
-                                                                     6: ('subst_id', str),
-                                                                     7: ('subst_name', str),
-                                                                     8: ('charge', float),
-                                                                     9: ('status_bit', str)}
-                                                            )
+                    mol2_code=mol2[0],
+                    mol2_lines=mol2[1],
+                    columns={
+                        0: ("atom_id", int),
+                        1: ("atom_name", str),
+                        2: ("x", float),
+                        3: ("y", float),
+                        4: ("z", float),
+                        5: ("atom_type", str),
+                        6: ("subst_id", str),
+                        7: ("subst_name", str),
+                        8: ("charge", float),
+                        9: ("status_bit", str),
+                    },
+                )
 
             # Insert additional columns (split ASN22 to ASN and 22)
             res_id_list = []
             res_name_list = []
 
-            for subst_name, atom_type in zip(molecule.df['subst_name'], molecule.df['atom_type']):
+            for subst_name, atom_type in zip(molecule.df["subst_name"], molecule.df["atom_type"]):
 
                 # Some subst_name entries in the KLIFs mol2 files contain underscores.
                 # Examples
-                # - 5YKS: Residues on the N-terminus of (before) the first amino acid, i.e. 3C protease cutting site
+                # - 5YKS: Residues on the N-terminus of (before) the first amino acid,
+                #   i.e. 3C protease cutting site
                 # - 2J5E: Mutated residue (CYO_797)
                 # Convert these underscores into a minus sign (so that it can still be cast to int)
-                subst_name = subst_name.replace('_', '-')
+                subst_name = subst_name.replace("_", "-")
 
-                # Some subst_name entries in the KLIFS mol2 files (in accordance with the original PDB files)
-                # contain a letter after the residue ID
+                # Some subst_name entries in the KLIFS mol2 files (in accordance with the original
+                # PDB files) contain a letter after the residue ID
                 # Examples
                 # - 3HLL: Irregular residue ID (56A, 93B)
                 # Remove letter from end of string
@@ -158,23 +219,28 @@ class MoleculeLoader:
                     res_id_list.append(int(subst_name[3:]))
                     res_name_list.append(subst_name[:3])
 
-            molecule.df.insert(loc=2, column='res_id', value=res_id_list)
-            molecule.df.insert(loc=2, column='res_name', value=res_name_list)
+            molecule.df.insert(loc=2, column="res_id", value=res_id_list)
+            molecule.df.insert(loc=2, column="res_name", value=res_name_list)
 
             # Select columns of interest
-            molecule._df = molecule.df.loc[:, ['atom_id',
-                                               'atom_name',
-                                               'res_id',
-                                               'res_name',
-                                               'subst_name',
-                                               'x',
-                                               'y',
-                                               'z',
-                                               'charge']]
+            molecule._df = molecule.df.loc[
+                :,
+                [
+                    "atom_id",
+                    "atom_name",
+                    "res_id",
+                    "res_name",
+                    "subst_name",
+                    "x",
+                    "y",
+                    "z",
+                    "charge",
+                ],
+            ]
 
             # Remove solvent if parameter remove_solvent=True
             if remove_solvent:
-                ix = molecule.df.index[molecule.df['res_name'] == 'HOH']
+                ix = molecule.df.index[molecule.df["res_name"] == "HOH"]
                 molecule.df.drop(index=ix, inplace=True)
 
             molecules.append(molecule)
@@ -193,45 +259,64 @@ class MoleculeLoader:
         Returns
         -------
         list of biopandas.pdb.pandas_pdb.PandasPdb
-            List of BioPandas objects containing metadata and structural data of molecule(s) in pdb file.
+            List of BioPandas objects containing metadata and structural data of molecule(s) in
+            pdb file.
         """
 
-        molecule = PandasPdb().read_pdb(str(self.molecule_path))  # biopandas not compatible with pathlib
+        molecule = PandasPdb().read_pdb(
+            str(self.molecule_path)
+        )  # biopandas not compatible with pathlib
 
         # If object has no code, set string from file stem and its folder name
         # E.g. "/mydir/pdb/3w32.mol2" will generate the code "pdb_3w32".
         if not (molecule.code or molecule.code.strip()):
-            molecule.code = f'{self.molecule_path.parts[-2]}_{self.molecule_path.stem}'
+            molecule.code = f"{self.molecule_path.parts[-2]}_{self.molecule_path.stem}"
 
         # Get both ATOM and HETATM lines of PDB file
-        molecule._df = pd.concat([molecule.df['ATOM'], molecule.df['HETATM']])
+        molecule._df = pd.concat([molecule.df["ATOM"], molecule.df["HETATM"]])
 
         # Select columns of interest
-        molecule._df = molecule.df.loc[:, ['atom_number',
-                                           'atom_name',
-                                           'residue_number',
-                                           'residue_name',
-                                           'x_coord',
-                                           'y_coord',
-                                           'z_coord',
-                                           'charge']]
+        molecule._df = molecule.df.loc[
+            :,
+            [
+                "atom_number",
+                "atom_name",
+                "residue_number",
+                "residue_name",
+                "x_coord",
+                "y_coord",
+                "z_coord",
+                "charge",
+            ],
+        ]
 
         # Insert additional columns
-        molecule.df.insert(loc=4,
-                           column='subst_name',
-                           value=[f'{i}{j}' for i, j in zip(molecule.df['residue_name'], molecule.df['residue_number'])])
+        molecule.df.insert(
+            loc=4,
+            column="subst_name",
+            value=[
+                f"{i}{j}"
+                for i, j in zip(molecule.df["residue_name"], molecule.df["residue_number"])
+            ],
+        )
 
         # Rename columns
-        molecule.df.rename(index=str, inplace=True, columns={'atom_number': 'atom_id',
-                                                             'residue_number': 'res_id',
-                                                             'residue_name': 'res_name',
-                                                             'x_coord': 'x',
-                                                             'y_coord': 'y',
-                                                             'z_coord': 'z'})
+        molecule.df.rename(
+            index=str,
+            inplace=True,
+            columns={
+                "atom_number": "atom_id",
+                "residue_number": "res_id",
+                "residue_name": "res_name",
+                "x_coord": "x",
+                "y_coord": "y",
+                "z_coord": "z",
+            },
+        )
 
         # Remove solvent if parameter remove_solvent=True
         if remove_solvent:
-            ix = molecule.df.index[molecule.df['res_name'] == 'HOH']
+            ix = molecule.df.index[molecule.df["res_name"] == "HOH"]
             molecule.df.drop(index=ix, inplace=True)
 
         # Cast to list only for homogeneity with reading mol2 files that can have multiple entries
@@ -260,8 +345,8 @@ class KlifsMoleculeLoader:
         Get molecule including KLIFS position IDs from a mol2 file path.
 
         This molecule has the form of a biopandas object, containing (i) the molecule code and
-        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns), including
-        KLIFS position IDs from the KLIFS metadata as additional property (column).
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns),
+        including KLIFS position IDs from the KLIFS metadata as additional property (column).
 
         Parameters
         ----------
@@ -272,7 +357,9 @@ class KlifsMoleculeLoader:
         """
 
         # Get molecule's KLIFS metadata entry from mol2 file
-        klifs_metadata_entry = self._metadata_entry_from_file(path_pocket_mol2, path_klifs_metadata)
+        klifs_metadata_entry = self._metadata_entry_from_file(
+            path_pocket_mol2, path_klifs_metadata
+        )
 
         # Get molecule
         self._load_molecule(klifs_metadata_entry, path_pocket_mol2)
@@ -282,8 +369,8 @@ class KlifsMoleculeLoader:
         Get molecule including KLIFS position IDs from a KLIFS metadata entry.
 
         This molecule has the form of a biopandas object, containing (i) the molecule code and
-        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns), including
-        KLIFS position IDs from the KLIFS metadata as additional property (column).
+        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns),
+        including KLIFS position IDs from the KLIFS metadata as additional property (column).
 
         Parameters
         ----------
@@ -294,15 +381,18 @@ class KlifsMoleculeLoader:
         """
 
         # Get molecule's mol2 file path from KLIFS metadata entry
-        path_pocket_mol2 = self._file_from_metadata_entry(klifs_metadata_entry, path_klifs_download)
+        path_pocket_mol2 = self._file_from_metadata_entry(
+            klifs_metadata_entry, path_klifs_download
+        )
 
         # Get molecule
         self._load_molecule(klifs_metadata_entry, path_pocket_mol2)
 
     def _load_molecule(self, klifs_metadata_entry, path_pocket_mol2):
         """
-        Load molecule from mol2 file in the form of a biopandas object, containing (i) the molecule code and
-        (i) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns).
+        Load molecule from mol2 file in the form of a biopandas object, containing
+        (i) the molecule code and
+        (ii) the molecule data, i.e. pandas.DataFrame: atoms (rows) x properties (columns).
         Add KLIFS position IDs from the KLIFS metadata as additional property (column).
 
         Parameters
@@ -318,11 +408,13 @@ class KlifsMoleculeLoader:
         molecule = molecule_loader.molecules[0]
 
         # List of KLIFS positions (starting at 1) excluding gap positions
-        klifs_ids = [index for index, residue in enumerate(klifs_metadata_entry.pocket, 1) if residue != '_']
+        klifs_ids = [
+            index for index, residue in enumerate(klifs_metadata_entry.pocket, 1) if residue != "_"
+        ]
 
         # Number of atoms per residue in molecule (mol2file)
         # Note: sort=False important otherwise negative residue IDs will be sorted to the top
-        number_of_atoms_per_residue = molecule.df.groupby(by='res_id', sort=False).size()
+        number_of_atoms_per_residue = molecule.df.groupby(by="res_id", sort=False).size()
 
         # Get KLIFS position IDs for each atom in molecule
         klifs_ids_per_atom = []
@@ -331,7 +423,7 @@ class KlifsMoleculeLoader:
             klifs_ids_per_atom = klifs_ids_per_atom + [klifs_id] * n
 
         # Add column for KLIFS position IDs to molecule
-        molecule.df['klifs_id'] = klifs_ids_per_atom
+        molecule.df["klifs_id"] = klifs_ids_per_atom
 
         self.molecule = molecule
 
@@ -356,45 +448,50 @@ class KlifsMoleculeLoader:
         # Get metadata from mol2 file path: kinase, PDB ID, alternate model and chain:
         path_pocket_mol2 = Path(path_pocket_mol2)
         if not path_pocket_mol2.exists():
-            raise FileNotFoundError(f'File does not exist: {path_pocket_mol2}')
+            raise FileNotFoundError(f"File does not exist: {path_pocket_mol2}")
 
         # Get kinase
         kinase = list(path_pocket_mol2.parents)[1].stem  # e.g. 'AAK1'
 
         # Get structure ID
-        structure_id = list(path_pocket_mol2.parents)[0].stem.split('_')  # e.g. ['4wsq', 'altA', 'chainA']
+        structure_id = list(path_pocket_mol2.parents)[0].stem.split(
+            "_"
+        )  # e.g. ['4wsq', 'altA', 'chainA']
 
         # Get PDB ID
         pdb_id = structure_id[0]  # e.g. '4wsq'
 
         # Get alternate model
-        alternate_model = [i[-1] for i in structure_id if 'alt' in i]
+        alternate_model = [i[-1] for i in structure_id if "alt" in i]
 
         if alternate_model:
             alternate_model = alternate_model[0]  # e.g. ['A']
         else:
-            alternate_model = '-'  # ['-']
+            alternate_model = "-"  # ['-']
 
         # Get chain
-        chain = [i[-1] for i in structure_id if 'chain' in i]
+        chain = [i[-1] for i in structure_id if "chain" in i]
 
         if chain:
             chain = chain[0]  # e.g. ['A']
         else:
-            chain = '-'  # ['-']
+            chain = "-"  # ['-']
 
         # Load KLIFS metadata
         klifs_metadata = pd.read_csv(path_klifs_metadata)
 
         klifs_metadata_entry = klifs_metadata[
-            (klifs_metadata.kinase == kinase) &
-            (klifs_metadata.pdb_id == pdb_id) &
-            (klifs_metadata.alternate_model == alternate_model) &
-            (klifs_metadata.chain == chain)
+            (klifs_metadata.kinase == kinase)
+            & (klifs_metadata.pdb_id == pdb_id)
+            & (klifs_metadata.alternate_model == alternate_model)
+            & (klifs_metadata.chain == chain)
         ]
 
         if len(klifs_metadata_entry) != 1:
-            raise ValueError(f'Unvalid number of entries ({len(klifs_metadata_entry)}) in metadata for file: {path_pocket_mol2}')
+            raise ValueError(
+                f"Unvalid number of entries ({len(klifs_metadata_entry)}) in metadata for file: "
+                f"{path_pocket_mol2}"
+            )
 
         # Squeeze casts one row DataFrame to Series
         klifs_metadata_entry = klifs_metadata_entry.squeeze()
@@ -420,11 +517,13 @@ class KlifsMoleculeLoader:
         """
 
         # Depending on whether alternate model and chain ID is given build file path:
-        path_pocket_mol2 = Path(path_klifs_download) / klifs_metadata_entry.filepath / 'pocket.mol2'
+        path_pocket_mol2 = (
+            Path(path_klifs_download) / klifs_metadata_entry.filepath / "pocket.mol2"
+        )
 
         # If file does not exist, raise error
         if not path_pocket_mol2.exists():
-            raise FileNotFoundError(f'File not found: {path_pocket_mol2}')
+            raise FileNotFoundError(f"File not found: {path_pocket_mol2}")
 
         return path_pocket_mol2
 
@@ -458,14 +557,11 @@ class PdbChainLoader:
         path_pdb = Path(path_pdb)
 
         if not path_pdb.exists():
-            raise IOError(f'PDB file does not exist: {path_pdb}')
+            raise IOError(f"PDB file does not exist: {path_pdb}")
 
         # Get structure
         parser = PDBParser(QUIET=True)
-        structure = parser.get_structure(
-            id=path_pdb.stem,
-            file=path_pdb
-        )
+        structure = parser.get_structure(id=path_pdb.stem, file=path_pdb)
 
         # Get alternate model (always use first model)
         model = structure[0]
@@ -511,11 +607,11 @@ class PdbChainLoader:
         """
 
         # Depending on whether alternate model and chain ID is given build file path:
-        path_pdb = path_klifs_download / klifs_metadata_entry.filepath / 'protein_pymol.pdb'
+        path_pdb = path_klifs_download / klifs_metadata_entry.filepath / "protein_pymol.pdb"
 
         # If file does not exist, raise error
         if not path_pdb.exists():
-            raise FileNotFoundError(f'File not found: {path_pdb}')
+            raise FileNotFoundError(f"File not found: {path_pdb}")
 
         return path_pdb
 
@@ -556,8 +652,8 @@ def get_amino_acids_3to1(three_letter_amino_acid):
 
 def split_klifs_code(klifs_code):
     """
-    Split KLIFS molecule code into its components, i.e. species name, kinase group name, PDB ID, alternate model ID,
-    and chain ID.
+    Split KLIFS molecule code into its components, i.e. species name, kinase group name, PDB ID,
+    alternate model ID, and chain ID.
 
     Parameters
     ----------
@@ -568,10 +664,11 @@ def split_klifs_code(klifs_code):
     Returns
     -------
     list of str
-        KLIFS molecule code components: species name, kinase name, PDB ID, alternate model ID, and chain ID.
+        KLIFS molecule code components: species name, kinase name, PDB ID, alternate model ID, and
+        chain ID.
     """
 
-    code = klifs_code.replace('/', '_').split('_')
+    code = klifs_code.replace("/", "_").split("_")
 
     # Get species name
     species = code[0]
@@ -583,20 +680,26 @@ def split_klifs_code(klifs_code):
     pdb_id = code[2]
 
     # Get alternate model ID
-    alternate_model = [i for i in code if 'alt' in i]
+    alternate_model = [i for i in code if "alt" in i]
     if alternate_model:
         alternate_model = alternate_model[0][-1]  # Get 'X' from 'altX'
     else:
         alternate_model = None
 
     # Get chain ID
-    chain = [i for i in code if 'chain' in i]
+    chain = [i for i in code if "chain" in i]
     if chain:
         chain = chain[0][-1]
     else:
         chain = None
 
-    return {'species': species, 'kinase': kinase, 'pdb_id': pdb_id, 'alternate_model': alternate_model, 'chain': chain}
+    return {
+        "species": species,
+        "kinase": kinase,
+        "pdb_id": pdb_id,
+        "alternate_model": alternate_model,
+        "chain": chain,
+    }
 
 
 def get_klifs_residues_mol2topdb(molecule):
@@ -621,22 +724,22 @@ def get_klifs_residues_mol2topdb(molecule):
     residue_ids = [int(i) for i in molecule.df.res_id.unique()]
 
     # Load PDB file and get residues
-    path_pdb = f'/home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download/{code["pdb_id"]}.cif'
+    # TBA = home/dominique/Documents/data/kinsim/20190724_full/raw/PDB_download??? TODO
+    path_pdb = f'/TBA/{code["pdb_id"]}.cif'  # TODO!!!!!!!!!!!!!!
 
     if not Path(path_pdb).exists():
-        raise IOError(f'PDB file does not exist: {path_pdb}')
+        raise IOError(f"PDB file does not exist: {path_pdb}")
 
     parser = MMCIFParser(QUIET=True)
-    structure = parser.get_structure(
-        structure_id=code['pdb_id'],
-        filename=path_pdb
-    )
+    structure = parser.get_structure(structure_id=code["pdb_id"], filename=path_pdb)
     model = structure[0]
-    chain = model[code['chain']]
-    residues = Selection.unfold_entities(entity_list=chain, target_level='R')
+    chain = model[code["chain"]]
+    residues = Selection.unfold_entities(entity_list=chain, target_level="R")
 
     # Select KLIFS residues
-    klifs_residues = [residue for residue in residues if residue.get_full_id()[3][1] in residue_ids]
+    klifs_residues = [
+        residue for residue in residues if residue.get_full_id()[3][1] in residue_ids
+    ]
 
     return klifs_residues
 
@@ -650,7 +753,8 @@ def center_of_mass(entity, geometric=False):
     ----------
     entity : Bio.PDB.Entity.Entity or list of Bio.PDB.Atom.Atom
         Contains atoms for which the center of mass / centroid needs to be calculated:
-        a) Basic container object for PDB heirachy. Structure, Model, Chain and Residue are subclasses of Entity.
+        a) Basic container object for PDB heirachy. Structure, Model, Chain and Residue are
+           subclasses of Entity.
         b) List of container objects for atoms.
 
     geometric : bool
@@ -672,12 +776,14 @@ def center_of_mass(entity, geometric=False):
     if isinstance(entity, Entity.Entity):
         atom_list = entity.get_atoms()
     # List of Atoms
-    elif hasattr(entity, '__iter__') and [x for x in entity if x.level == 'A']:
+    elif hasattr(entity, "__iter__") and [x for x in entity if x.level == "A"]:
         atom_list = entity
     # Some other weirdo object
     else:
-        raise ValueError(f'Center of Mass can only be calculated from the following objects:\n'
-                         f'Structure, Model, Chain, Residue, list of Atoms.')
+        raise ValueError(
+            f"Center of Mass can only be calculated from the following objects:\n"
+            f"Structure, Model, Chain, Residue, list of Atoms."
+        )
 
     masses = []
     positions = [[], [], []]  # [ [X1, X2, ..] , [Y1, Y2, ...] , [Z1, Z2, ...] ]
@@ -689,20 +795,22 @@ def center_of_mass(entity, geometric=False):
             positions[i].append(coord)
 
     # If there is a single atom with undefined mass complain loudly.
-    if 'ukn' in set(masses) and not geometric:
-        raise ValueError(f'Some atoms don\'t have an element assigned.\n'
-                         f'Try adding them manually or calculate the geometrical center of mass instead.')
+    if "ukn" in set(masses) and not geometric:
+        raise ValueError(
+            f"Some atoms don't have an element assigned.\n"
+            f"Try adding them manually or calculate the geometrical center of mass instead."
+        )
 
     if geometric:
-        return [sum(coord_list)/len(masses) for coord_list in positions]
+        return [sum(coord_list) / len(masses) for coord_list in positions]
     else:
         w_pos = [[], [], []]
         for atom_index, atom_mass in enumerate(masses):
-            w_pos[0].append(positions[0][atom_index]*atom_mass)
-            w_pos[1].append(positions[1][atom_index]*atom_mass)
-            w_pos[2].append(positions[2][atom_index]*atom_mass)
+            w_pos[0].append(positions[0][atom_index] * atom_mass)
+            w_pos[1].append(positions[1][atom_index] * atom_mass)
+            w_pos[2].append(positions[2][atom_index] * atom_mass)
 
-        return [sum(coord_list)/sum(masses) for coord_list in w_pos]
+        return [sum(coord_list) / sum(masses) for coord_list in w_pos]
 
 
 def get_aminoacids_by_molecularweight(path_to_results):
@@ -717,12 +825,13 @@ def get_aminoacids_by_molecularweight(path_to_results):
     References
     ----------
     Molecular weight is taken from:
-    https://www.sigmaaldrich.com/life-science/metabolomics/learning-center/amino-acid-reference-chart.html
+    https://www.sigmaaldrich.com/life-science/metabolomics/learning-center/
+    amino-acid-reference-chart.html
     """
 
-    molecular_weight = pd.read_csv(path_to_results / 'amino_acids_molecular_weight.csv')
+    molecular_weight = pd.read_csv(path_to_results / "amino_acids_molecular_weight.csv")
     molecular_weight.residue_name = molecular_weight.residue_name.str.upper()
-    return ' '.join(list(molecular_weight.sort_values(['molecular_weight']).residue_name))
+    return " ".join(list(molecular_weight.sort_values(["molecular_weight"]).residue_name))
 
 
 def get_klifs_regions():
@@ -734,37 +843,37 @@ def get_klifs_regions():
     """
 
     klifs_regions_definitions = {
-        'I': range(1, 3 + 1),  # β-sheet I
-        'g.l': range(4, 9 + 1),  # G-rich loop
-        'II': range(10, 13 + 1),  # β-sheet II
-        'III': range(14, 19 + 1),  # β-sheet III
-        'aC': range(20, 30 + 1),
-        'b.l': range(31, 37 + 1),  # loop connecting aC-helix to IV
-        'IV': range(38, 41 + 1),  # β-sheet IV
-        'V': range(42, 44 + 1),  # β-sheet V
-        'GK': range(45, 45 + 1),  # gatekeeper
-        'hinge': range(46, 48 + 1),
-        'linker': range(49, 52 + 1),  # loop connecting the hinge to aD-helix
-        'aD': range(53, 59 + 1),
-        'aE': range(60, 64 + 1),
-        'VI': range(65, 67 + 1),  # β-sheet VI
-        'c.I': range(68, 75 + 1),  # catalytic loop
-        'VII': range(76, 78 + 1),  # β-sheet VII
-        'VIII': range(79, 79 + 1),  # β-sheet VIII
-        'x': range(80, 80 + 1),  # residue preceding DFG-motif
-        'DFG': range(81, 83 + 1),  # DFG-motif
-        'a.l': range(84, 85 + 1)  # activation loop
+        "I": range(1, 3 + 1),  # β-sheet I
+        "g.l": range(4, 9 + 1),  # G-rich loop
+        "II": range(10, 13 + 1),  # β-sheet II
+        "III": range(14, 19 + 1),  # β-sheet III
+        "aC": range(20, 30 + 1),
+        "b.l": range(31, 37 + 1),  # loop connecting aC-helix to IV
+        "IV": range(38, 41 + 1),  # β-sheet IV
+        "V": range(42, 44 + 1),  # β-sheet V
+        "GK": range(45, 45 + 1),  # gatekeeper
+        "hinge": range(46, 48 + 1),
+        "linker": range(49, 52 + 1),  # loop connecting the hinge to aD-helix
+        "aD": range(53, 59 + 1),
+        "aE": range(60, 64 + 1),
+        "VI": range(65, 67 + 1),  # β-sheet VI
+        "c.I": range(68, 75 + 1),  # catalytic loop
+        "VII": range(76, 78 + 1),  # β-sheet VII
+        "VIII": range(79, 79 + 1),  # β-sheet VIII
+        "x": range(80, 80 + 1),  # residue preceding DFG-motif
+        "DFG": range(81, 83 + 1),  # DFG-motif
+        "a.l": range(84, 85 + 1),  # activation loop
     }
 
     klifs_regions = []
     for key, value in klifs_regions_definitions.items():
         klifs_regions = klifs_regions + [[key, i] for i in value]
-    klifs_regions = pd.DataFrame(klifs_regions, columns=['region_name', 'klifs_id'])
+    klifs_regions = pd.DataFrame(klifs_regions, columns=["region_name", "klifs_id"])
 
     klifs_regions.index = klifs_regions.klifs_id
 
     return klifs_regions
 
 
-if __name__ == '__main__':
-    print('auxiliary.py executed from CLI.')
+if __name__ == "__main__":
+    print("auxiliary.py executed from CLI.")

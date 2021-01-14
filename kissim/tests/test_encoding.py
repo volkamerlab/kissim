@@ -11,10 +11,17 @@ import pandas as pd
 import pytest
 
 from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
-from kissim.encoding import PharmacophoreSizeFeatures, ExposureFeature, SideChainOrientationFeature, \
-    PhysicoChemicalFeatures, SpatialFeatures, Fingerprint, DISTANCE_CUTOFFS, MOMENT_CUTOFFS, FEATURE_NAMES
+from kissim.encoding.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS, FEATURE_NAMES
+from kissim.encoding.features import (
+    PharmacophoreSizeFeatures,
+    ExposureFeature,
+    SideChainOrientationFeature,
+    PhysicoChemicalFeatures,
+    SpatialFeatures,
+)
+from kissim.encoding.api import Fingerprint
 
-PATH_TEST_DATA = Path(__name__).parent / 'kissim' / 'tests' / 'data'
+PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
 
 class TestsPharmacophoreSizeFeatures:
@@ -22,36 +29,39 @@ class TestsPharmacophoreSizeFeatures:
     Test PharmacophoreSizeFeatures class methods.
     """
 
-    @pytest.mark.parametrize('residue_name, feature_name, feature', [
-        ('ALA', 'size', 1),  # Size
-        ('ASN', 'size', 2),
-        ('ARG', 'size', 3),
-        ('PTR', 'size', 3),  # Converted non-standard
-        ('MSE', 'size', 2),  # Converted non-standard
-        ('XXX', 'size', None),  # Non-convertable non-standard
-        ('ALA', 'hbd', 0),
-        ('ASN', 'hbd', 1),
-        ('ARG', 'hbd', 3),
-        ('XXX', 'hbd', None),
-        ('ALA', 'hba', 0),
-        ('ASN', 'hba', 1),
-        ('ASP', 'hba', 2),
-        ('XXX', 'hba', None),
-        ('ALA', 'charge', 0),
-        ('ARG', 'charge', 1),
-        ('ASP', 'charge', -1),
-        ('XXX', 'charge', None),
-        ('ALA', 'aromatic', 0),
-        ('HIS', 'aromatic', 1),
-        ('XXX', 'aromatic', None),
-        ('ARG', 'aliphatic', 0),
-        ('ALA', 'aliphatic', 1),
-        ('XXX', 'aliphatic', None)
-
-    ])
+    @pytest.mark.parametrize(
+        "residue_name, feature_name, feature",
+        [
+            ("ALA", "size", 1),  # Size
+            ("ASN", "size", 2),
+            ("ARG", "size", 3),
+            ("PTR", "size", 3),  # Converted non-standard
+            ("MSE", "size", 2),  # Converted non-standard
+            ("XXX", "size", None),  # Non-convertable non-standard
+            ("ALA", "hbd", 0),
+            ("ASN", "hbd", 1),
+            ("ARG", "hbd", 3),
+            ("XXX", "hbd", None),
+            ("ALA", "hba", 0),
+            ("ASN", "hba", 1),
+            ("ASP", "hba", 2),
+            ("XXX", "hba", None),
+            ("ALA", "charge", 0),
+            ("ARG", "charge", 1),
+            ("ASP", "charge", -1),
+            ("XXX", "charge", None),
+            ("ALA", "aromatic", 0),
+            ("HIS", "aromatic", 1),
+            ("XXX", "aromatic", None),
+            ("ARG", "aliphatic", 0),
+            ("ALA", "aliphatic", 1),
+            ("XXX", "aliphatic", None),
+        ],
+    )
     def test_from_residue(self, residue_name, feature_name, feature):
         """
-        Test function for retrieval of residue's size and pharmacophoric features (i.e. number of hydrogen bond donor,
+        Test function for retrieval of residue's size and pharmacophoric features
+        (i.e. number of hydrogen bond donor,
         hydrogen bond acceptors, charge features, aromatic features or aliphatic features )
 
         Parameters
@@ -74,21 +84,26 @@ class TestsPharmacophoreSizeFeatures:
 
         assert feature_calculated == feature
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, molecule_code, shape', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-            'HUMAN/AAK1_4wsq_altA_chainB',
-            (85, 6)
-        ),
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            'HUMAN/ABL1_2g2i_chainA',
-            (82, 6)
-        )  # Contains not full KLIFS positions
-    ])
-    def test_pharmacophoresizefeatures_from_residue(self, path_klifs_metadata, path_mol2, molecule_code, shape):
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, molecule_code, shape",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
+                "HUMAN/AAK1_4wsq_altA_chainB",
+                (85, 6),
+            ),
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                "HUMAN/ABL1_2g2i_chainA",
+                (82, 6),
+            ),  # Contains not full KLIFS positions
+        ],
+    )
+    def test_pharmacophoresizefeatures_from_residue(
+        self, path_klifs_metadata, path_mol2, molecule_code, shape
+    ):
         """
         Test PharmacophoreSizeFeatures class attributes.
 
@@ -121,30 +136,38 @@ class TestsExposureFeature:
     Test ExposureFeature class methods.
     """
 
-    @pytest.mark.parametrize('path_pdb, chain_id, radius, method, n_residues, up_mean, down_mean, index_mean', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-            'B',
-            12.0,
-            'HSExposureCA',
-            308,
-            12.3636,
-            16.4708,
-            187.5
-        ),
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-            'B',
-            12.0,
-            'HSExposureCB',
-            310,
-            13.1355,
-            15.5806,
-            187.5
-        )
-
-    ])
-    def test_get_exposure_by_method(self, path_pdb, chain_id, radius, method, n_residues, up_mean, down_mean, index_mean):
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, radius, method, n_residues, up_mean, down_mean, index_mean",
+        [
+            (
+                PATH_TEST_DATA
+                / "KLIFS_download"
+                / "HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb",
+                "B",
+                12.0,
+                "HSExposureCA",
+                308,
+                12.3636,
+                16.4708,
+                187.5,
+            ),
+            (
+                PATH_TEST_DATA
+                / "KLIFS_download"
+                / "HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb",
+                "B",
+                12.0,
+                "HSExposureCB",
+                310,
+                13.1355,
+                15.5806,
+                187.5,
+            ),
+        ],
+    )
+    def test_get_exposure_by_method(
+        self, path_pdb, chain_id, radius, method, n_residues, up_mean, down_mean, index_mean
+    ):
         """
         Test half sphere exposure and exposure ratio calculation as well as the result format.
 
@@ -174,7 +197,9 @@ class TestsExposureFeature:
 
         # Get exposure
         feature = ExposureFeature()
-        exposures_calculated = feature.get_molecule_exposure_by_method(pdb_chain_loader.chain, radius, method)
+        exposures_calculated = feature.get_molecule_exposure_by_method(
+            pdb_chain_loader.chain, radius, method
+        )
 
         # Get method prefix, i.e. ca or cb
         prefix = method[-2:].lower()
@@ -183,15 +208,15 @@ class TestsExposureFeature:
         assert len(exposures_calculated) == n_residues
 
         # Test column names
-        columns = [f'{prefix}_{i}' for i in ['up', 'down', 'angle_CB-CA-pCB', 'exposure']]
+        columns = [f"{prefix}_{i}" for i in ["up", "down", "angle_CB-CA-pCB", "exposure"]]
         assert list(exposures_calculated.columns) == columns
 
         # Test exposure up values (mean)
-        up_mean_calculated = exposures_calculated[f'{prefix}_up'].mean()
+        up_mean_calculated = exposures_calculated[f"{prefix}_up"].mean()
         assert np.isclose(up_mean_calculated, up_mean, rtol=1e-05)
 
         # Test exposure down values (mean)
-        down_mean_calculated = exposures_calculated[f'{prefix}_down'].mean()
+        down_mean_calculated = exposures_calculated[f"{prefix}_down"].mean()
         assert np.isclose(down_mean_calculated, down_mean, rtol=1e-05)
 
         # Test residue IDs (mean)
@@ -200,21 +225,29 @@ class TestsExposureFeature:
 
         # Test for example residue the exposure ratio calculation
         example_residue = exposures_calculated.iloc[0]
-        ratio = example_residue[f'{prefix}_exposure']
-        ratio_calculated = example_residue[f'{prefix}_up'] / (
-                    example_residue[f'{prefix}_up'] + example_residue[f'{prefix}_down'])
+        ratio = example_residue[f"{prefix}_exposure"]
+        ratio_calculated = example_residue[f"{prefix}_up"] / (
+            example_residue[f"{prefix}_up"] + example_residue[f"{prefix}_down"]
+        )
         assert np.isclose(ratio_calculated, ratio, rtol=1e-04)
 
-    @pytest.mark.parametrize('path_pdb, chain_id, radius, n_residues, missing_exposure', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb',
-            'B',
-            12.0,
-            310,
-            {'ca': [33, 342], 'cb': []}
-        ),
-    ])
-    def test_get_molecule_exposures(self, path_pdb, chain_id, radius, n_residues, missing_exposure):
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, radius, n_residues, missing_exposure",
+        [
+            (
+                PATH_TEST_DATA
+                / "KLIFS_download"
+                / "HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb",
+                "B",
+                12.0,
+                310,
+                {"ca": [33, 342], "cb": []},
+            ),
+        ],
+    )
+    def test_get_molecule_exposures(
+        self, path_pdb, chain_id, radius, n_residues, missing_exposure
+    ):
         """
         Test join of HSExposureCA and HSExposureCB data.
 
@@ -244,52 +277,60 @@ class TestsExposureFeature:
         assert len(exposures_calculated) == n_residues
 
         # Test column names
-        column_names_ca = ['ca_up', 'ca_down', 'ca_angle_CB-CA-pCB', 'ca_exposure']
-        column_names_cb = ['cb_up', 'cb_down', 'cb_angle_CB-CA-pCB', 'cb_exposure']
+        column_names_ca = ["ca_up", "ca_down", "ca_angle_CB-CA-pCB", "ca_exposure"]
+        column_names_cb = ["cb_up", "cb_down", "cb_angle_CB-CA-pCB", "cb_exposure"]
         column_names = column_names_ca + column_names_cb
         assert list(exposures_calculated.columns) == column_names
 
         # Test missing residues in HSExposureCA and HSExposureCB calculation
         missing_residues_calculated = dict()
 
-        missing_residues_calculated['ca'] = list(exposures_calculated[exposures_calculated.ca_up.isna()].index)
-        assert missing_residues_calculated['ca'] == missing_exposure['ca']
+        missing_residues_calculated["ca"] = list(
+            exposures_calculated[exposures_calculated.ca_up.isna()].index
+        )
+        assert missing_residues_calculated["ca"] == missing_exposure["ca"]
 
-        missing_residues_calculated['cb'] = list(exposures_calculated[exposures_calculated.cb_up.isna()].index)
-        assert missing_residues_calculated['cb'] == missing_exposure['cb']
+        missing_residues_calculated["cb"] = list(
+            exposures_calculated[exposures_calculated.cb_up.isna()].index
+        )
+        assert missing_residues_calculated["cb"] == missing_exposure["cb"]
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, radius, n_residues, missing_exposure', [
-         (
-             PATH_TEST_DATA / 'klifs_metadata.csv',
-             PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-             PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-             'A',
-             12.0,
-             82,
-             {'ca': [5, 6], 'cb': []}
-         ),
-         (
-             PATH_TEST_DATA / 'klifs_metadata.csv',
-             PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3nlb_chainA/pocket.mol2',
-             PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3nlb_chainA/protein_pymol.pdb',
-             'A',
-             12.0,
-             85,
-             {'ca': [], 'cb': [7]}
-         )
-    ])
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id, radius, n_residues, missing_exposure",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+                12.0,
+                82,
+                {"ca": [5, 6], "cb": []},
+            ),
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/CHK1/3nlb_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/CHK1/3nlb_chainA/protein_pymol.pdb",
+                "A",
+                12.0,
+                85,
+                {"ca": [], "cb": [7]},
+            ),
+        ],
+    )
     def test_from_molecule(
-            self,
-            path_klifs_metadata,
-            path_mol2,
-            path_pdb,
-            chain_id,
-            radius,
-            n_residues,
-            missing_exposure
+        self,
+        path_klifs_metadata,
+        path_mol2,
+        path_pdb,
+        chain_id,
+        radius,
+        n_residues,
+        missing_exposure,
     ):
         """
-        Test KLIFS ID subset of molecule exposure values and correct selection of HSExposureCB and HSExposureCA values as
+        Test KLIFS ID subset of molecule exposure values and correct selection of HSExposureCB and
+        HSExposureCA values as
         final exposure value (use CB, but if not available use CA).
 
         Parameters
@@ -318,37 +359,49 @@ class TestsExposureFeature:
 
         # Get exposure
         exposure_feature = ExposureFeature()
-        exposure_feature.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain, radius)
+        exposure_feature.from_molecule(
+            klifs_molecule_loader.molecule, pdb_chain_loader.chain, radius
+        )
 
         # Test number of pocket residues in exposure calculation
         assert len(exposure_feature.features) == n_residues
         assert len(exposure_feature.features_verbose) == n_residues
 
         # Test column names in class attribute "features"
-        column_names = ['exposure']
+        column_names = ["exposure"]
         assert list(exposure_feature.features.columns) == column_names
 
         # Test column names in class attribute "features_verbose"
-        column_names_ca = ['ca_up', 'ca_down', 'ca_angle_CB-CA-pCB', 'ca_exposure']
-        column_names_cb = ['cb_up', 'cb_down', 'cb_angle_CB-CA-pCB', 'cb_exposure']
-        column_names = ['res_id'] + column_names_ca + column_names_cb + ['exposure']
+        column_names_ca = ["ca_up", "ca_down", "ca_angle_CB-CA-pCB", "ca_exposure"]
+        column_names_cb = ["cb_up", "cb_down", "cb_angle_CB-CA-pCB", "cb_exposure"]
+        column_names = ["res_id"] + column_names_ca + column_names_cb + ["exposure"]
         assert list(exposure_feature.features_verbose.columns) == column_names
 
         # Test for residues with missing exposures
         exposures_calculated = exposure_feature.features_verbose
         missing_residues_calculated = dict()
-        missing_residues_calculated['ca'] = list(exposures_calculated[exposures_calculated.ca_up.isna()].index)
-        missing_residues_calculated['cb'] = list(exposures_calculated[exposures_calculated.cb_up.isna()].index)
-        assert missing_residues_calculated['ca'] == missing_exposure['ca']
-        assert missing_residues_calculated['cb'] == missing_exposure['cb']
+        missing_residues_calculated["ca"] = list(
+            exposures_calculated[exposures_calculated.ca_up.isna()].index
+        )
+        missing_residues_calculated["cb"] = list(
+            exposures_calculated[exposures_calculated.cb_up.isna()].index
+        )
+        assert missing_residues_calculated["ca"] == missing_exposure["ca"]
+        assert missing_residues_calculated["cb"] == missing_exposure["cb"]
 
         # Test resulting exposure (HSExposureCB values, unless they are missing, then set HSExposureCA values)
         for index, row in exposures_calculated.iterrows():
 
-            if index in missing_exposure['cb']:
-                assert exposures_calculated.loc[index].exposure == exposures_calculated.loc[index].ca_exposure
+            if index in missing_exposure["cb"]:
+                assert (
+                    exposures_calculated.loc[index].exposure
+                    == exposures_calculated.loc[index].ca_exposure
+                )
             else:
-                assert exposures_calculated.loc[index].exposure == exposures_calculated.loc[index].cb_exposure
+                assert (
+                    exposures_calculated.loc[index].exposure
+                    == exposures_calculated.loc[index].cb_exposure
+                )
 
 
 class TestsSideChainOrientationFeature:
@@ -356,17 +409,22 @@ class TestsSideChainOrientationFeature:
     Test SideChainOrientationFeature class methods.
     """
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            'A',
-            315.95,
-            659
-        )
-    ])
-    def test_get_pocket_residues(self, path_klifs_metadata, path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms):
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+                315.95,
+                659,
+            )
+        ],
+    )
+    def test_get_pocket_residues(
+        self, path_klifs_metadata, path_mol2, path_pdb, chain_id, res_id_mean, n_pocket_atoms
+    ):
         """
         Test the mean of the pocket's PDB residue IDs and the number of pocket atoms.
 
@@ -392,7 +450,9 @@ class TestsSideChainOrientationFeature:
         pdb_chain_loader.from_file(path_pdb, chain_id)
 
         feature = SideChainOrientationFeature()
-        pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+        pocket_residues = feature._get_pocket_residues(
+            klifs_molecule_loader.molecule, pdb_chain_loader.chain
+        )
 
         # Get and test the mean of pocket PDB residue IDs and the number of pocket atoms
         res_id_mean_calculated = pocket_residues.res_id.mean()
@@ -400,27 +460,30 @@ class TestsSideChainOrientationFeature:
         pocket_atoms = []
         for residue in pocket_residues.pocket_residues:
             for atom in residue:
-                if not atom.get_name().startswith('H'):  # Count only non-hydrogen atoms
+                if not atom.get_name().startswith("H"):  # Count only non-hydrogen atoms
                     pocket_atoms.append(atom.get_name())
         n_pocket_atoms_calculated = len(pocket_atoms)
 
         assert np.isclose(res_id_mean_calculated, res_id_mean, rtol=1e-03)
         assert n_pocket_atoms_calculated == n_pocket_atoms
 
-    @pytest.mark.parametrize('path_pdb, chain_id, residue_id, ca', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ALK/2yjr_altA_chainA/protein_pymol.pdb',
-            'A',
-            1272,
-            [5.78, 18.76, 31.15]
-        ),  # Residue has CA
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ALK/2yjr_altA_chainA/protein_pymol.pdb',
-            'A',
-            1273,
-            None
-        )  # Residue has no CA
-    ])
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, residue_id, ca",
+        [
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ALK/2yjr_altA_chainA/protein_pymol.pdb",
+                "A",
+                1272,
+                [5.78, 18.76, 31.15],
+            ),  # Residue has CA
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ALK/2yjr_altA_chainA/protein_pymol.pdb",
+                "A",
+                1273,
+                None,
+            ),  # Residue has no CA
+        ],
+    )
     def test_get_ca(self, path_pdb, chain_id, residue_id, ca):
         """
         Test if CA atom is retrieved correctly from a residue (test if-else cases).
@@ -453,18 +516,21 @@ class TestsSideChainOrientationFeature:
         else:
             assert ca_calculated == ca
 
-    @pytest.mark.parametrize('path_pdb, chain_id, residue_id', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            337
-        ),  # ALA
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            357
-        ),  # Non-standard residue
-    ])
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, residue_id",
+        [
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                337,
+            ),  # ALA
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                357,
+            ),  # Non-standard residue
+        ],
+    )
     def test_get_pcb_from_gly_valueerror(self, path_pdb, chain_id, residue_id):
         """
         Test exceptions in pseudo-CB calculation for GLY.
@@ -493,14 +559,17 @@ class TestsSideChainOrientationFeature:
             feature = SideChainOrientationFeature()
             feature._get_pcb_from_gly(residue)
 
-    @pytest.mark.parametrize('path_pdb, chain_id, residue_id, ca_pcb', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            272,
-            np.array([12.22, 8.37, 31.38])
-        ),  # GLY
-    ])
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, residue_id, ca_pcb",
+        [
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                272,
+                np.array([12.22, 8.37, 31.38]),
+            ),  # GLY
+        ],
+    )
     def test_get_pcb_from_gly(self, path_pdb, chain_id, residue_id, ca_pcb):
         """
         Test pseudo-CB calculation for GLY.
@@ -532,26 +601,29 @@ class TestsSideChainOrientationFeature:
 
         assert np.isclose(ca_pcb_calculated.get_array().mean(), ca_pcb.mean(), rtol=1e-04)
 
-    @pytest.mark.parametrize('path_pdb, chain_id, residue_id, ca_pcb', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            272,
-            np.array([12.22, 8.37, 31.38])
-        ),  # GLY
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            337,
-            np.array([4.89, 12.19, 43.60])
-        ),  # Residue with +- residue
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/4jik_chainA/protein_pymol.pdb',
-            'A',
-            19,
-            None
-        ),  # Residue without + residue
-    ])
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, residue_id, ca_pcb",
+        [
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                272,
+                np.array([12.22, 8.37, 31.38]),
+            ),  # GLY
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                337,
+                np.array([4.89, 12.19, 43.60]),
+            ),  # Residue with +- residue
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/CHK1/4jik_chainA/protein_pymol.pdb",
+                "A",
+                19,
+                None,
+            ),  # Residue without + residue
+        ],
+    )
     def test_get_pcb_from_residue(self, path_pdb, chain_id, residue_id, ca_pcb):
         """
         Test pseudo-CB calculation for a residue.
@@ -587,75 +659,84 @@ class TestsSideChainOrientationFeature:
         else:
             assert np.isclose(ca_pcb_calculated.get_array().mean(), ca_pcb.mean(), rtol=1e-04)
 
-    @pytest.mark.parametrize('path_pdb, chain_id, residue_id, side_chain_centroid', [
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            272,
-            np.array([12.22, 8.37, 31.38])
-        ),  # GLY with pCB
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3ot8_altA_chainA/protein_pymol.pdb',
-            'A',
-            18,
-            None
-        ),  # GLY without pCB (missing C and CA)
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            337,
-            np.array([4.73, 12.85, 43.35])
-        ),  # ALA with CB
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/3nlb_chainA/protein_pymol.pdb',
-            'A',
-            19,
-            np.array([5.47, 13.78, 32.29])
-        ),  # ALA with pCB
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/4jik_chainA/protein_pymol.pdb',
-            'A',
-            19,
-            None
-        ),  # ALA without pCB (missing CA)
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            336,
-            np.array([4.48, 15.79, 46.66])
-        ),  # Standard residue (side chain) with enough atoms
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/5l4q_altA_chainA/protein_pymol.pdb',
-            'A',
-            130,
-            np.array([-5.11, 20.31, 49.99])
-        ),  # Standard residue with too few atoms but CB atom
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/BTK/4yhf_altA_chainB/protein_pymol.pdb',
-            'B',
-            412,
-            np.array([3.42, 12.33, 35.24])
-        ),  # Standard residue with too few atoms, no CB atom, but pCB atom
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/CHK1/4jik_chainA/protein_pymol.pdb',
-            'A',
-            51,
-            None
-        ),  # Standard residue with too few atoms and no CB and pCB atom
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb',
-            'A',
-            357,
-            np.array([12.94, 22.55, 44.96])
-        ),  # Non-standard residue with enough atoms (>0)
-        (
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/5l4q_altA_chainA/protein_pymol.pdb',
-            'A',
-            57,
-            np.array([10.44, 12.84, 31.17])
-        ),  # Side chain containing H atoms
-        # ('some.pdb', 'X', 0, None),  # Non-standard residue side chain with no atoms
-    ])
+    @pytest.mark.parametrize(
+        "path_pdb, chain_id, residue_id, side_chain_centroid",
+        [
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                272,
+                np.array([12.22, 8.37, 31.38]),
+            ),  # GLY with pCB
+            (
+                PATH_TEST_DATA
+                / "KLIFS_download"
+                / "HUMAN/CHK1/3ot8_altA_chainA/protein_pymol.pdb",
+                "A",
+                18,
+                None,
+            ),  # GLY without pCB (missing C and CA)
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                337,
+                np.array([4.73, 12.85, 43.35]),
+            ),  # ALA with CB
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/CHK1/3nlb_chainA/protein_pymol.pdb",
+                "A",
+                19,
+                np.array([5.47, 13.78, 32.29]),
+            ),  # ALA with pCB
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/CHK1/4jik_chainA/protein_pymol.pdb",
+                "A",
+                19,
+                None,
+            ),  # ALA without pCB (missing CA)
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                336,
+                np.array([4.48, 15.79, 46.66]),
+            ),  # Standard residue (side chain) with enough atoms
+            (
+                PATH_TEST_DATA
+                / "KLIFS_download"
+                / "HUMAN/AAK1/5l4q_altA_chainA/protein_pymol.pdb",
+                "A",
+                130,
+                np.array([-5.11, 20.31, 49.99]),
+            ),  # Standard residue with too few atoms but CB atom
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/BTK/4yhf_altA_chainB/protein_pymol.pdb",
+                "B",
+                412,
+                np.array([3.42, 12.33, 35.24]),
+            ),  # Standard residue with too few atoms, no CB atom, but pCB atom
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/CHK1/4jik_chainA/protein_pymol.pdb",
+                "A",
+                51,
+                None,
+            ),  # Standard residue with too few atoms and no CB and pCB atom
+            (
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ADCK3/5i35_chainA/protein_pymol.pdb",
+                "A",
+                357,
+                np.array([12.94, 22.55, 44.96]),
+            ),  # Non-standard residue with enough atoms (>0)
+            (
+                PATH_TEST_DATA
+                / "KLIFS_download"
+                / "HUMAN/AAK1/5l4q_altA_chainA/protein_pymol.pdb",
+                "A",
+                57,
+                np.array([10.44, 12.84, 31.17]),
+            ),  # Side chain containing H atoms
+            # ('some.pdb', 'X', 0, None),  # Non-standard residue side chain with no atoms
+        ],
+    )
     def test_get_side_chain_centroid(self, path_pdb, chain_id, residue_id, side_chain_centroid):
         """
         Test if side chain centroid is retrieved correctly from a residue (test if-else cases).
@@ -688,21 +769,30 @@ class TestsSideChainOrientationFeature:
 
         if side_chain_centroid is not None:
             # Check only x coordinate
-            assert np.isclose(side_chain_centroid_calculated.get_array().mean(), side_chain_centroid.mean(), rtol=1e-03)
+            assert np.isclose(
+                side_chain_centroid_calculated.get_array().mean(),
+                side_chain_centroid.mean(),
+                rtol=1e-03,
+            )
             assert isinstance(side_chain_centroid_calculated, Vector)
         else:
             assert side_chain_centroid_calculated == side_chain_centroid
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, pocket_centroid', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            'A',
-            np.array([0.99, 21.06, 36.70])
-        )
-    ])
-    def test_get_pocket_centroid(self, path_klifs_metadata, path_mol2, path_pdb, chain_id, pocket_centroid):
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id, pocket_centroid",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+                np.array([0.99, 21.06, 36.70]),
+            )
+        ],
+    )
+    def test_get_pocket_centroid(
+        self, path_klifs_metadata, path_mol2, path_pdb, chain_id, pocket_centroid
+    ):
         """
         Test pocket centroid calculation.
 
@@ -726,25 +816,34 @@ class TestsSideChainOrientationFeature:
         pdb_chain_loader.from_file(path_pdb, chain_id)
 
         feature = SideChainOrientationFeature()
-        pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+        pocket_residues = feature._get_pocket_residues(
+            klifs_molecule_loader.molecule, pdb_chain_loader.chain
+        )
         pocket_centroid_calculated = feature._get_pocket_centroid(pocket_residues)
 
         if pocket_centroid is not None:
-            assert np.isclose(pocket_centroid_calculated.get_array().mean(), pocket_centroid.mean(), rtol=1e-03)
+            assert np.isclose(
+                pocket_centroid_calculated.get_array().mean(), pocket_centroid.mean(), rtol=1e-03
+            )
             assert isinstance(pocket_centroid_calculated, Vector)
         else:
             assert pocket_centroid_calculated == pocket_centroid
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, n_vectors', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            'A',
-            82
-        )
-    ])
-    def test_get_pocket_vectors(self, path_klifs_metadata, path_mol2, path_pdb, chain_id, n_vectors):
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id, n_vectors",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+                82,
+            )
+        ],
+    )
+    def test_get_pocket_vectors(
+        self, path_klifs_metadata, path_mol2, path_pdb, chain_id, n_vectors
+    ):
         """
         Test if returned DataFrame for pocket vectors contains correct column names and correct number of vectors
         (= number of pocket residues).
@@ -769,26 +868,41 @@ class TestsSideChainOrientationFeature:
         pdb_chain_loader.from_file(path_pdb, chain_id)
 
         feature = SideChainOrientationFeature()
-        pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+        pocket_residues = feature._get_pocket_residues(
+            klifs_molecule_loader.molecule, pdb_chain_loader.chain
+        )
         pocket_vectors = feature._get_pocket_vectors(pocket_residues, pdb_chain_loader.chain)
 
         # Test if DataFrame contains correct columns
-        pocket_vectors_columns = ['klifs_id', 'res_id', 'res_name', 'ca', 'side_chain_centroid', 'pocket_centroid']
+        pocket_vectors_columns = [
+            "klifs_id",
+            "res_id",
+            "res_name",
+            "ca",
+            "side_chain_centroid",
+            "pocket_centroid",
+        ]
         assert list(pocket_vectors.columns) == pocket_vectors_columns
         assert len(pocket_vectors) == n_vectors
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            'A',
-            95.07
-        )
-    ])
-    def test_get_vertex_angles(self, path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean):
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+                95.07,
+            )
+        ],
+    )
+    def test_get_vertex_angles(
+        self, path_klifs_metadata, path_mol2, path_pdb, chain_id, angles_mean
+    ):
         """
-        Test if vertex angles are calculated correctly (check mean angle), and if returned DataFrame contains correct column
+        Test if vertex angles are calculated correctly (check mean angle), and if returned
+        DataFrame contains correct column
         name.
 
         Parameters
@@ -811,19 +925,22 @@ class TestsSideChainOrientationFeature:
         pdb_chain_loader.from_file(path_pdb, chain_id)
 
         feature = SideChainOrientationFeature()
-        pocket_residues = feature._get_pocket_residues(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+        pocket_residues = feature._get_pocket_residues(
+            klifs_molecule_loader.molecule, pdb_chain_loader.chain
+        )
         pocket_vectors = feature._get_pocket_vectors(pocket_residues, pdb_chain_loader.chain)
         angles_calculated = feature._get_vertex_angles(pocket_vectors)
 
-        assert list(angles_calculated.columns) == ['vertex_angle']
+        assert list(angles_calculated.columns) == ["vertex_angle"]
 
         # Calculate and test mean of all angles (excluding NaN values)
         angles_mean_calculated = angles_calculated.vertex_angle.mean()
         assert np.isclose(angles_mean_calculated, angles_mean, rtol=1e-03)
 
-    @pytest.mark.parametrize('vertex_angles', [
-        pd.DataFrame([0.0] * 85, index=range(1, 86), columns=['sco'])  # Wrong column
-    ])
+    @pytest.mark.parametrize(
+        "vertex_angles",
+        [pd.DataFrame([0.0] * 85, index=range(1, 86), columns=["sco"])],  # Wrong column
+    )
     def test_get_categories_valueerror(self, vertex_angles):
         """
         Test if exception are raised.
@@ -838,12 +955,15 @@ class TestsSideChainOrientationFeature:
             feature = SideChainOrientationFeature()
             feature._get_categories(vertex_angles)
 
-    @pytest.mark.parametrize('vertex_angles, categories', [
-        (
-            pd.DataFrame([0.0] * 85, index=range(1, 86), columns=['vertex_angle']),
-            pd.DataFrame([0.0] * 85, index=range(1, 86), columns=['sco']),
-        )
-    ])
+    @pytest.mark.parametrize(
+        "vertex_angles, categories",
+        [
+            (
+                pd.DataFrame([0.0] * 85, index=range(1, 86), columns=["vertex_angle"]),
+                pd.DataFrame([0.0] * 85, index=range(1, 86), columns=["sco"]),
+            )
+        ],
+    )
     def test_get_categories(self, vertex_angles, categories):
         """
         Test transformation of vertex angles to categories (for side chain orientation).
@@ -861,16 +981,19 @@ class TestsSideChainOrientationFeature:
 
         assert categories_calculated.equals(categories)
 
-    @pytest.mark.parametrize('vertex_angle, category', [
-        (0.0, 0.0),
-        (1.0, 0.0),
-        (45.0, 0.0),
-        (46.0, 1.0),
-        (90.0, 1.0),
-        (91.0, 2.0),
-        (180.0, 2.0),
-        (np.nan, np.nan)
-    ])
+    @pytest.mark.parametrize(
+        "vertex_angle, category",
+        [
+            (0.0, 0.0),
+            (1.0, 0.0),
+            (45.0, 0.0),
+            (46.0, 1.0),
+            (90.0, 1.0),
+            (91.0, 2.0),
+            (180.0, 2.0),
+            (np.nan, np.nan),
+        ],
+    )
     def test_get_category_from_vertex_angle(self, vertex_angle, category):
         """
         Test tranformation of vertex angle to category (for side chain orientation).
@@ -878,11 +1001,11 @@ class TestsSideChainOrientationFeature:
         Parameters
         ----------
         vertex_angle : float
-            Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket centroid. Ranges between
-            0.0 and 180.0.
+            Vertex angle between a residue's CA atom (vertex), side chain centroid and pocket
+            centroid. Ranges between 0.0 and 180.0.
         category : float
-            Side chain orientation towards pocket: Inwards (category 0.0), intermediate (category 1.0), and outwards
-            (category 2.0).
+            Side chain orientation towards pocket:
+            Inwards (category 0.0), intermediate (category 1.0), and outwards (category 2.0).
         """
 
         feature = SideChainOrientationFeature()
@@ -894,17 +1017,21 @@ class TestsSideChainOrientationFeature:
         else:
             assert np.isnan(category_calculated)
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id', [
-        (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-                'A'
-        )
-    ])
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+            )
+        ],
+    )
     def test_from_molecule(self, path_klifs_metadata, path_mol2, path_pdb, chain_id):
         """
-        Test if SideChainOrientation attributes features and features_verbose contain the correct column names.
+        Test if SideChainOrientation attributes features and features_verbose contain the correct
+        column names.
         Values are tested already in other test_sidechainorientation_* unit tests.
 
         Parameters
@@ -928,8 +1055,17 @@ class TestsSideChainOrientationFeature:
         feature.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
 
         # Check column names
-        features_columns = ['sco']
-        features_verbose_columns = 'klifs_id res_id res_name ca side_chain_centroid pocket_centroid vertex_angle sco'.split()
+        features_columns = ["sco"]
+        features_verbose_columns = [
+            "klifs_id",
+            "res_id",
+            "res_name",
+            "ca",
+            "side_chain_centroid",
+            "pocket_centroid",
+            "vertex_angle",
+            "sco",
+        ]
 
         # Test column names
         assert list(feature.features.columns) == features_columns
@@ -941,14 +1077,17 @@ class TestsPhysicoChemicalFeatures:
     Test PhysicoChemicalFeatures class methods.
     """
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            'A'
-        )
-    ])
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+            )
+        ],
+    )
     def test_from_molecule(self, path_klifs_metadata, path_mol2, path_pdb, chain_id):
         """
         Test length (85 rows for 85 KLIFS residues) and columns names of features DataFrame.
@@ -972,10 +1111,14 @@ class TestsPhysicoChemicalFeatures:
         pdb_chain_loader.from_file(path_pdb, chain_id)
 
         physicochemicalfeatures = PhysicoChemicalFeatures()
-        physicochemicalfeatures.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
+        physicochemicalfeatures.from_molecule(
+            klifs_molecule_loader.molecule, pdb_chain_loader.chain
+        )
         features = physicochemicalfeatures.features
 
-        physiochemicalfeatures_columns = 'size hbd hba charge aromatic aliphatic sco exposure'.split()
+        physiochemicalfeatures_columns = (
+            "size hbd hba charge aromatic aliphatic sco exposure".split()
+        )
         assert list(features.columns) == physiochemicalfeatures_columns
         assert len(features) == 85
 
@@ -985,12 +1128,15 @@ class TestsSpatialFeatures:
     Test SpatialFeatures class methods.
     """
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2'
-        )
-    ])
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+            )
+        ],
+    )
     def test_from_molecule(self, path_klifs_metadata, path_mol2):
         """
         Test length (85 rows for 85 KLIFS residues) and columns names of features DataFrame.
@@ -1012,42 +1158,51 @@ class TestsSpatialFeatures:
         features = spatialfeatures.features
 
         spatialfeatures_columns = [
-            'distance_to_centroid',
-            'distance_to_hinge_region',
-            'distance_to_dfg_region',
-            'distance_to_front_pocket'
+            "distance_to_centroid",
+            "distance_to_hinge_region",
+            "distance_to_dfg_region",
+            "distance_to_front_pocket",
         ]
         assert list(features.columns) == spatialfeatures_columns
         assert len(features) == 85
 
     @pytest.mark.parametrize(
-        'path_klifs_metadata, path_mol2, reference_point_name, anchor_residue_klifs_ids, x_coordinate', [
+        "path_klifs_metadata, path_mol2, reference_point_name, anchor_residue_klifs_ids, x_coordinate",
+        [
             (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                'hinge_region',
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
+                "hinge_region",
                 [16, 47, 80],
-                6.25545
+                6.25545,
             ),
             (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                'dfg_region',
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
+                "dfg_region",
                 [20, 23, 81],
-                11.6846
+                11.6846,
             ),
             (
-                PATH_TEST_DATA / 'klifs_metadata.csv',
-                PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-                'front_pocket',
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
+                "front_pocket",
                 [6, 48, 75],
-                float('nan')
-            )
-        ])
-    def test_get_anchor_atoms(self, path_klifs_metadata, path_mol2, reference_point_name, anchor_residue_klifs_ids,
-                              x_coordinate):
+                float("nan"),
+            ),
+        ],
+    )
+    def test_get_anchor_atoms(
+        self,
+        path_klifs_metadata,
+        path_mol2,
+        reference_point_name,
+        anchor_residue_klifs_ids,
+        x_coordinate,
+    ):
         """
-        Test function that calculates the anchor atoms for different scenarios (missing anchor residues, missing neighbors)
+        Test function that calculates the anchor atoms for different scenarios
+        (missing anchor residues, missing neighbors)
 
         Parameters
         ----------
@@ -1092,17 +1247,22 @@ class TestsSpatialFeatures:
 
         # Ugly workaround to test NaN values in anchors
         if math.isnan(x_coordinate):
-            assert math.isnan(anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], 'x'])
+            assert math.isnan(anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], "x"])
         else:
-            assert anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], 'x'] == x_coordinate
+            assert (
+                anchors[reference_point_name].loc[anchor_residue_klifs_ids[0], "x"] == x_coordinate
+            )
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, x_coordinate', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2',
-            1.02664
-        )
-    ])
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, x_coordinate",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
+                1.02664,
+            )
+        ],
+    )
     def test_get_reference_points(self, path_klifs_metadata, path_mol2, x_coordinate):
         """
         Test calculation of reference point "centroid" of a pocket.
@@ -1137,18 +1297,21 @@ class TestsFingerprint:
     Test Fingerprint class methods.
     """
 
-    @pytest.mark.parametrize('path_klifs_metadata, path_mol2, path_pdb, chain_id', [
-        (
-            PATH_TEST_DATA / 'klifs_metadata.csv',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/pocket.mol2',
-            PATH_TEST_DATA / 'KLIFS_download' / 'HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb',
-            'A'
-        )
-    ])
+    @pytest.mark.parametrize(
+        "path_klifs_metadata, path_mol2, path_pdb, chain_id",
+        [
+            (
+                PATH_TEST_DATA / "klifs_metadata.csv",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
+                PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
+                "A",
+            )
+        ],
+    )
     def test_from_molecule(self, path_klifs_metadata, path_mol2, path_pdb, chain_id):
         """
-        Test if Fingerprint class attributes (accessed via property function) have correct DataFrame shape, column and
-        index names.
+        Test if Fingerprint class attributes (accessed via property function) have correct
+        DataFrame shape, column and index names.
 
         Parameters
         ----------
@@ -1175,79 +1338,78 @@ class TestsFingerprint:
         # Non-normalized
         assert fingerprint.physicochemical.shape == (85, 8)
         assert list(fingerprint.physicochemical.index) == klifs_ids
-        assert list(fingerprint.physicochemical.columns) == FEATURE_NAMES['physicochemical']
+        assert list(fingerprint.physicochemical.columns) == FEATURE_NAMES["physicochemical"]
 
         assert fingerprint.distances.shape == (85, 4)
         assert list(fingerprint.distances.index) == klifs_ids
-        assert list(fingerprint.distances.columns) == FEATURE_NAMES['distances']
+        assert list(fingerprint.distances.columns) == FEATURE_NAMES["distances"]
 
         assert fingerprint.moments.shape == (4, 3)
-        assert list(fingerprint.moments.index) == FEATURE_NAMES['distances']
-        assert list(fingerprint.moments.columns) == FEATURE_NAMES['moments']
+        assert list(fingerprint.moments.index) == FEATURE_NAMES["distances"]
+        assert list(fingerprint.moments.columns) == FEATURE_NAMES["moments"]
 
-        assert list(fingerprint.physicochemical_distances.keys()) == 'physicochemical distances'.split()
-        assert list(fingerprint.physicochemical_moments.keys()) == 'physicochemical moments'.split()
+        assert (
+            list(fingerprint.physicochemical_distances.keys())
+            == "physicochemical distances".split()
+        )
+        assert (
+            list(fingerprint.physicochemical_moments.keys()) == "physicochemical moments".split()
+        )
 
         # Normalized
         assert fingerprint.physicochemical_normalized.shape == (85, 8)
         assert list(fingerprint.physicochemical_normalized.index) == klifs_ids
-        assert list(fingerprint.physicochemical_normalized.columns) == FEATURE_NAMES['physicochemical']
+        assert (
+            list(fingerprint.physicochemical_normalized.columns)
+            == FEATURE_NAMES["physicochemical"]
+        )
 
         assert fingerprint.distances.shape == (85, 4)
         assert list(fingerprint.distances_normalized.index) == klifs_ids
-        assert list(fingerprint.distances_normalized.columns) == FEATURE_NAMES['distances']
+        assert list(fingerprint.distances_normalized.columns) == FEATURE_NAMES["distances"]
 
         assert fingerprint.moments.shape == (4, 3)
-        assert list(fingerprint.moments_normalized.index) == FEATURE_NAMES['distances']
-        assert list(fingerprint.moments_normalized.columns) == FEATURE_NAMES['moments']
+        assert list(fingerprint.moments_normalized.index) == FEATURE_NAMES["distances"]
+        assert list(fingerprint.moments_normalized.columns) == FEATURE_NAMES["moments"]
 
-        assert list(fingerprint.physicochemical_distances_normalized.keys()) == 'physicochemical distances'.split()
-        assert list(fingerprint.physicochemical_moments_normalized.keys()) == 'physicochemical moments'.split()
-
-    @pytest.mark.parametrize('physicochemical, physicochemical_normalized', [
-        (
-            pd.DataFrame(
-                [
-                    [3.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-                ],
-                columns=FEATURE_NAMES['physicochemical']
-            ),
-            pd.DataFrame(
-                [
-                    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0]
-                ],
-                columns=FEATURE_NAMES['physicochemical']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 2.0, 0.8]
-                ],
-                columns=FEATURE_NAMES['physicochemical']
-            ),
-            pd.DataFrame(
-                [
-                    [0.5, 0.3333, 0.5, 0.5, 0.0, 0.0, 1.0, 0.8]
-                ],
-                columns=FEATURE_NAMES['physicochemical']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [np.nan] * 8
-                ],
-                columns=FEATURE_NAMES['physicochemical']
-            ),
-            pd.DataFrame(
-                [
-                    [np.nan] * 8
-                ],
-                columns=FEATURE_NAMES['physicochemical']
-            )
+        assert (
+            list(fingerprint.physicochemical_distances_normalized.keys())
+            == "physicochemical distances".split()
         )
-    ])
+        assert (
+            list(fingerprint.physicochemical_moments_normalized.keys())
+            == "physicochemical moments".split()
+        )
+
+    @pytest.mark.parametrize(
+        "physicochemical, physicochemical_normalized",
+        [
+            (
+                pd.DataFrame(
+                    [[3.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0]],
+                    columns=FEATURE_NAMES["physicochemical"],
+                ),
+                pd.DataFrame(
+                    [[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0]],
+                    columns=FEATURE_NAMES["physicochemical"],
+                ),
+            ),
+            (
+                pd.DataFrame(
+                    [[2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 2.0, 0.8]],
+                    columns=FEATURE_NAMES["physicochemical"],
+                ),
+                pd.DataFrame(
+                    [[0.5, 0.3333, 0.5, 0.5, 0.0, 0.0, 1.0, 0.8]],
+                    columns=FEATURE_NAMES["physicochemical"],
+                ),
+            ),
+            (
+                pd.DataFrame([[np.nan] * 8], columns=FEATURE_NAMES["physicochemical"]),
+                pd.DataFrame([[np.nan] * 8], columns=FEATURE_NAMES["physicochemical"]),
+            ),
+        ],
+    )
     def test_normalize_physicochemical_bits(self, physicochemical, physicochemical_normalized):
         """
         Test normalization of physicochemical bits.
@@ -1261,122 +1423,75 @@ class TestsFingerprint:
         """
 
         fingerprint = Fingerprint()
-        fingerprint.molecule_code = 'molecule'
-        fingerprint.fingerprint['physicochemical'] = physicochemical
+        fingerprint.molecule_code = "molecule"
+        fingerprint.fingerprint["physicochemical"] = physicochemical
 
         physicochemical_normalized_calculated = fingerprint._normalize_physicochemical_bits()
 
-        for feature in FEATURE_NAMES['physicochemical']:
+        for feature in FEATURE_NAMES["physicochemical"]:
 
             if np.isnan(physicochemical.iloc[0, 0]):
-                assert np.isnan(
-                    physicochemical_normalized_calculated[feature][0]
-                ) and np.isnan(
+                assert np.isnan(physicochemical_normalized_calculated[feature][0]) and np.isnan(
                     physicochemical_normalized[feature][0]
                 )
             else:
                 assert np.isclose(
                     physicochemical_normalized_calculated[feature][0],
                     physicochemical_normalized[feature][0],
-                    rtol=1e-03
+                    rtol=1e-03,
                 )
 
-    @pytest.mark.parametrize('distances, distances_normalized', [
-        (
-            pd.DataFrame(
-                [
-                    [1, 1, 1, 1]
-                ],
-                columns=FEATURE_NAMES['distances']
+    @pytest.mark.parametrize(
+        "distances, distances_normalized",
+        [
+            (
+                pd.DataFrame([[1, 1, 1, 1]], columns=FEATURE_NAMES["distances"]),
+                pd.DataFrame([[0.0, 0.0, 0.0, 0.0]], columns=FEATURE_NAMES["distances"]),
             ),
-            pd.DataFrame(
-                [
-                    [0.0, 0.0, 0.0, 0.0]
-                ],
-                columns=FEATURE_NAMES['distances']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
+            (
+                pd.DataFrame(
                     [
-                        DISTANCE_CUTOFFS['distance_to_centroid'][0],
-                        DISTANCE_CUTOFFS['distance_to_hinge_region'][0],
-                        DISTANCE_CUTOFFS['distance_to_dfg_region'][0],
-                        DISTANCE_CUTOFFS['distance_to_front_pocket'][0]
-                    ]
-                ],
-                columns=FEATURE_NAMES['distances']
+                        [
+                            DISTANCE_CUTOFFS["distance_to_centroid"][0],
+                            DISTANCE_CUTOFFS["distance_to_hinge_region"][0],
+                            DISTANCE_CUTOFFS["distance_to_dfg_region"][0],
+                            DISTANCE_CUTOFFS["distance_to_front_pocket"][0],
+                        ]
+                    ],
+                    columns=FEATURE_NAMES["distances"],
+                ),
+                pd.DataFrame([[0.0, 0.0, 0.0, 0.0]], columns=FEATURE_NAMES["distances"]),
             ),
-            pd.DataFrame(
-                [
-                    [0.0, 0.0, 0.0, 0.0]
-                ],
-                columns=FEATURE_NAMES['distances']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [10, 10, 10, 10]
-                ],
-                columns=FEATURE_NAMES['distances']
+            (
+                pd.DataFrame([[10, 10, 10, 10]], columns=FEATURE_NAMES["distances"]),
+                pd.DataFrame(
+                    [[0.3792, 0.3110, 0.2438, 0.2510]], columns=FEATURE_NAMES["distances"]
+                ),
             ),
-            pd.DataFrame(
-                [
-                    [0.3792, 0.3110, 0.2438, 0.2510]
-                ],
-                columns=FEATURE_NAMES['distances']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
+            (
+                pd.DataFrame(
                     [
-                        DISTANCE_CUTOFFS['distance_to_centroid'][1],
-                        DISTANCE_CUTOFFS['distance_to_hinge_region'][1],
-                        DISTANCE_CUTOFFS['distance_to_dfg_region'][1],
-                        DISTANCE_CUTOFFS['distance_to_front_pocket'][1]
-                    ]
-                ],
-                columns=FEATURE_NAMES['distances']
+                        [
+                            DISTANCE_CUTOFFS["distance_to_centroid"][1],
+                            DISTANCE_CUTOFFS["distance_to_hinge_region"][1],
+                            DISTANCE_CUTOFFS["distance_to_dfg_region"][1],
+                            DISTANCE_CUTOFFS["distance_to_front_pocket"][1],
+                        ]
+                    ],
+                    columns=FEATURE_NAMES["distances"],
+                ),
+                pd.DataFrame([[1.0, 1.0, 1.0, 1.0]], columns=FEATURE_NAMES["distances"]),
             ),
-            pd.DataFrame(
-                [
-                    [1.0, 1.0, 1.0, 1.0]
-                ],
-                columns=FEATURE_NAMES['distances']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [30, 30, 30, 30]
-                ],
-                columns=FEATURE_NAMES['distances']
+            (
+                pd.DataFrame([[30, 30, 30, 30]], columns=FEATURE_NAMES["distances"]),
+                pd.DataFrame([[1.0, 1.0, 1.0, 1.0]], columns=FEATURE_NAMES["distances"]),
             ),
-            pd.DataFrame(
-                [
-                    [1.0, 1.0, 1.0, 1.0]
-                ],
-                columns=FEATURE_NAMES['distances']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [np.nan] * 4
-                ],
-                columns=FEATURE_NAMES['distances']
+            (
+                pd.DataFrame([[np.nan] * 4], columns=FEATURE_NAMES["distances"]),
+                pd.DataFrame([[np.nan] * 4], columns=FEATURE_NAMES["distances"]),
             ),
-            pd.DataFrame(
-                [
-                    [np.nan] * 4
-                ],
-                columns=FEATURE_NAMES['distances']
-            )
-        )
-    ])
+        ],
+    )
     def test_normalize_distances_bits(self, distances, distances_normalized):
         """
         Test normalization of distances bits.
@@ -1390,153 +1505,110 @@ class TestsFingerprint:
         """
 
         fingerprint = Fingerprint()
-        fingerprint.molecule_code = 'molecule'
-        fingerprint.fingerprint['distances'] = distances
+        fingerprint.molecule_code = "molecule"
+        fingerprint.fingerprint["distances"] = distances
 
         distances_normalized_calculated = fingerprint._normalize_distances_bits()
 
-        for feature in FEATURE_NAMES['distances']:
+        for feature in FEATURE_NAMES["distances"]:
 
             if np.isnan(distances.iloc[0, 0]):
-                assert np.isnan(
-                    distances_normalized_calculated[feature][0]
-                ) and np.isnan(
+                assert np.isnan(distances_normalized_calculated[feature][0]) and np.isnan(
                     distances_normalized[feature][0]
                 )
             else:
                 assert np.isclose(
                     distances_normalized_calculated[feature][0],
                     distances_normalized[feature][0],
-                    rtol=1e-03
+                    rtol=1e-03,
                 )
 
-    @pytest.mark.parametrize('moments, moments_normalized', [
-        (
-            pd.DataFrame(
-                [
-                    [11, 3, -2]
-                ],
-                columns=FEATURE_NAMES['moments']
+    @pytest.mark.parametrize(
+        "moments, moments_normalized",
+        [
+            (
+                pd.DataFrame([[11, 3, -2]], columns=FEATURE_NAMES["moments"]),
+                pd.DataFrame([[0.0, 0.0, 0.0]], columns=FEATURE_NAMES["moments"]),
             ),
-            pd.DataFrame(
-                [
-                    [0.0, 0.0, 0.0]
-                ],
-                columns=FEATURE_NAMES['moments']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
+            (
+                pd.DataFrame(
                     [
-                        MOMENT_CUTOFFS['moment1'][0],
-                        MOMENT_CUTOFFS['moment2'][0],
-                        MOMENT_CUTOFFS['moment3'][0]
-                    ]
-                ],
-                columns=FEATURE_NAMES['moments']
+                        [
+                            MOMENT_CUTOFFS["moment1"][0],
+                            MOMENT_CUTOFFS["moment2"][0],
+                            MOMENT_CUTOFFS["moment3"][0],
+                        ]
+                    ],
+                    columns=FEATURE_NAMES["moments"],
+                ),
+                pd.DataFrame([[0.0, 0.0, 0.0]], columns=FEATURE_NAMES["moments"]),
             ),
-            pd.DataFrame(
-                [
-                    [0.0, 0.0, 0.0]
-                ],
-                columns=FEATURE_NAMES['moments']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [12, 4, 1]
-                ],
-                columns=FEATURE_NAMES['moments']
+            (
+                pd.DataFrame([[12, 4, 1]], columns=FEATURE_NAMES["moments"]),
+                pd.DataFrame([[0.1301, 0.355, 0.4030]], columns=FEATURE_NAMES["moments"]),
             ),
-            pd.DataFrame(
-                [
-                    [0.1301, 0.355, 0.4030]
-                ],
-                columns=FEATURE_NAMES['moments']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
+            (
+                pd.DataFrame(
                     [
-                        MOMENT_CUTOFFS['moment1'][1],
-                        MOMENT_CUTOFFS['moment2'][1],
-                        MOMENT_CUTOFFS['moment3'][1]
-                    ]
-                ],
-                columns=FEATURE_NAMES['moments']
+                        [
+                            MOMENT_CUTOFFS["moment1"][1],
+                            MOMENT_CUTOFFS["moment2"][1],
+                            MOMENT_CUTOFFS["moment3"][1],
+                        ]
+                    ],
+                    columns=FEATURE_NAMES["moments"],
+                ),
+                pd.DataFrame([[1.0, 1.0, 1.0]], columns=FEATURE_NAMES["moments"]),
             ),
-            pd.DataFrame(
-                [
-                    [1.0, 1.0, 1.0]
-                ],
-                columns=FEATURE_NAMES['moments']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [15, 6, 5]
-                ],
-                columns=FEATURE_NAMES['moments']
+            (
+                pd.DataFrame([[15, 6, 5]], columns=FEATURE_NAMES["moments"]),
+                pd.DataFrame([[1.0, 1.0, 1.0]], columns=FEATURE_NAMES["moments"]),
             ),
-            pd.DataFrame(
-                [
-                    [1.0, 1.0, 1.0]
-                ],
-                columns=FEATURE_NAMES['moments']
-            )
-        ),
-        (
-            pd.DataFrame(
-                [
-                    [np.nan] * 3
-                ],
-                columns=FEATURE_NAMES['moments']
+            (
+                pd.DataFrame([[np.nan] * 3], columns=FEATURE_NAMES["moments"]),
+                pd.DataFrame([[np.nan] * 3], columns=FEATURE_NAMES["moments"]),
             ),
-            pd.DataFrame(
-                [
-                    [np.nan] * 3
-                ],
-                columns=FEATURE_NAMES['moments']
-            )
-        )
-    ])
+        ],
+    )
     def test_normalize_moments_bits(self, moments, moments_normalized):
 
         fingerprint = Fingerprint()
-        fingerprint.molecule_code = 'molecule'
-        fingerprint.fingerprint['moments'] = moments
+        fingerprint.molecule_code = "molecule"
+        fingerprint.fingerprint["moments"] = moments
 
         moments_normalized_calculated = fingerprint._normalize_moments_bits()
 
-        for feature in FEATURE_NAMES['moments']:
+        for feature in FEATURE_NAMES["moments"]:
 
             if np.isnan(moments.iloc[0, 0]):
-                assert np.isnan(
-                    moments_normalized_calculated[feature][0]
-                ) and np.isnan(
+                assert np.isnan(moments_normalized_calculated[feature][0]) and np.isnan(
                     moments_normalized[feature][0]
                 )
             else:
                 assert np.isclose(
                     moments_normalized_calculated[feature][0],
                     moments_normalized[feature][0],
-                    rtol=1e-03
+                    rtol=1e-03,
                 )
 
-    @pytest.mark.parametrize('distances, moments', [
-        (
-            pd.DataFrame([[1, 1], [4, 4], [4, 4]]),
-            pd.DataFrame([[3.00, 1.41, -1.26], [3.00, 1.41, -1.26]], columns='moment1 moment2 moment3'.split())
-        ),
-        (
-            pd.DataFrame([[1, 2]]),
-            pd.DataFrame([[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]], columns='moment1 moment2 moment3'.split())
-        )
-    ])
+    @pytest.mark.parametrize(
+        "distances, moments",
+        [
+            (
+                pd.DataFrame([[1, 1], [4, 4], [4, 4]]),
+                pd.DataFrame(
+                    [[3.00, 1.41, -1.26], [3.00, 1.41, -1.26]],
+                    columns="moment1 moment2 moment3".split(),
+                ),
+            ),
+            (
+                pd.DataFrame([[1, 2]]),
+                pd.DataFrame(
+                    [[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]], columns="moment1 moment2 moment3".split()
+                ),
+            ),
+        ],
+    )
     def test_calc_moments(self, distances, moments):
 
         fingerprint = Fingerprint()
@@ -1549,15 +1621,17 @@ class TestsFingerprint:
         assert np.isclose(moments_calculated.moment2[0], moments.moment2[0], rtol=1e-02)
         assert np.isclose(moments_calculated.moment3[0], moments.moment3[0], rtol=1e-02)
 
-    @pytest.mark.parametrize('value, minimum, maximum, value_normalized', [
-        (1.00, 2.00, 3.00, 0.00),
-        (2.00, 2.00, 3.00, 0.00),
-        (2.50, 2.00, 3.00, 0.50),
-        (3.00, 2.00, 3.00, 1.00),
-        (4.00, 2.00, 3.00, 1.00),
-        (np.nan, 2.00, 3.00, np.nan)
-
-    ])
+    @pytest.mark.parametrize(
+        "value, minimum, maximum, value_normalized",
+        [
+            (1.00, 2.00, 3.00, 0.00),
+            (2.00, 2.00, 3.00, 0.00),
+            (2.50, 2.00, 3.00, 0.50),
+            (3.00, 2.00, 3.00, 1.00),
+            (4.00, 2.00, 3.00, 1.00),
+            (np.nan, 2.00, 3.00, np.nan),
+        ],
+    )
     def test_normalize(self, value, minimum, maximum, value_normalized):
         """
         Test value normalization.
@@ -1567,9 +1641,11 @@ class TestsFingerprint:
         value : float or int
                 Value to be normalized.
         minimum : float or int
-            Minimum value for normalization, values equal or greater than this minimum are set to 0.0.
+            Minimum value for normalization, values equal or greater than this minimum are set
+            to 0.0.
         maximum : float or int
-            Maximum value for normalization, values equal or greater than this maximum are set to 1.0.
+            Maximum value for normalization, values equal or greater than this maximum are set
+            to 1.0.
         value_normalized : float
             Normalized value.
         """
@@ -1581,4 +1657,3 @@ class TestsFingerprint:
             assert np.isnan(value_normalized_calculated) and np.isnan(value_normalized)
         else:
             assert np.isclose(value_normalized_calculated, value_normalized, rtol=1e-06)
-

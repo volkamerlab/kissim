@@ -5,20 +5,18 @@ Subpocket-based structural fingerprint for kinase pocket comparison
 Handles the primary functions
 """
 
-"""
-kissim.py
-Subpocket-based structural fingerprint for kinase pocket comparison
-
-Handles the primary functions
-"""
-
 import logging
 from pathlib import Path
 import pickle
 
-from kissim.preprocessing import KlifsMetadataLoader, KlifsMetadataFilter, \
-    Mol2FormatScreener, Mol2KlifsToPymolConverter, Mol2ToPdbConverter
-from kissim.encoding import FingerprintGenerator
+from kissim.preprocessing import (
+    KlifsMetadataLoader,
+    KlifsMetadataFilter,
+    Mol2FormatScreener,
+    Mol2KlifsToPymolConverter,
+    Mol2ToPdbConverter,
+)
+from kissim.encoding.api import FingerprintGenerator
 from kissim.similarity import FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 logger = logging.getLogger(__name__)
@@ -31,9 +29,11 @@ class Preprocessing:
     Attributes
     ----------
     path_klifs_overview : str or pathlib.Path or None
-        Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+        Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+        metadata.
     path_klifs_export : str or pathlib.Path or None
-        Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+        Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+        structure-related metadata.
     path_klifs_download : pathlib.Path or str or None
         Path to directory of KLIFS dataset files.
     path_results : pathlib.Path or str or None
@@ -55,15 +55,17 @@ class Preprocessing:
         3. Convert KLIFS protein.mol files to PyMol readable protein_pymol.mol2 files
          (residues with underscores are transformed to residues with negative sign).
         4. Convert protein_pymol.mol2 file to protein_pymol.pdb file.
-        5. Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation (in), resolution
-        (<=4), KLIFS quality score (>=4) and existent/parsable mol2 and pdb files.
+        5. Filter KLIFS metadata by different criteria such as species (HUMAN), DFG conformation
+        (in), resolution (<=4), KLIFS quality score (>=4) and existent/parsable mol2 and pdb files.
 
         Parameters
         ----------
         path_klifs_overview : str or pathlib.Path
-            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related metadata.
+            Path to KLIFS download file `overview.csv` containing mainly KLIFS alignment-related
+            metadata.
         path_klifs_export : str or pathlib.Path
-            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly structure-related metadata.
+            Path to KLIFS download file `KLIFS_download/KLIFS_export.csv` containing mainly
+            structure-related metadata.
         path_klifs_download : pathlib.Path or str
             Path to directory of KLIFS dataset files.
         path_results : pathlib.Path or str
@@ -83,14 +85,14 @@ class Preprocessing:
 
         # Check if input files and directories exist.
         if not self.path_klifs_overview.exists():
-            raise FileNotFoundError(f'File not found: {self.path_klifs_overview}')
+            raise FileNotFoundError(f"File not found: {self.path_klifs_overview}")
         if not self.path_klifs_export.exists():
-            raise FileNotFoundError(f'File not found: {self.path_klifs_export}')
+            raise FileNotFoundError(f"File not found: {self.path_klifs_export}")
         if not self.path_klifs_download.exists():
-            raise FileNotFoundError(f'Directory not found: {self.path_klifs_download}')
+            raise FileNotFoundError(f"Directory not found: {self.path_klifs_download}")
 
         # Create results folder if not already there
-        (self.path_results / 'preprocessing').mkdir(parents=True, exist_ok=True)
+        (self.path_results / "preprocessing").mkdir(parents=True, exist_ok=True)
 
         # Load KLIFS metadata (unfiltered)
         klifs_metadata_loader = self._load_klifs_metadata()
@@ -108,36 +110,36 @@ class Preprocessing:
         klifs_metadata_filter = self._filter_klifs_metadata(klifs_metadata_loader)
 
         # Save class objects as files
-        with open(self.path_results / 'preprocessing' / 'klifs_metadata_loader.p', 'wb') as f:
+        with open(self.path_results / "preprocessing" / "klifs_metadata_loader.p", "wb") as f:
             pickle.dump(klifs_metadata_loader, f)
-        with open(self.path_results / 'preprocessing' / 'mol2_format_screener.p', 'wb') as f:
+        with open(self.path_results / "preprocessing" / "mol2_format_screener.p", "wb") as f:
             pickle.dump(mol2_format_screener, f)
-        with open(self.path_results / 'preprocessing' / 'mol2_klifs_to_pymol_converter.p', 'wb') as f:
+        with open(
+            self.path_results / "preprocessing" / "mol2_klifs_to_pymol_converter.p", "wb"
+        ) as f:
             pickle.dump(mol2_klifs_to_pymol_converter, f)
-        with open(self.path_results / 'preprocessing' / 'mol2_to_pdb_converter.p', 'wb') as f:
+        with open(self.path_results / "preprocessing" / "mol2_to_pdb_converter.p", "wb") as f:
             pickle.dump(mol2_to_pdb_converter, f)
-        with open(self.path_results / 'preprocessing' / 'klifs_metadata_filter.p', 'wb') as f:
+        with open(self.path_results / "preprocessing" / "klifs_metadata_filter.p", "wb") as f:
             pickle.dump(klifs_metadata_filter, f)
 
         return klifs_metadata_filter
 
     def _load_klifs_metadata(self):
         """
-        Load KLIFS metadata from metadata files and save KlifsMetadataLoader class object to results folder.
+        Load KLIFS metadata from metadata files and save KlifsMetadataLoader class object to
+        results folder.
         """
 
         klifs_metadata_loader = KlifsMetadataLoader()
-        klifs_metadata_loader.from_files(
-            self.path_klifs_overview,
-            self.path_klifs_export
-        )
+        klifs_metadata_loader.from_files(self.path_klifs_overview, self.path_klifs_export)
 
         return klifs_metadata_loader
 
     def _screen_mol2_format(self, klifs_metadata_loader):
         """
-        Screen KLIFS protein mol2 file for irregular row formats and save Mol2FormatScreener class object to results
-        folder.
+        Screen KLIFS protein mol2 file for irregular row formats and save Mol2FormatScreener
+        class object to results folder.
 
         Parameters
         ----------
@@ -147,8 +149,7 @@ class Preprocessing:
 
         mol2_format_screener = Mol2FormatScreener()
         mol2_format_screener.from_metadata(
-            klifs_metadata_loader.data_essential,
-            self.path_klifs_download
+            klifs_metadata_loader.data_essential, self.path_klifs_download
         )
 
         return mol2_format_screener
@@ -165,8 +166,7 @@ class Preprocessing:
 
         mol2_klifs_to_pymol_converter = Mol2KlifsToPymolConverter()
         mol2_klifs_to_pymol_converter.from_metadata(
-            klifs_metadata_loader.data_essential,
-            self.path_klifs_download
+            klifs_metadata_loader.data_essential, self.path_klifs_download
         )
 
         return mol2_klifs_to_pymol_converter
@@ -183,8 +183,7 @@ class Preprocessing:
 
         mol2_to_pdb_converter = Mol2ToPdbConverter()
         mol2_to_pdb_converter.from_klifs_metadata(
-            klifs_metadata_loader.data_essential,
-            self.path_klifs_download
+            klifs_metadata_loader.data_essential, self.path_klifs_download
         )
 
         return mol2_to_pdb_converter
@@ -201,8 +200,7 @@ class Preprocessing:
 
         klifs_metadata_filter = KlifsMetadataFilter()
         klifs_metadata_filter.from_klifs_metadata(
-            klifs_metadata_loader.data_essential,
-            self.path_klifs_download
+            klifs_metadata_loader.data_essential, self.path_klifs_download
         )
 
         return klifs_metadata_filter
@@ -228,7 +226,8 @@ class Encoding:
 
     def execute(self, klifs_metadata_filter, path_klifs_download, path_results):
         """
-        Encode KLIFS dataset, i.e. generate fingerprints for each KLIFS entry in filtered KLIFS metadata.
+        Encode KLIFS dataset, i.e. generate fingerprints for each KLIFS entry in filtered
+        KLIFS metadata.
 
         Parameters
         ----------
@@ -251,20 +250,19 @@ class Encoding:
 
         # Check if input files and directories exist.
         if not self.path_klifs_download.exists():
-            raise FileNotFoundError(f'Directory not found: {self.path_klifs_download}')
+            raise FileNotFoundError(f"Directory not found: {self.path_klifs_download}")
 
         # Create results folder if not already there
-        (self.path_results / 'encoding').mkdir(parents=True, exist_ok=True)
+        (self.path_results / "encoding").mkdir(parents=True, exist_ok=True)
 
         # Generate fingerprints
         fingerprint_generator = FingerprintGenerator()
         fingerprint_generator.from_metadata(
-            klifs_metadata_filter.filtered,
-            self.path_klifs_download
+            klifs_metadata_filter.filtered, self.path_klifs_download
         )
 
         # Save class object to file
-        with open(self.path_results / 'encoding' / 'fingerprint_generator.p', 'wb') as f:
+        with open(self.path_results / "encoding" / "fingerprint_generator.p", "wb") as f:
             pickle.dump(fingerprint_generator, f)
 
 
@@ -282,10 +280,12 @@ class Similarity:
 
         self.path_results = None
 
-    def execute(self, fingerprint_generator, distance_measures, feature_weighting_schemes, path_results):
+    def execute(
+        self, fingerprint_generator, distance_measures, feature_weighting_schemes, path_results
+    ):
         """
-        Calculate all-against-all feature and fingerprint distances for different distance measures and feature
-        weighting schemes.
+        Calculate all-against-all feature and fingerprint distances for different distance measures
+        and feature weighting schemes.
 
         Parameters
         ----------
@@ -294,7 +294,8 @@ class Similarity:
         distance_measures : dict of str
             Distance measures: Key is name for file name, value is name as implemented in package.
         feature_weighting_schemes : dict of (dict or None)
-            Feature weighting schemes: Key is name for file name, value is formatting as required for package.
+            Feature weighting schemes: Key is name for file name, value is formatting as required
+            for package.
         path_results : pathlib.Path or str
             Path to results folder.
         """
@@ -303,7 +304,7 @@ class Similarity:
         self.path_results = Path(path_results)
 
         # Create results folder if not already there
-        (self.path_results / 'similarity').mkdir(parents=True, exist_ok=True)
+        (self.path_results / "similarity").mkdir(parents=True, exist_ok=True)
 
         # All against all fingerprint comparison
         for distance_measure_name, distance_measure in distance_measures.items():
@@ -313,19 +314,24 @@ class Similarity:
             feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
 
             # Save class object to file
-            with open(self.path_results / 'similarity' / f'feature_distances_{distance_measure_name}.p', 'wb') as f:
+            with open(
+                self.path_results / "similarity" / f"feature_distances_{distance_measure_name}.p",
+                "wb",
+            ) as f:
                 pickle.dump(feature_distances_generator, f)
 
             for feature_weights_name, feature_weights in feature_weighting_schemes.items():
                 # Generate fingerprint distance (FingerprintDistanceGenerator)
                 fingerprint_distance_generator = FingerprintDistanceGenerator()
                 fingerprint_distance_generator.from_feature_distances_generator(
-                    feature_distances_generator,
-                    feature_weights
+                    feature_distances_generator, feature_weights
                 )
 
                 # Save class object to file
                 with open(
-                    self.path_results / 'similarity' / f'fingerprint_distance_{distance_measure}_{feature_weights_name}.p', 'wb'
+                    self.path_results
+                    / "similarity"
+                    / f"fingerprint_distance_{distance_measure}_{feature_weights_name}.p",
+                    "wb",
                 ) as f:
                     pickle.dump(fingerprint_distance_generator, f)
