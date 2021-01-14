@@ -19,22 +19,22 @@ LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 FEATURE_NAMES = ["physicochemical", "spatial"]
 FEATURE_NAMES_PHYSICOCHEMICAL = [
-            "size",
-            "hbd",
-            "hba",
-            "charge",
-            "aromatic",
-            "aliphatic",
-            "sco",
-            "exposure",
-        ]
+    "size",
+    "hbd",
+    "hba",
+    "charge",
+    "aromatic",
+    "aliphatic",
+    "sco",
+    "exposure",
+]
 FEATURE_NAMES_SPATIAL = ["distances", "moments"]
 FEATURE_NAMES_DISTANCES_AND_MOMENTS = [
-            "hinge_region",
-            "dfg_region",
-            "front_pocket",
-            "center",
-        ]
+    "hinge_region",
+    "dfg_region",
+    "front_pocket",
+    "center",
+]
 
 
 class TestFingerprint:
@@ -70,10 +70,19 @@ class TestFingerprint:
         assert fingerprint2.structure_klifs_id == structure_klifs_id
         # Attribute values_dict
         assert list(fingerprint1.values_dict.keys()) == FEATURE_NAMES
-        assert list(fingerprint1.values_dict["physicochemical"].keys()) == FEATURE_NAMES_PHYSICOCHEMICAL
+        assert (
+            list(fingerprint1.values_dict["physicochemical"].keys())
+            == FEATURE_NAMES_PHYSICOCHEMICAL
+        )
         assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL
-        assert list(fingerprint1.values_dict["spatial"]["distances"].keys()) == FEATURE_NAMES_DISTANCES_AND_MOMENTS
-        assert list(fingerprint1.values_dict["spatial"]["moments"].keys()) == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+        assert (
+            list(fingerprint1.values_dict["spatial"]["distances"].keys())
+            == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+        )
+        assert (
+            list(fingerprint1.values_dict["spatial"]["moments"].keys())
+            == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+        )
         # Attribute residue_ids
         assert fingerprint1.residue_ids == fingerprint2.residue_ids
         # Attribute residue_ixs
@@ -87,7 +96,7 @@ class TestFingerprint:
         """
         Tets fingerprint values array.
         """
-        
+
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
         values_array_mean_calculated = np.nanmean(fingerprint.values_array(True, True, True))
         assert pytest.approx(values_array_mean_calculated, abs=1e-4) == values_array_mean
@@ -100,7 +109,7 @@ class TestFingerprint:
         """
         Test DataFrame columns/index names.
         """
-        
+
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
         assert fingerprint.physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL
         assert fingerprint.physicochemical.index.to_list() == list(range(1, 86))
@@ -114,7 +123,7 @@ class TestFingerprint:
         """
         Test DataFrame columns/index names.
         """
-        
+
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
         assert fingerprint.distances.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert fingerprint.distances.index.to_list() == list(range(1, 86))
@@ -128,7 +137,7 @@ class TestFingerprint:
         """
         Test DataFrame columns/index names.
         """
-        
+
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
         assert fingerprint.moments.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert fingerprint.moments.index.to_list() == [1, 2, 3]
@@ -140,10 +149,10 @@ class TestFingerprint:
     )
     def test_values_array(self, structure_klifs_id):
         """
-        Test the different lengths of the final fingerprint based on the selection of 
+        Test the different lengths of the final fingerprint based on the selection of
         physicochemical, distances and moments features.
         """
-        
+
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
         assert fingerprint.values_array(False, False, False).size == 0
         assert fingerprint.values_array(True, False, False).size == 680
@@ -162,7 +171,7 @@ class TestFingerprint:
         """
         Test if saving/loading a fingerprint to/from a json file.
         """
-        
+
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
         json_filepath = Path("fingerprint.json")
 
@@ -171,7 +180,7 @@ class TestFingerprint:
             # Save json file
             fingerprint.to_json(json_filepath)
             assert json_filepath.exists()
-            
+
             # Load json file
             fingerprint_reloaded = Fingerprint.from_json(json_filepath)
             # Test if class attributes from ID and from json are the same
@@ -194,7 +203,7 @@ class TestFingerprint:
         """
         Test pocket generation based on biopython and pandas.
         """
-        
+
         fingerprint = Fingerprint()
         pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, REMOTE)
         assert isinstance(pocket_bp, PocketBioPython)
@@ -208,7 +217,7 @@ class TestFingerprint:
         """
         Test if physicochemical an spatial features dictionary has correct keys.
         """
-        
+
         fingerprint = Fingerprint()
         pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, REMOTE)
 
