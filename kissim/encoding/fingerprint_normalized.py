@@ -95,12 +95,18 @@ class FingerprintNormalized(FingerprintBase):
             values_normalized["charge"] = [
                 self._min_max_normalization(value, -1.0, 1.0) for value in values["charge"]
             ]
-            values_normalized["aromatic"] = values["aromatic"]
-            values_normalized["aliphatic"] = values["aliphatic"]
+            values_normalized["aromatic"] = [
+                self._min_max_normalization(value, 0.0, 1.0) for value in values["aromatic"]
+            ]
+            values_normalized["aliphatic"] = [
+                self._min_max_normalization(value, 0.0, 1.0) for value in values["aliphatic"]
+            ]
             values_normalized["sco"] = [
                 self._min_max_normalization(value, 0.0, 2.0) for value in values["sco"]
             ]
-            values_normalized["exposure"] = values["exposure"]
+            values_normalized["exposure"] = [
+                self._min_max_normalization(value, 0.0, 1.0) for value in values["exposure"]
+            ]
             return values_normalized
 
         else:
@@ -124,38 +130,15 @@ class FingerprintNormalized(FingerprintBase):
         values_normalized = {}
 
         if values is not None:
-            values_normalized["center"] = [
-                self._min_max_normalization(
-                    value,
-                    DISTANCE_CUTOFFS["center"][0],
-                    DISTANCE_CUTOFFS["center"][1],
-                )
-                for value in values["center"]
-            ]
-            values_normalized["hinge_region"] = [
-                self._min_max_normalization(
-                    value,
-                    DISTANCE_CUTOFFS["hinge_region"][0],
-                    DISTANCE_CUTOFFS["hinge_region"][1],
-                )
-                for value in values["hinge_region"]
-            ]
-            values_normalized["dfg_region"] = [
-                self._min_max_normalization(
-                    value,
-                    DISTANCE_CUTOFFS["dfg_region"][0],
-                    DISTANCE_CUTOFFS["dfg_region"][1],
-                )
-                for value in values["dfg_region"]
-            ]
-            values_normalized["front_pocket"] = [
-                self._min_max_normalization(
-                    value,
-                    DISTANCE_CUTOFFS["front_pocket"][0],
-                    DISTANCE_CUTOFFS["front_pocket"][1],
-                )
-                for value in values["front_pocket"]
-            ]
+            for subpocket_name, distances in values.items():
+                values_normalized[subpocket_name] = [
+                    self._min_max_normalization(
+                        distance,
+                        DISTANCE_CUTOFFS[subpocket_name][0],
+                        DISTANCE_CUTOFFS[subpocket_name][1],
+                    )
+                    for distance in distances
+                ]
             return values_normalized
 
         else:
@@ -212,13 +195,13 @@ class FingerprintNormalized(FingerprintBase):
             Normalized value.
         """
 
-        if minimum < value < maximum:
+        if np.isnan(value):
+            return np.nan
+        elif minimum < value < maximum:
             return (value - minimum) / float(maximum - minimum)
         elif value <= minimum:
             return 0.0
         elif value >= maximum:
             return 1.0
-        elif np.isnan(value):
-            return np.nan
         else:
             raise ValueError(f"Unexpected value to be normalized: {value}")
