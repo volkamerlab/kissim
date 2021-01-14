@@ -77,7 +77,7 @@ class TestsSubpocketsFeature:
 
         # Test distances
         for _, distances in feature._distances.items():
-            assert isinstance(distances, np.ndarray)
+            assert isinstance(distances, list)
         distances_mean_calculated = {
             name: np.nanmean(distances) for name, distances in feature._distances.items()
         }
@@ -85,9 +85,9 @@ class TestsSubpocketsFeature:
 
         # Test moments
         for _, moments in feature._moments.items():
-            assert isinstance(moments, np.ndarray)
+            assert isinstance(moments, list)
         moments_mean_calculated = {
-            name: moments.mean() for name, moments in feature._moments.items()
+            name: np.nanmean(moments) for name, moments in feature._moments.items()
         }
         assert pytest.approx(moments_mean_calculated, abs=1e-6) == moments_mean
 
