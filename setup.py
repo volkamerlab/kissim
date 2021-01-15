@@ -42,7 +42,7 @@ setup(
     package_data={'kissim': ["data/*.dat"]
                   },
     # Entry points
-    entry_points={"console_scripts": ["kissim-encoder = kissim.encoding.cli:main"]},
+    entry_points={"console_scripts": ["kissim = kissim.cli.main:main"]},
     # Allows `setup.py test` to work correctly with pytest
     setup_requires=[] + pytest_runner,
 
