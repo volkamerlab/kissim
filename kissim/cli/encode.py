@@ -22,7 +22,7 @@ def encode(args):
 
     configure_logger(args.output)
     structure_klifs_ids = _parse_structure_klifs_ids(args.input)
-    api_encode(structure_klifs_ids, args.output, args.local, args.ncores)
+    api_encode(structure_klifs_ids, args.output, args.ncores, args.local)
 
 
 def _parse_structure_klifs_ids(args_input):
