@@ -30,6 +30,9 @@ class Fingerprint(FingerprintBase):
         ----------
         structure_klifs_id : int
             Structure KLIFS ID.
+        klifs_session : opencadd.databases.klifs.session.Session or None
+            Local or remote KLIFS session.
+            If None (default), set up remote KLIFS session.
         """
         if klifs_session is None:
             klifs_session = setup_remote()
