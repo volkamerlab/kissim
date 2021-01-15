@@ -2,7 +2,7 @@
 kissim.encoding.features
 """
 
-from .core import BaseFeature
+from .base import BaseFeature
 from .exposure import SolventExposureFeature
 from .sco import SideChainOrientationFeature
 from .sitealign import SiteAlignFeature
