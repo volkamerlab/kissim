@@ -21,8 +21,6 @@ def encode(args):
         CLI arguments.
     """
 
-    print(type(args))
-
     configure_logger(args.output)
     klifs_session = _setup_klifs_session(args.local)
     structure_klifs_ids = _parse_structure_klifs_ids(args.input)
@@ -38,7 +36,7 @@ def encode(args):
 
 def _setup_klifs_session(args_local):
     """
-    Set up KLIFS session. 
+    Set up KLIFS session.
 
     Parameters
     ----------

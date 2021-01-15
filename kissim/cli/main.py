@@ -17,7 +17,7 @@ from kissim.cli.encode import encode
 
 def main():
     """
-    Define CLI sub-commands and their arguments. 
+    Define CLI sub-commands and their arguments.
     Note: Package entry point points to this function.
 
     Sub-commands are:
