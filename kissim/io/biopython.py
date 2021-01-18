@@ -10,7 +10,7 @@ import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
 from opencadd.io import Biopython
 from opencadd.databases.klifs import setup_remote
-from opencadd.structure.pocket import BasePocket
+from opencadd.structure.pocket import PocketBase
 
 from ..definitions import SIDE_CHAIN_REPRESENTATIVE
 from ..schema import STANDARD_AMINO_ACIDS, NON_STANDARD_AMINO_ACID_CONVERSION
@@ -19,7 +19,7 @@ from ..utils import enter_temp_directory
 logger = logging.getLogger(__name__)
 
 
-class PocketBioPython(BasePocket):
+class PocketBioPython(PocketBase):
     """
     Class defining the Biopython-based pocket object.
 
@@ -122,7 +122,7 @@ class PocketBioPython(BasePocket):
 
         Returns
         -------
-        pandas.DataFrame
+        Bio.PDB.Structure.Structure
             Structural data for a complex.
         """
 

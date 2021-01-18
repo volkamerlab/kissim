@@ -4,8 +4,8 @@ kissim.io.dataframe
 Defines a DataFrame-based pocket class.
 """
 
-from opencadd.structure.pocket import KlifsPocket
+from opencadd.structure.pocket import PocketKlifs
 
 
-class PocketDataFrame(KlifsPocket):
+class PocketDataFrame(PocketKlifs):
     pass
