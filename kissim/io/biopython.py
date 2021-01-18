@@ -95,7 +95,9 @@ class PocketBioPython(BasePocket):
             pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
             pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
         except AttributeError as e:
-            logger.error(f"AttributeError: {e} in Bio.PDB.Exposure for structure KLIFS ID {structure_klifs_id}")
+            logger.error(
+                f"AttributeError: {e} in Bio.PDB.Exposure for structure KLIFS ID {structure_klifs_id}"
+            )
             if e.args[0] == "'NoneType' object has no attribute 'norm'":
                 # If HSE cannot be calculated with this error message, it is most likely related
                 # to https://github.com/volkamerlab/kissim/issues/27
@@ -104,7 +106,7 @@ class PocketBioPython(BasePocket):
             else:
                 # Other errors shall be raised!!!
                 raise AttributeError(f"{e}")
-                
+
         return pocket
 
     def _get_biopython(self, structure_klifs_id, klifs_session):

@@ -75,7 +75,9 @@ class Fingerprint(FingerprintBase):
             fingerprint.residue_ixs = pocket_bp._residue_ixs
 
             values_dict = {}
-            values_dict["physicochemical"] = fingerprint._get_physicochemical_features_dict(pocket_bp)
+            values_dict["physicochemical"] = fingerprint._get_physicochemical_features_dict(
+                pocket_bp
+            )
             values_dict["spatial"] = fingerprint._get_spatial_features_dict(pocket_df)
             fingerprint.values_dict = values_dict
 
