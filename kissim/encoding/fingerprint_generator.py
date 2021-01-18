@@ -59,6 +59,7 @@ class FingerprintGenerator:
         """
 
         start_time = datetime.datetime.now()
+        logger.info(f"Fingerprint generation started at: {start_time}")
 
         # Set up KLIFS session if needed
         if klifs_session is None:
