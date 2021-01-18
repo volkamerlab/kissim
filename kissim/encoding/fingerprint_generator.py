@@ -160,7 +160,7 @@ class FingerprintGenerator:
             If input number of cores exceeds the number of available CPUs - 1.
         """
 
-        max_n_cores = cpu_count() - 1
+        max_n_cores = cpu_count()
         if n_cores is None:
             n_cores = max_n_cores
         else:
