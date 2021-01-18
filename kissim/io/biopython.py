@@ -4,6 +4,8 @@ kissim.io.biopython
 Defines a Biopython-based pocket class.
 """
 
+import logging
+
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
 from opencadd.io import Biopython
@@ -13,6 +15,8 @@ from opencadd.structure.pocket import BasePocket
 from ..definitions import SIDE_CHAIN_REPRESENTATIVE
 from ..schema import STANDARD_AMINO_ACIDS, NON_STANDARD_AMINO_ACID_CONVERSION
 from ..utils import enter_temp_directory
+
+logger = logging.getLogger(__name__)
 
 
 class PocketBioPython(BasePocket):
@@ -87,8 +91,20 @@ class PocketBioPython(BasePocket):
             structure_klifs_id, klifs_session
         )
         # Get HSE data
-        pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
-        pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
+        try:
+            pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
+            pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
+        except AttributeError as e:
+            logger.error(f"AttributeError: {e} in Bio.PDB.Exposure for structure KLIFS ID {structure_klifs_id}")
+            if e.args[0] == "'NoneType' object has no attribute 'norm'":
+                # If HSE cannot be calculated with this error message, it is most likely related
+                # to https://github.com/volkamerlab/kissim/issues/27
+                # Return None for this pocket, with will result in a None fingerprint
+                return None
+            else:
+                # Other errors shall be raised!!!
+                raise AttributeError(f"{e}")
+                
         return pocket
 
     def _get_biopython(self, structure_klifs_id, klifs_session):
