@@ -43,10 +43,14 @@ class TestFingerprint:
     """
 
     @pytest.mark.parametrize(
-        "structure_klifs_id",
-        [109, 110, 118],
+        "structure_klifs_id, fingerprint",
+        [
+            (109, Fingerprint),
+            (110, Fingerprint),
+            (100000, None),  # Unknown structure KLIFS ID
+        ],
     )
-    def test_from_structure_klifs_id(self, structure_klifs_id):
+    def test_from_structure_klifs_id(self, structure_klifs_id, fingerprint):
         """
         Test if Fingerprint can be set locally and remotely.
         """
@@ -54,39 +58,46 @@ class TestFingerprint:
         fingerprint1 = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         fingerprint2 = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
 
-        # Check if locally and remotely obtained fingerprints are the same
-        # Use method values_array()
-        assert np.allclose(
-            fingerprint1.values_array(True, True, True),
-            fingerprint2.values_array(True, True, True),
-            rtol=0,
-            atol=0,
-            equal_nan=True,
-        )
+        if fingerprint is None:
+            assert fingerprint1 is None
+            assert fingerprint2 is None
+        else:
+            assert isinstance(fingerprint1, Fingerprint)
+            assert isinstance(fingerprint2, Fingerprint)
 
-        # Test attributes
-        # Attribute structure_klifs_id
-        assert fingerprint1.structure_klifs_id == structure_klifs_id
-        assert fingerprint2.structure_klifs_id == structure_klifs_id
-        # Attribute values_dict
-        assert list(fingerprint1.values_dict.keys()) == FEATURE_NAMES
-        assert (
-            list(fingerprint1.values_dict["physicochemical"].keys())
-            == FEATURE_NAMES_PHYSICOCHEMICAL
-        )
-        assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL
-        assert (
-            list(fingerprint1.values_dict["spatial"]["distances"].keys())
-            == FEATURE_NAMES_DISTANCES_AND_MOMENTS
-        )
-        assert (
-            list(fingerprint1.values_dict["spatial"]["moments"].keys())
-            == FEATURE_NAMES_DISTANCES_AND_MOMENTS
-        )
-        # Attribute residue_ids
-        assert fingerprint1.residue_ids == fingerprint2.residue_ids
-        # Attribute residue_ixs
-        assert fingerprint1.residue_ixs == fingerprint2.residue_ixs
+            # Check if locally and remotely obtained fingerprints are the same
+            # Use method values_array()
+            assert np.allclose(
+                fingerprint1.values_array(True, True, True),
+                fingerprint2.values_array(True, True, True),
+                rtol=0,
+                atol=0,
+                equal_nan=True,
+            )
+
+            # Test attributes
+            # Attribute structure_klifs_id
+            assert fingerprint1.structure_klifs_id == structure_klifs_id
+            assert fingerprint2.structure_klifs_id == structure_klifs_id
+            # Attribute values_dict
+            assert list(fingerprint1.values_dict.keys()) == FEATURE_NAMES
+            assert (
+                list(fingerprint1.values_dict["physicochemical"].keys())
+                == FEATURE_NAMES_PHYSICOCHEMICAL
+            )
+            assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL
+            assert (
+                list(fingerprint1.values_dict["spatial"]["distances"].keys())
+                == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+            )
+            assert (
+                list(fingerprint1.values_dict["spatial"]["moments"].keys())
+                == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+            )
+            # Attribute residue_ids
+            assert fingerprint1.residue_ids == fingerprint2.residue_ids
+            # Attribute residue_ixs
+            assert fingerprint1.residue_ixs == fingerprint2.residue_ixs
 
     @pytest.mark.parametrize(
         "structure_klifs_id, values_array_mean",
