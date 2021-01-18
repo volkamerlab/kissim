@@ -48,6 +48,7 @@ class TestFingerprint:
             (109, Fingerprint),
             (110, Fingerprint),
             (100000, None),  # Unknown structure KLIFS ID
+            (12508, None),  # Structure with Bio.PDB.HSExposure error
         ],
     )
     def test_from_structure_klifs_id(self, structure_klifs_id, fingerprint):

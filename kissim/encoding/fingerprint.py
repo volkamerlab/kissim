@@ -57,21 +57,27 @@ class Fingerprint(FingerprintBase):
                 return None
 
         fingerprint = cls()
-        fingerprint.structure_klifs_id = structure_klifs_id
-        pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, klifs_session)
-        # Check if residues are consistent between pockets
-        if pocket_bp._residue_ids != pocket_df._residue_ids:
-            raise ValueError(f"Residue PDB IDs are not the same for df and bp pockets.")
-        if pocket_bp._residue_ixs != pocket_df._residue_ixs:
-            raise ValueError(f"Residue indices are not the same for df and bp pockets.")
-        # Set residue attributes
-        fingerprint.residue_ids = pocket_bp._residue_ids
-        fingerprint.residue_ixs = pocket_bp._residue_ixs
 
-        values_dict = {}
-        values_dict["physicochemical"] = fingerprint._get_physicochemical_features_dict(pocket_bp)
-        values_dict["spatial"] = fingerprint._get_spatial_features_dict(pocket_df)
-        fingerprint.values_dict = values_dict
+        # Get pocket
+        pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, klifs_session)
+        if pocket_bp is None or pocket_df is None:
+            # If a pocket is None, fingerprint shall be None
+            fingerprint = None
+        else:
+            # Check if residues are consistent between pockets
+            if pocket_bp._residue_ids != pocket_df._residue_ids:
+                raise ValueError(f"Residue PDB IDs are not the same for df and bp pockets.")
+            if pocket_bp._residue_ixs != pocket_df._residue_ixs:
+                raise ValueError(f"Residue indices are not the same for df and bp pockets.")
+            # Set residue attributes
+            fingerprint.structure_klifs_id = structure_klifs_id
+            fingerprint.residue_ids = pocket_bp._residue_ids
+            fingerprint.residue_ixs = pocket_bp._residue_ixs
+
+            values_dict = {}
+            values_dict["physicochemical"] = fingerprint._get_physicochemical_features_dict(pocket_bp)
+            values_dict["spatial"] = fingerprint._get_spatial_features_dict(pocket_df)
+            fingerprint.values_dict = values_dict
 
         return fingerprint
 
