@@ -36,7 +36,7 @@ class FingerprintGenerator:
 
         self.structure_klifs_ids = None
         self.klifs_session = None
-        self.data = None  # TODO omit and return dict directly?
+        self.data = None
 
     @classmethod
     def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=None):
