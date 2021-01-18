@@ -91,7 +91,6 @@ class Similarity:
                     pickle.dump(fingerprint_distance_generator, f)
 
 
-
 class FingerprintDistanceGenerator:
     """
     Generate fingerprint distances for multiple fingerprint pairs based on their feature distances,

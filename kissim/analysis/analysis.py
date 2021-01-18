@@ -48,11 +48,7 @@ class KlifsMetadataAnalyser:
 
         fig, ax = plt.subplots(figsize=(20, 4))
 
-        axes = (
-            sequence.apply(lambda x: x == residue_name)
-            .apply(sum)
-            .plot(kind="bar", ax=ax)
-        )
+        axes = sequence.apply(lambda x: x == residue_name).apply(sum).plot(kind="bar", ax=ax)
 
         axes.set_ylabel("Number of KLIFS entries")
         axes.set_xlabel("KLIFS position")
