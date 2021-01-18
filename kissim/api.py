@@ -9,7 +9,7 @@ from opencadd.databases.klifs import setup_remote, setup_local
 from kissim.encoding import FingerprintGenerator
 
 
-def encode(structure_klifs_ids, json_filepath, n_cores=1, local_klifs_session=None):
+def encode(structure_klifs_ids, json_filepath=None, n_cores=1, local_klifs_session=None):
     """
     Encode structures.
 
@@ -18,12 +18,17 @@ def encode(structure_klifs_ids, json_filepath, n_cores=1, local_klifs_session=No
     structure_klifs_ids : list of int
         Structure KLIFS IDs.
     json_filepath : str or pathlib.Path
-        Path to output json file.
+        Path to output json file. Default None.
     n_cores : int
         Number of cores used to generate fingerprints.
     local_klifs_session : str or None
         If path to local KLIFS download is given, set up local KLIFS session.
         If None is given, set up remote KLIFS session.
+
+    Returns
+    -------
+    kissim.encoding.fingerprint_generator
+        Fingerprints.
     """
 
     # Set up KLIFS session
@@ -34,8 +39,11 @@ def encode(structure_klifs_ids, json_filepath, n_cores=1, local_klifs_session=No
         structure_klifs_ids, klifs_session, n_cores
     )
 
-    # Save fingerprints to json file
-    fingerprints.to_json(json_filepath)
+    # Optionally: Save fingerprints to json file
+    if json_filepath:
+        fingerprints.to_json(json_filepath)
+
+    return fingerprints
 
 
 def _setup_klifs_session(local_klifs_session=None):
