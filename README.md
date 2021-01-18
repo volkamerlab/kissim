@@ -5,6 +5,8 @@ Structural kinase similarity (`kissim`)
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/volkamerlab/branch/master?svg=true)](https://ci.appveyor.com/project/volkamerlab/kissim/branch/master)
 [![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/master/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim/branch/master)
 
+> ⚠ This project is work-in-progress. The API is not final.
+
 **Subpocket-based structural fingerprint for kinase pocket comparison**
 
 Kinases are important and frequently studied drug targets for cancer and inflammatory diseases. 
