@@ -206,7 +206,9 @@ class TestsSubpocketsFeature:
         pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
         ca_atoms = pocket.ca_atoms
-        distance_calculated = feature._calculate_distance_to_center(ca_atoms, residue_id, subpocket_center)
+        distance_calculated = feature._calculate_distance_to_center(
+            ca_atoms, residue_id, subpocket_center
+        )
         if np.isnan(distance):
             assert np.isnan(distance_calculated)
         else:
