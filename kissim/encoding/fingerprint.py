@@ -35,16 +35,19 @@ class Fingerprint(FingerprintBase):
             Local or remote KLIFS session.
             If None (default), set up remote KLIFS session.
         """
+
+        # If no KLIFS session is given, set up local session
         if klifs_session is None:
             klifs_session = setup_remote()
 
-        # Check if structure KLIFS ID exists
+        # Return empty fingerprint if structure KLIFS ID does not exists
         if klifs_session._client:
             try:
                 klifs_session.structures.by_structure_klifs_id(structure_klifs_id)
             except SwaggerMappingError as e:
                 logger.warning(
-                    f"Unknown structure KLIFS ID (remotely): {structure_klifs_id} (SwaggerMappingError: {e})"
+                    f"{structure_klifs_id}: Unknown structure KLIFS ID (remotely). "
+                    f"(SwaggerMappingError: {e})"
                 )
                 return None
         else:
@@ -52,7 +55,8 @@ class Fingerprint(FingerprintBase):
                 klifs_session.structures.by_structure_klifs_id(structure_klifs_id)
             except ValueError as e:
                 logger.warning(
-                    f"Unknown structure KLIFS ID (locally): {structure_klifs_id} (ValueError: {e})"
+                    f"{structure_klifs_id}: Unknown structure KLIFS ID (locally). "
+                    f"(ValueError: {e})"
                 )
                 return None
 
@@ -66,9 +70,13 @@ class Fingerprint(FingerprintBase):
         else:
             # Check if residues are consistent between pockets
             if pocket_bp._residue_ids != pocket_df._residue_ids:
-                raise ValueError(f"Residue PDB IDs are not the same for df and bp pockets.")
+                raise ValueError(
+                    f"{structure_klifs_id}: Residue PDB IDs are not the same for df and bp pockets."
+                )
             if pocket_bp._residue_ixs != pocket_df._residue_ixs:
-                raise ValueError(f"Residue indices are not the same for df and bp pockets.")
+                raise ValueError(
+                    f"{structure_klifs_id}: Residue indices are not the same for df and bp pockets."
+                )
             # Set residue attributes
             fingerprint.structure_klifs_id = structure_klifs_id
             fingerprint.residue_ids = pocket_bp._residue_ids
@@ -80,6 +88,9 @@ class Fingerprint(FingerprintBase):
             )
             values_dict["spatial"] = fingerprint._get_spatial_features_dict(pocket_df)
             fingerprint.values_dict = values_dict
+
+        if fingerprint is None:
+            logger.info(f"{structure_klifs_id}: Empty fingerprint.")
 
         return fingerprint
 
