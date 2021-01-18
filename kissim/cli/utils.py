@@ -32,7 +32,7 @@ def configure_logger(filename, level=logging.INFO):
 
     # Set a stream and a file handler
     s_handler = logging.StreamHandler()
-    f_handler = logging.FileHandler(filename.parent / f"{filename.stem}.log")
+    f_handler = logging.FileHandler(filename.parent / f"{filename.stem}.log", mode="w")
 
     # Set formatting for these handlers
     formatter = logging.Formatter(logging.BASIC_FORMAT)
