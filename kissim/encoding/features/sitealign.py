@@ -77,9 +77,11 @@ class SiteAlignFeature(BaseFeature):
         feature._residue_ids = pocket._residue_ids
         feature._residue_ixs = pocket._residue_ixs
 
+        residues = [
+            pocket._residue_from_residue_id(residue_id) for residue_id in feature._residue_ids
+        ]
         feature._residue_names = [
-            pocket._data_complex[residue_id].resname if residue_id is not None else None
-            for residue_id in feature._residue_ids
+            residue.resname if residue is not None else None for residue in residues
         ]
         feature._categories = [
             feature._residue_to_value(residue_name, feature_name)
