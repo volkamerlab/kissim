@@ -169,6 +169,7 @@ class TestsSubpocketsFeature:
         "structure_klifs_id, remote, subpocket_center, mean_distance",
         [
             (12347, REMOTE, [0, 0, 0], 43.866110),
+            (12347, REMOTE, None, 43.866110),  # No center
         ],
     )
     def test_calculate_distances_to_center(
@@ -176,12 +177,40 @@ class TestsSubpocketsFeature:
     ):
         """
         Test calculation of distances between a subpocket center and all pocket residues.
+        Test also the case that there is no subpocket center.
         """
         pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
         feature = SubpocketsFeature.from_pocket(pocket)
         distances_calculated = feature._calculate_distances_to_center(pocket, subpocket_center)
         mean_distance_calculated = np.nanmean(np.array(distances_calculated))
-        assert pytest.approx(mean_distance_calculated, abs=1e-6) == mean_distance
+        if subpocket_center is None:
+            assert np.isnan(mean_distance_calculated)
+            assert len(distances_calculated) == len(pocket._residue_ids)
+        else:
+            assert pytest.approx(mean_distance_calculated, abs=1e-6) == mean_distance
+
+    @pytest.mark.parametrize(
+        "structure_klifs_id, remote, residue_id, subpocket_center, distance",
+        [
+            (2542, REMOTE, 157, [0, 0, 0], 42.263037),  # Center and existing residue CA
+            (2542, REMOTE, 1, [0, 0, 0], np.nan),  # Center and no residue (or residue CA)
+            (2542, REMOTE, None, [0, 0, 0], np.nan),  # Center and residue is None
+        ],
+    )
+    def test_calculate_distance_to_center(
+        self, structure_klifs_id, remote, residue_id, subpocket_center, distance
+    ):
+        """
+        Test calculation of distances between a subpocket center and a pocket residues.
+        """
+        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
+        feature = SubpocketsFeature.from_pocket(pocket)
+        ca_atoms = pocket.ca_atoms
+        distance_calculated = feature._calculate_distance_to_center(ca_atoms, residue_id, subpocket_center)
+        if np.isnan(distance):
+            assert np.isnan(distance_calculated)
+        else:
+            assert pytest.approx(distance_calculated, abs=1e-6) == distance
 
     @pytest.mark.parametrize(
         "values, moments",

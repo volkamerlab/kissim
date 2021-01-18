@@ -200,23 +200,52 @@ class SubpocketsFeature(BaseFeature):
             Distances between a subpocket or pocket center and all pocket residues.
         """
 
-        distances = []
-        ca_atoms = pocket.ca_atoms
-
-        for residue_id in pocket._residue_ids:
-            if residue_id is None:
-                distance = np.nan
-            else:
-                ca_atom_coord = ca_atoms[ca_atoms["residue.id"] == residue_id][
-                    ["atom.x", "atom.y", "atom.z"]
-                ].to_numpy()
-                distance = np.linalg.norm(ca_atom_coord - center)
-            distances.append(distance)
-
-        # Must be cast to list of floats (removing all numpy data types) to allow json dump
-        distances = np.array(distances).tolist()
+        if center is None:
+            distances = [np.nan] * len(pocket._residue_ids)
+            return distances
+        else:
+            distances = []
+            ca_atoms = pocket.ca_atoms
+            for residue_id in pocket._residue_ids:
+                distance = self._calculate_distance_to_center(ca_atoms, residue_id, center)
+                distances.append(distance)
+            # Must be cast to list of floats (removing all numpy data types) to allow json dump
+            distances = np.array(distances).tolist()
 
         return distances
+
+    def _calculate_distance_to_center(self, ca_atoms, residue_id, center):
+        """
+        Calculate distances between a subpocket or pocket center and all pocket residues (CA
+        atoms).
+
+        Parameters
+        ----------
+        ca_atoms : pandas.DataFrame
+            Pocket CA atoms.
+        residue_id : int
+            Residue ID.
+        center : numpy.array
+            Subpocket or pocket center.
+
+        Returns
+        -------
+        float
+            Distance between a subpocket or pocket center and a pocket.
+        """
+
+        if residue_id is None:
+            distance = np.nan
+        else:
+            ca_atom_coord = ca_atoms[ca_atoms["residue.id"] == residue_id][
+                ["atom.x", "atom.y", "atom.z"]
+            ].to_numpy()
+            if len(ca_atom_coord) != 1:
+                distance = np.nan
+            else:
+                distance = np.linalg.norm(ca_atom_coord - center)
+
+        return distance
 
     def _calculate_moments(self):
         """
