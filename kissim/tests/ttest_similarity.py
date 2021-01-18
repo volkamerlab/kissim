@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from kissim.auxiliary import KlifsMoleculeLoader, PdbChainLoader
 from kissim.encoding import Fingerprint, FingerprintGenerator
 from kissim.similarity import (
     FeatureDistances,
@@ -51,14 +50,7 @@ def fingerprint_generator():
 
     for path_mol2, path_pdb, chain_id in zip(paths_mol2, paths_pdb, chain_ids):
 
-        klifs_molecule_loader = KlifsMoleculeLoader()
-        klifs_molecule_loader.from_file(path_mol2, path_klifs_metadata)
-        pdb_chain_loader = PdbChainLoader()
-        pdb_chain_loader.from_file(path_pdb, chain_id)
-
-        fingerprint = Fingerprint()
-        fingerprint.from_molecule(klifs_molecule_loader.molecule, pdb_chain_loader.chain)
-
+        fingerprint = Fingerprint.from_structure_klifs_id(paths_mol2)
         fingerprints.append(fingerprint)
 
     # FingerprintGenerator (set class attribute manually)

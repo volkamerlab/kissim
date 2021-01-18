@@ -50,7 +50,7 @@ class KlifsMetadataAnalyser:
 
         axes = (
             sequence.apply(lambda x: x == residue_name)
-            .apply(lambda x: sum(x))
+            .apply(sum)
             .plot(kind="bar", ax=ax)
         )
 
