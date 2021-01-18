@@ -88,13 +88,8 @@ class FingerprintGenerator:
         end_time = datetime.datetime.now()
 
         logger.info(f"Number of input structures: {len(structure_klifs_ids)}")
-        logger.info(f"Number of fingerprints: {len(fingerprints_list)}")
-        logger.info(
-            f"Number of fingerprints without None: "
-            f"{len([i for i in fingerprints_list if i is not None])}"
-        )
-        logger.info(f"Start of fingerprint generation: {start_time}")
-        logger.info(f"End of fingerprint generation: {end_time}")
+        logger.info(f"Number of successfull fingerprints: {len(fingerprint_generator.data)}")
+        logger.info(f"Runtime: {end_time - start_time}")
 
         return fingerprint_generator
 
