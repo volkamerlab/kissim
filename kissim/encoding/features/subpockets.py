@@ -23,6 +23,8 @@ class SubpocketsFeature(BaseFeature):
 
     Attributes
     ----------
+    name : str or int
+        Name for structure encoding by this feature.
     _residue_ids : list of int
         Residue IDs.
     _residue_ixs : list of int
@@ -34,6 +36,8 @@ class SubpocketsFeature(BaseFeature):
     """
 
     def __init__(self):
+
+        self.name = None
         self._residue_ids = None
         self._residue_ixs = None
         self._distances = None
@@ -63,6 +67,7 @@ class SubpocketsFeature(BaseFeature):
         subpockets = subpockets or SUBPOCKETS
 
         feature = cls()
+        feature.name = pocket.name
         feature._residue_ids = pocket._residue_ids
         feature._residue_ixs = pocket._residue_ixs
 

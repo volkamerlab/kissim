@@ -18,6 +18,8 @@ class BaseFeature:
 
     Properties
     ----------
+    name : str or int
+        Name for structure encoding by this feature.
     values : list of float
         Feature values for pocket residues.
     details : pandas.DataFrame
@@ -25,7 +27,9 @@ class BaseFeature:
     """
 
     def __init__(self):
+        self.name = None
         self._residue_ids = None
+        self._residue_ixs = None
 
     @classmethod
     def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):

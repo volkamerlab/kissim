@@ -34,6 +34,7 @@ class TestsSideChainOrientationFeature:
         assert isinstance(feature, SideChainOrientationFeature)
 
         # Test class attributes
+        assert feature.name == structure_klifs_id
         for residue_id, residue_ix, category, vertex_angle, ca_atom, sc_atom in zip(
             feature._residue_ids,
             feature._residue_ixs,

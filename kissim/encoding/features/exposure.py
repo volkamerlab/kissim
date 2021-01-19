@@ -20,6 +20,8 @@ class SolventExposureFeature(BaseFeature):
 
     Attributes
     ----------
+    name : str or int
+        Name for structure encoding by this feature.
     _residue_ids : list of int
         Residue IDs.
     _residue_ixs : list of int
@@ -44,6 +46,7 @@ class SolventExposureFeature(BaseFeature):
 
     def __init__(self):
 
+        self.name = None
         self._residue_ids = None
         self._residue_ixs = None
         self._ratio = None
@@ -69,6 +72,7 @@ class SolventExposureFeature(BaseFeature):
         """
 
         feature = cls()
+        feature.name = pocket.name
         feature._residue_ids = pocket._residue_ids
         feature._residue_ixs = pocket._residue_ixs
         exposures = feature._get_exposures(pocket, radius)

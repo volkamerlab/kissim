@@ -40,6 +40,7 @@ class TestsSiteAlignFeature:
         assert isinstance(feature, SiteAlignFeature)
 
         # Test class attributes
+        assert feature.name == structure_klifs_id
         for residue_id, residue_ix, residue_name, category in zip(
             feature._residue_ids, feature._residue_ixs, feature._residue_names, feature._categories
         ):

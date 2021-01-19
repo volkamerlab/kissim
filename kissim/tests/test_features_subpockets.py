@@ -36,6 +36,7 @@ class TestsSubpocketsFeature:
 
         # Test class attributes
         # Note: _distances and _moments are tested separately below
+        assert feature.name == structure_klifs_id
         for residue_id, residue_ix in zip(feature._residue_ids, feature._residue_ixs):
             if residue_id is not None:
                 assert isinstance(residue_id, int)
@@ -222,7 +223,7 @@ class TestsSubpocketsFeature:
             ([1, 0], [0.5, 0.5, 0]),
             ([3, 0, 0], [1, 1.4142135, 1.2599210]),
             ([], [np.nan, np.nan, np.nan]),
-            ([np.nan, np.nan], [np.nan, np.nan, np.nan])
+            ([np.nan, np.nan], [np.nan, np.nan, np.nan]),
         ],
     )
     def test_calculate_first_second_third_moment(self, values, moments):

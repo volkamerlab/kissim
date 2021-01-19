@@ -32,6 +32,7 @@ class TestsSolventExposureFeature:
         assert isinstance(feature, SolventExposureFeature)
 
         # Test class attributes
+        assert feature.name == structure_klifs_id
         for residue_id, residue_ix, ratio, ratio_ca, ratio_cb in zip(
             feature._residue_ids,
             feature._residue_ixs,

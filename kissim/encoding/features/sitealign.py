@@ -22,6 +22,8 @@ class SiteAlignFeature(BaseFeature):
 
     Attributes
     ----------
+    name : str or int
+        Name for structure encoding by this feature.
     _residue_ids : list of int
         Residue IDs.
     _residue_ixs : list of int
@@ -45,6 +47,7 @@ class SiteAlignFeature(BaseFeature):
 
     def __init__(self):
 
+        self.name = None
         self._residue_ids = None
         self._residue_ixs = None
         self._residue_names = None
@@ -74,6 +77,7 @@ class SiteAlignFeature(BaseFeature):
             SiteAlign features object.
         """
         feature = cls()
+        feature.name = pocket.name
         feature._residue_ids = pocket._residue_ids
         feature._residue_ixs = pocket._residue_ixs
 
@@ -199,9 +203,12 @@ class SiteAlignFeature(BaseFeature):
 
         try:
             residue_name_new = NON_STANDARD_AMINO_ACID_CONVERSION[residue_name]
-            logger.info(f"Non-standard residue {residue_name} is processed as {residue_name_new}.")
+            logger.info(
+                f"{self.name}: Non-standard residue {residue_name} is set to "
+                f"{residue_name_new}."
+            )
             return residue_name_new
 
         except KeyError:
-            logger.info(f"Non-standard residue {residue_name} is set to None.")
+            logger.info(f"{self.name}: Non-standard residue {residue_name} is set to None.")
             return None
