@@ -203,12 +203,12 @@ class SiteAlignFeature(BaseFeature):
 
         try:
             residue_name_new = NON_STANDARD_AMINO_ACID_CONVERSION[residue_name]
-            logger.info(
+            logger.warning(
                 f"{self.name}: Non-standard residue {residue_name} is set to "
                 f"{residue_name_new}."
             )
             return residue_name_new
 
         except KeyError:
-            logger.info(f"{self.name}: Non-standard residue {residue_name} is set to None.")
+            logger.warning(f"{self.name}: Non-standard residue {residue_name} is set to None.")
             return None
