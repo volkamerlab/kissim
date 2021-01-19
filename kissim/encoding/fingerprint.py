@@ -40,7 +40,7 @@ class Fingerprint(FingerprintBase):
 
         data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
         if data is None:
-            logger.info(f"{structure_klifs_id}: Empty fingerprint (data unaccessible).")
+            logger.warning(f"{structure_klifs_id}: Empty fingerprint (data unaccessible).")
             fingerprint = None
         else:
             fingerprint = cls.from_text(
@@ -81,7 +81,7 @@ class Fingerprint(FingerprintBase):
         pocket_bp = PocketBioPython.from_text(text, extension, residue_ids, residue_ixs, name)
         pocket_df = PocketDataFrame.from_text(text, extension, residue_ids, residue_ixs, name)
         if pocket_bp is None or pocket_df is None:
-            logger.info(f"{name}: Empty fingerprint (pocket unaccessible).")
+            logger.warning(f"{name}: Empty fingerprint (pocket unaccessible).")
             fingerprint = None
         else:
             fingerprint = cls()
