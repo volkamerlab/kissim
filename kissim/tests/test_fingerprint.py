@@ -211,27 +211,15 @@ class TestFingerprint:
         "structure_klifs_id",
         [109],
     )
-    def test_get_pocket(self, structure_klifs_id):
-        """
-        Test pocket generation based on biopython and pandas.
-        """
-
-        fingerprint = Fingerprint()
-        pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, REMOTE)
-        assert isinstance(pocket_bp, PocketBioPython)
-        assert isinstance(pocket_df, PocketDataFrame)
-
-    @pytest.mark.parametrize(
-        "structure_klifs_id",
-        [109],
-    )
     def test_get_physicochemical_or_spatial_features_dict(self, structure_klifs_id):
         """
         Test if physicochemical an spatial features dictionary has correct keys.
         """
 
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, REMOTE)
+
         fingerprint = Fingerprint()
-        pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, REMOTE)
 
         # Physicochemical features
         physicochemical_dict = fingerprint._get_physicochemical_features_dict(pocket_bp)

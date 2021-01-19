@@ -6,10 +6,7 @@ Defines the kissim fingerprint.
 
 import logging
 
-from bravado_core.exception import SwaggerMappingError
-from opencadd.databases.klifs import setup_remote
-
-from kissim.io import PocketBioPython, PocketDataFrame
+from kissim.io import KlifsToKissimData, PocketBioPython, PocketDataFrame
 from kissim.encoding import FingerprintBase
 from kissim.encoding.features import (
     SiteAlignFeature,
@@ -34,54 +31,63 @@ class Fingerprint(FingerprintBase):
         klifs_session : opencadd.databases.klifs.session.Session or None
             Local or remote KLIFS session.
             If None (default), set up remote KLIFS session.
+
+        Returns
+        -------
+        kissim.encoding.Fingerprint
+            Fingerprint.
         """
 
-        # If no KLIFS session is given, set up local session
-        if klifs_session is None:
-            klifs_session = setup_remote()
-
-        # Return empty fingerprint if structure KLIFS ID does not exists
-        if klifs_session._client:
-            try:
-                klifs_session.structures.by_structure_klifs_id(structure_klifs_id)
-            except SwaggerMappingError as e:
-                logger.warning(
-                    f"{structure_klifs_id}: Unknown structure KLIFS ID (remotely). "
-                    f"(SwaggerMappingError: {e})"
-                )
-                return None
-        else:
-            try:
-                klifs_session.structures.by_structure_klifs_id(structure_klifs_id)
-            except ValueError as e:
-                logger.warning(
-                    f"{structure_klifs_id}: Unknown structure KLIFS ID (locally). "
-                    f"(ValueError: {e})"
-                )
-                return None
-
-        fingerprint = cls()
-
-        # Get pocket
-        pocket_bp, pocket_df = fingerprint._get_pocket(structure_klifs_id, klifs_session)
-        if pocket_bp is None or pocket_df is None:
-            # If a pocket is None, fingerprint shall be None
+        data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
+        if data is None:
+            logger.info(f"{structure_klifs_id}: Empty fingerprint (data unaccessible).")
             fingerprint = None
         else:
-            # Check if residues are consistent between pockets
-            if pocket_bp._residue_ids != pocket_df._residue_ids:
-                raise ValueError(
-                    f"{structure_klifs_id}: Residue PDB IDs are not the same for df and bp pockets."
-                )
-            if pocket_bp._residue_ixs != pocket_df._residue_ixs:
-                raise ValueError(
-                    f"{structure_klifs_id}: Residue indices are not the same for df and bp pockets."
-                )
-            # Set residue attributes
-            fingerprint.structure_klifs_id = structure_klifs_id
+            fingerprint = cls.from_text(
+                data.text,
+                data.extension,
+                data.residue_ids,
+                data.residue_ixs,
+                data.structure_klifs_id,
+            )
+        return fingerprint
+
+    @classmethod
+    def from_text(cls, text, extension, residue_ids, residue_ixs, name):
+        """
+        Calculate fingerprint for a KLIFS structure (by complex data as text and pocket residue
+        IDs and indices).
+
+        Parameters
+        ----------
+        text : str
+            Structural complex data as string (file content).
+        extension : str
+            Structural complex data format (file extension).
+        residue_ids : list of int
+            Pocket residue IDs.
+        residue_ixs : list of int
+            Pocket residue indices.
+        name : str
+            Structure name.
+
+        Returns
+        -------
+        kissim.encoding.Fingerprint
+            Fingerprint.
+        """
+
+        # BioPython-based and DataFrame-based pocket are both necessary for fingerprint features
+        pocket_bp = PocketBioPython.from_text(text, extension, residue_ids, residue_ixs, name)
+        pocket_df = PocketDataFrame.from_text(text, extension, residue_ids, residue_ixs, name)
+        if pocket_bp is None or pocket_df is None:
+            logger.info(f"{name}: Empty fingerprint (pocket unaccessible).")
+            fingerprint = None
+        else:
+            fingerprint = cls()
+            fingerprint.structure_klifs_id = name
             fingerprint.residue_ids = pocket_bp._residue_ids
             fingerprint.residue_ixs = pocket_bp._residue_ixs
-
             values_dict = {}
             values_dict["physicochemical"] = fingerprint._get_physicochemical_features_dict(
                 pocket_bp
@@ -89,40 +95,7 @@ class Fingerprint(FingerprintBase):
             values_dict["spatial"] = fingerprint._get_spatial_features_dict(pocket_df)
             fingerprint.values_dict = values_dict
 
-        if fingerprint is None:
-            logger.info(f"{structure_klifs_id}: Empty fingerprint.")
-
         return fingerprint
-
-    def _get_pocket(self, structure_klifs_id, klifs_session):
-        """
-        Get DataFrame and BioPython-based pocket objects from a structure KLIFS ID.
-        TODO do not fetch data from KLIFS twice!!!
-
-        Parameters
-        ----------
-        structure_klifs_id : int
-            Structure KLIFS ID.
-        klifs_session : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-
-        Returns
-        -------
-        pocket_bp : kissim.io.PocketBioPython
-            Biopython-based pocket object.
-        pocket_df : kissim.io.PocketDataFrame
-            DataFrame-based pocket object.
-        """
-
-        # Set up BioPython-based pocket
-        pocket_bp = PocketBioPython.from_structure_klifs_id(
-            structure_klifs_id, klifs_session=klifs_session
-        )
-        # Set up DataFrame-based pocket
-        pocket_df = PocketDataFrame.from_structure_klifs_id(
-            structure_klifs_id, extension="pdb", klifs_session=klifs_session
-        )
-        return pocket_bp, pocket_df
 
     def _get_physicochemical_features_dict(self, pocket_bp):
         """
