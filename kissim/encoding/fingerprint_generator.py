@@ -228,6 +228,6 @@ class FingerprintGenerator:
             Fingerprint.
         """
 
-        logger.info(f"Generate fingerprint for structure KLIFS ID: {structure_klifs_id}")
+        logger.info(f"{structure_klifs_id}: Generate fingerprint...")
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
         return fingerprint
