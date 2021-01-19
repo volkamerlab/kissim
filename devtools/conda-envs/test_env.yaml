@@ -1,24 +1,22 @@
 name: test
-
 channels:
   - conda-forge
   - defaults
-  - samoturk
-
 dependencies:
-
     # Base depends
   - python>=3.6
   - pip
     # Package dependencies
   - biopandas
-  - biopython
+  - biopython 1.77
+  - numpy
   - nglview
-  - pmw
-  - pymol
   - scipy
   - matplotlib
   - seaborn
+  - jupyter
+  - jupyterlab=2
+  - ipywidgets>=7.5
   # Testing
   - pytest
   - pytest-cov
@@ -27,4 +25,17 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - nbsphinx
+  # Developement
+  - black
+  - pylint
+  # Remove when opencadd is conda-installable
+  - rdkit
+  - bravado
+  - tqdm
+  - pip:
+    - black-nb
+    - https://github.com/volkamerlab/opencadd/archive/2a6cf9bcee72a3626114cda82af758e05ed5af18.zip
+## For Jupyter lab extensions, run:
+# conda install nodejs
+# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc @ijmbarr/jupyterlab_spellchecker
 
