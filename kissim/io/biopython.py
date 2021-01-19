@@ -9,9 +9,9 @@ import logging
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
 from opencadd.io import Biopython
-from opencadd.databases.klifs import setup_remote
 from opencadd.structure.pocket import PocketBase
 
+from .data import KlifsToKissimData
 from ..definitions import SIDE_CHAIN_REPRESENTATIVE
 from ..schema import STANDARD_AMINO_ACIDS, NON_STANDARD_AMINO_ACID_CONVERSION
 from ..utils import enter_temp_directory
@@ -71,105 +71,78 @@ class PocketBioPython(PocketBase):
 
         Returns
         -------
+        kissim.io.PocketBioPython or None
+            Biopython-based pocket object.
+        """
+
+        data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
+        if data:
+            pocket = cls.from_text(
+                data.text, data.extension, data.residue_ids, data.residue_ixs, structure_klifs_id
+            )
+            return pocket
+        else:
+            return None
+
+    @classmethod
+    def from_text(cls, text, extension, residue_ids, residue_ixs, name):
+        """
+        Get Biopython-based pocket object from text, pocket residue IDs and indices.
+
+        Parameters
+        ----------
+        text : str
+            Structural complex data as string (file content).
+        extension : str
+            Structural complex data format (file extension).
+        residue_ids : list of int
+            Pocket residue IDs.
+        residue_ixs : list of int
+            Pocket residue indices.
+        name : str
+            Structure name.
+
+        Returns
+        -------
         kissim.io.PocketBioPython
             Biopython-based pocket object.
         """
 
-        if klifs_session is None:
-            klifs_session = setup_remote()
+        with enter_temp_directory():
+            filename = "complex.pdb"
+            with open(filename, "w") as f:
+                f.write(text)
+                # Get biopython Structure object
+                structure = Biopython.from_file(filename)
+                # KLIFS PDB files contain only one model and one chain - get their IDs
+                model_id = next(structure.get_models()).id
+                chain_id = next(structure.get_chains()).id
+                # Get biopython Chain object
+                chain = structure[model_id][chain_id]
+
         pocket = cls()
-        pocket.name = structure_klifs_id
-        # Load structure as biopython Chain object
-        structure = pocket._get_biopython(structure_klifs_id, klifs_session)
-        # KLIFS PDB files contain only one model and one chain - get their IDs
-        model_id = next(structure.get_models()).id
-        chain_id = next(structure.get_chains()).id
-        chain = structure[model_id][chain_id]
+        pocket.name = name
         pocket._data_complex = chain
-        # Get pocket residues
-        pocket._residue_ids, pocket._residue_ixs = pocket._get_pocket_residue_ids(
-            structure_klifs_id, klifs_session
-        )
-        # Get HSE data
+        pocket._residue_ids, pocket._residue_ixs = residue_ids, residue_ixs
         try:
             pocket._hse_ca_complex = HSExposure.HSExposureCA(pocket._data_complex)
             pocket._hse_cb_complex = HSExposure.HSExposureCB(pocket._data_complex)
         except AttributeError as e:
             logger.error(
-                f"AttributeError: {e} in Bio.PDB.Exposure for structure KLIFS ID {structure_klifs_id}"
+                f"{pocket.name}: Bio.PDB.Exposure could not be calculated "
+                f"(AttributeError: {e})"
             )
             if e.args[0] == "'NoneType' object has no attribute 'norm'":
-                # If HSE cannot be calculated with this error message, it is most likely related
-                # to https://github.com/volkamerlab/kissim/issues/27
+                # If HSE cannot be calculated with this error message,
+                # it is most likely related to
+                # https://github.com/volkamerlab/kissim/issues/27
                 # Return None for this pocket, with will result in a None fingerprint
-                return None
+                pocket = None
             else:
                 # Other errors shall be raised!!!
                 raise AttributeError(f"{e}")
 
         return pocket
-
-    def _get_biopython(self, structure_klifs_id, klifs_session):
-        """
-        Get structural data for a complex from a KLIFS structure ID as Biopython Structure object.
-
-        Parameters
-        ----------
-        structure_klifs_id : int
-            KLIFS structure ID.
-        klifs_session : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-
-        Returns
-        -------
-        Bio.PDB.Structure.Structure
-            Structural data for a complex.
-        """
-
-        if klifs_session._client:
-            with enter_temp_directory():
-                filepath = klifs_session.coordinates.to_pdb(structure_klifs_id, "complex")
-                biopython = Biopython.from_file(filepath)
-                return biopython
-        else:
-            filepath = klifs_session.structures.by_structure_klifs_id(structure_klifs_id)[
-                "structure.filepath"
-            ][0]
-            filepath = klifs_session._path_to_klifs_download / filepath / "complex.pdb"
-            biopython = Biopython.from_file(filepath)
-            return biopython
-
-    def _get_pocket_residue_ids(self, structure_klifs_id, klifs_session):
-        """
-        Get pocket residues.
-
-        Parameters
-        ----------
-        structure_klifs_id : int
-            KLIFS structure ID.
-        klifs_session : opencadd.databases.klifs.session.Session
-            Local or remote KLIFS session.
-
-        Returns
-        -------
-        residue_ids : list of int
-            Pocket residue PDB IDs.
-        residue_ixs : list of int
-            Pocket residues indices.
-        """
-
-        if klifs_session._client:
-            residues = klifs_session.pockets.by_structure_klifs_id(structure_klifs_id)
-        else:
-            residues = klifs_session.pockets.by_structure_klifs_id(
-                structure_klifs_id, extension="pdb"
-            )
-        residue_ids = residues["residue.id"].to_list()
-        residue_ixs = residues["residue.klifs_id"].to_list()
-        residue_ids, residue_ixs = self._format_residue_ids_and_ixs(
-            residue_ids, residue_ixs, "set pocket residues"
-        )
-        return residue_ids, residue_ixs
 
     @property
     def center(self):
