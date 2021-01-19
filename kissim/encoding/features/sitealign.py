@@ -185,8 +185,7 @@ class SiteAlignFeature(BaseFeature):
                 f'Please choose from: {", ".join(SITEALIGN_FEATURES.columns)}'
             )
 
-    @staticmethod
-    def _convert_modified_residue(residue_name):
+    def _convert_modified_residue(self, residue_name):
         """
         Convert a non-standard residue in a standard residue if possible (if not return None).
 
