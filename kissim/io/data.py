@@ -1,5 +1,7 @@
 """
 kissim.io.data
+
+Defines class for KLIFS data (to be passed to kissim).
 """
 
 import logging
@@ -14,13 +16,22 @@ logger = logging.getLogger(__name__)
 
 class KlifsToKissimData:
     """
+    Class for KLIFS data from structure KLIFS ID to prepare data for kissim.
 
-
-    structure_klifs_id : int
-        KLIFS structure ID.
+    Attributes
+    ----------
     klifs_session : opencadd.databases.klifs.session.Session
         Local or remote KLIFS session.
-
+    structure_klifs_id : int
+        KLIFS structure ID.
+    text : str
+        Structural complex data as string (file content).
+    extension : str
+        Structural complex data format (file extension).
+    residue_ids : list of int
+        Pocket residue IDs.
+    residue_ixs : list of int
+        Pocket residue indices.
     """
 
     def __init__(self):
@@ -35,11 +46,19 @@ class KlifsToKissimData:
     @classmethod
     def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
+        Get KLIFS data from structure KLIFS ID.
 
+        Parameters
+        ----------
         structure_klifs_id : int
             KLIFS structure ID.
         klifs_session : opencadd.databases.klifs.session.Session
             Local or remote KLIFS session.
+
+        Returns
+        -------
+        kissim.io.KlifsToKissimData
+            KLIFS data.
         """
 
         data = cls()
@@ -67,6 +86,11 @@ class KlifsToKissimData:
     def _structure_klifs_id_exists(self):
         """
         Check if structure KLIFS ID exists.
+
+        Returns
+        -------
+        bool
+            True if structure KLIFS ID exists, else False.
         """
 
         structure_klifs_id_exists = True
@@ -93,7 +117,13 @@ class KlifsToKissimData:
         return structure_klifs_id_exists
 
     def _local_session_files_exist(self):
-        """TODO"""
+        """
+        Check if the coordinate files complex.pdb and pocket.pdb exist in local KLIFS session.
+
+        Returns
+        -------
+        True if files exist, else False.
+        """
 
         # Get path to folder with data for structure KLIFS ID
         filepath = self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)[
@@ -120,8 +150,10 @@ class KlifsToKissimData:
 
         Returns
         -------
-        string
+        text : string
             Complex structural data.
+        extension : string
+            Complex file extension.
         """
 
         extension = "pdb"
