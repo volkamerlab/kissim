@@ -287,11 +287,11 @@ class SubpocketsFeature(BaseFeature):
 
         values = np.array(values)
 
-        if len(values) > 0:
+        if len(values) > 0 and not all(np.isnan(values)):
             moment1 = np.nanmean(values)
             # Second and third moment: delta degrees of freedom = 0 (divisor N)
             moment2 = np.nanstd(values, ddof=0)
             moment3 = cbrt(moment(values, moment=3, nan_policy="omit"))
             return moment1, moment2, moment3
         else:
-            return None, None, None
+            return np.nan, np.nan, np.nan
