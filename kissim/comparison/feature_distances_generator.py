@@ -83,6 +83,7 @@ class FeatureDistancesGenerator:
         # TODO generalize (KLIFS-independent?)
         if self.data is not None:
             kinase_names = [i.kinase_pair for i in self.data.values()]
+            print(kinase_names)
             deduplicated_kinase_names = sorted(list(set(chain.from_iterable(kinase_names))))
             return deduplicated_kinase_names
 

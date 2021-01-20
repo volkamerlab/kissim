@@ -37,7 +37,6 @@ def fingerprint_generator():
     # Encode structures
     LOCAL_KLIFS_PATH = PATH_TEST_DATA / "KLIFS_download"
     fingerprint_generator = encode(structure_klifs_ids, local_klifs_session=LOCAL_KLIFS_PATH)
-    print(fingerprint_generator)
 
     return fingerprint_generator
 
@@ -62,7 +61,7 @@ def feature_distances():
         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     )
 
-    # FeatureDistances (set class attributes manually)
+    # FeatureDistances (lf._get_incoming_resp class attributes manually)
     feature_distances = FeatureDistances()
     feature_distances.molecule_pair_code = molecule_pair_code
     feature_distances.distances = distances
@@ -85,16 +84,19 @@ def feature_distances_generator():
     # FeatureDistances
     feature_distances1 = FeatureDistances()
     feature_distances1.molecule_pair_code = ("HUMAN/kinase1_pdb1", "HUMAN/kinase1_pdb2")
+    feature_distances1.kinase_pair = ("kinase1", "kinase1")
     feature_distances1.distances = [1.0] * 15
     feature_distances1.bit_coverages = [1.0] * 15
 
     feature_distances2 = FeatureDistances()
     feature_distances2.molecule_pair_code = ("HUMAN/kinase1_pdb1", "HUMAN/kinase2_pdb1")
+    feature_distances2.kinase_pair = ("kinase1", "kinase2")
     feature_distances2.distances = [0.0] * 15
     feature_distances2.bit_coverages = [1.0] * 15
 
     feature_distances3 = FeatureDistances()
     feature_distances3.molecule_pair_code = ("HUMAN/kinase1_pdb2", "HUMAN/kinase2_pdb1")
+    feature_distances3.kinase_pair = ("kinase1", "kinase2")
     feature_distances3.distances = [0.0] * 15
     feature_distances3.bit_coverages = [0.0] * 15
 

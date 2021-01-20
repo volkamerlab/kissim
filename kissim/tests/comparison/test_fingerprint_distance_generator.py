@@ -111,7 +111,6 @@ class TestsFingerprintDistanceGenerator:
 
         # FingerprintDistanceGenerator
         fingerprint_distance_generator = FingerprintDistanceGenerator()
-        print(feature_distances_generator.data)
         fingerprint_distance_generator.from_feature_distances_generator(
             feature_distances_generator
         )

@@ -88,7 +88,7 @@ class Fingerprint(FingerprintBase):
             text, extension, residue_ids, residue_ixs, structure_name
         )
         if pocket_bp is None or pocket_df is None:
-            logger.warning(f"{name}: Empty fingerprint (pocket unaccessible).")
+            logger.warning(f"{structure_name}: Empty fingerprint (pocket unaccessible).")
             fingerprint = None
         else:
             fingerprint = cls()

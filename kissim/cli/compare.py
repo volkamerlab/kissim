@@ -4,8 +4,6 @@ kissim.cli.encode
 Compare encoded structures (fingerprints).
 """
 
-import numpy as np
-
 from kissim.api import compare as api_compare
 from kissim.cli.utils import configure_logger
 from kissim.encoding import FingerprintGenerator
