@@ -12,6 +12,7 @@ from . import FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 logger = logging.getLogger(__name__)
 
+
 class Similarity:
     """
     Calculate all-against-all fingerprint distance.
