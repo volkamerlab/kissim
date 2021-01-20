@@ -5,14 +5,33 @@ Defines the feature distances for a fingerprint pair.
 """
 
 import logging
+from itertools import chain
 
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 
-from kissim.encoding.schema import FEATURE_NAMES
-
 logger = logging.getLogger(__name__)
+
+FEATURE_NAMES = {
+    "physicochemical": [
+        "size",
+        "hbd",
+        "hba",
+        "charge",
+        "aromatic",
+        "aliphatic",
+        "sco",
+        "exposure",
+    ],
+    "distances": [
+        "distance_to_centroid",
+        "distance_to_hinge_region",
+        "distance_to_dfg_region",
+        "distance_to_front_pocket",
+    ],
+    "moments": ["moment1", "moment2", "moment3"],
+}
 
 
 class FeatureDistances:
@@ -67,9 +86,7 @@ class FeatureDistances:
 
             return data_df
 
-    def from_fingerprints(
-        self, fingerprint1, fingerprint2, distance_measure="scaled_euclidean", normalized=True
-    ):
+    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure="scaled_euclidean"):
         """
         Calculate distance between two fingerprints for each (normalized) feature.
 
@@ -81,39 +98,37 @@ class FeatureDistances:
             Fingerprint 2.
         distance_measure : str
             Type of distance measure, defaults to scaled Euclidean distance.
-        normalized : bool
-            Normalized (default) or non-normalized fingerprints.
         """
 
         # Set class attributes
-        self.molecule_pair_code = (fingerprint1.molecule_code, fingerprint2.molecule_code)
+        self.molecule_pair_code = (
+            fingerprint1.structure_klifs_id,
+            fingerprint2.structure_klifs_id,
+        )
 
         # Get fingerprint (normalized or not normalized)
-        if normalized:
-            f1 = fingerprint1.fingerprint_normalized
-            f2 = fingerprint2.fingerprint_normalized
-        else:
-            f1 = fingerprint1.fingerprint
-            f2 = fingerprint2.fingerprint
+        f1 = fingerprint1.values_dict
+        f2 = fingerprint2.values_dict
 
         # Iterate over all features and get feature type, feature name, feature distance and
-        # feature bit coverage
+        # feature bit coverage  # TODO this is only a quick fix, redo!
         distances = []
         bit_coverages = []
-
-        for feature_type in FEATURE_NAMES.keys():
-
-            for feature_name in FEATURE_NAMES[feature_type]:
-
-                # Get feature bits
-                features1 = f1[feature_type][feature_name]
-                features2 = f2[feature_type][feature_name]
-
-                distance, bit_coverage = self.from_features(features1, features2, distance_measure)
-
-                # Save feature data to fingerprint data
-                distances.append(distance)
-                bit_coverages.append(bit_coverage)
+        f1, f2 = fingerprint1.physicochemical, fingerprint2.physicochemical
+        for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
+            distance, bit_coverage = self.from_features(ff1, ff2, distance_measure)
+            distances.append(distance)
+            bit_coverages.append(bit_coverage)
+        f1, f2 = fingerprint1.distances, fingerprint2.distances
+        for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
+            distance, bit_coverage = self.from_features(ff1, ff2, distance_measure)
+            distances.append(distance)
+            bit_coverages.append(bit_coverage)
+        f1, f2 = fingerprint1.moments.transpose(), fingerprint2.moments.transpose()
+        for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
+            distance, bit_coverage = self.from_features(ff1, ff2, distance_measure)
+            distances.append(distance)
+            bit_coverages.append(bit_coverage)
 
         self.distances = np.array(distances)
         self.bit_coverages = np.array(bit_coverages)

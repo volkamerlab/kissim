@@ -5,6 +5,7 @@ Defines the pairwise fingerprint distances for a set of fingerprints.
 """
 
 import datetime
+from itertools import repeat
 import logging
 from multiprocessing import cpu_count, Pool
 

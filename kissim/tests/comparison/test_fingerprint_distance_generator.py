@@ -1,13 +1,19 @@
 """
 Unit and regression test for the kissim.comparison.FingerprintDistanceGenerator class.
 """
+
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from kissim.comparison import FingerprintDistanceGenerator
+from kissim.comparison import FingerprintDistance, FingerprintDistanceGenerator
+from kissim.tests.comparison.fixures import (
+    feature_distances,
+    feature_distances_generator,
+    fingerprint_distance_generator,
+)
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 

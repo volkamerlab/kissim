@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from kissim.encoding import Fingerprint
-from kissim.comparison import FeatureDistancesGenerator
+from kissim.comparison import FeatureDistances, FeatureDistancesGenerator
 from kissim.tests.comparison.fixures import fingerprint_generator
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
