@@ -11,7 +11,7 @@ import pickle
 import logging
 from pathlib import Path
 
-from kissim.similarity import Similarity
+from kissim.comparison import Similarity
 
 
 # Parse arguments

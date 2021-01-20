@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from kissim.encoding import Fingerprint, FingerprintGenerator
-from kissim.similarity import (
+from kissim.comparison import (
     FeatureDistances,
     FingerprintDistance,
     FeatureDistancesGenerator,
