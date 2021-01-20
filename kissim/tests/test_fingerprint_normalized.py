@@ -2,15 +2,17 @@
 Unit and regression test for kissim.encoding.FingerprintNormalized.
 """
 
+from pathlib import Path
 import pytest
 
 import numpy as np
-from opencadd.databases.klifs import setup_remote
+from opencadd.databases.klifs import setup_local
 
 from kissim.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
 from kissim.encoding import Fingerprint, FingerprintNormalized
 
-REMOTE = setup_remote()
+PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 class TestFingerprintNormalized:
@@ -28,7 +30,7 @@ class TestFingerprintNormalized:
         Includes tests for the method _normalize() used in the class __init__ method.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         fingerprint_normalized = FingerprintNormalized.from_fingerprint(fingerprint)
 
     @pytest.mark.parametrize(

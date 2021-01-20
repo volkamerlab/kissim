@@ -2,17 +2,19 @@
 Unit and regression test for the kissim.encoding.features.sco.SideChainOrientationFeature class.
 """
 
+from pathlib import Path
 import pytest
 
 import numpy as np
 import pandas as pd
 import Bio
-from opencadd.databases.klifs import setup_remote
+from opencadd.databases.klifs import setup_local
 
 from kissim.io import PocketBioPython
 from kissim.encoding.features import SideChainOrientationFeature
 
-REMOTE = setup_remote()
+PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 class TestsSideChainOrientationFeature:
@@ -21,15 +23,15 @@ class TestsSideChainOrientationFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote",
-        [(12347, REMOTE)],
+        "structure_klifs_id, klifs_session",
+        [(12347, LOCAL)],
     )
-    def test_from_pocket(self, structure_klifs_id, remote):
+    def test_from_pocket(self, structure_klifs_id, klifs_session):
         """
         Test if SideChainOrientationFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature, SideChainOrientationFeature)
 
@@ -55,29 +57,29 @@ class TestsSideChainOrientationFeature:
         assert isinstance(feature._pocket_center, Bio.PDB.vectors.Vector)
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote, values_mean",
-        [(12347, REMOTE, 1.440678)],
+        "structure_klifs_id, klifs_session, values_mean",
+        [(12347, LOCAL, 1.440678)],
     )
-    def test_values(self, structure_klifs_id, remote, values_mean):
+    def test_values(self, structure_klifs_id, klifs_session, values_mean):
         """
         Test class property: values.
         The mean refers to the mean of non-NaN values.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.values, list)
         values_mean_calculated = pd.Series(feature.values).dropna().mean()
         assert values_mean == pytest.approx(values_mean_calculated)
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote",
-        [(12347, REMOTE)],
+        "structure_klifs_id, klifs_session",
+        [(12347, LOCAL)],
     )
-    def test_details(self, structure_klifs_id, remote):
+    def test_details(self, structure_klifs_id, klifs_session):
         """
         Test class property: details.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
         feature = SideChainOrientationFeature.from_pocket(pocket)
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [

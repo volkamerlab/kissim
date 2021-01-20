@@ -3,13 +3,16 @@ Unit and regression test for kissim.io class functionalities that
 PocketBioPython and PocketDataFrame have in common.
 """
 
+from pathlib import Path
+
 import pytest
 import pandas as pd
-from opencadd.databases.klifs import setup_remote
+from opencadd.databases.klifs import setup_local
 
 from kissim.io import PocketBioPython, PocketDataFrame
 
-REMOTE = setup_remote()
+PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 class TestPocketBioPython:
@@ -18,32 +21,34 @@ class TestPocketBioPython:
     """
 
     @pytest.mark.parametrize(
-        "pocket_class, structure_klifs_id, remote",
-        [(PocketBioPython, 12347, None), (PocketDataFrame, 12347, REMOTE)],
+        "pocket_class, structure_klifs_id, klifs_session",
+        [(PocketBioPython, 12347, None), (PocketDataFrame, 12347, LOCAL)],
     )
-    def test_from_structure_klifs_id(self, pocket_class, structure_klifs_id, remote):
+    def test_from_structure_klifs_id(self, pocket_class, structure_klifs_id, klifs_session):
         """
-        Test if PocketBioPython can be set remotely (from_structure_klifs_id()).
+        Test if PocketBioPython can be set (from_structure_klifs_id()).
         Test attribute `name`.
         """
-        pocket = pocket_class.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
+        pocket = pocket_class.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         assert isinstance(pocket, pocket_class)
 
         # Test attribute name
         assert pocket.name == structure_klifs_id
 
     @pytest.mark.parametrize(
-        "pocket_class, structure_klifs_id, remote, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum",
+        "pocket_class, structure_klifs_id, klifs_session, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum",
         [
-            (PocketBioPython, 12347, REMOTE, 85, 78, 41198, 3655),
-            (PocketDataFrame, 12347, REMOTE, 85, 78, 41198, 3655),
+            (PocketBioPython, 12347, LOCAL, 85, 78, 41198, 3655),
+            (PocketDataFrame, 12347, LOCAL, 85, 78, 41198, 3655),
         ],
     )
     def test_residues(
         self,
         pocket_class,
         structure_klifs_id,
-        remote,
+        klifs_session,
         n_residues,
         n_residues_wo_na,
         residue_ids_sum,
@@ -55,7 +60,9 @@ class TestPocketBioPython:
         - property (`residues`)
         regarding the residue IDs.
         """
-        pocket = pocket_class.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
+        pocket = pocket_class.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         # Test property residues
         assert isinstance(pocket.residues, pd.DataFrame)
         assert len(pocket.residues) == n_residues

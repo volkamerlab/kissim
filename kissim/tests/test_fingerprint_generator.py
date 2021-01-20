@@ -60,9 +60,7 @@ class TestFingerprintGenerator:
         Test if saving/loading a fingerprint to/from a json file.
         """
 
-        fingerprints = FingerprintGenerator.from_structure_klifs_ids(
-            structure_klifs_ids, REMOTE, 1
-        )
+        fingerprints = FingerprintGenerator.from_structure_klifs_ids(structure_klifs_ids, LOCAL, 1)
         json_filepath = Path("fingerprints.json")
 
         with enter_temp_directory():
