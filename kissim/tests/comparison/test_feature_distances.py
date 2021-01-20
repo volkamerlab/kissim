@@ -41,8 +41,8 @@ class TestsFeatureDistances:
             Euclidean distance between two value lists.
         """
 
-        feature_distances_generator = FeatureDistances()
-        score_calculated = feature_distances_generator._scaled_euclidean_distance(values1, values2)
+        feature_distances = FeatureDistances()
+        score_calculated = feature_distances._scaled_euclidean_distance(values1, values2)
 
         assert np.isclose(score_calculated, distance, rtol=1e-04)
 
@@ -68,8 +68,8 @@ class TestsFeatureDistances:
             Manhattan distance between two value lists.
         """
 
-        feature_distances_generator = FeatureDistances()
-        score_calculated = feature_distances_generator._scaled_cityblock_distance(values1, values2)
+        feature_distances = FeatureDistances()
+        score_calculated = feature_distances._scaled_cityblock_distance(values1, values2)
 
         assert np.isclose(score_calculated, distance, rtol=1e-04)
 
@@ -95,8 +95,8 @@ class TestsFeatureDistances:
             Distance between two value lists.
         """
 
-        feature_distances_generator = FeatureDistances()
-        distance_calculated = feature_distances_generator._calculate_feature_distance(
+        feature_distances = FeatureDistances()
+        distance_calculated = feature_distances._calculate_feature_distance(
             feature_pair, distance_measure
         )
 
@@ -123,8 +123,8 @@ class TestsFeatureDistances:
         """
 
         with pytest.raises(TypeError):
-            feature_distance_generator = FeatureDistances()
-            feature_distance_generator._calculate_feature_distance(feature_pair, distance_measure)
+            feature_distance = FeatureDistances()
+            feature_distance._calculate_feature_distance(feature_pair, distance_measure)
 
     @pytest.mark.parametrize(
         "feature_pair, distance_measure",
@@ -151,8 +151,8 @@ class TestsFeatureDistances:
         """
 
         with pytest.raises(ValueError):
-            feature_distance_generator = FeatureDistances()
-            feature_distance_generator._calculate_feature_distance(feature_pair, distance_measure)
+            feature_distance = FeatureDistances()
+            feature_distance._calculate_feature_distance(feature_pair, distance_measure)
 
     @pytest.mark.parametrize(
         "feature1, feature2, distance, bit_coverage",
@@ -219,6 +219,7 @@ class TestsFeatureDistances:
 
         # Fingerprints
         fingerprints = list(fingerprint_generator.data.values())
+        print(fingerprints)
 
         # Get feature distances
         feature_distances = FeatureDistances()

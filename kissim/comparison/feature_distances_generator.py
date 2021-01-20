@@ -11,10 +11,29 @@ from multiprocessing import cpu_count, Pool
 from itertools import combinations, repeat, chain
 import pandas as pd
 
-from kissim.encoding.schema import FEATURE_NAMES
 from . import FeatureDistances
 
 logger = logging.getLogger(__name__)
+
+FEATURE_NAMES = {
+    "physicochemical": [
+        "size",
+        "hbd",
+        "hba",
+        "charge",
+        "aromatic",
+        "aliphatic",
+        "sco",
+        "exposure",
+    ],
+    "distances": [
+        "distance_to_centroid",
+        "distance_to_hinge_region",
+        "distance_to_dfg_region",
+        "distance_to_front_pocket",
+    ],
+    "moments": ["moment1", "moment2", "moment3"],
+}
 
 
 class FeatureDistancesGenerator:

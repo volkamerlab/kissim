@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from kissim.encoding import Fingerprint, FingerprintGenerator
+from kissim.api import encode
 from kissim.comparison import (
     FeatureDistances,
     FingerprintDistance,
@@ -31,31 +31,13 @@ def fingerprint_generator():
         Fingerprints.
     """
 
-    # Set data paths
-    path_klifs_metadata = PATH_TEST_DATA / "klifs_metadata.csv"
-    paths_mol2 = [
-        PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/pocket.mol2",
-        PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
-        PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/pocket.mol2",
-    ]
-    paths_pdb = [
-        PATH_TEST_DATA / "KLIFS_download" / "HUMAN/ABL1/2g2i_chainA/protein_pymol.pdb",
-        PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb",
-        PATH_TEST_DATA / "KLIFS_download" / "HUMAN/AAK1/4wsq_altA_chainB/protein_pymol.pdb",
-    ]
-    chain_ids = ["A", "B", "B"]
+    # Example structure KLIFS IDs
+    structure_klifs_ids = [109, 110, 118]
 
-    # Generate fingerprints
-    fingerprints = []
-
-    for path_mol2, path_pdb, chain_id in zip(paths_mol2, paths_pdb, chain_ids):
-
-        fingerprint = Fingerprint.from_structure_klifs_id(paths_mol2)
-        fingerprints.append(fingerprint)
-
-    # FingerprintGenerator (set class attribute manually)
-    fingerprint_generator = FingerprintGenerator()
-    fingerprint_generator.data = {i.molecule_code: i for i in fingerprints}
+    # Encode structures
+    LOCAL_KLIFS_PATH = PATH_TEST_DATA / "KLIFS_download"
+    fingerprint_generator = encode(structure_klifs_ids, local_klifs_session=LOCAL_KLIFS_PATH)
+    print(fingerprint_generator)
 
     return fingerprint_generator
 
