@@ -2,16 +2,18 @@
 Unit and regression test for the kissim.encoding.features.sitealign.SiteAlignFeature class.
 """
 
+from pathlib import Path
 import pytest
 
 import numpy as np
 import pandas as pd
-from opencadd.databases.klifs import setup_remote
+from opencadd.databases.klifs import setup_local
 
 from kissim.io import PocketBioPython
 from kissim.encoding.features import SiteAlignFeature
 
-REMOTE = setup_remote()
+PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 class TestsSiteAlignFeature:
@@ -20,22 +22,22 @@ class TestsSiteAlignFeature:
     """
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote, feature_name",
+        "structure_klifs_id, klifs_session, feature_name",
         [
-            (12347, REMOTE, "hba"),
-            (12347, REMOTE, "hbd"),
-            (12347, REMOTE, "size"),
-            (12347, REMOTE, "charge"),
-            (12347, REMOTE, "aliphatic"),
-            (12347, REMOTE, "aromatic"),
+            (12347, LOCAL, "hba"),
+            (12347, LOCAL, "hbd"),
+            (12347, LOCAL, "size"),
+            (12347, LOCAL, "charge"),
+            (12347, LOCAL, "aliphatic"),
+            (12347, LOCAL, "aromatic"),
         ],
     )
-    def test_from_pocket(self, structure_klifs_id, remote, feature_name):
+    def test_from_pocket(self, structure_klifs_id, klifs_session, feature_name):
         """
         Test if SiteAlignFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
         feature = SiteAlignFeature.from_pocket(pocket, feature_name)
         assert isinstance(feature, SiteAlignFeature)
 
@@ -51,28 +53,28 @@ class TestsSiteAlignFeature:
             assert isinstance(category, float)
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote, feature_name",
-        [(12347, REMOTE, "xxx")],
+        "structure_klifs_id, klifs_session, feature_name",
+        [(12347, LOCAL, "xxx")],
     )
-    def test_from_pocket_raises(self, structure_klifs_id, remote, feature_name):
+    def test_from_pocket_raises(self, structure_klifs_id, klifs_session, feature_name):
         """
         Test if SiteAlignFeature raises error when passed an invalid feature name.
         """
         with pytest.raises(KeyError):
             pocket = PocketBioPython.from_structure_klifs_id(
-                structure_klifs_id, klifs_session=remote
+                structure_klifs_id, klifs_session=klifs_session
             )
             SiteAlignFeature.from_pocket(pocket, feature_name)
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote",
-        [(12347, REMOTE)],
+        "structure_klifs_id, klifs_session",
+        [(12347, LOCAL)],
     )
-    def test_values(self, structure_klifs_id, remote):
+    def test_values(self, structure_klifs_id, klifs_session):
         """
         Test class property: values.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
         # Use example feature type
         feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
 
@@ -81,14 +83,14 @@ class TestsSiteAlignFeature:
             assert isinstance(value, float)
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, remote",
-        [(12347, REMOTE)],
+        "structure_klifs_id, klifs_session",
+        [(12347, LOCAL)],
     )
-    def test_details(self, structure_klifs_id, remote):
+    def test_details(self, structure_klifs_id, klifs_session):
         """
         Test class property: details.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=remote)
+        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
         # Use example feature type
         feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
 

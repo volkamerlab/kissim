@@ -61,7 +61,7 @@ class TestFingerprintGenerator:
         """
 
         fingerprints = FingerprintGenerator.from_structure_klifs_ids(
-            structure_klifs_ids, REMOTE, 1
+            structure_klifs_ids, LOCAL, 1
         )
         json_filepath = Path("fingerprints.json")
 
