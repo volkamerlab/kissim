@@ -49,11 +49,12 @@ class Fingerprint(FingerprintBase):
                 data.residue_ids,
                 data.residue_ixs,
                 data.structure_klifs_id,
+                data.kinase_name,
             )
         return fingerprint
 
     @classmethod
-    def from_text(cls, text, extension, residue_ids, residue_ixs, name):
+    def from_text(cls, text, extension, residue_ids, residue_ixs, structure_name, kinase_name):
         """
         Calculate fingerprint for a KLIFS structure (by complex data as text and pocket residue
         IDs and indices).
@@ -68,8 +69,10 @@ class Fingerprint(FingerprintBase):
             Pocket residue IDs.
         residue_ixs : list of int
             Pocket residue indices.
-        name : str
+        structure_name : str  # TODO or structure_klifs_id?
             Structure name.
+        kinase_name : str
+            Kinase name.
 
         Returns
         -------
@@ -78,14 +81,19 @@ class Fingerprint(FingerprintBase):
         """
 
         # BioPython-based and DataFrame-based pocket are both necessary for fingerprint features
-        pocket_bp = PocketBioPython.from_text(text, extension, residue_ids, residue_ixs, name)
-        pocket_df = PocketDataFrame.from_text(text, extension, residue_ids, residue_ixs, name)
+        pocket_bp = PocketBioPython.from_text(
+            text, extension, residue_ids, residue_ixs, structure_name
+        )
+        pocket_df = PocketDataFrame.from_text(
+            text, extension, residue_ids, residue_ixs, structure_name
+        )
         if pocket_bp is None or pocket_df is None:
             logger.warning(f"{name}: Empty fingerprint (pocket unaccessible).")
             fingerprint = None
         else:
             fingerprint = cls()
-            fingerprint.structure_klifs_id = name
+            fingerprint.structure_klifs_id = structure_name
+            fingerprint.kinase_name = kinase_name
             fingerprint.residue_ids = pocket_bp._residue_ids
             fingerprint.residue_ixs = pocket_bp._residue_ixs
             values_dict = {}

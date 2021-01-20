@@ -41,8 +41,10 @@ class FeatureDistances:
 
     Attributes
     ----------
-    molecule_pair_code : tuple of str
+    molecule_pair_code : tuple of str or int  # TODO Rename?
         Codes of both molecules represented by the fingerprints.
+    kinase_pair : tuple of str
+        TODO
     distances : np.ndarray
         Distances between two fingerprints for each of their features.
     bit_coverages : np.ndarray
@@ -52,6 +54,7 @@ class FeatureDistances:
     def __init__(self):
 
         self.molecule_pair_code = None
+        self.kinase_pair = None
         self.distances = None
         self.bit_coverages = None
 
@@ -105,6 +108,7 @@ class FeatureDistances:
             fingerprint1.structure_klifs_id,
             fingerprint2.structure_klifs_id,
         )
+        self.kinase_pair = (fingerprint1.kinase_name, fingerprint2.kinase_name)
 
         # Get fingerprint (normalized or not normalized)
         f1 = fingerprint1.values_dict

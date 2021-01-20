@@ -38,6 +38,7 @@ class KlifsToKissimData:
 
         self.klifs_session = None
         self.structure_klifs_id = None
+        self.kinase_name = None
         self.text = None
         self.extension = None
         self.residue_ids = None
@@ -80,6 +81,7 @@ class KlifsToKissimData:
 
         data.text, data.extension = data._get_text_and_extension()
         data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
+        data.kinase_name = data._get_kinase_name()
 
         return data
 
@@ -186,6 +188,7 @@ class KlifsToKissimData:
             Pocket residues indices.
         """
 
+        # TODO check if if-else necessary (API should be the same!)
         if self.klifs_session._client:
             residues = self.klifs_session.pockets.by_structure_klifs_id(self.structure_klifs_id)
         else:
@@ -201,3 +204,13 @@ class KlifsToKissimData:
         )
 
         return residue_ids, residue_ixs
+
+    def _get_kinase_name(self):
+        """
+        TODO docstring + unit test!!
+        """
+
+        structures = self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)
+        kinase_name = structures.squeeze()["kinase.klifs_name"]
+        print(kinase_name)
+        return kinase_name

@@ -66,7 +66,8 @@ class FeatureDistancesGenerator:
         """
 
         if self.data is not None:
-            return sorted(list(set(chain.from_iterable(self.data.keys()))))
+            deduplicated_molecule_codes = sorted(list(set(chain.from_iterable(self.data.keys()))))
+            return deduplicated_molecule_codes
 
     @property
     def kinase_names(self):
@@ -79,8 +80,11 @@ class FeatureDistancesGenerator:
             Kinase names.
         """
 
-        if self.molecule_codes is not None:
-            return sorted(set([i.split("/")[1].split("_")[0] for i in self.molecule_codes]))
+        # TODO generalize (KLIFS-independent?)
+        if self.data is not None:
+            kinase_names = [i.kinase_pair for i in self.data.values()]
+            deduplicated_kinase_names = sorted(list(set(chain.from_iterable(kinase_names))))
+            return deduplicated_kinase_names
 
     def from_fingerprint_generator(
         self, fingerprints_generator, distance_measure="scaled_euclidean"

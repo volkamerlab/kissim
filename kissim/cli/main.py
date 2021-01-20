@@ -12,7 +12,7 @@ Special thanks to @jaimergp for the pointers.
 
 import argparse
 
-from kissim.cli.encode import encode
+from kissim.cli import encode, compare
 
 
 def main():
@@ -65,7 +65,45 @@ def main():
     encode_subparser.set_defaults(func=encode)
 
     # Arguments and function to be called for sub-command compare
-    # TODO
+    compare_subparser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Path to json file containing fingerprint data",
+        required=True,
+    )
+    compare_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to output csv file containing pairwise fingerprint distances",
+        required=True,
+    )
+    compare_subparser.add_argument(
+        "-c",
+        "--ncores",
+        type=int,
+        help="Number of cores. If 1 comparison in sequence, else in parallel.",
+        required=False,
+        default=1,
+    )
+    compare_subparser.add_argument(
+        "-d",
+        "--distance",
+        type=str,
+        help="Distance measure (scaled_euclidean or scaled_cityblock).",
+        required=False,
+        default="scaled_euclidean",
+    )
+    compare_subparser.add_argument(
+        "-w",
+        "--weights",
+        type=str,
+        help="Feature weights.",
+        required=False,
+        default="001",
+    )
+    compare_subparser.set_defaults(func=compare)
 
     args = parser.parse_args()
     args.func(args)
