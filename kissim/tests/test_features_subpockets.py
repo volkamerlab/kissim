@@ -32,7 +32,9 @@ class TestsSubpocketsFeature:
         Test if SubpocketsFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature.from_pocket(pocket)
         assert isinstance(feature, SubpocketsFeature)
 
@@ -75,7 +77,9 @@ class TestsSubpocketsFeature:
         return values from the class methods calculate_distance and calculate_moments.
         """
 
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature.from_pocket(pocket)
 
         # Test distances
@@ -102,7 +106,9 @@ class TestsSubpocketsFeature:
         """
         Test class property: values.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature.from_pocket(pocket)
 
         assert isinstance(feature.values, dict)
@@ -117,7 +123,9 @@ class TestsSubpocketsFeature:
         """
         Test class property: details.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature.from_pocket(pocket)
 
         assert isinstance(feature.details, dict)
@@ -153,7 +161,9 @@ class TestsSubpocketsFeature:
         Test if subpockets are added correctly.
         """
 
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature()
 
         pocket = feature._add_subpockets(pocket, subpockets)
@@ -182,7 +192,9 @@ class TestsSubpocketsFeature:
         Test calculation of distances between a subpocket center and all pocket residues.
         Test also the case that there is no subpocket center.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature.from_pocket(pocket)
         distances_calculated = feature._calculate_distances_to_center(pocket, subpocket_center)
         mean_distance_calculated = np.nanmean(np.array(distances_calculated))
@@ -206,7 +218,9 @@ class TestsSubpocketsFeature:
         """
         Test calculation of distances between a subpocket center and a pocket residues.
         """
-        pocket = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketDataFrame.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SubpocketsFeature.from_pocket(pocket)
         ca_atoms = pocket.ca_atoms
         distance_calculated = feature._calculate_distance_to_center(

@@ -159,7 +159,9 @@ class TestsSolventExposureFeature:
             )
         ],
     )
-    def test_get_exposures(self, structure_klifs_id, klifs_session, radius, n_residues, missing_exposure):
+    def test_get_exposures(
+        self, structure_klifs_id, klifs_session, radius, n_residues, missing_exposure
+    ):
         """
         Test join of HSExposureCA and HSExposureCB data.
 

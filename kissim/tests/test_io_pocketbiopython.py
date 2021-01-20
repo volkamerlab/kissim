@@ -21,6 +21,7 @@ from kissim.io import PocketBioPython
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
+
 class TestPocketBioPython:
     """
     Test PocketBioPython class.
@@ -30,7 +31,9 @@ class TestPocketBioPython:
         "structure_klifs_id, klifs_session, n_atoms_complex, n_atoms_pocket",
         [(12347, LOCAL, 1819, 577)],
     )
-    def test_data_complex(self, structure_klifs_id, klifs_session, n_atoms_complex, n_atoms_pocket):
+    def test_data_complex(
+        self, structure_klifs_id, klifs_session, n_atoms_complex, n_atoms_pocket
+    ):
         """
         Test class attribute handling the complex data, i.e. `_data_complex`.
         """
@@ -259,7 +262,9 @@ class TestPocketBioPython:
             (9122, LOCAL, 357, 27.526666),  # MSE > MET (with CE)
         ],
     )
-    def test_side_chain_representative(self, structure_klifs_id, klifs_session, residue_id, sc_atom_mean):
+    def test_side_chain_representative(
+        self, structure_klifs_id, klifs_session, residue_id, sc_atom_mean
+    ):
         """
         Test if side chain representative is retrieved correctly from a residue,
         i.e. method `_side_chain_representative`.

@@ -29,7 +29,9 @@ class TestPocketBioPython:
         Test if PocketBioPython can be set (from_structure_klifs_id()).
         Test attribute `name`.
         """
-        pocket = pocket_class.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = pocket_class.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         assert isinstance(pocket, pocket_class)
 
         # Test attribute name
@@ -58,7 +60,9 @@ class TestPocketBioPython:
         - property (`residues`)
         regarding the residue IDs.
         """
-        pocket = pocket_class.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = pocket_class.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         # Test property residues
         assert isinstance(pocket.residues, pd.DataFrame)
         assert len(pocket.residues) == n_residues

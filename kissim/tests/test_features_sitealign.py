@@ -37,7 +37,9 @@ class TestsSiteAlignFeature:
         Test if SiteAlignFeature can be set from a Pocket object.
         Test object attribues.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketBioPython.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         feature = SiteAlignFeature.from_pocket(pocket, feature_name)
         assert isinstance(feature, SiteAlignFeature)
 
@@ -74,7 +76,9 @@ class TestsSiteAlignFeature:
         """
         Test class property: values.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketBioPython.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         # Use example feature type
         feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
 
@@ -90,7 +94,9 @@ class TestsSiteAlignFeature:
         """
         Test class property: details.
         """
-        pocket = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session=klifs_session)
+        pocket = PocketBioPython.from_structure_klifs_id(
+            structure_klifs_id, klifs_session=klifs_session
+        )
         # Use example feature type
         feature = SiteAlignFeature.from_pocket(pocket, feature_name="hba")
 
