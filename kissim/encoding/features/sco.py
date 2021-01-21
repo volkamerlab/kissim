@@ -195,6 +195,6 @@ class SideChainOrientationFeature(BaseFeature):
             return 2.0
         else:
             raise ValueError(
-                f"Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. "
+                f"Molecule {self.name}: Unknown vertex angle {vertex_angle}. "
                 f"Only values between 0.0 and 180.0 allowed."
             )

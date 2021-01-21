@@ -139,7 +139,7 @@ class TestsSideChainOrientationFeature:
             assert np.isnan(category_calculated)
 
     @pytest.mark.parametrize(
-        "vertex_angle, category",
+        "vertex_angle",
         [200],  # > 180.0
     )
     def test_get_category(self, vertex_angle):
