@@ -219,7 +219,6 @@ class TestsFeatureDistances:
 
         # Fingerprints
         fingerprints = list(fingerprint_generator.data.values())
-        print(fingerprints)
 
         # Get feature distances
         feature_distances = FeatureDistances()

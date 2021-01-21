@@ -212,5 +212,4 @@ class KlifsToKissimData:
 
         structures = self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)
         kinase_name = structures.squeeze()["kinase.klifs_name"]
-        print(kinase_name)
         return kinase_name

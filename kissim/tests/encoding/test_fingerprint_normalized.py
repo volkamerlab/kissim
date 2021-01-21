@@ -70,7 +70,6 @@ class TestFingerprintNormalized:
         values_normalized_calculated = fingerprint_normalized._normalize_physicochemical_bits(
             values
         )
-        print(values_normalized_calculated)
         assert values_normalized_calculated == values_normalized
 
     @pytest.mark.parametrize(
