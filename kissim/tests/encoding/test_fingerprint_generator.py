@@ -28,6 +28,7 @@ class TestFingerprintGenerator:
             ([109, 110, 118], REMOTE, 2, 14627.0178),
             ([109, 110, 118], LOCAL, 1, 14627.0178),
             ([109, 110, 118], LOCAL, 2, 14627.0178),
+            ([109, 110, 118], None, None, 14627.0178),
         ],
     )
     def test_from_structure_klifs_id(
@@ -50,6 +51,19 @@ class TestFingerprintGenerator:
             pytest.approx(fingerprints_values_array_sum_calculated, abs=1e-4)
             == fingerprints_values_array_sum
         )
+
+    @pytest.mark.parametrize(
+        "n_cores",
+        [1000000000000],
+    )
+    def test_get_n_cores_valueerror(self, n_cores):
+        """
+        Test if number of cores are set correctly.
+        """
+
+        fingerprint_generator = FingerprintGenerator()
+        with pytest.raises(ValueError):
+            fingerprint_generator._set_n_cores(n_cores)
 
     @pytest.mark.parametrize(
         "structure_klifs_ids, values_array_sum",
