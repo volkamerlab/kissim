@@ -1,5 +1,5 @@
 """
-kissim.encoding.features.core 
+kissim.encoding.features.base 
 
 Defines the core classes and functions.
 """
