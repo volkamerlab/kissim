@@ -148,6 +148,17 @@ class TestsSolventExposureFeature:
         assert ratio == pytest.approx(ratio_calculated)
 
     @pytest.mark.parametrize(
+        "method",
+        ["invalid"],
+    )
+    def test_get_exposure_by_method_valueerror(self, method):
+        """
+        Test if wrong method name raises error.
+        """
+        with pytest.raises(ValueError):
+            SolventExposureFeature._get_exposures_by_method(None, None, method)
+
+    @pytest.mark.parametrize(
         "structure_klifs_id, klifs_session, radius, n_residues, missing_exposure",
         [
             (
