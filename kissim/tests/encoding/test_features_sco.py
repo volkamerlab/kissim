@@ -137,3 +137,16 @@ class TestsSideChainOrientationFeature:
             assert category == category_calculated
         else:
             assert np.isnan(category_calculated)
+
+    @pytest.mark.parametrize(
+        "vertex_angle, category",
+        [200],  # > 180.0
+    )
+    def test_get_category(self, vertex_angle):
+        """
+        Test tranformation of vertex angle to category for invalid angle.
+        """
+
+        with pytest.raises(ValueError):
+            feature = SideChainOrientationFeature()
+            feature._get_category(vertex_angle)

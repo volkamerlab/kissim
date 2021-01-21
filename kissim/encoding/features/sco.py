@@ -193,8 +193,6 @@ class SideChainOrientationFeature(BaseFeature):
             return 1.0
         elif 90.0 < vertex_angle <= 180.0:  # Outwards
             return 2.0
-        elif np.isnan(vertex_angle):
-            return np.nan
         else:
             raise ValueError(
                 f"Molecule {self.molecule_code}: Unknown vertex angle {vertex_angle}. "
