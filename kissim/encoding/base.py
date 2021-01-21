@@ -25,8 +25,10 @@ class FingerprintBase:
 
     Attributes
     ----------
-    structure_klifs_id : str
+    structure_klifs_id : int  # TODO generalize (KLIFS-independent)?
         Structure KLIFS ID.
+    kinase_name : str
+        Kinase name.
     values_dict : dict of dict (of dict) of list of floats
         Fingerprint values, grouped in a nested dictionary by the following keys
         - "physicochemical"
@@ -76,7 +78,9 @@ class FingerprintBase:
 
     def __init__(self):
 
+        # TODO add more structure metadata? e.g. bound ligand?
         self.structure_klifs_id = None
+        self.kinase_name = None
         self.values_dict = None
         self.residue_ids = None
         self.residue_ixs = None
@@ -203,6 +207,7 @@ class FingerprintBase:
 
         fingerprint = cls()
         fingerprint.structure_klifs_id = fingerprint_dict["structure_klifs_id"]
+        fingerprint.kinase_name = fingerprint_dict["kinase_name"]
         fingerprint.values_dict = fingerprint_dict["values_dict"]
         fingerprint.residue_ids = fingerprint_dict["residue_ids"]
         fingerprint.residue_ixs = fingerprint_dict["residue_ixs"]
