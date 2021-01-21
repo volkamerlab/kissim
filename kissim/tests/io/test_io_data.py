@@ -26,13 +26,14 @@ class TestKlifsToKissimData:
         [
             (118, LOCAL, True),
             (12347, REMOTE, True),
-            (100000, LOCAL, False),
-            (100000, REMOTE, False),
+            (100000, LOCAL, False),  # Invalid ID
+            (117, LOCAL, False),  # Missing complex.pdb
+            (100000, REMOTE, False),  # Invalid ID
         ],
     )
     def test_from_structure_klifs_id(self, structure_klifs_id, klifs_session, exists):
 
-        data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id)
+        data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
         if exists:
             assert isinstance(data, KlifsToKissimData)
             assert data.structure_klifs_id == structure_klifs_id
