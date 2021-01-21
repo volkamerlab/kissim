@@ -36,9 +36,10 @@ class TestFingerprintNormalized:
     @pytest.mark.parametrize(
         "values, values_normalized",
         [
+            (None, None),
             (
                 {
-                    "size": [0, 1, 3, 4],
+                    "size": [0, 1, 3, np.nan],
                     "hbd": [-1, 0, 3, 4],
                     "hba": [-1, 0, 2, 3],
                     "charge": [-2, -1, 1, 2],
@@ -48,7 +49,7 @@ class TestFingerprintNormalized:
                     "exposure": [-1, 0, 1, 2],
                 },
                 {
-                    "size": [0.0, 0.0, 1.0, 1.0],
+                    "size": [0.0, 0.0, 1.0, np.nan],
                     "hbd": [0.0, 0.0, 1.0, 1.0],
                     "hba": [0.0, 0.0, 1.0, 1.0],
                     "charge": [0.0, 0.0, 1.0, 1.0],
@@ -57,7 +58,7 @@ class TestFingerprintNormalized:
                     "sco": [0.0, 0.0, 1.0, 1.0],
                     "exposure": [0.0, 0.0, 1.0, 1.0],
                 },
-            )
+            ),
         ],
     )
     def test_normalize_physicochemical_bits(self, values, values_normalized):
@@ -69,12 +70,12 @@ class TestFingerprintNormalized:
         values_normalized_calculated = fingerprint_normalized._normalize_physicochemical_bits(
             values
         )
-        print(values_normalized_calculated)
         assert values_normalized_calculated == values_normalized
 
     @pytest.mark.parametrize(
         "values, values_normalized",
         [
+            (None, None),
             (
                 {
                     "hinge_region": [
@@ -108,7 +109,7 @@ class TestFingerprintNormalized:
                     "front_pocket": [0.0, 0.0, 1.0, 1.0],
                     "center": [0.0, 0.0, 1.0, 1.0],
                 },
-            )
+            ),
         ],
     )
     def test_normalize_distances_bits(self, values, values_normalized):
@@ -123,6 +124,7 @@ class TestFingerprintNormalized:
     @pytest.mark.parametrize(
         "values, values_normalized",
         [
+            (None, None),
             (
                 {
                     "test": [

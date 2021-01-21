@@ -151,10 +151,10 @@ class TestPocketBioPython:
 
         # Test property pcb_atoms
         # Shape
-        assert pocket_bp.pcb_atoms.shape == (78, 2)
+        assert pocket_bp.pcb_atoms.shape == (85, 2)
         # Columns and dtypes
         assert pocket_bp.pcb_atoms.columns.to_list() == ["residue.id", "pcb.vector"]
-        assert pocket_bp.pcb_atoms.dtypes.to_list() == ["int64", "object"]
+        assert pocket_bp.pcb_atoms.dtypes.to_list() == ["Int32", "object"]
         for pcb_vector in pocket_bp.pcb_atoms["pcb.vector"]:
             if pcb_vector is not None:
                 assert isinstance(pcb_vector, Bio.PDB.vectors.Vector)
@@ -174,6 +174,20 @@ class TestPocketBioPython:
         pcb_atom_calculated = pocket_bp._pcb_atom_from_gly(residue)
         pcb_atom_mean_calculated = pcb_atom_calculated.get_array().mean()
         assert pcb_atom_mean == pytest.approx(pcb_atom_mean_calculated)
+
+    @pytest.mark.parametrize(
+        "structure_klifs_id, klifs_session, residue_id",
+        [(9122, LOCAL, 272)],  # GLY
+    )
+    def test_pcb_atom_from_non_gly(self, structure_klifs_id, klifs_session, residue_id):
+        """
+        Test that this method will not be used for GLY.
+        """
+
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, klifs_session)
+        residue = pocket_bp._residue_from_residue_id(residue_id)
+        with pytest.raises(ValueError):
+            pocket_bp._pcb_atom_from_non_gly(residue)
 
     @pytest.mark.parametrize(
         "structure_klifs_id, klifs_session, residue_id",
@@ -203,9 +217,10 @@ class TestPocketBioPython:
                 np.array([4.887966, 11.028965, 42.998965]),
             ),  # Residue with +- residue
             (9122, LOCAL, 261, None),  # Residue without + residue
+            (9122, LOCAL, None, None),  # Residue is None
         ],
     )
-    def test_pcb_atoms(self, structure_klifs_id, klifs_session, residue_id, pcb_atom):
+    def test_pcb_atom(self, structure_klifs_id, klifs_session, residue_id, pcb_atom):
         """
         Test pseudo-CB calculation for a residue, i.e. method `_pcb_atom`.
         """

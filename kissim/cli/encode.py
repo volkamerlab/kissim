@@ -6,11 +6,11 @@ Encode structures (generate fingerprints) from CLI arguments.
 
 import numpy as np
 
-from kissim.api import encode as api_encode
+from kissim.api import encode
 from kissim.cli.utils import configure_logger
 
 
-def encode(args):
+def encode_from_cli(args):
     """
     Encode structures.
 
@@ -22,7 +22,7 @@ def encode(args):
 
     configure_logger(args.output)
     structure_klifs_ids = _parse_structure_klifs_ids(args.input)
-    api_encode(structure_klifs_ids, args.output, args.ncores, args.local)
+    encode(structure_klifs_ids, args.output, args.ncores, args.local)
 
 
 def _parse_structure_klifs_ids(args_input):

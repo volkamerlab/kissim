@@ -15,14 +15,19 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
-class TestPocketBioPython:
+class TestPocket:
     """
     Test common functionalities in the PocketBioPython and PocketDataFrame classes.
     """
 
     @pytest.mark.parametrize(
         "pocket_class, structure_klifs_id, klifs_session",
-        [(PocketBioPython, 12347, None), (PocketDataFrame, 12347, LOCAL)],
+        [
+            (PocketBioPython, 12347, LOCAL),
+            (PocketDataFrame, 12347, LOCAL),
+            (PocketBioPython, 100000, LOCAL),
+            (PocketDataFrame, 100000, LOCAL),
+        ],
     )
     def test_from_structure_klifs_id(self, pocket_class, structure_klifs_id, klifs_session):
         """
@@ -32,10 +37,12 @@ class TestPocketBioPython:
         pocket = pocket_class.from_structure_klifs_id(
             structure_klifs_id, klifs_session=klifs_session
         )
-        assert isinstance(pocket, pocket_class)
-
-        # Test attribute name
-        assert pocket.name == structure_klifs_id
+        if structure_klifs_id > 99999:
+            assert pocket is None
+        else:
+            assert isinstance(pocket, pocket_class)
+            # Test attribute name
+            assert pocket.name == structure_klifs_id
 
     @pytest.mark.parametrize(
         "pocket_class, structure_klifs_id, klifs_session, n_residues, n_residues_wo_na, residue_ids_sum, residue_ixs_sum",

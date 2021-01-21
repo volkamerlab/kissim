@@ -201,7 +201,5 @@ class FingerprintNormalized(FingerprintBase):
             return (value - minimum) / float(maximum - minimum)
         elif value <= minimum:
             return 0.0
-        elif value >= maximum:
-            return 1.0
         else:
-            raise ValueError(f"Unexpected value to be normalized: {value}")
+            return 1.0

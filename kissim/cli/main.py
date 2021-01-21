@@ -12,7 +12,7 @@ Special thanks to @jaimergp for the pointers.
 
 import argparse
 
-from kissim.cli import encode, compare
+from kissim.cli import encode_from_cli, compare_from_cli
 
 
 def main():
@@ -62,7 +62,7 @@ def main():
         required=False,
         default=1,
     )
-    encode_subparser.set_defaults(func=encode)
+    encode_subparser.set_defaults(func=encode_from_cli)
 
     # Arguments and function to be called for sub-command compare
     compare_subparser.add_argument(
@@ -103,7 +103,7 @@ def main():
         required=False,
         default="001",
     )
-    compare_subparser.set_defaults(func=compare)
+    compare_subparser.set_defaults(func=compare_from_cli)
 
     args = parser.parse_args()
     args.func(args)

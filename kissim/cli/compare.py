@@ -4,12 +4,12 @@ kissim.cli.encode
 Compare encoded structures (fingerprints).
 """
 
-from kissim.api import compare as api_compare
+from kissim.api import compare
 from kissim.cli.utils import configure_logger
 from kissim.encoding import FingerprintGenerator
 
 
-def compare(args):
+def compare_from_cli(args):
     """
     Compare fingerprints.
 
@@ -22,7 +22,7 @@ def compare(args):
     configure_logger(args.output)
     fingerprint_generator = FingerprintGenerator.from_json(args.input)
     weights = _parse_weights(args.weights)
-    api_compare(
+    compare(
         fingerprint_generator,
         args.output,
         args.ncores,
