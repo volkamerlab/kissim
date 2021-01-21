@@ -6,6 +6,7 @@ import pytest
 
 from kissim.encoding.features import BaseFeature
 
+
 class TestsBaseFeature:
     """
     Test BaseFeature class methods.

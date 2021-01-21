@@ -58,7 +58,7 @@ class TestFingerprintNormalized:
                     "sco": [0.0, 0.0, 1.0, 1.0],
                     "exposure": [0.0, 0.0, 1.0, 1.0],
                 },
-            )
+            ),
         ],
     )
     def test_normalize_physicochemical_bits(self, values, values_normalized):
@@ -110,7 +110,7 @@ class TestFingerprintNormalized:
                     "front_pocket": [0.0, 0.0, 1.0, 1.0],
                     "center": [0.0, 0.0, 1.0, 1.0],
                 },
-            )
+            ),
         ],
     )
     def test_normalize_distances_bits(self, values, values_normalized):
