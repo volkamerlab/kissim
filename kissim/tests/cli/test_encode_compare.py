@@ -13,9 +13,7 @@ from kissim.cli import encode_from_cli, compare_from_cli
     "encode_args, compare_args",
     [
         (
-            Namespace(
-                input=["12347"], output="fps.json", local=None, ncores=1
-            ),
+            Namespace(input=["12347"], output="fps.json", local=None, ncores=1),
             Namespace(
                 input="fps.json",
                 output="matrix.csv",
