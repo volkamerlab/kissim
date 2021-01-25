@@ -3,9 +3,6 @@ kissim
 Subpocket-based structural fingerprint for kinase pocket comparison
 """
 
-# Add imports here
-from .kissim import *
-
 # Handle versioneer
 from ._version import get_versions
 versions = get_versions()
