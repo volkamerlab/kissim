@@ -6,26 +6,12 @@
 Welcome to kissim's documentation!
 =========================================================
 
-``kissim`` is a Python package for kinase pocket comparison using a subpocket-based fingerprint.
-
 .. toctree::
-   :maxdepth: 1
-   :caption: User guide
+   :maxdepth: 2
+   :caption: Contents:
 
-   installing
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Encoding
-
-   encoding
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Similarity
-
-   similarity
-
+   getting_started
+   api
 
 
 
