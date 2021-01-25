@@ -1,8 +1,7 @@
 Structural kinase similarity (`kissim`)
 ==============================
 [//]: # (Badges)
-[![GH Actions Status](https://github.com/volkamerlab/kissim/workflows/CI/badge.svg)](https://github.com/volkamerlab/kissim/actions?query=branch%3Amaster)
-[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/volkamerlab/branch/master?svg=true)](https://ci.appveyor.com/project/volkamerlab/kissim/branch/master)
+[![GitHub Actions Build Status](https://github.com/volkamerlab/kissim/workflows/CI/badge.svg)](https://github.com/volkamerlab/kissim/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/master/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim/branch/master)
 
 > ⚠ This project is work-in-progress. The API is not final.
@@ -47,4 +46,4 @@ Copyright (c) 2019, Volkamer Lab
 #### Acknowledgements
  
 Project based on the 
-[Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.0.
+[Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.5.
