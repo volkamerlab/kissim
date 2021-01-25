@@ -16,7 +16,7 @@ try:
     with open("README.md", "r") as handle:
         long_description = handle.read()
 except:
-    long_description = "\n".join(short_description[2:]),
+    long_description = "\n".join(short_description[2:])
 
 
 setup(
@@ -34,14 +34,13 @@ setup(
     # Which Python importable modules should be included when your package is installed
     # Handled automatically by setuptools. Use 'exclude' to prevent some specific
     # subpackage(s) from being added, if needed
-    packages=['kissim', 'kissim.tests'],
+    packages=find_packages(),
 
     # Optional include package data to ship with your package
     # Customize MANIFEST.in if the general case does not suit your needs
     # Comment out this line to prevent the files from being packaged with your software
-    package_data={'kissim': ["data/*.dat"]
-                  },
-    # Entry points
+    include_package_data=True,
+
     entry_points={"console_scripts": ["kissim = kissim.cli.main:main"]},
     # Allows `setup.py test` to work correctly with pytest
     setup_requires=[] + pytest_runner,

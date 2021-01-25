@@ -80,14 +80,6 @@ def main():
         required=True,
     )
     compare_subparser.add_argument(
-        "-c",
-        "--ncores",
-        type=int,
-        help="Number of cores. If 1 comparison in sequence, else in parallel.",
-        required=False,
-        default=1,
-    )
-    compare_subparser.add_argument(
         "-d",
         "--distance",
         type=str,
@@ -102,6 +94,14 @@ def main():
         help="Feature weights.",
         required=False,
         default="001",
+    )
+    compare_subparser.add_argument(
+        "-c",
+        "--ncores",
+        type=int,
+        help="Number of cores. If 1 comparison in sequence, else in parallel.",
+        required=False,
+        default=1,
     )
     compare_subparser.set_defaults(func=compare_from_cli)
 
