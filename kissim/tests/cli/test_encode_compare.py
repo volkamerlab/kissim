@@ -14,20 +14,19 @@ from kissim.cli import encode_from_cli, compare_from_cli
     [
         (
             Namespace(
-                func=compare_from_cli, input=["12347"], local=None, ncores=1, output="fps.json"
+                input=["12347"], output="fps.json", local=None, ncores=1
             ),
             Namespace(
-                distance="scaled_euclidean",
-                func=compare_from_cli,
                 input="fps.json",
-                ncores=1,
                 output="matrix.csv",
+                distance="scaled_euclidean",
                 weights="001",
+                ncores=1,
             ),
         )
     ],
 )
-def test_encode_from_cli(encode_args, compare_args):
+def ttest_encode_from_cli(encode_args, compare_args):
 
     with enter_temp_directory():
         encode_from_cli(encode_args)
