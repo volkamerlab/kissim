@@ -102,10 +102,10 @@ class FingerprintNormalized(FingerprintBase):
                 self._min_max_normalization(value, 0.0, 1.0) for value in values["aliphatic"]
             ]
             values_normalized["sco"] = [
-                self._min_max_normalization(value, 0.0, 2.0) for value in values["sco"]
+                self._min_max_normalization(value, 1.0, 3.0) for value in values["sco"]
             ]
             values_normalized["exposure"] = [
-                self._min_max_normalization(value, 0.0, 1.0) for value in values["exposure"]
+                self._min_max_normalization(value, 1.0, 3.0) for value in values["exposure"]
             ]
             return values_normalized
 

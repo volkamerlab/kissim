@@ -28,7 +28,7 @@ FEATURE_NAMES_PHYSICOCHEMICAL_DICT = [
     "sco",
     "sco.vertex_angle",
     "exposure",
-    "exposure.ratio"
+    "exposure.ratio",
 ]
 FEATURE_NAMES_PHYSICOCHEMICAL = [
     "size",
