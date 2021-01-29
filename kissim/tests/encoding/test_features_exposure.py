@@ -51,7 +51,7 @@ class TestsSolventExposureFeature:
 
     @pytest.mark.parametrize(
         "structure_klifs_id, klifs_session, values_mean",
-        [(12347, LOCAL, 0.552123)],
+        [(12347, LOCAL, 2.192308)],
     )
     def test_values(self, structure_klifs_id, klifs_session, values_mean):
         """
@@ -80,6 +80,7 @@ class TestsSolventExposureFeature:
         assert isinstance(feature.details, pd.DataFrame)
         assert feature.details.columns.to_list() == [
             "residue.id",
+            "exposure.category",
             "exposure.ratio",
             "exposure.ratio_ca",
             "exposure.ratio_cb",

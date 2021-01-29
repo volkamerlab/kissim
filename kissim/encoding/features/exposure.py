@@ -26,6 +26,8 @@ class SolventExposureFeature(BaseFeature):
         Residue IDs.
     _residue_ixs : list of int
         Residue indices.
+    _categories : list of float or None
+        Pocket residues' solvent exposure categories.
     _ratio : list of float
         Exposure values: Ratio of CA atoms in upper sphere / full sphere.
     _ratio_ca : list of float
@@ -49,6 +51,7 @@ class SolventExposureFeature(BaseFeature):
         self.name = None
         self._residue_ids = None
         self._residue_ixs = None
+        self._categories = None
         self._ratio = None
         self._ratio_ca = None
         self._ratio_cb = None
@@ -79,6 +82,7 @@ class SolventExposureFeature(BaseFeature):
         feature._ratio = exposures["exposure"].to_list()
         feature._ratio_ca = exposures["ca.exposure"].to_list()
         feature._ratio_cb = exposures["cb.exposure"].to_list()
+        feature._categories = [feature._get_category(ratio) for ratio in feature._ratio]
         return feature
 
     @property
@@ -92,7 +96,7 @@ class SolventExposureFeature(BaseFeature):
             Exposure for pocket residues.
         """
 
-        return self._ratio
+        return self._categories
 
     @property
     def details(self):
@@ -111,6 +115,7 @@ class SolventExposureFeature(BaseFeature):
         features = pd.DataFrame(
             {
                 "residue.id": self._residue_ids,
+                "exposure.category": self._categories,
                 "exposure.ratio": self._ratio,
                 "exposure.ratio_ca": self._ratio_ca,
                 "exposure.ratio_cb": self._ratio_cb,
@@ -220,3 +225,38 @@ class SolventExposureFeature(BaseFeature):
         exposures = exposures.drop(["residue.id"], axis=1).set_index("residue.ix")
 
         return exposures
+
+    def _get_category(self, ratio):
+        """
+        Transform a given solvent exposure ratio into a category value, which defines the side chain
+        orientation towards the pocket:
+        - low solvent exposure (category 1.0)
+        - intermediate solvent exposure (category 2.0)
+        - high solvent exposure (category 3.0)
+
+        Parameters
+        ----------
+        vertex_angle : float or None
+            Vertex angle between a residue's CA atom (vertex), side chain representative and pocket
+            centroid. Ranges between 0.0 and 180.0.
+
+        Returns
+        -------
+        float or None
+            Category for side chain orientation towards pocket.
+            None if any of the input vectors are None.
+        """
+
+        if np.isnan(ratio):
+            return np.nan
+        elif 0.0 <= ratio <= 0.45:  # Low solvent exposure
+            return 1.0
+        elif 0.45 < ratio <= 0.55:  # Intermediate solvent exposure
+            return 2.0
+        elif 0.55 < ratio <= 1.0:  # High solvent exposure
+            return 3.0
+        else:
+            raise ValueError(
+                f"Molecule {self.name}: Unknown solvent exposure ratio {ratio}. "
+                f"Only values between 0.0 and 180.0 allowed."
+            )
