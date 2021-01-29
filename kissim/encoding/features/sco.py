@@ -137,6 +137,7 @@ class SideChainOrientationFeature(BaseFeature):
         )
         features["pocket_center.vector"] = self._pocket_center
         features.index.name = "residue.ix"
+        features = features.astype({"residue.id": "Int32"})
         return features
 
     def _calculate_vertex_angle(self, vector1, vector2, vector3):
@@ -168,9 +169,9 @@ class SideChainOrientationFeature(BaseFeature):
         """
         Transform a given vertex angle into a category value, which defines the side chain
         orientation towards the pocket:
-        - inwards (category 0.0)
-        - intermediate (category 1.0)
-        - outwards (category 2.0)
+        - inwards (category 1.0)
+        - intermediate (category 2.0)
+        - outwards (category 3.0)
 
         Parameters
         ----------
@@ -188,11 +189,11 @@ class SideChainOrientationFeature(BaseFeature):
         if np.isnan(vertex_angle):
             return np.nan
         elif 0.0 <= vertex_angle <= 45.0:  # Inwards
-            return 0.0
-        elif 45.0 < vertex_angle <= 90.0:  # Intermediate
             return 1.0
-        elif 90.0 < vertex_angle <= 180.0:  # Outwards
+        elif 45.0 < vertex_angle <= 90.0:  # Intermediate
             return 2.0
+        elif 90.0 < vertex_angle <= 180.0:  # Outwards
+            return 3.0
         else:
             raise ValueError(
                 f"Molecule {self.name}: Unknown vertex angle {vertex_angle}. "

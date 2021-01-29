@@ -58,7 +58,7 @@ class TestsSideChainOrientationFeature:
 
     @pytest.mark.parametrize(
         "structure_klifs_id, klifs_session, values_mean",
-        [(12347, LOCAL, 1.440678)],
+        [(12347, LOCAL, 2.440678)],
     )
     def test_values(self, structure_klifs_id, klifs_session, values_mean):
         """
