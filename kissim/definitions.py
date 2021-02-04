@@ -69,17 +69,13 @@ SUBPOCKETS = {
     "subpocket.color": ["magenta", "cornflowerblue", "green"],
 }
 
-# TODO update
-DISTANCE_CUTOFFS = {  # 99% percentile of all distances
-    "center": (3.05, 21.38),
-    "hinge_region": (4.10, 23.07),
-    "dfg_region": (4.62, 26.69),
-    "front_pocket": (5.46, 23.55),
+# 1% and 99% percentiles of all distances
+DISTANCE_CUTOFFS = {
+    "hinge_region": (4.11, 23.07),
+    "dfg_region": (4.66, 26.73),
+    "front_pocket": (5.45, 23.42),
+    "center": (3.05, 21.19),
 }
 
-# TODO update
-MOMENT_CUTOFFS = {  # 99% percentile of all moments
-    1: (11.68, 14.14),
-    2: (3.29, 5.29),
-    3: (-1.47, 4.66),
-}
+# 1% and 99% percentiles of all moments
+MOMENT_CUTOFFS = {1: (11.68, 14.19), 2: (3.26, 5.29), 3: (-1.69, 4.72)}
