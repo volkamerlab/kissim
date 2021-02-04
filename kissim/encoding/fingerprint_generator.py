@@ -12,6 +12,7 @@ from pathlib import Path
 
 from multiprocessing import cpu_count, Pool
 from opencadd.databases.klifs import setup_remote
+import pandas as pd
 
 from kissim.encoding import Fingerprint
 
@@ -139,6 +140,121 @@ class FingerprintGenerator:
         filepath = Path(filepath)
         with open(filepath, "w") as f:
             f.write(json_string)
+
+    @property
+    def physicochemical(self):
+        """
+        Get physicochemical feature vectors per feature type and pocket.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Physicochemical feature vectors per feature type (columns) and pocket (rows).
+        """
+        return self._feature_group("physicochemical")
+
+    @property
+    def distances(self):
+        """
+        Get distances feature vectors per feature type and pocket.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances feature vectors per feature type (columns) and pocket (rows).
+        """
+        return self._feature_group("distances")
+
+    @property
+    def moments(self):
+        """
+        Get moments feature vectors per feature type and pocket.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Moments feature vectors per feature type (columns) and pocket (rows).
+        """
+        return self._feature_group("moments")
+
+    @property
+    def physicochemical_exploded(self):
+        """
+        Get physicochemical feature values per feature type and bit position.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Physicochemical feature values per feature type (columns) and pocket / bit position
+            (rows).
+        """
+        return self._feature_group_exploded("physicochemical")
+
+    @property
+    def distances_exploded(self):
+        """
+        Get distances feature values per feature type and bit position.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Distances feature values per feature type (columns) and pocket / bit position (rows).
+        """
+        return self._feature_group_exploded("distances")
+
+    @property
+    def moments_exploded(self):
+        """
+        Get moments feature values per feature type and bit position.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Moments feature values per feature type (columns) and pocket / bit position (rows).
+        """
+        return self._feature_group_exploded("moments")
+
+    def _feature_group(self, feature_group):
+        """
+        For a given feature group, get feature vectors per feature type and pocket.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Feature vectors per feature type (columns) and pocket (rows).
+        """
+        features = {
+            structure_klifs_id: (
+                fingerprint.values_dict[feature_group]
+                if feature_group == "physicochemical"
+                else fingerprint.values_dict["spatial"][feature_group]
+            )
+            for structure_klifs_id, fingerprint in self.data.items()
+        }
+        features = pd.DataFrame(features).transpose()
+        return features
+
+    def _feature_group_exploded(self, feature_group):
+        """TODO"""
+        index_level1 = "structure_klifs_id"
+        if feature_group == "moments":
+            index_level2 = "moment"
+        else:
+            index_level2 = "residue_ix"
+        features = self._feature_group(feature_group)
+        features_exploded = features.apply(lambda x: x.explode()).astype(float)
+        features_exploded.index.name = index_level1
+        multi_index = (
+            features_exploded.groupby(index_level1, sort=False, dropna=False)
+            .size()
+            .apply(lambda x: range(1, x + 1))
+            .explode()
+        )
+        multi_index = pd.MultiIndex.from_tuples(
+            list(multi_index.items()), names=[index_level1, index_level2]
+        )
+        features_exploded.index = multi_index
+        return features_exploded
 
     def _set_n_cores(self, n_cores):
         """
