@@ -14,7 +14,7 @@ from multiprocessing import cpu_count, Pool
 from opencadd.databases.klifs import setup_remote
 import pandas as pd
 
-from kissim.encoding import Fingerprint
+from kissim.encoding import Fingerprint, FingerprintNormalized
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,8 @@ class FingerprintGenerator:
         Local or remote KLIFS session.
     data : dict of int: kissim.encoding.Fingerprint
         Fingerprints for input structures (by KLIFS ID).
+    data_normalized : dict of int: kissim.encoding.Fingerprint
+        Normalized fingerprints for input structures (by KLIFS ID).
     """
 
     def __init__(self):
@@ -38,6 +40,7 @@ class FingerprintGenerator:
         self.structure_klifs_ids = None
         self.klifs_session = None
         self.data = None
+        self.data_normalized = None
 
     @classmethod
     def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=None):
@@ -47,7 +50,8 @@ class FingerprintGenerator:
         Parameters
         ----------
         structure_klifs_id : int
-            Structure KLIFS ID.
+            Input structure KLIFS ID (output fingerprints may contain less IDs because some
+            structures could not be encoded).
         klifs_session : opencadd.databases.klifs.session.Session
             Local or remote KLIFS session.
         n_cores : int or None
@@ -88,6 +92,9 @@ class FingerprintGenerator:
             if i is not None  # Removes emtpy fingerprints
         }
 
+        # Normalize fingerprints
+        fingerprint_generator.data_normalized = fingerprint_generator._normalize_fingerprints()
+
         end_time = datetime.datetime.now()
 
         logger.info(f"Number of input structures: {len(structure_klifs_ids)}")
@@ -97,7 +104,7 @@ class FingerprintGenerator:
         return fingerprint_generator
 
     @classmethod
-    def from_json(cls, filepath):
+    def from_json(cls, filepath, normalize=False):
         """
         Initialize a FingerprintGenerator object from a json file.
 
@@ -105,6 +112,9 @@ class FingerprintGenerator:
         ----------
         filepath : str or pathlib.Path
             Path to json file.
+        normalized : bool
+            Add normalization (default: False). This will store the unnormalized features alongside
+            the normalized features.
         """
 
         filepath = Path(filepath)
@@ -119,6 +129,8 @@ class FingerprintGenerator:
 
         fingerprint_generator = cls()
         fingerprint_generator.data = data
+        if normalize:
+            fingerprint_generator.data_normalized = fingerprint_generator._normalize_fingerprints()
         fingerprint_generator.structure_klifs_ids = list(fingerprint_generator.data.keys())
 
         return fingerprint_generator
@@ -141,46 +153,65 @@ class FingerprintGenerator:
         with open(filepath, "w") as f:
             f.write(json_string)
 
-    @property
-    def physicochemical(self):
+    def physicochemical(self, normalized=False):
         """
         Get physicochemical feature vectors per feature type and pocket.
+
+        Parameters
+        ----------
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
         pandas.DataFrame
             Physicochemical feature vectors per feature type (columns) and pocket (rows).
         """
-        return self._feature_group("physicochemical")
 
-    @property
-    def distances(self):
+        return self._feature_group("physicochemical", normalized)
+
+    def distances(self, normalized=False):
         """
         Get distances feature vectors per feature type and pocket.
+
+        Parameters
+        ----------
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
         pandas.DataFrame
             Distances feature vectors per feature type (columns) and pocket (rows).
         """
-        return self._feature_group("distances")
 
-    @property
-    def moments(self):
+        return self._feature_group("distances", normalized)
+
+    def moments(self, normalized=False):
         """
         Get moments feature vectors per feature type and pocket.
+
+        Parameters
+        ----------
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
         pandas.DataFrame
             Moments feature vectors per feature type (columns) and pocket (rows).
         """
-        return self._feature_group("moments")
 
-    @property
-    def physicochemical_exploded(self):
+        return self._feature_group("moments", normalized)
+
+    def physicochemical_exploded(self, normalized=False):
         """
         Get physicochemical feature values per feature type and bit position.
+
+        Parameters
+        ----------
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
@@ -188,60 +219,103 @@ class FingerprintGenerator:
             Physicochemical feature values per feature type (columns) and pocket / bit position
             (rows).
         """
-        return self._feature_group_exploded("physicochemical")
 
-    @property
-    def distances_exploded(self):
+        return self._feature_group_exploded("physicochemical", normalized)
+
+    def distances_exploded(self, normalized=False):
         """
         Get distances feature values per feature type and bit position.
+
+        Parameters
+        ----------
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
         pandas.DataFrame
             Distances feature values per feature type (columns) and pocket / bit position (rows).
         """
-        return self._feature_group_exploded("distances")
 
-    @property
-    def moments_exploded(self):
+        return self._feature_group_exploded("distances", normalized)
+
+    def moments_exploded(self, normalized=False):
         """
         Get moments feature values per feature type and bit position.
+
+        Parameters
+        ----------
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
         pandas.DataFrame
             Moments feature values per feature type (columns) and pocket / bit position (rows).
         """
-        return self._feature_group_exploded("moments")
 
-    def _feature_group(self, feature_group):
+        return self._feature_group_exploded("moments", normalized)
+
+    def _feature_group(self, feature_group, normalized=False):
         """
         For a given feature group, get feature vectors per feature type and pocket.
+
+        Parameter
+        ---------
+        feature_group : str
+            Feature group, i.e. "physicochemical", "distances", or "moments".
+        normalized : bool
+            Unnormalized (default) or normalized features.
 
         Returns
         -------
         pandas.DataFrame
             Feature vectors per feature type (columns) and pocket (rows).
         """
-        features = {
-            structure_klifs_id: (
-                fingerprint.values_dict[feature_group]
-                if feature_group == "physicochemical"
-                else fingerprint.values_dict["spatial"][feature_group]
-            )
-            for structure_klifs_id, fingerprint in self.data.items()
-        }
-        features = pd.DataFrame(features).transpose()
+
+        if normalized:
+            fingerprints = self.data_normalized
+        else:
+            fingerprints = self.data
+
+        if fingerprints is not None:
+            features = {
+                structure_klifs_id: (
+                    fingerprint.values_dict[feature_group]
+                    if feature_group == "physicochemical"
+                    else fingerprint.values_dict["spatial"][feature_group]
+                )
+                for structure_klifs_id, fingerprint in fingerprints.items()
+            }
+            features = pd.DataFrame(features).transpose()
+        else:
+            features = None
+
         return features
 
-    def _feature_group_exploded(self, feature_group):
-        """TODO"""
+    def _feature_group_exploded(self, feature_group, normalized=False):
+        """
+        For a given feature group, get moments feature values per feature type and bit position.
+
+        Parameters
+        ----------
+        feature_group : str
+            Feature group, i.e. "physicochemical", "distances", or "moments".
+        normalized : bool
+            Unnormalized (default) or normalized features.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Feature values per feature type (columns) and pocket / bit position (rows).
+        """
+
         index_level1 = "structure_klifs_id"
         if feature_group == "moments":
             index_level2 = "moment"
         else:
             index_level2 = "residue_ix"
-        features = self._feature_group(feature_group)
+        features = self._feature_group(feature_group, normalized)
         features_exploded = features.apply(lambda x: x.explode()).astype(float)
         features_exploded.index.name = index_level1
         multi_index = (
@@ -348,3 +422,9 @@ class FingerprintGenerator:
         logger.info(f"{structure_klifs_id}: Generate fingerprint...")
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, klifs_session)
         return fingerprint
+
+    def _normalize_fingerprints(self):
+        """TODO"""
+        return {
+            key: FingerprintNormalized.from_fingerprint(value) for key, value in self.data.items()
+        }
