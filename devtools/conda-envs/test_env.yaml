@@ -35,6 +35,7 @@ dependencies:
   - pip:
     - black-nb
     - https://github.com/volkamerlab/opencadd/archive/2a6cf9bcee72a3626114cda82af758e05ed5af18.zip
+
 ## For Jupyter lab extensions, run:
 # conda install nodejs
 # jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc @ijmbarr/jupyterlab_spellchecker
