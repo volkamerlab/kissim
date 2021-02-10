@@ -47,28 +47,39 @@ class TestsSubpocketsFeature:
             assert isinstance(residue_ix, int)
 
     @pytest.mark.parametrize(
-        "structure_klifs_id, klifs_session, distances_mean, moments_mean",
+        "structure_klifs_id, klifs_session, distances_mean, moments_mean, subpocket_centers_mean",
         [
             (
                 12347,
                 LOCAL,
                 {
-                    "hinge_region": 13.0850042,
-                    "dfg_region": 14.3059388,
-                    "front_pocket": 13.3038583,
-                    "center": 12.2359484,
+                    "hinge_region": 13.085004,
+                    "dfg_region": 14.305939,
+                    "front_pocket": 13.303858,
+                    "center": 12.235948,
                 },
                 {
-                    "hinge_region": 6.7050982,
-                    "dfg_region": 7.5004165,
-                    "front_pocket": 6.7609020,
-                    "center": 4.7422497,
+                    "hinge_region": 6.705098,
+                    "dfg_region": 7.500417,
+                    "front_pocket": 6.760902,
+                    "center": 4.742250,
+                },
+                {
+                    "hinge_region": 22.241111,
+                    "dfg_region": 20.888666,
+                    "front_pocket": 19.057000,
+                    "center": 19.632547,
                 },
             ),
         ],
     )
     def test_calculate_distances_and_moments(
-        self, structure_klifs_id, klifs_session, distances_mean, moments_mean
+        self,
+        structure_klifs_id,
+        klifs_session,
+        distances_mean,
+        moments_mean,
+        subpocket_centers_mean,
     ):
         """
         Test calculation of distances and moments for all subpockets.
@@ -97,6 +108,15 @@ class TestsSubpocketsFeature:
             name: np.nanmean(moments) for name, moments in feature._moments.items()
         }
         assert pytest.approx(moments_mean_calculated, abs=1e-6) == moments_mean
+
+        # Test subpocket centers
+        for _, subpocket_center in feature._subpocket_centers.items():
+            assert isinstance(subpocket_center, list)
+        subpocket_centers_mean_calculated = {
+            name: (np.nanmean(coordinates) if coordinates is not None else None)
+            for name, coordinates in feature._subpocket_centers.items()
+        }
+        assert pytest.approx(subpocket_centers_mean_calculated, abs=1e-6) == subpocket_centers_mean
 
     @pytest.mark.parametrize(
         "structure_klifs_id, klifs_session",

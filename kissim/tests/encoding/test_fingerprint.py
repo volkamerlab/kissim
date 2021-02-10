@@ -16,7 +16,7 @@ from kissim.tests.encoding.schema import (
     FEATURE_NAMES,
     FEATURE_NAMES_PHYSICOCHEMICAL_DICT,
     FEATURE_NAMES_PHYSICOCHEMICAL,
-    FEATURE_NAMES_SPATIAL,
+    FEATURE_NAMES_SPATIAL_DICT,
     FEATURE_NAMES_DISTANCES_AND_MOMENTS,
 )
 
@@ -74,7 +74,7 @@ class TestFingerprint:
                 list(fingerprint1.values_dict["physicochemical"].keys())
                 == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
             )
-            assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL
+            assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL_DICT
             assert (
                 list(fingerprint1.values_dict["spatial"]["distances"].keys())
                 == FEATURE_NAMES_DISTANCES_AND_MOMENTS
@@ -217,6 +217,6 @@ class TestFingerprint:
         # Spatial features
         spatial_dict = fingerprint._get_spatial_features_dict(pocket_df)
         assert isinstance(spatial_dict, dict)
-        assert list(spatial_dict.keys()) == FEATURE_NAMES_SPATIAL
+        assert list(spatial_dict.keys()) == FEATURE_NAMES_SPATIAL_DICT
         assert list(spatial_dict["distances"].keys()) == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert list(spatial_dict["moments"].keys()) == FEATURE_NAMES_DISTANCES_AND_MOMENTS

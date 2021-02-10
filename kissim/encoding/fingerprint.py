@@ -149,7 +149,8 @@ class Fingerprint(FingerprintBase):
         Returns
         -------
         dict of list of float
-            Per-subpocket feature values (values) for distances and moments (keys).
+            Per-subpocket feature values [and coordinates] (values) for distances and moments
+            [and subpocket centers] (keys).
         """
 
         # Set up spatial features
@@ -158,5 +159,6 @@ class Fingerprint(FingerprintBase):
         feature = SubpocketsFeature.from_pocket(pocket_df)
         features["distances"] = feature._distances
         features["moments"] = feature._moments
+        features["subpocket_centers"] = feature._subpocket_centers
 
         return features

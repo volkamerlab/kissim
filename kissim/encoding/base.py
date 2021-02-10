@@ -84,6 +84,7 @@ class FingerprintBase:
         self.values_dict = None
         self.residue_ids = None
         self.residue_ixs = None
+        self.subpocket_centers = None
 
     @property
     def physicochemical(self):

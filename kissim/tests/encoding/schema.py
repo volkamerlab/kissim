@@ -26,6 +26,7 @@ FEATURE_NAMES_PHYSICOCHEMICAL = [
     "exposure",
 ]
 FEATURE_NAMES_SPATIAL = ["distances", "moments"]
+FEATURE_NAMES_SPATIAL_DICT = ["distances", "moments", "subpocket_centers"]
 FEATURE_NAMES_DISTANCES_AND_MOMENTS = [
     "hinge_region",
     "dfg_region",
