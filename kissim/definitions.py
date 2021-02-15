@@ -69,13 +69,12 @@ SUBPOCKETS = {
     "subpocket.color": ["magenta", "cornflowerblue", "green"],
 }
 
-# 1% and 99% percentiles of all distances
+# Cutoffs defined in this notebook:
+# https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb
 DISTANCE_CUTOFFS = {
-    "hinge_region": (4.11, 23.07),
-    "dfg_region": (4.66, 26.73),
-    "front_pocket": (5.45, 23.42),
-    "center": (3.05, 21.19),
+    "hinge_region": (2.0, 31.0),
+    "dfg_region": (0.0, 34.0),
+    "front_pocket": (1.0, 33.0),
+    "center": (1.0, 29.0),
 }
-
-# 1% and 99% percentiles of all moments
-MOMENT_CUTOFFS = {1: (11.68, 14.19), 2: (3.26, 5.29), 3: (-1.69, 4.72)}
+MOMENT_CUTOFFS = {1: (11.0, 17.0), 2: (2.0, 7.0), 3: (-3.0, 7.0)}
