@@ -11,8 +11,9 @@ import logging
 from pathlib import Path
 
 from multiprocessing import cpu_count, Pool
-from opencadd.databases.klifs import setup_remote
+import numpy as np
 import pandas as pd
+from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import Fingerprint, FingerprintNormalized
 
@@ -152,6 +153,28 @@ class FingerprintGenerator:
         filepath = Path(filepath)
         with open(filepath, "w") as f:
             f.write(json_string)
+
+    @property
+    def subpocket_centers(self):
+        """
+        Subpocket center coordinates for all structures.
+
+        Returns
+        -------
+        pandas.DataFrame
+            All subpockets (columns, level 0) coordinates x, y, z (columns, level 1) for all
+            structures (rows).
+        """
+
+        coordinates = []
+        for structure_klifs_id, fingerprint in self.data.items():
+            coordinates_series = fingerprint.subpocket_centers.transpose().stack()
+            coordinates_series.name = structure_klifs_id
+            coordinates.append(coordinates_series)
+        print(coordinates_series)
+        coordinates = pd.DataFrame(coordinates)
+
+        return coordinates
 
     def physicochemical(self, normalized=False):
         """

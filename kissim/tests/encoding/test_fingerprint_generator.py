@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import numpy as np
+import pandas as pd
 from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.utils import enter_temp_directory
@@ -75,6 +76,23 @@ class TestFingerprintGenerator:
         for key, value in fingerprints.data_normalized.items():
             assert isinstance(key, int)
             assert isinstance(value, FingerprintNormalized)
+
+        # Property: subpocket_centers
+        assert isinstance(fingerprints.subpocket_centers, pd.DataFrame)
+        assert fingerprints.subpocket_centers.index.to_list() == structure_klifs_ids
+        assert (
+            fingerprints.subpocket_centers.columns.get_level_values(0).to_list()
+            == np.repeat(FEATURE_NAMES_DISTANCES_AND_MOMENTS, 3).tolist()
+        )
+        assert (
+            fingerprints.subpocket_centers.columns.get_level_values(1).to_list()
+            == [
+                "x",
+                "y",
+                "z",
+            ]
+            * len(FEATURE_NAMES_DISTANCES_AND_MOMENTS)
+        )
 
     @pytest.mark.parametrize(
         "n_cores",
