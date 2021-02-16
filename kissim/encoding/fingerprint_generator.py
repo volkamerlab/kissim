@@ -11,7 +11,6 @@ import logging
 from pathlib import Path
 
 from multiprocessing import cpu_count, Pool
-import numpy as np
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
@@ -60,7 +59,7 @@ class FingerprintGenerator:
 
         Returns
         -------
-        kissim.encoding.fingerprint_generator  # TODO return dict (structure KLIFS ID: fingerprint)
+        kissim.encoding.fingerprint_generator
             Fingerprint generator object containing fingerprints.
         """
 
