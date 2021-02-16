@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import numpy as np
+import pandas as pd
 from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.utils import enter_temp_directory
@@ -83,10 +84,21 @@ class TestFingerprint:
                 list(fingerprint1.values_dict["spatial"]["moments"].keys())
                 == FEATURE_NAMES_DISTANCES_AND_MOMENTS
             )
+            assert (
+                list(fingerprint1.values_dict["spatial"]["subpocket_centers"].keys())
+                == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+            )
             # Attribute residue_ids
             assert fingerprint1.residue_ids == fingerprint2.residue_ids
             # Attribute residue_ixs
             assert fingerprint1.residue_ixs == fingerprint2.residue_ixs
+            # Attribute subpocket_centers
+            assert isinstance(fingerprint1.subpocket_centers, pd.DataFrame)
+            assert (
+                fingerprint1.subpocket_centers.columns.to_list()
+                == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+            )
+            assert fingerprint1.subpocket_centers.index.to_list() == ["x", "y", "z"]
 
     @pytest.mark.parametrize(
         "structure_klifs_id, values_array_mean",

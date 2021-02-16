@@ -84,7 +84,6 @@ class FingerprintBase:
         self.values_dict = None
         self.residue_ids = None
         self.residue_ixs = None
-        self.subpocket_centers = None
 
     @property
     def physicochemical(self):
@@ -134,6 +133,22 @@ class FingerprintBase:
         features = pd.DataFrame(features, index=[1, 2, 3])
         features.index.name = "moments"
         return features
+
+    @property
+    def subpocket_centers(self):
+        """
+        Subpocket centers' coordinates.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Coordinates x, y, z (rows) for subpocket centers (columns).
+        """
+
+        subpocket_centers_dict = self.values_dict["spatial"]["subpocket_centers"]
+        subpocket_centers_df = pd.DataFrame(subpocket_centers_dict, index=["x", "y", "z"])
+
+        return subpocket_centers_df
 
     def values_array(self, physicochemical=True, spatial_distances=False, spatial_moments=True):
         """
