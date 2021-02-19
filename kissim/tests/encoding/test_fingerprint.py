@@ -13,7 +13,7 @@ from opencadd.databases.klifs import setup_local, setup_remote
 from kissim.utils import enter_temp_directory
 from kissim.io import PocketBioPython, PocketDataFrame
 from kissim.encoding import Fingerprint
-from kissim.tests.encoding.schema import (
+from kissim.schema import (
     FEATURE_NAMES,
     FEATURE_NAMES_PHYSICOCHEMICAL_DICT,
     FEATURE_NAMES_PHYSICOCHEMICAL,

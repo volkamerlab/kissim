@@ -1,31 +1,43 @@
 """
 kissim.encoding.definitions 
 
-Handles kissim-specific definitions.
+Handles definitions.
 """
 
 import pandas as pd
 
-SIDE_CHAIN_REPRESENTATIVE = {
-    "ALA": "CB",
-    "ARG": "CG",
-    "ASN": "CG",
-    "ASP": "CG",
-    "CYS": "SG",
-    "GLN": "CD",
-    "GLU": "CD",
-    "HIS": "CE1",
-    "ILE": "CD1",
-    "LEU": "CG",
-    "LYS": "NZ",
-    "MET": "CE",
-    "PHE": "CZ",
-    "PRO": "CB",
-    "SER": "OG",
-    "THR": "CB",
-    "TRP": "CE2",
-    "TYR": "OH",
-    "VAL": "CB",
+STANDARD_AMINO_ACIDS = [
+    "ALA",
+    "ARG",
+    "ASN",
+    "ASP",
+    "CYS",
+    "GLN",
+    "GLU",
+    "GLY",
+    "HIS",
+    "ILE",
+    "LEU",
+    "LYS",
+    "MET",
+    "PHE",
+    "PRO",
+    "SER",
+    "THR",
+    "TRP",
+    "TYR",
+    "VAL",
+]
+
+NON_STANDARD_AMINO_ACID_CONVERSION = {
+    "CAF": "CYS",
+    "CME": "CYS",
+    "CSS": "CYS",
+    "OCY": "CYS",
+    "KCX": "LYS",
+    "MSE": "MET",
+    "PHD": "ASP",
+    "PTR": "TYR",
 }
 
 SITEALIGN_FEATURES = pd.DataFrame.from_dict(
@@ -54,6 +66,28 @@ SITEALIGN_FEATURES = pd.DataFrame.from_dict(
     orient="index",
     columns=["size", "hbd", "hba", "charge", "aromatic", "aliphatic"],
 )
+
+SIDE_CHAIN_REPRESENTATIVE = {
+    "ALA": "CB",
+    "ARG": "CG",
+    "ASN": "CG",
+    "ASP": "CG",
+    "CYS": "SG",
+    "GLN": "CD",
+    "GLU": "CD",
+    "HIS": "CE1",
+    "ILE": "CD1",
+    "LEU": "CG",
+    "LYS": "NZ",
+    "MET": "CE",
+    "PHE": "CZ",
+    "PRO": "CB",
+    "SER": "OG",
+    "THR": "CB",
+    "TRP": "CE2",
+    "TYR": "OH",
+    "VAL": "CB",
+}
 
 EXPOSURE_RADIUS = 12.0
 

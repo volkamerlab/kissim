@@ -11,7 +11,7 @@ from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.utils import enter_temp_directory
 from kissim.encoding import Fingerprint, FingerprintNormalized, FingerprintGenerator
-from kissim.tests.encoding.schema import (
+from kissim.schema import (
     FEATURE_NAMES_PHYSICOCHEMICAL,
     FEATURE_NAMES_PHYSICOCHEMICAL_DICT,
     FEATURE_NAMES_DISTANCES_AND_MOMENTS,
