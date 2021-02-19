@@ -217,11 +217,11 @@ class TestsSubpocketsFeature:
         )
         feature = SubpocketsFeature.from_pocket(pocket)
         distances_calculated = feature._calculate_distances_to_center(pocket, subpocket_center)
-        mean_distance_calculated = np.nanmean(np.array(distances_calculated))
         if subpocket_center is None:
-            assert np.isnan(mean_distance_calculated)
             assert len(distances_calculated) == len(pocket._residue_ids)
+            assert all(np.isnan(distances_calculated))
         else:
+            mean_distance_calculated = np.nanmean(np.array(distances_calculated))
             assert pytest.approx(mean_distance_calculated, abs=1e-6) == mean_distance
 
     @pytest.mark.parametrize(
