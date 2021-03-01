@@ -9,8 +9,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from kissim.schema import NON_STANDARD_AMINO_ACID_CONVERSION
-from kissim.definitions import SITEALIGN_FEATURES
+from kissim.definitions import NON_STANDARD_AMINO_ACID_CONVERSION, SITEALIGN_FEATURES
 from kissim.encoding.features import BaseFeature
 
 logger = logging.getLogger(__name__)

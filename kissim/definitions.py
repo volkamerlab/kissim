@@ -1,31 +1,43 @@
 """
 kissim.encoding.definitions 
 
-Handles kissim-specific definitions.
+Handles definitions.
 """
 
 import pandas as pd
 
-SIDE_CHAIN_REPRESENTATIVE = {
-    "ALA": "CB",
-    "ARG": "CG",
-    "ASN": "CG",
-    "ASP": "CG",
-    "CYS": "SG",
-    "GLN": "CD",
-    "GLU": "CD",
-    "HIS": "CE1",
-    "ILE": "CD1",
-    "LEU": "CG",
-    "LYS": "NZ",
-    "MET": "CE",
-    "PHE": "CZ",
-    "PRO": "CB",
-    "SER": "OG",
-    "THR": "CB",
-    "TRP": "CE2",
-    "TYR": "OH",
-    "VAL": "CB",
+STANDARD_AMINO_ACIDS = [
+    "ALA",
+    "ARG",
+    "ASN",
+    "ASP",
+    "CYS",
+    "GLN",
+    "GLU",
+    "GLY",
+    "HIS",
+    "ILE",
+    "LEU",
+    "LYS",
+    "MET",
+    "PHE",
+    "PRO",
+    "SER",
+    "THR",
+    "TRP",
+    "TYR",
+    "VAL",
+]
+
+NON_STANDARD_AMINO_ACID_CONVERSION = {
+    "CAF": "CYS",
+    "CME": "CYS",
+    "CSS": "CYS",
+    "OCY": "CYS",
+    "KCX": "LYS",
+    "MSE": "MET",
+    "PHD": "ASP",
+    "PTR": "TYR",
 }
 
 SITEALIGN_FEATURES = pd.DataFrame.from_dict(
@@ -55,6 +67,28 @@ SITEALIGN_FEATURES = pd.DataFrame.from_dict(
     columns=["size", "hbd", "hba", "charge", "aromatic", "aliphatic"],
 )
 
+SIDE_CHAIN_REPRESENTATIVE = {
+    "ALA": "CB",
+    "ARG": "CG",
+    "ASN": "CG",
+    "ASP": "CG",
+    "CYS": "SG",
+    "GLN": "CD",
+    "GLU": "CD",
+    "HIS": "CE1",
+    "ILE": "CD1",
+    "LEU": "CG",
+    "LYS": "NZ",
+    "MET": "CE",
+    "PHE": "CZ",
+    "PRO": "CB",
+    "SER": "OG",
+    "THR": "CB",
+    "TRP": "CE2",
+    "TYR": "OH",
+    "VAL": "CB",
+}
+
 EXPOSURE_RADIUS = 12.0
 
 ANCHOR_RESIDUES = {
@@ -69,17 +103,12 @@ SUBPOCKETS = {
     "subpocket.color": ["magenta", "cornflowerblue", "green"],
 }
 
-# TODO update
-DISTANCE_CUTOFFS = {  # 99% percentile of all distances
-    "center": (3.05, 21.38),
-    "hinge_region": (4.10, 23.07),
-    "dfg_region": (4.62, 26.69),
-    "front_pocket": (5.46, 23.55),
+# Cutoffs defined in this notebook:
+# https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb
+DISTANCE_CUTOFFS = {
+    "hinge_region": (2.0, 31.0),
+    "dfg_region": (0.0, 34.0),
+    "front_pocket": (1.0, 33.0),
+    "center": (1.0, 29.0),
 }
-
-# TODO update
-MOMENT_CUTOFFS = {  # 99% percentile of all moments
-    1: (11.68, 14.14),
-    2: (3.29, 5.29),
-    3: (-1.47, 4.66),
-}
+MOMENT_CUTOFFS = {1: (11.0, 17.0), 2: (2.0, 7.0), 3: (-3.0, 7.0)}

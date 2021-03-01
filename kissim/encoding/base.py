@@ -98,6 +98,9 @@ class FingerprintBase:
         """
         features = self.values_dict["physicochemical"]
         features = pd.DataFrame(features, index=self.residue_ixs)
+        features = features[
+            ["size", "hbd", "hba", "charge", "aromatic", "aliphatic", "sco", "exposure"]
+        ]
         features.index.name = "residue.ix"
         return features
 
@@ -131,6 +134,22 @@ class FingerprintBase:
         features.index.name = "moments"
         return features
 
+    @property
+    def subpocket_centers(self):
+        """
+        Subpocket centers' coordinates.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Coordinates x, y, z (rows) for subpocket centers (columns).
+        """
+
+        subpocket_centers_dict = self.values_dict["spatial"]["subpocket_centers"]
+        subpocket_centers_df = pd.DataFrame(subpocket_centers_dict, index=["x", "y", "z"])
+
+        return subpocket_centers_df
+
     def values_array(self, physicochemical=True, spatial_distances=False, spatial_moments=True):
         """
         Get the full set or subset of features as 1D array.
@@ -154,18 +173,15 @@ class FingerprintBase:
         features = []
 
         if physicochemical:
-            physchem_features = self.values_dict["physicochemical"]
-            physchem_features = np.array(list(physchem_features.values())).flatten()
+            physchem_features = self.physicochemical.to_numpy().flatten()
             features.append(physchem_features)
 
         if spatial_distances:
-            distances_features = self.values_dict["spatial"]["distances"]
-            distances_features = np.array(list(distances_features.values())).flatten()
+            distances_features = self.distances.to_numpy().flatten()
             features.append(distances_features)
 
         if spatial_moments:
-            moments_features = self.values_dict["spatial"]["moments"]
-            moments_features = np.array(list(moments_features.values())).flatten()
+            moments_features = self.moments.to_numpy().flatten()
             features.append(moments_features)
 
         # Concatenate physicochemical and spatial features

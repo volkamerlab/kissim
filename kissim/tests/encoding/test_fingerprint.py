@@ -7,34 +7,23 @@ from pathlib import Path
 import pytest
 
 import numpy as np
+import pandas as pd
 from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.utils import enter_temp_directory
 from kissim.io import PocketBioPython, PocketDataFrame
 from kissim.encoding import Fingerprint
+from kissim.schema import (
+    FEATURE_NAMES,
+    FEATURE_NAMES_PHYSICOCHEMICAL_DICT,
+    FEATURE_NAMES_PHYSICOCHEMICAL,
+    FEATURE_NAMES_SPATIAL_DICT,
+    FEATURE_NAMES_DISTANCES_AND_MOMENTS,
+)
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 REMOTE = setup_remote()
 LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
-
-FEATURE_NAMES = ["physicochemical", "spatial"]
-FEATURE_NAMES_PHYSICOCHEMICAL = [
-    "size",
-    "hbd",
-    "hba",
-    "charge",
-    "aromatic",
-    "aliphatic",
-    "sco",
-    "exposure",
-]
-FEATURE_NAMES_SPATIAL = ["distances", "moments"]
-FEATURE_NAMES_DISTANCES_AND_MOMENTS = [
-    "hinge_region",
-    "dfg_region",
-    "front_pocket",
-    "center",
-]
 
 
 class TestFingerprint:
@@ -84,9 +73,9 @@ class TestFingerprint:
             assert list(fingerprint1.values_dict.keys()) == FEATURE_NAMES
             assert (
                 list(fingerprint1.values_dict["physicochemical"].keys())
-                == FEATURE_NAMES_PHYSICOCHEMICAL
+                == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
             )
-            assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL
+            assert list(fingerprint1.values_dict["spatial"].keys()) == FEATURE_NAMES_SPATIAL_DICT
             assert (
                 list(fingerprint1.values_dict["spatial"]["distances"].keys())
                 == FEATURE_NAMES_DISTANCES_AND_MOMENTS
@@ -95,10 +84,21 @@ class TestFingerprint:
                 list(fingerprint1.values_dict["spatial"]["moments"].keys())
                 == FEATURE_NAMES_DISTANCES_AND_MOMENTS
             )
+            assert (
+                list(fingerprint1.values_dict["spatial"]["subpocket_centers"].keys())
+                == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+            )
             # Attribute residue_ids
             assert fingerprint1.residue_ids == fingerprint2.residue_ids
             # Attribute residue_ixs
             assert fingerprint1.residue_ixs == fingerprint2.residue_ixs
+            # Attribute subpocket_centers
+            assert isinstance(fingerprint1.subpocket_centers, pd.DataFrame)
+            assert (
+                fingerprint1.subpocket_centers.columns.to_list()
+                == FEATURE_NAMES_DISTANCES_AND_MOMENTS
+            )
+            assert fingerprint1.subpocket_centers.index.to_list() == ["x", "y", "z"]
 
     @pytest.mark.parametrize(
         "structure_klifs_id, values_array_mean",
@@ -109,7 +109,7 @@ class TestFingerprint:
         Tets fingerprint values array.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         values_array_mean_calculated = np.nanmean(fingerprint.values_array(True, True, True))
         assert pytest.approx(values_array_mean_calculated, abs=1e-4) == values_array_mean
 
@@ -122,7 +122,7 @@ class TestFingerprint:
         Test DataFrame columns/index names.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         assert fingerprint.physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL
         assert fingerprint.physicochemical.index.to_list() == list(range(1, 86))
         assert fingerprint.physicochemical.index.name == "residue.ix"
@@ -136,7 +136,7 @@ class TestFingerprint:
         Test DataFrame columns/index names.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         assert fingerprint.distances.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert fingerprint.distances.index.to_list() == list(range(1, 86))
         assert fingerprint.distances.index.name == "residue.ix"
@@ -150,7 +150,7 @@ class TestFingerprint:
         Test DataFrame columns/index names.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         assert fingerprint.moments.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert fingerprint.moments.index.to_list() == [1, 2, 3]
         assert fingerprint.moments.index.name == "moments"
@@ -165,7 +165,7 @@ class TestFingerprint:
         physicochemical, distances and moments features.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         assert fingerprint.values_array(False, False, False).size == 0
         assert fingerprint.values_array(True, False, False).size == 680
         assert fingerprint.values_array(False, True, False).size == 340
@@ -184,7 +184,7 @@ class TestFingerprint:
         Test if saving/loading a fingerprint to/from a json file.
         """
 
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         json_filepath = Path("fingerprint.json")
 
         with enter_temp_directory():
@@ -216,19 +216,19 @@ class TestFingerprint:
         Test if physicochemical an spatial features dictionary has correct keys.
         """
 
-        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, REMOTE)
-        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, REMOTE)
+        pocket_bp = PocketBioPython.from_structure_klifs_id(structure_klifs_id, LOCAL)
+        pocket_df = PocketDataFrame.from_structure_klifs_id(structure_klifs_id, LOCAL)
 
         fingerprint = Fingerprint()
 
         # Physicochemical features
         physicochemical_dict = fingerprint._get_physicochemical_features_dict(pocket_bp)
         assert isinstance(physicochemical_dict, dict)
-        assert list(physicochemical_dict.keys()) == FEATURE_NAMES_PHYSICOCHEMICAL
+        assert list(physicochemical_dict.keys()) == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
 
         # Spatial features
         spatial_dict = fingerprint._get_spatial_features_dict(pocket_df)
         assert isinstance(spatial_dict, dict)
-        assert list(spatial_dict.keys()) == FEATURE_NAMES_SPATIAL
+        assert list(spatial_dict.keys()) == FEATURE_NAMES_SPATIAL_DICT
         assert list(spatial_dict["distances"].keys()) == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert list(spatial_dict["moments"].keys()) == FEATURE_NAMES_DISTANCES_AND_MOMENTS

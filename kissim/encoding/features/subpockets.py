@@ -33,6 +33,8 @@ class SubpocketsFeature(BaseFeature):
         Distances between all subpockets and all pocket residues.
     _moments : dict of (str: list of float)
         Moments of distribution of distances between all subpockets and all pocket residues.
+    _subpocket_centers : dict of (str: numpy.array)
+        Subpocket center coordinates.
     """
 
     def __init__(self):
@@ -42,6 +44,7 @@ class SubpocketsFeature(BaseFeature):
         self._residue_ixs = None
         self._distances = None
         self._moments = None
+        self._subpocket_centers = None
 
     @classmethod
     def from_pocket(cls, pocket, subpockets=None):  # pylint: disable=W0221
@@ -73,6 +76,7 @@ class SubpocketsFeature(BaseFeature):
 
         # Add subpockets
         pocket = feature._add_subpockets(pocket, subpockets)
+        feature._subpocket_centers = feature._get_subpocket_centers(pocket)
 
         # Calculate distances
         feature._distances = feature._calculate_distances(pocket)
@@ -158,6 +162,31 @@ class SubpocketsFeature(BaseFeature):
             )
 
         return pocket
+
+    def _get_subpocket_centers(self, pocket):
+        """
+        Get the subpocket center coordinates.
+
+        Parameters
+        ----------
+        pocket : kissim.io.PocketDataFrame
+            Pocket object.
+
+        Returns
+        -------
+        dict of (str: list of float)
+            Coordinates (values) for subpockets (keys).
+        """
+
+        subpocket_centers = pocket.subpockets.set_index("subpocket.name")[
+            "subpocket.center"
+        ].to_dict()
+        subpocket_centers["center"] = pocket.center
+        subpocket_centers = {
+            name: (coordinates.tolist() if coordinates is not None else coordinates)
+            for name, coordinates in subpocket_centers.items()
+        }
+        return subpocket_centers
 
     def _calculate_distances(self, pocket):
         """

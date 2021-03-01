@@ -110,29 +110,29 @@ class TestsSiteAlignFeature:
     @pytest.mark.parametrize(
         "residue_name, feature_name, value",
         [
-            ("ALA", "size", np.float(1.0)),  # Size
-            ("ASN", "size", np.float(2.0)),
-            ("ARG", "size", np.float(3.0)),
-            ("PTR", "size", np.float(3.0)),  # Converted non-standard
-            ("MSE", "size", np.float(2.0)),  # Converted non-standard
+            ("ALA", "size", 1.0),  # Size
+            ("ASN", "size", 2.0),
+            ("ARG", "size", 3.0),
+            ("PTR", "size", 3.0),  # Converted non-standard
+            ("MSE", "size", 2.0),  # Converted non-standard
             ("XXX", "size", np.nan),  # Non-convertable non-standard
-            ("ALA", "hbd", np.float(0.0)),
-            ("ASN", "hbd", np.float(1.0)),
-            ("ARG", "hbd", np.float(3.0)),
+            ("ALA", "hbd", 0.0),
+            ("ASN", "hbd", 1.0),
+            ("ARG", "hbd", 3.0),
             ("XXX", "hbd", np.nan),
-            ("ALA", "hba", np.float(0.0)),
-            ("ASN", "hba", np.float(1.0)),
-            ("ASP", "hba", np.float(2.0)),
+            ("ALA", "hba", 0.0),
+            ("ASN", "hba", 1.0),
+            ("ASP", "hba", 2.0),
             ("XXX", "hba", np.nan),
-            ("ALA", "charge", np.float(0.0)),
-            ("ARG", "charge", np.float(1.0)),
-            ("ASP", "charge", np.float(-1.0)),
+            ("ALA", "charge", 0.0),
+            ("ARG", "charge", 1.0),
+            ("ASP", "charge", -1.0),
             ("XXX", "charge", np.nan),
-            ("ALA", "aromatic", np.float(0.0)),
-            ("HIS", "aromatic", np.float(1.0)),
+            ("ALA", "aromatic", 0.0),
+            ("HIS", "aromatic", 1.0),
             ("XXX", "aromatic", np.nan),
-            ("ARG", "aliphatic", np.float(0.0)),
-            ("ALA", "aliphatic", np.float(1.0)),
+            ("ARG", "aliphatic", 0.0),
+            ("ALA", "aliphatic", 1.0),
             ("XXX", "aliphatic", np.nan),
         ],
     )

@@ -12,8 +12,11 @@ from opencadd.io import Biopython
 from opencadd.structure.pocket import PocketBase
 
 from .data import KlifsToKissimData
-from ..definitions import SIDE_CHAIN_REPRESENTATIVE
-from ..schema import STANDARD_AMINO_ACIDS, NON_STANDARD_AMINO_ACID_CONVERSION
+from ..definitions import (
+    STANDARD_AMINO_ACIDS,
+    NON_STANDARD_AMINO_ACID_CONVERSION,
+    SIDE_CHAIN_REPRESENTATIVE,
+)
 from ..utils import enter_temp_directory
 
 logger = logging.getLogger(__name__)
