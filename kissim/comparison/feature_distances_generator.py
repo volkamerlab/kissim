@@ -7,7 +7,7 @@ Defines the feature distances for multiple fingerprint pairs.
 import datetime
 import json
 import logging
-from multiprocessing import cpu_count, Pool
+from multiprocessing import Pool
 from pathlib import Path
 
 from itertools import combinations, repeat, chain
