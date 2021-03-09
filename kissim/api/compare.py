@@ -37,8 +37,13 @@ def compare(
 
     print(csv_path)
 
-    feature_distances_generator = FeatureDistancesGenerator()
-    feature_distances_generator.from_fingerprint_generator(fingerprint_generator, distance_measure)
+    start = datetime.datetime.now()
+
+    logger.info(f"SIMILARITY: FingerprintDistanceGenerator: {feature_weights}")
+
+    feature_distances_generator = FeatureDistancesGenerator.from_fingerprint_generator(
+        fingerprint_generator
+    )
     # TODO save to file
 
     fingerprint_distance_generator = FingerprintDistanceGenerator()
@@ -46,3 +51,8 @@ def compare(
         feature_distances_generator, feature_weights
     )
     # TODO save to file
+
+    end = datetime.datetime.now()
+
+    logger.info(f"Start of fingerprint distance generation: {start}")
+    logger.info(f"End of fingerprint distance generation: {end}")
