@@ -10,11 +10,12 @@ import json
 import logging
 from pathlib import Path
 
-from multiprocessing import cpu_count, Pool
+from multiprocessing import Pool
 import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import Fingerprint, FingerprintNormalized
+from kissim.utils import set_n_cores
 
 logger = logging.getLogger(__name__)
 
@@ -71,34 +72,24 @@ class FingerprintGenerator:
         if klifs_session is None:
             klifs_session = setup_remote()
 
+        # Set number of cores to be used
+        n_cores = set_n_cores(n_cores)
+
         # Initialize FingerprintGenerator object
         fingerprint_generator = cls()
         fingerprint_generator.structure_klifs_ids = structure_klifs_ids
         fingerprint_generator.klifs_session = klifs_session
-
-        # Set number of cores to be used
-        n_cores = fingerprint_generator._set_n_cores(n_cores)
-
-        # Generate fingerprints
-        if n_cores == 1:
-            fingerprints_list = fingerprint_generator._process_fingerprints_in_sequence()
-        else:
-            fingerprints_list = fingerprint_generator._process_fingerprints_in_parallel(n_cores)
-
-        # Add fingerprints to FingerprintGenerator object
+        fingerprints_list = fingerprint_generator._get_fingerprint_list(n_cores)
         fingerprint_generator.data = {
             i.structure_klifs_id: i
             for i in fingerprints_list
             if i is not None  # Removes emtpy fingerprints
         }
-
-        # Normalize fingerprints
         fingerprint_generator.data_normalized = fingerprint_generator._normalize_fingerprints()
 
         end_time = datetime.datetime.now()
-
         logger.info(f"Number of input structures: {len(structure_klifs_ids)}")
-        logger.info(f"Number of successfull fingerprints: {len(fingerprint_generator.data)}")
+        logger.info(f"Number of successful fingerprints: {len(fingerprint_generator.data)}")
         logger.info(f"Runtime: {end_time - start_time}")
 
         return fingerprint_generator
@@ -170,7 +161,6 @@ class FingerprintGenerator:
             coordinates_series = fingerprint.subpocket_centers.transpose().stack()
             coordinates_series.name = structure_klifs_id
             coordinates.append(coordinates_series)
-        print(coordinates_series)
         coordinates = pd.DataFrame(coordinates)
 
         return coordinates
@@ -352,38 +342,27 @@ class FingerprintGenerator:
         features_exploded.index = multi_index
         return features_exploded
 
-    def _set_n_cores(self, n_cores):
+    def _get_fingerprint_list(self, n_cores):
         """
-        Set the number of cores to be used for fingerprint generation.
+        Generate fingerprints.
 
         Parameters
         ----------
-        n_cores : int or None
-            Number of cores as defined by the user.
-            If no number is given, use all available CPUs - 1.
-            If a number is given, raise error if it exceeds the number of available CPUs - 1.
+        n_cores : int
+            Number of cores.
 
         Returns
         -------
-        int
-            Number of cores to be used for fingerprint generation.
-
-        Raises
-        ------
-        ValueError
-            If input number of cores exceeds the number of available CPUs - 1.
+        list of kissim.encoding.fingerprint
+            List of fingerprints
         """
 
-        max_n_cores = cpu_count()
-        if n_cores is None:
-            n_cores = max_n_cores
+        if n_cores == 1:
+            fingerprints_list = self._process_fingerprints_in_sequence()
         else:
-            if n_cores > max_n_cores:
-                raise ValueError(
-                    f"Maximal number of available cores: {max_n_cores}. You chose: {n_cores}."
-                )
-        logger.info(f"Number of cores used: {n_cores}.")
-        return n_cores
+            fingerprints_list = self._process_fingerprints_in_parallel(n_cores)
+
+        return fingerprints_list
 
     def _process_fingerprints_in_sequence(self):
         """
@@ -422,6 +401,7 @@ class FingerprintGenerator:
         )
         pool.close()
         pool.join()
+
         return fingerprints_list
 
     def _get_fingerprint(self, structure_klifs_id, klifs_session):
