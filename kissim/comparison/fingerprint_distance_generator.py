@@ -380,7 +380,7 @@ class FingerprintDistanceGenerator:
             kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
         elif by == "size":
             kinase_distances = structure_distances_grouped_by_kinases.size()
-            kinase_distances.name = "n_structures"
+            kinase_distances.name = "distance"
             kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
         else:
             raise ValueError(f'Condition "by" unknown. Choose from: {", ".join(by_terms)}')
