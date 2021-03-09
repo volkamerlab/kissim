@@ -64,12 +64,12 @@ class TestsFingerprintDistanceGenerator:
             assert isinstance(i, FingerprintDistance)
 
     @pytest.mark.parametrize(
-        "distance_measure, feature_weights, molecule_codes, kinase_names",
+        "distance_measure, feature_weights, structure_ids, kinase_ids",
         [
             (
                 "scaled_euclidean",
                 None,
-                "HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1".split(),
+                "pdb1 pdb2 pdb3".split(),
                 "kinase1 kinase2".split(),
             )
         ],
@@ -79,8 +79,8 @@ class TestsFingerprintDistanceGenerator:
         feature_distances_generator,
         distance_measure,
         feature_weights,
-        molecule_codes,
-        kinase_names,
+        structure_ids,
+        kinase_ids,
     ):
         """
         Test FingerprintDistanceGenerator class attributes.
@@ -103,52 +103,41 @@ class TestsFingerprintDistanceGenerator:
                 distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region,
                 distance_to_front_pocket, moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
-        molecule_codes : list of str
+        structure_ids : list of str
             List of molecule codes associated with input fingerprints.
-        kinase_names : list of str
+        kinase_ids : list of str
             List of kinase names associated with input fingerprints.
         """
 
         # FingerprintDistanceGenerator
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_generator.from_feature_distances_generator(
-            feature_distances_generator
+        fingerprint_distance_generator = (
+            FingerprintDistanceGenerator.from_feature_distances_generator(
+                feature_distances_generator
+            )
         )
 
         # Test attributes
-        assert fingerprint_distance_generator.distance_measure == distance_measure
         assert fingerprint_distance_generator.feature_weights == feature_weights
-        assert fingerprint_distance_generator.molecule_codes == molecule_codes
-        assert fingerprint_distance_generator.kinase_names == kinase_names
+        assert fingerprint_distance_generator.structure_ids == structure_ids
+        assert fingerprint_distance_generator.kinase_ids == kinase_ids
 
         assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
 
-        data_columns = "molecule_code_1 molecule_code_2 distance coverage".split()
+        data_columns = "structure1 structure2 kinase1 kinase2 distance coverage".split()
         assert list(fingerprint_distance_generator.data.columns) == data_columns
 
     @pytest.mark.parametrize(
-        "fill, structure_distance_matrix",
+        "structure_distance_matrix",
         [
-            (
-                False,
-                pd.DataFrame(
-                    [[0.0, 0.5, 0.75], [np.nan, 0.0, 1.0], [np.nan, np.nan, 0.0]],
-                    columns="HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1".split(),
-                    index="HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1".split(),
-                ),
-            ),
-            (
-                True,
-                pd.DataFrame(
-                    [[0.0, 0.5, 0.75], [0.5, 0.0, 1.0], [0.75, 1.0, 0.0]],
-                    columns="HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1".split(),
-                    index="HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1".split(),
-                ),
-            ),
+            pd.DataFrame(
+                [[0.0, 0.75, 1.0], [0.75, 0.0, 0.8], [1.0, 0.8, 0.0]],
+                columns="pdb1 pdb2 pdb3".split(),
+                index="pdb1 pdb2 pdb3".split(),
+            )
         ],
     )
-    def test_get_structure_distance_matrix(
-        self, fingerprint_distance_generator, fill, structure_distance_matrix
+    def test_structure_distance_matrix(
+        self, fingerprint_distance_generator, structure_distance_matrix
     ):
         """
         Test if structure distance matrix is correct.
@@ -157,60 +146,48 @@ class TestsFingerprintDistanceGenerator:
         ----------
         fingerprint_distance_generator : FingerprintDistanceGenerator
             Fingerprint distance for multiple fingerprint pairs.
-        fill
-        structure_distance_matrix
+        structure_distance_matrix : pandas.DataFrame
+            Structure distance matrix.
         """
 
         # Test generation of structure distance matrix
         structure_distance_matrix_calculated = (
-            fingerprint_distance_generator.get_structure_distance_matrix(fill)
+            fingerprint_distance_generator.structure_distance_matrix()
         )
 
         assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
 
     @pytest.mark.parametrize(
-        "by, fill, structure_distance_matrix",
+        "by, kinase_distance_matrix",
         [
             (
                 "minimum",
-                False,
                 pd.DataFrame(
-                    [[0.5, 0.75], [np.nan, 0.0]],
+                    [[0.0, 0.8], [0.8, 0.0]],
                     columns="kinase1 kinase2".split(),
                     index="kinase1 kinase2".split(),
                 ),
             ),  # Minimum
             (
-                "minimum",
-                True,
-                pd.DataFrame(
-                    [[0.5, 0.75], [0.75, 0.0]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
-                ),
-            ),  # Fill=True
-            (
                 "maximum",
-                False,
                 pd.DataFrame(
-                    [[0.5, 1.0], [np.nan, 0.0]],
+                    [[0.75, 1.0], [1.0, 0.0]],
                     columns="kinase1 kinase2".split(),
                     index="kinase1 kinase2".split(),
                 ),
             ),  # Maximum
             (
                 "mean",
-                False,
                 pd.DataFrame(
-                    [[0.5, 0.875], [np.nan, 0.0]],
+                    [[0.25, 0.9], [0.9, 0.0]],
                     columns="kinase1 kinase2".split(),
                     index="kinase1 kinase2".split(),
                 ),
-            ),  # Minimum
+            ),  # Mean
         ],
     )
-    def test_get_kinase_distance_matrix(
-        self, fingerprint_distance_generator, by, fill, structure_distance_matrix
+    def test_kinase_distance_matrix(
+        self, fingerprint_distance_generator, by, kinase_distance_matrix
     ):
         """
         Test if kinase distance matrix is correct.
@@ -224,13 +201,13 @@ class TestsFingerprintDistanceGenerator:
             distances values per structure pair. Default: Minimum distance value.
         fill : bool
             Fill or fill not (default) lower triangle of distance matrix.
-        structure_distance_matrix : pandas.DataFrame
+        kinase_distance_matrix : pandas.DataFrame
             xxx
         """
 
         # Test generation of structure distance matrix
-        structure_distance_matrix_calculated = (
-            fingerprint_distance_generator.get_kinase_distance_matrix(by, fill)
+        kinase_distance_matrix_calculated = fingerprint_distance_generator.kinase_distance_matrix(
+            by
         )
 
-        assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
+        assert kinase_distance_matrix_calculated.equals(kinase_distance_matrix)

@@ -17,8 +17,10 @@ class FingerprintDistance:
 
     Attributes
     ----------
-    molecule_pair_code : tuple of str
-        Codes of both molecules represented by the fingerprints.
+    structure_pair_ids : tuple of str or int
+        IDs of both structures that are represented by the input fingerprints.
+    kinase_pair_ids : tuple of str or int
+        IDs for kinases that are represented by the input fingerprints.
     distance : float
         Fingerprint distance (weighted per feature).
     bit_coverage : float
@@ -27,11 +29,13 @@ class FingerprintDistance:
 
     def __init__(self):
 
-        self.molecule_pair_code = None
+        self.structure_pair_ids = None
+        self.kinase_pair_ids = None
         self.distance = None
         self.bit_coverage = None
 
-    def from_feature_distances(self, feature_distances, feature_weights=None):
+    @classmethod
+    def from_feature_distances(cls, feature_distances, feature_weights=None):
         """
         Get fingerprint distance.
 
@@ -52,17 +56,31 @@ class FingerprintDistance:
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
             For (ii) and (iii): All floats must sum up to 1.0.
+
+        Returns
+        -------
+        kissim.comparison.FingerprintDistance
+            Fingerprint distance.
         """
 
+        fingerprint_distance = cls()
+
         # Set class attributes
-        self.molecule_pair_code = feature_distances.molecule_pair_code
+        fingerprint_distance.structure_pair_ids = feature_distances.structure_pair_ids
+        fingerprint_distance.kinase_pair_ids = feature_distances.kinase_pair_ids
 
         # Add weights
-        feature_weights_formatted = self._format_weights(feature_weights)
+        feature_weights_formatted = fingerprint_distance._format_weights(feature_weights)
 
         # Calculate weighted sum of feature distances and feature coverage
-        self.distance = sum(feature_distances.distances * feature_weights_formatted)
-        self.bit_coverage = sum(feature_distances.bit_coverages * feature_weights_formatted)
+        fingerprint_distance.distance = sum(
+            feature_distances.distances * feature_weights_formatted
+        )
+        fingerprint_distance.bit_coverage = sum(
+            feature_distances.bit_coverages * feature_weights_formatted
+        )
+
+        return fingerprint_distance
 
     def _format_weights(self, feature_weights=None):
         """

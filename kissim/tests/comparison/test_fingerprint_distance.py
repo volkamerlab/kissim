@@ -253,13 +253,14 @@ class TestsFingerprintDistance:
         """
 
         # FingerprintDistance
-        fingerprint_distance = FingerprintDistance()
-        fingerprint_distance.from_feature_distances(feature_distances, feature_weights)
+        fingerprint_distance = FingerprintDistance.from_feature_distances(
+            feature_distances, feature_weights
+        )
 
         # Test class attributes:
 
         # Molecule codes
-        assert fingerprint_distance.molecule_pair_code == feature_distances.molecule_pair_code
+        assert fingerprint_distance.structure_pair_ids == feature_distances.structure_pair_ids
 
         # Fingerprint distance
         assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
