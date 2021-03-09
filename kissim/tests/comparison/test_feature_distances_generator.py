@@ -18,31 +18,6 @@ class TestsFeatureDistancesGenerator:
     """
 
     @pytest.mark.parametrize(
-        "fingerprints, empty_fingerprints",
-        [
-            ({"a": Fingerprint(), "b": None}, {"a": Fingerprint()}),
-            ({"a": Fingerprint()}, {"a": Fingerprint()}),
-        ],
-    )
-    def test_remove_empty_fingerprints(self, fingerprints, empty_fingerprints):
-        """
-        Test removal of empty fingerprints (None) from fingerprints dictionary.
-
-        Parameters
-        ----------
-        fingerprints : dict of kissim.encoding.Fingerprint
-            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        empty_fingerprints : dict of kissim.encoding.Fingerprint
-            Dictionary of non-empty fingerprints: Keys are molecule codes and values are
-            fingerprint data.
-        """
-
-        generator = FeatureDistancesGenerator()
-        empty_fingerprints_calculated = generator._remove_empty_fingerprints(fingerprints)
-
-        assert empty_fingerprints_calculated.keys() == empty_fingerprints.keys()
-
-    @pytest.mark.parametrize(
         "fingerprints, pairs",
         [
             (
@@ -64,7 +39,7 @@ class TestsFeatureDistancesGenerator:
         """
 
         generator = FeatureDistancesGenerator()
-        pairs_calculated = generator._get_fingerprint_pairs(fingerprints)
+        pairs_calculated = generator._fingerprint_pairs(fingerprints)
 
         for pair_calculated, pair in zip(pairs_calculated, pairs):
             assert pair_calculated == pair
@@ -114,7 +89,7 @@ class TestsFeatureDistancesGenerator:
             assert isinstance(i, FeatureDistances)
 
     @pytest.mark.parametrize(
-        "distance_measure, feature_weights, molecule_codes, kinase_names",
+        "distance_measure, feature_weights, structure_ids, kinase_ids",
         [
             (
                 "scaled_euclidean",
@@ -129,8 +104,8 @@ class TestsFeatureDistancesGenerator:
         fingerprint_generator,
         distance_measure,
         feature_weights,
-        molecule_codes,
-        kinase_names,
+        structure_ids,
+        kinase_ids,
     ):
         """
         Test FeatureDistancesGenerator class attributes.
@@ -142,11 +117,11 @@ class TestsFeatureDistancesGenerator:
         """
 
         # Test FeatureDistancesGenerator class attributes
-        feature_distances_generator = FeatureDistancesGenerator()
-        feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
+        feature_distances_generator = FeatureDistancesGenerator.from_fingerprint_generator(
+            fingerprint_generator
+        )
 
         # Test attributes
-        assert feature_distances_generator.distance_measure == distance_measure
         assert isinstance(feature_distances_generator.data, dict)
 
         # Test example value from dictionary

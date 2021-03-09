@@ -5,35 +5,20 @@ Defines the feature distances for multiple fingerprint pairs.
 """
 
 import datetime
+import json
 import logging
 from multiprocessing import cpu_count, Pool
+from pathlib import Path
 
 from itertools import combinations, repeat, chain
 import pandas as pd
 
+from kissim.encoding import FingerprintGenerator
+from kissim.schema import DISTANCES_FEATURE_NAMES
+from kissim.utils import set_n_cores
 from . import FeatureDistances
 
 logger = logging.getLogger(__name__)
-
-FEATURE_NAMES = {
-    "physicochemical": [
-        "size",
-        "hbd",
-        "hba",
-        "charge",
-        "aromatic",
-        "aliphatic",
-        "sco",
-        "exposure",
-    ],
-    "distances": [
-        "distance_to_centroid",
-        "distance_to_hinge_region",
-        "distance_to_dfg_region",
-        "distance_to_front_pocket",
-    ],
-    "moments": ["moment1", "moment2", "moment3"],
-}
 
 
 class FeatureDistancesGenerator:
@@ -43,98 +28,189 @@ class FeatureDistancesGenerator:
 
     Attributes
     ----------
-    distance_measure : str
-        Type of distance measure, defaults to scaled Euclidean distance.
     data : dict of tuple of str: np.ndarray
         Feature distances and bit coverage (value) for each fingerprint pair (key: molecule codes).
+    structure_kinase_ids : list of tuple
+        Structure and kinase IDs for structures in dataset.
     """
 
     def __init__(self):
-
-        self.distance_measure = None
         self.data = None
+        self.structure_kinase_ids = None
 
     @property
-    def molecule_codes(self):
+    def structure_ids(self):
         """
-        Unique molecule codes associated with all fingerprints (sorted alphabetically).
+        Unique structure IDs associated with all fingerprints (sorted alphabetically).
 
         Returns
         -------
-        list of str:
-            Molecule codes.
+        list of str or int
+            Structure IDs.
         """
 
         if self.data is not None:
-            deduplicated_molecule_codes = sorted(list(set(chain.from_iterable(self.data.keys()))))
-            return deduplicated_molecule_codes
+            structure_ids = self.data.keys()
+            deduplicated_structure_ids = sorted(set(chain.from_iterable(structure_ids)))
+            return deduplicated_structure_ids
 
     @property
-    def kinase_names(self):
+    def kinase_ids(self):
         """
-        Unique kinase names associated with all fingerprints (sorted alphabetically).
+        Unique kinase IDs (e.g. kinase names) associated with all fingerprints (sorted
+        alphabetically).
 
         Returns
         -------
-        list of str
-            Kinase names.
+        list of str or int
+            Kinase IDs.
         """
 
-        # TODO generalize (KLIFS-independent?)
         if self.data is not None:
-            kinase_names = [i.kinase_pair for i in self.data.values()]
-            deduplicated_kinase_names = sorted(list(set(chain.from_iterable(kinase_names))))
-            return deduplicated_kinase_names
+            kinase_ids = [i.kinase_pair_ids for i in self.data.values()]
+            deduplicated_kinase_ids = sorted(set(chain.from_iterable(kinase_ids)))
+            return deduplicated_kinase_ids
 
-    def from_fingerprint_generator(
-        self, fingerprints_generator, distance_measure="scaled_euclidean"
-    ):
+    @classmethod
+    def from_fingerprint_generator(cls, fingerprints_generator, n_cores=None):
         """
-        Calculate feature distances for all possible fingerprint pair combinations, given a
-        distance measure.
+        Calculate feature distances for all possible structure pairs.
 
         Parameters
         ----------
         fingerprints_generator : kissim.encoding.FingerprintsGenerator
             Multiple fingerprints.
-        distance_measure : str
-            Type of distance measure, defaults to scaled Euclidean distance.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
+
+        Returns
+        -------
+        kissim.comparison.FeatureDistancesGenerator
+            Feature distances generator.
         """
 
-        start = datetime.datetime.now()
+        start_time = datetime.datetime.now()
+        logger.info(f"Feature distances generation started at: {start_time}")
 
-        logger.info(f"SIMILARITY: FeatureDistancesGenerator: {distance_measure}")
+        # Set number of cores to be used
+        n_cores = set_n_cores(n_cores)
 
-        # Remove empty fingerprints
-        fingerprints = self._remove_empty_fingerprints(fingerprints_generator.data)
-
-        # Set class attributes
-        self.distance_measure = distance_measure
-
-        # Calculate pairwise feature distances
-        feature_distances_list = self._get_feature_distances_from_list(
-            self._get_feature_distances, fingerprints, self.distance_measure
+        # Initialize FeatureDistancesGenerator object
+        feature_distances_generator = cls()
+        feature_distances_list = feature_distances_generator._get_feature_distances_from_list(
+            feature_distances_generator._get_feature_distances,
+            fingerprints_generator.data,
+            n_cores,
         )
+        feature_distances_generator.data = {
+            i.structure_pair_ids: i for i in feature_distances_list
+        }
+        feature_distances_generator.structure_kinase_ids = [
+            (structure_id, fingerprint.kinase_name)
+            for structure_id, fingerprint in fingerprints_generator.data.items()
+        ]
 
-        # Cast returned list into dict
-        self.data = {i.molecule_pair_code: i for i in feature_distances_list}
+        end_time = datetime.datetime.now()
+        logger.info(f"Number of feature distances: {len(feature_distances_generator.data)}")
+        logger.info(f"Runtime: {end_time - start_time}")
 
-        end = datetime.datetime.now()
+        return feature_distances_generator
 
-        logger.info(f"Start of feature distances generator: {start}")
-        logger.info(f"End of feature distances generator: {end}")
-
-    def get_data_by_molecule_pair(self, molecule_code1, molecule_code2):
+    @classmethod
+    def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=None):
         """
-        Get feature distances for fingerprint pair by their molecule codes, with details on
+        Calculate feature distances for all possible structure pairs.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            Input structure KLIFS ID (output fingerprints may contain less IDs because some
+            structures could not be encoded).
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
+
+        Returns
+        -------
+        kissim.comparison.FeatureDistancesGenerator
+            Feature distances generator.
+        """
+
+        fingerprint_generator = FingerprintGenerator.from_structure_klifs_ids(
+            structure_klifs_ids, klifs_session, n_cores
+        )
+        feature_distances_generator = cls.from_fingerprint_generator(
+            fingerprint_generator, n_cores
+        )
+        return feature_distances_generator
+
+    @classmethod
+    def from_json(cls, filepath):
+        """
+        Initialize a FeatureDistancesGenerator object from a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+
+        Returns
+        -------
+        kissim.comparison.FeatureDistancesGenerator
+            Feature distances generator.
+        """
+
+        filepath = Path(filepath)
+        with open(filepath, "r") as f:
+            json_string = f.read()
+        feature_distances_list = json.loads(json_string)
+
+        data = {}
+        for feature_distances_dict in feature_distances_list:
+            feature_distances = FeatureDistances._from_dict(feature_distances_dict)
+            data[feature_distances.structure_pair_ids] = feature_distances
+
+        feature_distances_generator = cls()
+        feature_distances_generator.data = data
+
+        return feature_distances_generator
+
+    def to_json(self, filepath):
+        """
+        Write FeatureDistancesGenerator class attributes to a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+        """
+
+        feature_distances_list = [
+            feature_distances.__dict__
+            for structure_pair_ids, feature_distances in self.data.items()
+        ]
+        # Cast np.array to list
+        for feature_distances in feature_distances_list:
+            feature_distances["distances"] = feature_distances["distances"].tolist()
+            feature_distances["bit_coverages"] = feature_distances["bit_coverages"].tolist()
+
+        json_string = json.dumps(feature_distances_list)
+        filepath = Path(filepath)
+        with open(filepath, "w") as f:
+            f.write(json_string)
+
+    def by_structure_pair(self, structure_id1, structure_id2):
+        """
+        Get feature distances for fingerprint pair by their structure IDs, with details on
         feature types, feature names, and feature bit coverages.
 
         Parameters
         ----------
-        molecule_code1 : str
-            Molecule code 1.
-        molecule_code2 : str
-            Molecule code 2.
+        structure_id1 : str
+            Structure ID 1.
+        structure_id2 : str
+            Structure ID 2.
 
         Returns
         -------
@@ -146,9 +222,11 @@ class FeatureDistancesGenerator:
         if self.data is not None:
 
             feature_types = list(
-                chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()])
+                chain.from_iterable(
+                    [[key] * len(value) for key, value in DISTANCES_FEATURE_NAMES.items()]
+                )
             )
-            feature_names = list(chain.from_iterable(FEATURE_NAMES.values()))
+            feature_names = list(chain.from_iterable(DISTANCES_FEATURE_NAMES.values()))
 
             data = self.data[(molecule_code1, molecule_code2)]
 
@@ -158,91 +236,8 @@ class FeatureDistancesGenerator:
 
             return data_df
 
-    def _get_feature_distances_from_list(
-        self, _get_feature_distances, fingerprints, distance_measure="scaled_euclidean"
-    ):
-        """
-        Get feature distances for multiple fingerprint pairs.
-        Uses parallel computing.
-
-        Parameters
-        ----------
-        _get_feature_distances : method
-            Method calculating feature distances for one fingerprint pair.
-        fingerprints : dict of str: kissim.encoding.Fingerprint
-            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        distance_measure : str
-            Type of distance measure, defaults to scaled Euclidean distance.
-
-        Returns
-        -------
-        list of kissim.similarity.FeatureDistances
-            List of distances and bit coverages between two fingerprints for each of their
-            features.
-        """
-
-        # Get start time of computation
-        start = datetime.datetime.now()
-        logger.info(f"Calculate pairwise feature distances...")
-
-        # Number of CPUs on machine
-        num_cores = cpu_count() - 1
-        logger.info(f"Number of cores used: {num_cores}")
-
-        # Create pool with `num_processes` processes
-        pool = Pool(processes=num_cores)
-
-        # Get fingerprint pairs (molecule code pairs)
-        pairs = self._get_fingerprint_pairs(fingerprints)
-
-        # Apply function to each chunk in list
-        feature_distances_list = pool.starmap(
-            _get_feature_distances, zip(pairs, repeat(fingerprints), repeat(distance_measure))
-        )
-
-        # Close and join pool
-        pool.close()
-        pool.join()
-
-        # Get end time of script
-        logger.info(f"Number of feature distances: {len(feature_distances_list)}")
-        end = datetime.datetime.now()
-
-        logger.info(start)
-        logger.info(end)
-
-        return feature_distances_list
-
     @staticmethod
-    def _get_feature_distances(pair, fingerprints, distance_measure="scaled_euclidean"):
-        """
-        Calculate the feature distances for one fingerprint pair.
-
-        Parameters
-        ----------
-        fingerprints : dict of tuple of str: kissim.encoding.Fingerprint
-            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        pair : tuple of str
-            Molecule names of molecules encoded by fingerprint pair.
-        distance_measure : str
-            Type of distance measure, defaults to scaled Euclidean distance.
-
-        Returns
-        -------
-        kissim.similarity.FeatureDistances
-            Distances and bit coverages between two fingerprints for each of their features.
-        """
-
-        fingerprint1 = fingerprints[pair[0]]
-        fingerprint2 = fingerprints[pair[1]]
-
-        feature_distances = FeatureDistances()
-        feature_distances.from_fingerprints(fingerprint1, fingerprint2, distance_measure)
-
-        return feature_distances
-
-    @staticmethod
-    def _get_fingerprint_pairs(fingerprints):
+    def _fingerprint_pairs(fingerprints):
         """
         Get all fingerprint pair combinations from dictionary of fingerprints.
 
@@ -257,46 +252,59 @@ class FeatureDistancesGenerator:
             List of molecule code pairs (list).
         """
 
-        pairs = []
-
-        for i, j in combinations(fingerprints.keys(), 2):
-            pairs.append((i, j))
-
-        logger.info(f"Number of pairs: {len(pairs)}")
-
+        pairs = [(i, j) for i, j in combinations(fingerprints.keys(), 2)]
         return pairs
 
-    @staticmethod
-    def _remove_empty_fingerprints(fingerprints):
+    def _get_feature_distances_from_list(self, _get_feature_distances, fingerprints, n_cores=None):
         """
-        Remove empty fingerprints from dictionary of fingerprints.
+        Get feature distances for multiple fingerprint pairs.
+        Uses parallel computing.
 
         Parameters
         ----------
+        _get_feature_distances : method
+            Method calculating feature distances for one fingerprint pair.
         fingerprints : dict of str: kissim.encoding.Fingerprint
+            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
+
+        Returns
+        -------
+        list of kissim.similarity.FeatureDistances
+            List of distances and bit coverages between two fingerprints for each of their
+            features.
+        """
+
+        pool = Pool(processes=n_cores)
+        pairs = self._fingerprint_pairs(fingerprints)
+        feature_distances_list = pool.starmap(
+            _get_feature_distances, zip(pairs, repeat(fingerprints))
+        )
+        pool.close()
+        pool.join()
+
+        return feature_distances_list
+
+    @staticmethod
+    def _get_feature_distances(pair, fingerprints):
+        """
+        Calculate the feature distances for one fingerprint pair.
+
+        Parameters
+        ----------
+        fingerprints : dict of tuple of str: kissim.encoding.Fingerprint
             Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
 
         Returns
         -------
-        dict of str: kissim.encoding.Fingerprint
-            Dictionary of non-empty fingerprints: Keys are molecule codes and values are
-            fingerprint data.
+        kissim.similarity.FeatureDistances
+            Distances and bit coverages between two fingerprints for each of their features.
         """
 
-        # Get molecule codes for empty fingerprints
-        empty_molecule_codes = []
+        fingerprint1 = fingerprints[pair[0]]
+        fingerprint2 = fingerprints[pair[1]]
 
-        for molecule_code, fingerprint in fingerprints.items():
+        feature_distances = FeatureDistances.from_fingerprints(fingerprint1, fingerprint2)
 
-            if not fingerprint:
-                empty_molecule_codes.append(molecule_code)
-                logger.info(f"Empty fingerprint molecule codes: {molecule_code}")
-
-        # Delete empty fingerprints from dict
-        for empty in empty_molecule_codes:
-            del fingerprints[empty]
-
-        logger.info(f"Number of empty fingerprints: {len(empty_molecule_codes)}")
-        logger.info(f"Number of non-empty fingerprints: {len(fingerprints)}")
-
-        return fingerprints
+        return feature_distances

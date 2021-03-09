@@ -11,27 +11,9 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 
-logger = logging.getLogger(__name__)
+from ..schema import DISTANCES_FEATURE_NAMES
 
-FEATURE_NAMES = {
-    "physicochemical": [
-        "size",
-        "hbd",
-        "hba",
-        "charge",
-        "aromatic",
-        "aliphatic",
-        "sco",
-        "exposure",
-    ],
-    "distances": [
-        "distance_to_centroid",
-        "distance_to_hinge_region",
-        "distance_to_dfg_region",
-        "distance_to_front_pocket",
-    ],
-    "moments": ["moment1", "moment2", "moment3"],
-}
+logger = logging.getLogger(__name__)
 
 
 class FeatureDistances:
@@ -41,10 +23,10 @@ class FeatureDistances:
 
     Attributes
     ----------
-    molecule_pair_code : tuple of str or int  # TODO Rename?
-        Codes of both molecules represented by the fingerprints.
-    kinase_pair : tuple of str
-        TODO
+    structure_pair_ids : tuple of str or int
+        IDs for structures that are representated by the input fingerprints.
+    kinase_pair_ids : tuple of str or int
+        IDs for kinases that are represented by the input fingerprints.
     distances : np.ndarray
         Distances between two fingerprints for each of their features.
     bit_coverages : np.ndarray
@@ -53,8 +35,8 @@ class FeatureDistances:
 
     def __init__(self):
 
-        self.molecule_pair_code = None
-        self.kinase_pair = None
+        self.structure_pair_ids = None
+        self.kinase_pair_ids = None
         self.distances = None
         self.bit_coverages = None
 
@@ -74,9 +56,11 @@ class FeatureDistances:
         if (self.distances is not None) and (self.bit_coverages is not None):
 
             feature_types = list(
-                chain.from_iterable([[key] * len(value) for key, value in FEATURE_NAMES.items()])
+                chain.from_iterable(
+                    [[key] * len(value) for key, value in DISTANCES_FEATURE_NAMES.items()]
+                )
             )
-            feature_names = list(chain.from_iterable(FEATURE_NAMES.values()))
+            feature_names = list(chain.from_iterable(DISTANCES_FEATURE_NAMES.values()))
 
             data_df = pd.DataFrame(
                 {
@@ -89,7 +73,8 @@ class FeatureDistances:
 
             return data_df
 
-    def from_fingerprints(self, fingerprint1, fingerprint2, distance_measure="scaled_euclidean"):
+    @classmethod
+    def from_fingerprints(cls, fingerprint1, fingerprint2):
         """
         Calculate distance between two fingerprints for each (normalized) feature.
 
@@ -99,16 +84,21 @@ class FeatureDistances:
             Fingerprint 1.
         fingerprint2 : encoding.Fingerprint
             Fingerprint 2.
-        distance_measure : str
-            Type of distance measure, defaults to scaled Euclidean distance.
+
+        Returns
+        -------
+        kissim.comparison.feature_distances
+            Feature distances.
         """
 
+        feature_distances = cls()
+
         # Set class attributes
-        self.molecule_pair_code = (
+        feature_distances.structure_pair_ids = (
             fingerprint1.structure_klifs_id,
             fingerprint2.structure_klifs_id,
         )
-        self.kinase_pair = (fingerprint1.kinase_name, fingerprint2.kinase_name)
+        feature_distances.kinase_pair_ids = (fingerprint1.kinase_name, fingerprint2.kinase_name)
 
         # Get fingerprint (normalized or not normalized)
         f1 = fingerprint1.values_dict
@@ -118,26 +108,61 @@ class FeatureDistances:
         # feature bit coverage  # TODO this is only a quick fix, redo!
         distances = []
         bit_coverages = []
+
+        # Physicochemical features
         f1, f2 = fingerprint1.physicochemical, fingerprint2.physicochemical
         for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
-            distance, bit_coverage = self.from_features(ff1, ff2, distance_measure)
+            distance, bit_coverage = feature_distances._get_feature_distances_and_bit_coverages(
+                ff1, ff2, "scaled_cityblock"
+            )
             distances.append(distance)
             bit_coverages.append(bit_coverage)
+
+        # Distances features
         f1, f2 = fingerprint1.distances, fingerprint2.distances
         for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
-            distance, bit_coverage = self.from_features(ff1, ff2, distance_measure)
+            distance, bit_coverage = feature_distances._get_feature_distances_and_bit_coverages(
+                ff1, ff2, "scaled_euclidean"
+            )
             distances.append(distance)
             bit_coverages.append(bit_coverage)
+
+        # Moments features
         f1, f2 = fingerprint1.moments.transpose(), fingerprint2.moments.transpose()
         for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
-            distance, bit_coverage = self.from_features(ff1, ff2, distance_measure)
+            distance, bit_coverage = feature_distances._get_feature_distances_and_bit_coverages(
+                ff1, ff2, "scaled_euclidean"
+            )
             distances.append(distance)
             bit_coverages.append(bit_coverage)
 
-        self.distances = np.array(distances)
-        self.bit_coverages = np.array(bit_coverages)
+        feature_distances.distances = np.array(distances)
+        feature_distances.bit_coverages = np.array(bit_coverages)
 
-    def from_features(self, feature1, feature2, distance_measure="scaled_euclidean"):
+        return feature_distances
+
+    @classmethod
+    def _from_dict(cls, feature_distances_dict):
+        """
+        Initiate the feature distances from a dictionary containing the FeatureDistances class
+        attributes.
+
+        Parameters
+        ----------
+        feature_distances_dict : dict
+            FeatureDistances attributes in the form of a dictionary.
+        """
+
+        feature_distances = cls()
+        feature_distances.structure_pair_ids = tuple(feature_distances_dict["structure_pair_ids"])
+        feature_distances.kinase_pair_ids = tuple(feature_distances_dict["kinase_pair_ids"])
+        feature_distances.distances = np.array(feature_distances_dict["distances"])
+        feature_distances.bit_coverages = np.array(feature_distances_dict["bit_coverages"])
+        return feature_distances
+
+    def _get_feature_distances_and_bit_coverages(
+        self, feature1, feature2, distance_measure="scaled_euclidean"
+    ):
         """
         Distance and bit coverage for a feature pair.
 
