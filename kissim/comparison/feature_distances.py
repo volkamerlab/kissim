@@ -9,9 +9,9 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
-from scipy.spatial import distance
 
 from ..schema import DISTANCES_FEATURE_NAMES
+from . import measures
 
 logger = logging.getLogger(__name__)
 
@@ -234,65 +234,13 @@ class FeatureDistances:
 
         # Get feature distance
         if distance_measure == "scaled_euclidean":
-            return self._scaled_euclidean_distance(feature_pair[0], feature_pair[1])
+            return measures.scaled_euclidean_distance(feature_pair[0], feature_pair[1])
 
         elif distance_measure == "scaled_cityblock":
-            return self._scaled_cityblock_distance(feature_pair[0], feature_pair[1])
+            return measures.scaled_cityblock_distance(feature_pair[0], feature_pair[1])
 
         else:
             distance_measures = "scaled_euclidean scaled_cityblock".split()
             raise ValueError(
                 f'Distance measure unknown. Choose from: {", ".join(distance_measures)}'
             )
-
-    @staticmethod
-    def _scaled_euclidean_distance(values1, values2):
-        """
-        Calculate scaled Euclidean distance between two value lists of same length.
-
-        Parameters
-        ----------
-        values1 : np.ndarray
-            Value list (same length as values2).
-        values2 : np.ndarray
-            Value list (same length as values1).
-
-        Returns
-        -------
-        float
-            Scaled Euclidean distance between two value lists.
-        """
-
-        if len(values1) != len(values2):
-            raise ValueError(f"Distance calculation failed: Values lists are not of same length.")
-        elif len(values1) == 0:
-            return np.nan
-        else:
-            d = 1 / len(values1) * distance.euclidean(values1, values2)
-            return d
-
-    @staticmethod
-    def _scaled_cityblock_distance(values1, values2):
-        """
-        Calculate scaled cityblock distance between two value lists of same length.
-
-        Parameters
-        ----------
-        values1 : np.ndarray
-            Value list (same length as values2).
-        values2 : np.ndarray
-            Value list (same length as values1).
-
-        Returns
-        -------
-        float
-            Scaled cityblock distance between two value lists.
-        """
-
-        if len(values1) != len(values2):
-            raise ValueError(f"Distance calculation failed: Values lists are not of same length.")
-        elif len(values1) == 0:
-            return np.nan
-        else:
-            d = 1 / len(values1) * distance.cityblock(values1, values2)
-            return d

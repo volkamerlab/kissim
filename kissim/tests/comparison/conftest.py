@@ -19,7 +19,7 @@ from kissim.comparison import (
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def fingerprint_generator():
     """
     Get FingerprintGenerator instance with dummy data, i.e. multiple fingerprints
