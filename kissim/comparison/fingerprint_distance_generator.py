@@ -52,6 +52,41 @@ class FingerprintDistanceGenerator:
         self.structure_kinase_ids = None
         self.feature_weights = None
 
+    @property
+    def structure_ids(self):
+        """
+        Unique structure IDs associated with all fingerprints (sorted alphabetically).
+
+        Returns
+        -------
+        list of str or int
+            Structure IDs.
+        """
+
+        return sorted(
+            pd.DataFrame(self.structure_kinase_ids, columns=["structure_id", "kinase_id"])[
+                "structure_id"
+            ].unique()
+        )
+
+    @property
+    def kinase_ids(self):
+        """
+        Unique kinase IDs (e.g. kinase names) associated with all fingerprints (sorted
+        alphabetically).
+
+        Returns
+        -------
+        list of str or int
+            Kinase IDs.
+        """
+
+        return sorted(
+            pd.DataFrame(self.structure_kinase_ids, columns=["structure_id", "kinase_id"])[
+                "kinase_id"
+            ].unique()
+        )
+
     @classmethod
     def from_feature_distances_generator(cls, feature_distances_generator, feature_weights=None):
         """
@@ -185,41 +220,6 @@ class FingerprintDistanceGenerator:
         logger.info(f"End: {end}")
 
         return fingerprint_distances_list
-
-    @property
-    def structure_ids(self):
-        """
-        Unique structure IDs associated with all fingerprints (sorted alphabetically).
-
-        Returns
-        -------
-        list of str or int
-            Structure IDs.
-        """
-
-        return sorted(
-            pd.DataFrame(self.structure_kinase_ids, columns=["structure_id", "kinase_id"])[
-                "structure_id"
-            ].unique()
-        )
-
-    @property
-    def kinase_ids(self):
-        """
-        Unique kinase IDs (e.g. kinase names) associated with all fingerprints (sorted
-        alphabetically).
-
-        Returns
-        -------
-        list of str or int
-            Kinase IDs.
-        """
-
-        return sorted(
-            pd.DataFrame(self.structure_kinase_ids, columns=["structure_id", "kinase_id"])[
-                "kinase_id"
-            ].unique()
-        )
 
     @staticmethod
     def _get_fingerprint_distance(feature_distances, feature_weights=None):
