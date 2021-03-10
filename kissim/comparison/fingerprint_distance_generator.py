@@ -12,7 +12,7 @@ from multiprocessing import cpu_count, Pool
 import numpy as np
 import pandas as pd
 
-from . import FingerprintDistance
+from . import FingerprintDistance, FeatureDistancesGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -153,8 +153,48 @@ class FingerprintDistanceGenerator:
         return fingerprint_distance_generator
 
     @classmethod
-    def from_structure_klifs_ids(cls, feature_distances_generator, feature_weights=None):
-        pass
+    def from_structure_klifs_ids(
+        cls, structure_klifs_ids, klifs_session=None, n_cores=None, feature_weights=None
+    ):
+        """
+        Calculate fingerprint distances for all possible structure pairs.
+
+        Parameters
+        ----------
+        structure_klifs_id : int
+            Input structure KLIFS ID (output fingerprints may contain less IDs because some
+            structures could not be encoded).
+        klifs_session : opencadd.databases.klifs.session.Session
+            Local or remote KLIFS session.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
+        feature_weights : None or list of float
+            Feature weights of the following form:
+            (i) None
+                Default feature weights: All features equally distributed to 1/15
+                (15 features in total).
+            (ii) By feature type (list of 3 floats)
+                Feature types to be set in the following order: physicochemical, distances, and
+                moments.
+            (iii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic,
+                aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
+                distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+            For (ii) and (iii): All floats must sum up to 1.0.
+
+        Returns
+        -------
+        kissim.comparison.FingerprintDistancesGenerator
+            Fingerprint distance generator.
+        """
+
+        feature_distances_generator = FeatureDistancesGenerator.from_structure_klifs_ids(
+            structure_klifs_ids, klifs_session, n_cores
+        )
+        fingerprint_distance_generator = cls.from_feature_distances_generator(
+            feature_distances_generator, feature_weights
+        )
+        return fingerprint_distance_generator
 
     @staticmethod
     def _get_fingerprint_distance_from_list(

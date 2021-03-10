@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.comparison import FingerprintDistance, FingerprintDistanceGenerator
 from kissim.tests.comparison.fixures import (
@@ -15,53 +16,16 @@ from kissim.tests.comparison.fixures import (
     fingerprint_distance_generator,
 )
 
+
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+REMOTE = setup_remote()
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 class TestsFingerprintDistanceGenerator:
     """
     Test FingerprintDistanceGenerator class methods.
     """
-
-    def test_get_fingerprint_distance(self, feature_distances):
-        """
-        Test if return type is FingerprintDistance class instance.
-
-        Parameters
-        ----------
-        feature_distances : kissim.similarity.FeatureDistances
-            Distances and bit coverages between two fingerprints for each of their features.
-        """
-
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_calculated = fingerprint_distance_generator._get_fingerprint_distance(
-            feature_distances
-        )
-
-        assert isinstance(fingerprint_distance_calculated, FingerprintDistance)
-
-    def test_get_fingerprint_distance_from_list(self, feature_distances_generator):
-        """
-        Test if return type is instance of list of FingerprintDistance class instances.
-
-        Parameters
-        ----------
-        feature_distances_generator : FeatureDistancesGenerator
-            Feature distances for multiple fingerprints.
-        """
-
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_list = (
-            fingerprint_distance_generator._get_fingerprint_distance_from_list(
-                fingerprint_distance_generator._get_fingerprint_distance,
-                list(feature_distances_generator.data.values()),
-            )
-        )
-
-        assert isinstance(fingerprint_distance_list, list)
-
-        for i in fingerprint_distance_list:
-            assert isinstance(i, FingerprintDistance)
 
     @pytest.mark.parametrize(
         "distance_measure, feature_weights, structure_ids, kinase_ids",
@@ -125,6 +89,69 @@ class TestsFingerprintDistanceGenerator:
 
         data_columns = "structure1 structure2 kinase1 kinase2 distance coverage".split()
         assert list(fingerprint_distance_generator.data.columns) == data_columns
+
+    @pytest.mark.parametrize(
+        "structure_klifs_ids, klifs_session, n_cores, feature_weights",
+        [
+            ([110, 118], REMOTE, 1, None),
+            ([110, 118], REMOTE, 2, None),
+            ([110, 118], LOCAL, 1, None),
+            ([110, 118], LOCAL, 2, None),
+            ([110, 118], None, None, None),
+        ],
+    )
+    def test_from_structure_klifs_ids(
+        self, structure_klifs_ids, klifs_session, n_cores, feature_weights
+    ):
+        """
+        Test FeatureDistancesGenerator class attributes.
+        """
+
+        # Test FeatureDistancesGenerator class attributes
+        feature_distances_generator = FingerprintDistanceGenerator.from_structure_klifs_ids(
+            structure_klifs_ids, klifs_session, n_cores, feature_weights
+        )
+        assert isinstance(feature_distances_generator, FingerprintDistanceGenerator)
+
+    def test_get_fingerprint_distance(self, feature_distances):
+        """
+        Test if return type is FingerprintDistance class instance.
+
+        Parameters
+        ----------
+        feature_distances : kissim.similarity.FeatureDistances
+            Distances and bit coverages between two fingerprints for each of their features.
+        """
+
+        fingerprint_distance_generator = FingerprintDistanceGenerator()
+        fingerprint_distance_calculated = fingerprint_distance_generator._get_fingerprint_distance(
+            feature_distances
+        )
+
+        assert isinstance(fingerprint_distance_calculated, FingerprintDistance)
+
+    def test_get_fingerprint_distance_from_list(self, feature_distances_generator):
+        """
+        Test if return type is instance of list of FingerprintDistance class instances.
+
+        Parameters
+        ----------
+        feature_distances_generator : FeatureDistancesGenerator
+            Feature distances for multiple fingerprints.
+        """
+
+        fingerprint_distance_generator = FingerprintDistanceGenerator()
+        fingerprint_distance_list = (
+            fingerprint_distance_generator._get_fingerprint_distance_from_list(
+                fingerprint_distance_generator._get_fingerprint_distance,
+                list(feature_distances_generator.data.values()),
+            )
+        )
+
+        assert isinstance(fingerprint_distance_list, list)
+
+        for i in fingerprint_distance_list:
+            assert isinstance(i, FingerprintDistance)
 
     @pytest.mark.parametrize(
         "structure_distance_matrix",
