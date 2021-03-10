@@ -87,20 +87,20 @@ def feature_distances_generator():
     feature_distances1 = FeatureDistances()
     feature_distances1.structure_pair_ids = ("pdb1", "pdb2")
     feature_distances1.kinase_pair_ids = ("kinase1", "kinase1")
-    feature_distances1.distances = [1.0] * 15
-    feature_distances1.bit_coverages = [1.0] * 15
+    feature_distances1.distances = np.array([1.0] * 15)
+    feature_distances1.bit_coverages = np.array([1.0] * 15)
 
     feature_distances2 = FeatureDistances()
     feature_distances2.structure_pair_ids = ("pdb1", "pdb3")
     feature_distances2.kinase_pair_ids = ("kinase1", "kinase2")
-    feature_distances2.distances = [0.0] * 15
-    feature_distances2.bit_coverages = [1.0] * 15
+    feature_distances2.distances = np.array([0.0] * 15)
+    feature_distances2.bit_coverages = np.array([1.0] * 15)
 
     feature_distances3 = FeatureDistances()
     feature_distances3.structure_pair_ids = ("pdb2", "pdb3")
     feature_distances3.kinase_pair_ids = ("kinase1", "kinase2")
-    feature_distances3.distances = [0.0] * 15
-    feature_distances3.bit_coverages = [0.0] * 15
+    feature_distances3.distances = np.array([0.0] * 15)
+    feature_distances3.bit_coverages = np.array([0.0] * 15)
 
     # FeatureDistancesGenerator
     data = {

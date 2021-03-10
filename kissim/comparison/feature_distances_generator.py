@@ -220,21 +220,8 @@ class FeatureDistancesGenerator:
         """
 
         if self.data is not None:
-
-            feature_types = list(
-                chain.from_iterable(
-                    [[key] * len(value) for key, value in DISTANCES_FEATURE_NAMES.items()]
-                )
-            )
-            feature_names = list(chain.from_iterable(DISTANCES_FEATURE_NAMES.values()))
-
-            data = self.data[(molecule_code1, molecule_code2)]
-
-            data_df = pd.DataFrame(data, columns="distance bit_coverage".split())
-            data_df.insert(loc=0, column="feature_type", value=feature_types)
-            data_df.insert(loc=1, column="feature_names", value=feature_names)
-
-            return data_df
+            feature_distances = self.data[(structure_id1, structure_id2)]
+            return feature_distances.data
 
     @staticmethod
     def _fingerprint_pairs(fingerprints):
