@@ -43,11 +43,6 @@ class TestsFeatureDistancesGenerator:
     ):
         """
         Test FeatureDistancesGenerator class attributes.
-
-        Parameters
-        ----------
-        distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
         """
 
         # Test FeatureDistancesGenerator class attributes
@@ -74,15 +69,7 @@ class TestsFeatureDistancesGenerator:
             ([110, 118], None, None),
         ],
     )
-    def test_from_fingerprints(self, structure_klifs_ids, klifs_session, n_cores):
-        """
-        Test FeatureDistancesGenerator class attributes.
-
-        Parameters
-        ----------
-        distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
-        """
+    def test_from_structure_klifs_ids(self, structure_klifs_ids, klifs_session, n_cores):
 
         # Test FeatureDistancesGenerator class attributes
         feature_distances_generator = FeatureDistancesGenerator.from_structure_klifs_ids(
