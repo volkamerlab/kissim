@@ -1,5 +1,5 @@
 """
-Unit and regression tests for kissim.similarity class methods.
+Fixures to be used in unit testing.
 """
 
 from pathlib import Path

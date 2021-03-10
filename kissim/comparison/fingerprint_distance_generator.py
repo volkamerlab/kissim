@@ -12,7 +12,7 @@ from multiprocessing import cpu_count, Pool
 import numpy as np
 import pandas as pd
 
-from . import FingerprintDistance, FeatureDistancesGenerator
+from kissim.comparison import FingerprintDistance, FeatureDistancesGenerator
 
 logger = logging.getLogger(__name__)
 

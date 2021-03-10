@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 
 from kissim.comparison import FingerprintDistance
-from kissim.tests.comparison.fixures import feature_distances
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 

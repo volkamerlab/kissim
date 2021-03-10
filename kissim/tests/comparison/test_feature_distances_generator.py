@@ -10,7 +10,6 @@ from opencadd.databases.klifs import setup_local, setup_remote
 from kissim.utils import enter_temp_directory
 from kissim.encoding import Fingerprint
 from kissim.comparison import FeatureDistances, FeatureDistancesGenerator
-from kissim.tests.comparison.fixures import fingerprint_generator, feature_distances_generator
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 REMOTE = setup_remote()

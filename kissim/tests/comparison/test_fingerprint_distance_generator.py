@@ -10,11 +10,6 @@ import pytest
 from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.comparison import FingerprintDistance, FingerprintDistanceGenerator
-from kissim.tests.comparison.fixures import (
-    feature_distances,
-    feature_distances_generator,
-    fingerprint_distance_generator,
-)
 
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
