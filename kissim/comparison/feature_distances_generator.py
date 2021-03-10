@@ -11,10 +11,8 @@ from multiprocessing import Pool
 from pathlib import Path
 
 from itertools import combinations, repeat, chain
-import pandas as pd
 
 from kissim.encoding import FingerprintGenerator
-from kissim.schema import DISTANCES_FEATURE_NAMES
 from kissim.utils import set_n_cores
 from . import FeatureDistances
 
