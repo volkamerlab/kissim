@@ -22,6 +22,7 @@ class TestsFeatureDistances:
     @pytest.mark.parametrize(
         "values1, values2, distance",
         [
+            ([], [], np.nan),
             ([0, 0], [4, 3], 2.5),
             (np.array([0, 0]), np.array([4, 3]), 2.5),
             (pd.Series([0, 0]), pd.Series([4, 3]), 2.5),
@@ -44,11 +45,29 @@ class TestsFeatureDistances:
         feature_distances = FeatureDistances()
         score_calculated = feature_distances._scaled_euclidean_distance(values1, values2)
 
-        assert np.isclose(score_calculated, distance, rtol=1e-04)
+        if not np.isnan(distance):
+            assert np.isclose(score_calculated, distance, rtol=1e-04)
+
+    @pytest.mark.parametrize(
+        "values1, values2",
+        [
+            ([0, 0], [4, 3, 3]),
+        ],
+    )
+    def test_scaled_euclidean_distance_raises(self, values1, values2):
+        """
+        Test if Euclidean distance calculation raises error if input values are of different
+        length.
+        """
+
+        with pytest.raises(ValueError):
+            feature_distances = FeatureDistances()
+            feature_distances._scaled_euclidean_distance(values1, values2)
 
     @pytest.mark.parametrize(
         "values1, values2, distance",
         [
+            ([], [], np.nan),
             ([0, 0], [4, 3], 3.5),
             (np.array([0, 0]), np.array([4, 3]), 3.5),
             (pd.Series([0, 0]), pd.Series([4, 3]), 3.5),
@@ -71,7 +90,24 @@ class TestsFeatureDistances:
         feature_distances = FeatureDistances()
         score_calculated = feature_distances._scaled_cityblock_distance(values1, values2)
 
-        assert np.isclose(score_calculated, distance, rtol=1e-04)
+        if not np.isnan(distance):
+            assert np.isclose(score_calculated, distance, rtol=1e-04)
+
+    @pytest.mark.parametrize(
+        "values1, values2",
+        [
+            ([0, 0], [4, 3, 3]),
+        ],
+    )
+    def test_scaled_cityblock_distance_raises(self, values1, values2):
+        """
+        Test if Manhattan distance calculation raises error if input values are of different
+        length.
+        """
+
+        with pytest.raises(ValueError):
+            feature_distances = FeatureDistances()
+            feature_distances._scaled_cityblock_distance(values1, values2)
 
     @pytest.mark.parametrize(
         "feature_pair, distance_measure, distance",
@@ -248,3 +284,23 @@ class TestsFeatureDistances:
             [8, 4, 3], index="physicochemical distances moments".split()
         )
         assert all(feature_type_dimension_calculated == feature_type_dimension)
+
+    @pytest.mark.parametrize(
+        "feature_distances_dict",
+        [
+            {
+                "structure_pair_ids": ["pdb1", "pdb2"],
+                "kinase_pair_ids": ["kinase1", "kinase2"],
+                "distances": [1.0] * 15,
+                "bit_coverages": [1.0] * 15,
+            }
+        ],
+    )
+    def test_from_dict(self, feature_distances_dict):
+
+        feature_distances_calculated = FeatureDistances._from_dict(feature_distances_dict)
+        assert isinstance(feature_distances_calculated, FeatureDistances)
+        assert isinstance(feature_distances_calculated.structure_pair_ids, tuple)
+        assert isinstance(feature_distances_calculated.kinase_pair_ids, tuple)
+        assert isinstance(feature_distances_calculated.distances, np.ndarray)
+        assert isinstance(feature_distances_calculated.bit_coverages, np.ndarray)
