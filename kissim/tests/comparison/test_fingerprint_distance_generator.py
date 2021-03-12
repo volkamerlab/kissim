@@ -23,49 +23,26 @@ class TestsFingerprintDistanceGenerator:
     """
 
     @pytest.mark.parametrize(
-        "distance_measure, feature_weights, structure_ids, kinase_ids",
+        "feature_weights, structure_ids, kinase_ids, structure_kinase_ids",
         [
             (
-                "scaled_euclidean",
                 None,
                 "pdb1 pdb2 pdb3".split(),
                 "kinase1 kinase2".split(),
+                [("pdb1", "kinase1"), ("pdb2", "kinase1"), ("pdb3", "kinase2")],
             )
         ],
     )
     def test_from_feature_distances_generator(
         self,
         feature_distances_generator,
-        distance_measure,
         feature_weights,
         structure_ids,
         kinase_ids,
+        structure_kinase_ids,
     ):
         """
         Test FingerprintDistanceGenerator class attributes.
-
-        Parameters
-        ----------
-        feature_distances_generator : FeatureDistancesGenerator
-            Feature distances for multiple fingerprints.
-        distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
-        feature_weights : dict of float or None
-            Feature weights of the following form:
-            (i) None
-                Default feature weights: All features equally distributed to 1/15
-                (15 feature in total).
-            (ii) By feature type
-                Feature types to be set are: physicochemical, distances, and moments.
-            (iii) By feature:
-                Features to be set are: size, hbd, hba, charge, aromatic, aliphatic, sco, exposure,
-                distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region,
-                distance_to_front_pocket, moment1, moment2, and moment3.
-            For (ii) and (iii): All floats must sum up to 1.0.
-        structure_ids : list of str
-            List of molecule codes associated with input fingerprints.
-        kinase_ids : list of str
-            List of kinase names associated with input fingerprints.
         """
 
         # FingerprintDistanceGenerator
@@ -76,12 +53,20 @@ class TestsFingerprintDistanceGenerator:
         )
 
         # Test attributes
-        assert fingerprint_distance_generator.feature_weights == feature_weights
+        assert fingerprint_distance_generator.structure_kinase_ids == structure_kinase_ids
+        assert isinstance(fingerprint_distance_generator.feature_weights, np.ndarray)
+        assert len(fingerprint_distance_generator.feature_weights) == 15
+        assert isinstance(fingerprint_distance_generator._structures1, list)
+        assert isinstance(fingerprint_distance_generator._structures2, list)
+        assert isinstance(fingerprint_distance_generator._kinases1, list)
+        assert isinstance(fingerprint_distance_generator._kinases2, list)
+        assert isinstance(fingerprint_distance_generator._distances, np.ndarray)
+        assert isinstance(fingerprint_distance_generator._bit_coverages, np.ndarray)
+
+        # Test properties
         assert fingerprint_distance_generator.structure_ids == structure_ids
         assert fingerprint_distance_generator.kinase_ids == kinase_ids
-
         assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
-
         data_columns = "structure1 structure2 kinase1 kinase2 distance coverage".split()
         assert list(fingerprint_distance_generator.data.columns) == data_columns
 

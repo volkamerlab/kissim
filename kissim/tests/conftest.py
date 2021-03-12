@@ -5,13 +5,11 @@ Fixures to be used in unit testing.
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from kissim.api import encode
 from kissim.comparison import (
     FeatureDistances,
-    FingerprintDistance,
     FeatureDistancesGenerator,
     FingerprintDistanceGenerator,
 )
@@ -36,7 +34,7 @@ def fingerprint_generator():
 
     # Encode structures
     LOCAL_KLIFS_PATH = PATH_TEST_DATA / "KLIFS_download"
-    fingerprint_generator = encode(structure_klifs_ids, local_klifs_session=LOCAL_KLIFS_PATH)
+    fingerprint_generator = encode(structure_klifs_ids, local_klifs_download_path=LOCAL_KLIFS_PATH)
 
     return fingerprint_generator
 
@@ -132,22 +130,25 @@ def fingerprint_distance_generator():
         Fingerprint distance for multiple fingerprint pairs.
     """
 
-    data = pd.DataFrame(
-        [
-            ["pdb1", "pdb2", "kinase1", "kinase1", 0.75, 1.0],
-            ["pdb1", "pdb3", "kinase1", "kinase2", 1.0, 1.0],
-            ["pdb2", "pdb3", "kinase1", "kinase2", 0.8, 1.0],
-        ],
-        columns="structure1 structure2 kinase1 kinase2 distance coverage".split(),
-    )
+    structures1 = ["pdb1", "pdb1", "pdb2"]
+    structures2 = ["pdb2", "pdb3", "pdb3"]
+    kinases1 = ["kinase1", "kinase1", "kinase1"]
+    kinases2 = ["kinase1", "kinase2", "kinase2"]
+    distances = np.array([0.75, 1.0, 0.8])
+    bit_coverages = np.array([1.0, 1.0, 1.0])
 
     # FingerprintDistanceGenerator
     fingerprint_distance_generator = FingerprintDistanceGenerator()
-    fingerprint_distance_generator.data = data
     fingerprint_distance_generator.structure_kinase_ids = [
         ("pdb1", "kinase1"),
         ("pdb2", "kinase1"),
         ("pdb3", "kinase2"),
     ]
+    fingerprint_distance_generator._structures1 = structures1
+    fingerprint_distance_generator._structures2 = structures2
+    fingerprint_distance_generator._kinases1 = kinases1
+    fingerprint_distance_generator._kinases2 = kinases2
+    fingerprint_distance_generator._distances = distances
+    fingerprint_distance_generator._bit_coverages = bit_coverages
 
     return fingerprint_distance_generator

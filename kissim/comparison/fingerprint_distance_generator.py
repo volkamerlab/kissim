@@ -6,13 +6,16 @@ Defines the pairwise fingerprint distances for a set of fingerprints.
 
 import datetime
 from itertools import repeat
+import json
 import logging
 from multiprocessing import cpu_count, Pool
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from kissim.comparison import FingerprintDistance, FeatureDistancesGenerator
+from kissim.comparison import weights
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +28,6 @@ class FingerprintDistanceGenerator:
 
     Attributes
     ----------
-    data : pandas.DataFrame
-        Fingerprint distance and coverage, plus details on both molecule codes associated with
-        fingerprint pairs.
     structure_kinase_ids : list of tuple
         Structure and kinase IDs for structures in dataset.
     feature_weights : None or list of float
@@ -35,22 +35,49 @@ class FingerprintDistanceGenerator:
         (i) None
             Default feature weights: All features equally distributed to 1/15
             (15 features in total).
-        (ii) By feature type (list of 3 floats)
-            Feature types to be set in the following order: physicochemical, distances, and
-            moments.
-        (iii) By feature (list of 15 floats):
-            Features to be set in the following order: size, hbd, hba, charge, aromatic, aliphatic,
-            sco, exposure,
-            distance_to_centroid, distance_to_hinge_region, distance_to_dfg_region,
-            distance_to_front_pocket, moment1, moment2, and moment3.
-        For (ii) and (iii): All floats must sum up to 1.0.
+        (ii) By feature (list of 15 floats):
+            Features to be set in the following order: size, hbd, hba, charge, aromatic,
+            aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
+            distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+            All floats must sum up to 1.0.
+    _structures1 : list of int
+        List of first part of structure pairs.
+    _structures2 : list of int
+        List of second part of structure pairs.
+    _kinase1 : list of str
+        List of kinases belonging to first part of structure pairs.
+    _kinase2 : list of str
+        List of kinases belonging to second part of structure pairs.
+    _distances : np.array
+        Fingerprint distances for structure pairs.
+    _bit_coverages : np.array
+        Bit coverages for structure pairs.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
-        self.data = None
         self.structure_kinase_ids = None
         self.feature_weights = None
+        self._structures1 = None
+        self._structures2 = None
+        self._kinases1 = None
+        self._kinases2 = None
+        self._distances = None
+        self._bit_coverages = None
+
+    def __eq__(self, other):
+
+        if isinstance(other, FingerprintDistanceGenerator):
+            return (
+                self.structure_kinase_ids == other.structure_kinase_ids
+                and np.array_equal(self.feature_weights, other.feature_weights)
+                and self._structures1 == other._structures1
+                and self._structures2 == other._structures2
+                and self._kinases1 == other._kinases1
+                and self._kinases2 == other._kinases2
+                and np.array_equal(self._distances, other._distances, equal_nan=True)
+                and np.array_equal(self._bit_coverages, other._bit_coverages, equal_nan=True)
+            )
 
     @property
     def structure_ids(self):
@@ -87,6 +114,29 @@ class FingerprintDistanceGenerator:
             ].unique()
         )
 
+    @property
+    def data(self):
+        """
+        Fingerprint distance data for all fingerprint pairs.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Fingerprint distance and coverage, plus details on both molecule codes associated with
+            fingerprint pairs.
+        """
+
+        return pd.DataFrame(
+            {
+                "structure1": self._structures1,
+                "structure2": self._structures2,
+                "kinase1": self._kinases1,
+                "kinase2": self._kinases2,
+                "distance": self._distances,
+                "coverage": self._bit_coverages,
+            }
+        )
+
     @classmethod
     def from_feature_distances_generator(cls, feature_distances_generator, feature_weights=None):
         """
@@ -103,14 +153,11 @@ class FingerprintDistanceGenerator:
             (i) None
                 Default feature weights: All features equally distributed to 1/15
                 (15 features in total).
-            (ii) By feature type (list of 3 floats)
-                Feature types to be set in the following order: physicochemical, distances, and
-                moments.
-            (iii) By feature (list of 15 floats):
+            (ii) By feature (list of 15 floats):
                 Features to be set in the following order: size, hbd, hba, charge, aromatic,
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
-            For (ii) and (iii): All floats must sum up to 1.0.
+                All floats must sum up to 1.0.
 
         Returns
         -------
@@ -118,10 +165,10 @@ class FingerprintDistanceGenerator:
             Fingerprint distance generator.
         """
 
-        fingerprint_distance_generator = cls()
+        start_time = datetime.datetime.now()
+        logger.info(f"Fingerprint distance generation started at: {start_time}")
 
-        # Set class attributes
-        fingerprint_distance_generator.feature_weights = feature_weights
+        fingerprint_distance_generator = cls()
 
         # Calculate pairwise fingerprint distances
         fingerprint_distance_list = (
@@ -132,24 +179,43 @@ class FingerprintDistanceGenerator:
             )
         )
 
-        # Format result and save to class attribute
-        fingerprint_distance_generator.data = pd.DataFrame(
-            [
-                [
-                    i.structure_pair_ids[0],
-                    i.structure_pair_ids[1],
-                    i.kinase_pair_ids[0],
-                    i.kinase_pair_ids[1],
-                    i.distance,
-                    i.bit_coverage,
-                ]
-                for i in fingerprint_distance_list
-            ],
-            columns="structure1 structure2 kinase1 kinase2 distance coverage".split(),
-        )
+        # Set class attributes
+        fingerprint_distance_generator.feature_weights = weights.format_weights(feature_weights)
         fingerprint_distance_generator.structure_kinase_ids = (
             feature_distances_generator.structure_kinase_ids
         )
+        fingerprint_distance_generator._structures1 = []
+        fingerprint_distance_generator._structures2 = []
+        fingerprint_distance_generator._kinases1 = []
+        fingerprint_distance_generator._kinases2 = []
+        fingerprint_distance_generator._distances = []
+        fingerprint_distance_generator._bit_coverages = []
+        for fingerprint_distance in fingerprint_distance_list:
+            fingerprint_distance_generator._structures1.append(
+                fingerprint_distance.structure_pair_ids[0]
+            )
+            fingerprint_distance_generator._structures2.append(
+                fingerprint_distance.structure_pair_ids[1]
+            )
+            fingerprint_distance_generator._kinases1.append(
+                fingerprint_distance.kinase_pair_ids[0]
+            )
+            fingerprint_distance_generator._kinases2.append(
+                fingerprint_distance.kinase_pair_ids[1]
+            )
+            fingerprint_distance_generator._distances.append(fingerprint_distance.distance)
+            fingerprint_distance_generator._bit_coverages.append(fingerprint_distance.bit_coverage)
+        fingerprint_distance_generator._distances = np.array(
+            fingerprint_distance_generator._distances
+        )
+        fingerprint_distance_generator._bit_coverages = np.array(
+            fingerprint_distance_generator._bit_coverages
+        )
+
+        end_time = datetime.datetime.now()
+        logger.info(f"Number of fingerprint distances: {len(fingerprint_distance_generator.data)}")
+        logger.info(f"Runtime: {end_time - start_time}")
+
         return fingerprint_distance_generator
 
     @classmethod
@@ -173,14 +239,11 @@ class FingerprintDistanceGenerator:
             (i) None
                 Default feature weights: All features equally distributed to 1/15
                 (15 features in total).
-            (ii) By feature type (list of 3 floats)
-                Feature types to be set in the following order: physicochemical, distances, and
-                moments.
-            (iii) By feature (list of 15 floats):
+            (ii) By feature (list of 15 floats):
                 Features to be set in the following order: size, hbd, hba, charge, aromatic,
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
-            For (ii) and (iii): All floats must sum up to 1.0.
+                All floats must sum up to 1.0.
 
         Returns
         -------
@@ -195,6 +258,73 @@ class FingerprintDistanceGenerator:
             feature_distances_generator, feature_weights
         )
         return fingerprint_distance_generator
+
+    @classmethod
+    def from_json(cls, filepath):
+        """
+        Initialize a FingerprintDistanceGenerator object from a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+
+        Returns
+        -------
+        kissim.comparison.FingerprintDistanceGenerator
+            Fingerprint distance generator.
+        """
+
+        # Load JSON string
+        filepath = Path(filepath)
+        with open(filepath, "r") as f:
+            json_string = f.read()
+        fingerprint_distance_generator_dict = json.loads(json_string)
+
+        # Initialize object attributes from dict
+        fingerprint_distance_generator = cls()
+        fingerprint_distance_generator.__dict__.update(fingerprint_distance_generator_dict)
+        # Update some attributes
+        fingerprint_distance_generator.structure_kinase_ids = [
+            tuple(i) for i in fingerprint_distance_generator.structure_kinase_ids
+        ]
+        fingerprint_distance_generator.feature_weights = np.array(
+            fingerprint_distance_generator.feature_weights
+        )
+        fingerprint_distance_generator._distances = np.array(
+            fingerprint_distance_generator._distances
+        )
+        fingerprint_distance_generator._bit_coverages = np.array(
+            fingerprint_distance_generator._bit_coverages
+        )
+
+        return fingerprint_distance_generator
+
+    def to_json(self, filepath):
+        """
+        Write FingerprintDistanceGenerator class attributes to a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+        """
+
+        fingerprint_distance_generator_dict = self.__dict__.copy()
+        fingerprint_distance_generator_dict[
+            "feature_weights"
+        ] = fingerprint_distance_generator_dict["feature_weights"].tolist()
+        fingerprint_distance_generator_dict["_distances"] = fingerprint_distance_generator_dict[
+            "_distances"
+        ].tolist()
+        fingerprint_distance_generator_dict[
+            "_bit_coverages"
+        ] = fingerprint_distance_generator_dict["_bit_coverages"].tolist()
+        json_string = json.dumps(fingerprint_distance_generator_dict)
+
+        filepath = Path(filepath)
+        with open(filepath, "w") as f:
+            f.write(json_string)
 
     @staticmethod
     def _get_fingerprint_distance_from_list(
@@ -218,14 +348,11 @@ class FingerprintDistanceGenerator:
             (i) None
                 Default feature weights: All features equally distributed to 1/15
                 (15 features in total).
-            (ii) By feature type (list of 3 floats)
-                Feature types to be set in the following order: physicochemical, distances, and
-                moments.
-            (iii) By feature (list of 15 floats):
+            (ii) By feature (list of 15 floats):
                 Features to be set in the following order: size, hbd, hba, charge, aromatic,
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
-            For (ii) and (iii): All floats must sum up to 1.0.
+                All floats must sum up to 1.0.
 
         Returns
         -------
@@ -275,14 +402,11 @@ class FingerprintDistanceGenerator:
             (i) None
                 Default feature weights: All features equally distributed to 1/15
                 (15 features in total).
-            (ii) By feature type (list of 3 floats)
-                Feature types to be set in the following order: physicochemical, distances, and
-                moments.
-            (iii) By feature (list of 15 floats):
+            (ii) By feature (list of 15 floats):
                 Features to be set in the following order: size, hbd, hba, charge, aromatic,
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
-            For (ii) and (iii): All floats must sum up to 1.0.
+                All floats must sum up to 1.0.
 
         Returns
         -------
@@ -382,7 +506,7 @@ class FingerprintDistanceGenerator:
             Fingerprint distance and coverage for kinase pairs.
         """
 
-        # Add self-comparisonsa
+        # Add self-comparisons
         data = self.data
         data_self_comparisons = pd.DataFrame(
             [

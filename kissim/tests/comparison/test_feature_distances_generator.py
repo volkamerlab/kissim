@@ -22,10 +22,9 @@ class TestsFeatureDistancesGenerator:
     """
 
     @pytest.mark.parametrize(
-        "distance_measure, feature_weights, structure_ids, kinase_ids",
+        "feature_weights, structure_ids, kinase_ids",
         [
             (
-                "scaled_euclidean",
                 None,
                 ["HUMAN/ABL1_2g2i_chainA", "HUMAN/AAK1_4wsq_altA_chainB"],
                 ["AAK1", "ABL1"],
@@ -35,7 +34,6 @@ class TestsFeatureDistancesGenerator:
     def test_from_fingerprints(
         self,
         fingerprint_generator,
-        distance_measure,
         feature_weights,
         structure_ids,
         kinase_ids,
