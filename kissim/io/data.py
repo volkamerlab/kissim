@@ -128,21 +128,21 @@ class KlifsToKissimData:
         """
 
         # Get path to folder with data for structure KLIFS ID
-        filepath = self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)[
+        path = self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)[
             "structure.filepath"
         ][0]
 
         # Get path to complex.pdb and pocket.pdb
-        filepath_complex = self.klifs_session._path_to_klifs_download / filepath / "complex.pdb"
-        filepath_pocket = self.klifs_session._path_to_klifs_download / filepath / "pocket.pdb"
+        complex_filepath = self.klifs_session._path_to_klifs_download / path / "complex.pdb"
+        pocket_filepath = self.klifs_session._path_to_klifs_download / path / "pocket.pdb"
 
         # Do both files exist?
-        if filepath_complex.exists() and filepath_pocket.exists():
+        if complex_filepath.exists() and pocket_filepath.exists():
             return True
         else:
             logger.warning(
                 f"{self.structure_klifs_id}: Local complex.pdb or pocket.pdb file missing: "
-                f"{filepath_complex}"
+                f"{complex_filepath}"
             )
             return False
 

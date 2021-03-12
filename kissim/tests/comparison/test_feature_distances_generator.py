@@ -88,12 +88,14 @@ class TestsFeatureDistancesGenerator:
 
         with enter_temp_directory():
 
-            path_json = Path("test.json")
+            json_filepath = Path("test.json")
 
-            feature_distances_generator.to_json(path_json)
-            assert path_json.exists()
+            feature_distances_generator.to_json(json_filepath)
+            assert json_filepath.exists()
 
-            feature_distances_generator_from_json = FeatureDistancesGenerator.from_json(path_json)
+            feature_distances_generator_from_json = FeatureDistancesGenerator.from_json(
+                json_filepath
+            )
             assert isinstance(feature_distances_generator_from_json, FeatureDistancesGenerator)
 
     @pytest.mark.parametrize("structure_ids", [["pdb1", "pdb2", "pdb3"]])
