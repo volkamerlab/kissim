@@ -80,20 +80,12 @@ def main():
         required=True,
     )
     compare_subparser.add_argument(
-        "-d",
-        "--distance",
-        type=str,
-        help="Distance measure (scaled_euclidean or scaled_cityblock).",
-        required=False,
-        default="scaled_euclidean",
-    )
-    compare_subparser.add_argument(
         "-w",
         "--weights",
-        type=str,
+        type=float,
+        nargs=15,
         help="Feature weights.",
         required=False,
-        default="001",
     )
     compare_subparser.add_argument(
         "-c",
