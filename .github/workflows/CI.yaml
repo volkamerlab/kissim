@@ -114,7 +114,7 @@ jobs:
       - name: Run flake8-nb
         shell: bash
         run: |
-          flake8-nb --config tox.ini docs/tutorials/*ipynb
+          flake8-nb --config setup.cfg docs/tutorials/*ipynb
 
   docs:
     runs-on: ubuntu-latest
