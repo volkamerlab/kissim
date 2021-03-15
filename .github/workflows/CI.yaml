@@ -98,7 +98,6 @@ jobs:
           black --check -l 99 $PACKAGE/
 
   lint-format-notebooks:
-    name: Notebooks linter and formatter
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
