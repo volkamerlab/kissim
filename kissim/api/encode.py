@@ -33,7 +33,7 @@ def encode(
 
     Returns
     -------
-    kissim.encoding.fingerprint_generator
+    kissim.encoding.FingerprintGenerator
         Fingerprints.
     """
 

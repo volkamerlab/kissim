@@ -43,8 +43,10 @@ def compare(
 
     Returns
     -------
-    feature_distances_generator : TODO
-    fingerprint_distance_generator : TODO
+    feature_distances_generator : kissim.comparison.FeatureDistancesGenerator
+        Feature distances for all pairwise fingerprints.
+    fingerprint_distance_generator : kissim.comparison.FingerprintDistanceGenerator
+        Fingerprint distance for all pairwise fingeprints.
     """
 
     if output_path is not None:
