@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from ..schema import DISTANCES_FEATURE_NAMES
-from . import measures
+from .utils import scaled_euclidean_distance, scaled_cityblock_distance
 
 logger = logging.getLogger(__name__)
 
@@ -234,10 +234,10 @@ class FeatureDistances:
 
         # Get feature distance
         if distance_measure == "scaled_euclidean":
-            return measures.scaled_euclidean_distance(feature_pair[0], feature_pair[1])
+            return scaled_euclidean_distance(feature_pair[0], feature_pair[1])
 
         elif distance_measure == "scaled_cityblock":
-            return measures.scaled_cityblock_distance(feature_pair[0], feature_pair[1])
+            return scaled_cityblock_distance(feature_pair[0], feature_pair[1])
 
         else:
             distance_measures = "scaled_euclidean scaled_cityblock".split()

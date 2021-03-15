@@ -6,7 +6,65 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from kissim.comparison import measures
+from kissim.comparison.utils import (
+    format_weights,
+    scaled_euclidean_distance,
+    scaled_cityblock_distance,
+)
+
+
+@pytest.mark.parametrize(
+    "feature_weights, feature_weights_formatted",
+    [
+        (None, np.array([0.0667] * 15)),
+        (
+            [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        ),
+    ],
+)
+def test_format_weights(feature_weights, feature_weights_formatted):
+    """
+    Test if feature weights are added correctly to feature distance DataFrame.
+
+    Parameters
+    ----------
+    feature_weights : None or list of float
+        Feature weights.
+    feature_weights_formatted : list of float
+        Formatted feature weights of length 15.
+    """
+
+    feature_weights_formatted_calculated = format_weights(feature_weights)
+
+    assert np.isclose(
+        np.std(feature_weights_formatted),
+        np.std(feature_weights_formatted_calculated),
+        rtol=1e-04,
+    )
+
+
+@pytest.mark.parametrize("feature_weights", [{"a": 0}, "bla"])
+def test_format_weights_typeerror(feature_weights):
+    """
+    Test if wrong data type of input feature weights raises TypeError.
+    """
+
+    with pytest.raises(TypeError):
+        format_weights(feature_weights)
+
+
+@pytest.mark.parametrize(
+    "feature_weights",
+    [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0]],
+)
+def test_format_weights_valueerror(feature_weights):
+    """
+    Test if wrong data type of input feature weights raises TypeError.
+    """
+
+    with pytest.raises(ValueError):
+        format_weights(feature_weights)
 
 
 @pytest.mark.parametrize(
@@ -32,7 +90,7 @@ def test_scaled_euclidean_distance(vector1, vector2, distance):
         Euclidean distance between two value lists.
     """
 
-    score_calculated = measures.scaled_euclidean_distance(vector1, vector2)
+    score_calculated = scaled_euclidean_distance(vector1, vector2)
 
     if not np.isnan(distance):
         assert np.isclose(score_calculated, distance, rtol=1e-04)
@@ -51,7 +109,7 @@ def test_scaled_euclidean_distance_raises(vector1, vector2):
     """
 
     with pytest.raises(ValueError):
-        measures.scaled_euclidean_distance(vector1, vector2)
+        scaled_euclidean_distance(vector1, vector2)
 
 
 @pytest.mark.parametrize(
@@ -77,7 +135,7 @@ def test_scaled_cityblock_distance(vector1, vector2, distance):
         Manhattan distance between two value lists.
     """
 
-    score_calculated = measures.scaled_cityblock_distance(vector1, vector2)
+    score_calculated = scaled_cityblock_distance(vector1, vector2)
 
     if not np.isnan(distance):
         assert np.isclose(score_calculated, distance, rtol=1e-04)
@@ -96,4 +154,4 @@ def test_scaled_cityblock_distance_raises(vector1, vector2):
     """
 
     with pytest.raises(ValueError):
-        measures.scaled_cityblock_distance(vector1, vector2)
+        scaled_cityblock_distance(vector1, vector2)

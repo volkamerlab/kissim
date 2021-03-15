@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from kissim.comparison import FingerprintDistance, FeatureDistancesGenerator
-from kissim.comparison import weights
+from kissim.comparison.utils import format_weights
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ class FingerprintDistanceGenerator:
         )
 
         # Set class attributes
-        fingerprint_distance_generator.feature_weights = weights.format_weights(feature_weights)
+        fingerprint_distance_generator.feature_weights = format_weights(feature_weights)
         fingerprint_distance_generator.structure_kinase_ids = (
             feature_distances_generator.structure_kinase_ids
         )

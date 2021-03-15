@@ -6,7 +6,9 @@ Defines the distance for a fingerprint pair.
 
 import logging
 
-from kissim.comparison import weights
+import numpy as np
+
+from kissim.comparison.utils import format_weights
 
 logger = logging.getLogger(__name__)
 
@@ -65,19 +67,112 @@ class FingerprintDistance:
 
         fingerprint_distance = cls()
 
+        # Get data of interest from input
+        weights = format_weights(feature_weights)
+        bit_coverages = feature_distances.bit_coverages
+        distances = feature_distances.distances
+
         # Set class attributes
+        fingerprint_distance.feature_weights = weights
         fingerprint_distance.structure_pair_ids = feature_distances.structure_pair_ids
         fingerprint_distance.kinase_pair_ids = feature_distances.kinase_pair_ids
 
-        # Add weights
-        fingerprint_distance.feature_weights = weights.format_weights(feature_weights)
-
-        # Calculate weighted sum of feature distances and feature coverage
-        fingerprint_distance.distance = sum(
-            feature_distances.distances * fingerprint_distance.feature_weights
+        # Calculate weighted sum of feature bit coverages
+        fingerprint_distance.bit_coverage = fingerprint_distance._calculate_weighted_sum(
+            bit_coverages, weights
         )
-        fingerprint_distance.bit_coverage = sum(
-            feature_distances.bit_coverages * fingerprint_distance.feature_weights
+        # Calculate weighted sum of feature distances
+        if np.isnan(distances).any():
+            (
+                distances,
+                weights,
+            ) = fingerprint_distance._remove_nan_distances_and_recalibrate_weights(
+                distances, weights
+            )
+        fingerprint_distance.distance = fingerprint_distance._calculate_weighted_sum(
+            distances, weights
         )
 
         return fingerprint_distance
+
+    @staticmethod
+    def _calculate_weighted_sum(values, weights):
+        """
+        Calculate the weighted sum of values.
+
+        Parameters
+        ----------
+        values : np.ndarray
+            Values vector. Same length as weights vector
+        weights : np.ndarray
+            Weights vector. Same length as values vector.
+
+        Returns
+        -------
+        float
+            Weighted sum of values.
+        """
+
+        if np.isnan(values).any():
+            raise ValueError(f"Input values cannot contain NaN values: {values}")
+
+        if not np.isclose(np.sum(weights), 1.0):
+            raise ValueError(f"Sum of input weights must be 1 but is {np.sum(weights)}.")
+
+        return np.sum(values * weights)
+
+    @staticmethod
+    def _remove_nan_distances_and_recalibrate_weights(distances, weights):
+        """
+        Remove NaN values from distances and recalibrate weights.
+
+        Parameters
+        ----------
+        distances : np.ndarray
+            Distances vector. Same length as weights vector
+        weights : np.ndarray
+            Weights vector. Same length as distances vector.
+
+        Returns
+        -------
+        distances_wo_nan : np.ndarray
+            Distances vector without NaN values.
+        weights_wo_nan_recalibrated : np.ndarray
+            Weights vector without weights for NaN distances values, while recalibrating the
+            remaining weights.
+
+        Notes
+        -----
+
+        Weights recalibration: Weights for NaN distance values are distributed across
+        not-NaN distance values - distribution w.r.t. to the corresponding weights for not-NaN
+        distance values.
+
+        Example:
+
+        distances = np.array([np.nan, 0.1, 0.2, 0.8, 0.9])
+        weights = np.array([0.1, 0.2, 0.3, 0.3, 0.1])
+        >>>
+        distances_wo_nan = np.array([0.1, 0.2, 0.8, 0.9])
+        weights_wo_nan_recalibrated = np.array([0.2, 0.3, 0.3, 0.1]) +
+                                      np.array([0.2, 0.3, 0.3, 0.1]) * 0.1 / 0.9
+
+        where
+        - 0.1 is the sum of weights for NaN distances
+        - 0.9 is the sum of weights for not-Nan distances
+        - np.array([0.2, 0.3, 0.3, 0.1]) * 0.1 / 0.9 == 0.1
+        """
+
+        # Remove NaN values from distances
+        distances_wo_nan = distances[~np.isnan(distances)]
+
+        # Split weights by not-NaN and NaN distances
+        weights_wo_nan = weights[~np.isnan(distances)]
+        weights_w_nan = weights[np.isnan(distances)]
+
+        # Recalibrate weights (distribute weights for NaN distances across not-NaN distances)
+        weights_wo_nan_recalibrated = weights_wo_nan + weights_wo_nan * (
+            np.sum(weights_w_nan) / np.sum(weights_wo_nan)
+        )
+
+        return distances_wo_nan, weights_wo_nan_recalibrated

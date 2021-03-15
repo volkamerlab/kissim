@@ -25,7 +25,7 @@ class TestsFingerprintDistance:
                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.25],
                 0.5,
                 0.75,
-            )
+            ),
         ],
     )
     def test_from_feature_distances(self, feature_distances, feature_weights, distance, coverage):
@@ -55,3 +55,79 @@ class TestsFingerprintDistance:
         assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
         assert np.isclose(fingerprint_distance.bit_coverage, coverage, rtol=1e-04)
         assert np.array_equal(fingerprint_distance.feature_weights, np.array(feature_weights))
+
+    @pytest.mark.parametrize(
+        "values, weights, calculated_weighted_sum",
+        [
+            (
+                np.array([0.1, 0.2]),
+                np.array([0.5, 0.5]),
+                0.15,
+            ),
+            (
+                np.array([0.1, 0.2]),
+                np.array([1.0, 0.0]),
+                0.1,
+            ),
+            (
+                np.array([0.1, 0.2]),
+                np.array([0.2, 0.8]),
+                0.18,
+            ),
+        ],
+    )
+    def test_calculate_weighted_sum(self, values, weights, calculated_weighted_sum):
+
+        fingerprint_distance = FingerprintDistance()
+        calculated_weighted_sum_calculated = fingerprint_distance._calculate_weighted_sum(
+            values, weights
+        )
+        assert np.isclose(calculated_weighted_sum_calculated, calculated_weighted_sum, rtol=1e-04)
+
+    @pytest.mark.parametrize(
+        "values, weights",
+        [
+            (
+                np.array([0.1, np.nan]),  # Values contain NaN
+                np.array([0.5, 0.5]),
+            ),
+            (
+                np.array([0.1, 0.1]),
+                np.array([0.5, 0.0]),  # Sum is not 1.0
+            ),
+        ],
+    )
+    def test_calculate_weighted_sum_raises(self, values, weights):
+
+        with pytest.raises(ValueError):
+            fingerprint_distance = FingerprintDistance()
+            fingerprint_distance._calculate_weighted_sum(values, weights)
+
+    @pytest.mark.parametrize(
+        "distances, weights, distances_wo_nan, weights_wo_nan_recalibrated",
+        [
+            (
+                np.array([np.nan, 0.1, 0.2, 0.8, 0.9]),
+                np.array([0.2, 0.2, 0.2, 0.2, 0.2]),
+                np.array([0.1, 0.2, 0.8, 0.9]),
+                np.array([0.25, 0.25, 0.25, 0.25]),
+            ),
+            (
+                np.array([np.nan, 0.1, 0.2, 0.8, 0.9]),
+                np.array([0.1, 0.2, 0.3, 0.3, 0.1]),
+                np.array([0.1, 0.2, 0.8, 0.9]),
+                np.array([0.2, 0.3, 0.3, 0.1]) + np.array([0.2, 0.3, 0.3, 0.1]) * 0.1 / 0.9,
+            ),
+        ],
+    )
+    def test_remove_nan_distances_and_recalibrate_weights(
+        self, distances, weights, distances_wo_nan, weights_wo_nan_recalibrated
+    ):
+
+        fingerprint_distance = FingerprintDistance()
+        (
+            distances_wo_nan_calculated,
+            weights_wo_nan_recalibrated_calculated,
+        ) = fingerprint_distance._remove_nan_distances_and_recalibrate_weights(distances, weights)
+        assert np.array_equal(distances_wo_nan_calculated, distances_wo_nan)
+        assert np.array_equal(weights_wo_nan_recalibrated_calculated, weights_wo_nan_recalibrated)

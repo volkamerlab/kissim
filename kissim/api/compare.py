@@ -8,7 +8,7 @@ from pathlib import Path
 import logging
 
 from kissim.comparison import FeatureDistancesGenerator, FingerprintDistanceGenerator
-from kissim.comparison import weights
+from kissim.comparison.utils import format_weights
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def compare(
         output_path.mkdir(parents=True, exist_ok=True)
         feature_distances_json_filepath = output_path / "feature_distances.json"
         feature_weights_tag = "-".join(
-            [str(int(i * 1000)) for i in weights.format_weights(feature_weights)]
+            [str(int(i * 1000)) for i in format_weights(feature_weights)]
         )
         fingerprint_distance_json_filepath = (
             output_path / f"fingerprint_distances_{feature_weights_tag}.json"
