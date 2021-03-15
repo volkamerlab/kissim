@@ -37,21 +37,21 @@ def main():
         "--input",
         nargs="+",
         type=str,
-        help="List of structure KLIFS IDs or path to txt file containing structure KLIFS IDs",
+        help="List of structure KLIFS IDs or path to txt file containing structure KLIFS IDs.",
         required=True,
     )
     encode_subparser.add_argument(
         "-o",
         "--output",
         type=str,
-        help="Path to output json file containing fingerprint data",
+        help="Path to output json file containing fingerprint data.",
         required=True,
     )
     encode_subparser.add_argument(
         "-l",
         "--local",
         type=str,
-        help="Path to KLIFS download folder. If set local KLIFS data is used, else remote KLIFS data",
+        help="Path to KLIFS download folder. If set local KLIFS data is used, else remote KLIFS data.",
         required=False,
     )
     encode_subparser.add_argument(
@@ -69,14 +69,14 @@ def main():
         "-i",
         "--input",
         type=str,
-        help="Path to json file containing fingerprint data",
+        help="Path to json file containing fingerprint data.",
         required=True,
     )
     compare_subparser.add_argument(
         "-o",
         "--output",
         type=str,
-        help="Path to output csv file containing pairwise fingerprint distances",
+        help="Path to output folder where distance json files will be saved.",
         required=True,
     )
     compare_subparser.add_argument(
@@ -84,7 +84,7 @@ def main():
         "--weights",
         type=float,
         nargs=15,
-        help="Feature weights.",
+        help="Feature weights. Eeach feature must be set individually, all weights must sum up to 1.0.",
         required=False,
     )
     compare_subparser.add_argument(
