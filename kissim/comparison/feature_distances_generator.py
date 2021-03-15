@@ -185,7 +185,7 @@ class FeatureDistancesGenerator:
         """
 
         feature_distances_list = [
-            feature_distances.__dict__
+            feature_distances.__dict__.copy()
             for structure_pair_ids, feature_distances in self.data.items()
         ]
         # Cast np.array to list
