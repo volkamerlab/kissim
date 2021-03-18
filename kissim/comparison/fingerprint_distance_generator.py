@@ -181,6 +181,7 @@ class FingerprintDistanceGenerator:
 
         # Format input feature weights
         feature_weights = format_weights(feature_weights)
+        logger.info(f"Feature weights: {feature_weights}")
 
         fingerprint_distance_generator = cls()
 
