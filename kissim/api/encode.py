@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def encode(
-    structure_klifs_ids, fingerprints_json_filepath=None, n_cores=1, local_klifs_download_path=None
+    structure_klifs_ids, fingerprints_json_filepath=None, local_klifs_download_path=None, n_cores=1
 ):
     """
     Encode structures.
@@ -25,11 +25,11 @@ def encode(
         Structure KLIFS IDs.
     fingerprints_json_filepath : str or pathlib.Path
         Path to output json file. Default None.
-    n_cores : int
-        Number of cores used to generate fingerprints.
     local_klifs_download_path : str or None
         If path to local KLIFS download is given, set up local KLIFS session.
         If None is given, set up remote KLIFS session.
+    n_cores : int
+        Number of cores used to generate fingerprints.
 
     Returns
     -------

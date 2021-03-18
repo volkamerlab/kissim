@@ -11,17 +11,17 @@ from kissim.encoding import FingerprintGenerator
 
 
 @pytest.mark.parametrize(
-    "output_path, n_cores, feature_weights",
+    "output_path, feature_weights, n_cores",
     [
-        (None, 1, None),
-        (None, 2, None),
-        (None, 1, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-        (".", 1, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        (None, None, 1),
+        (None, None, 2),
+        (None, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 1),
+        (".", [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 1),
     ],
 )
-def test_compare(fingerprint_generator, output_path, n_cores, feature_weights):
+def test_compare(fingerprint_generator, output_path, feature_weights, n_cores):
 
-    compare(fingerprint_generator, output_path, n_cores, feature_weights)
+    compare(fingerprint_generator, output_path, feature_weights, n_cores)
 
     if output_path is not None:
         output_path = Path(output_path)

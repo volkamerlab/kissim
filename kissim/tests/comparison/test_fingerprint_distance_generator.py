@@ -71,17 +71,17 @@ class TestsFingerprintDistanceGenerator:
         assert list(fingerprint_distance_generator.data.columns) == data_columns
 
     @pytest.mark.parametrize(
-        "structure_klifs_ids, klifs_session, n_cores, feature_weights",
+        "structure_klifs_ids, klifs_session, feature_weights, n_cores",
         [
-            ([110, 118], REMOTE, 1, None),
-            ([110, 118], REMOTE, 2, None),
-            ([110, 118], LOCAL, 1, None),
-            ([110, 118], LOCAL, 2, None),
+            ([110, 118], REMOTE, None, 1),
+            ([110, 118], REMOTE, None, 2),
+            ([110, 118], LOCAL, None, 1),
+            ([110, 118], LOCAL, None, 2),
             ([110, 118], None, None, None),
         ],
     )
     def test_from_structure_klifs_ids(
-        self, structure_klifs_ids, klifs_session, n_cores, feature_weights
+        self, structure_klifs_ids, klifs_session, feature_weights, n_cores
     ):
         """
         Test FeatureDistancesGenerator class attributes.
@@ -89,7 +89,7 @@ class TestsFingerprintDistanceGenerator:
 
         # Test FeatureDistancesGenerator class attributes
         feature_distances_generator = FingerprintDistanceGenerator.from_structure_klifs_ids(
-            structure_klifs_ids, klifs_session, n_cores, feature_weights
+            structure_klifs_ids, klifs_session, feature_weights, n_cores
         )
         assert isinstance(feature_distances_generator, FingerprintDistanceGenerator)
 
@@ -125,6 +125,8 @@ class TestsFingerprintDistanceGenerator:
             fingerprint_distance_generator._get_fingerprint_distance_from_list(
                 fingerprint_distance_generator._get_fingerprint_distance,
                 list(feature_distances_generator.data.values()),
+                None,
+                1,
             )
         )
 

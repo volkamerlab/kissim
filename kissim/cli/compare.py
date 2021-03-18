@@ -21,4 +21,4 @@ def compare_from_cli(args):
 
     configure_logger(args.output)
     fingerprint_generator = FingerprintGenerator.from_json(args.input)
-    compare(fingerprint_generator, args.output, args.ncores, args.weights)
+    compare(fingerprint_generator, args.output, args.weights, args.ncores)
