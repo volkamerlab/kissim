@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 
 from kissim.comparison import FeatureDistances
-from kissim.tests.comparison.fixures import fingerprint_generator
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
@@ -18,60 +17,6 @@ class TestsFeatureDistances:
     """
     Test FeatureDistances class methods.
     """
-
-    @pytest.mark.parametrize(
-        "values1, values2, distance",
-        [
-            ([0, 0], [4, 3], 2.5),
-            (np.array([0, 0]), np.array([4, 3]), 2.5),
-            (pd.Series([0, 0]), pd.Series([4, 3]), 2.5),
-        ],
-    )
-    def test_scaled_euclidean_distance(self, values1, values2, distance):
-        """
-        Test Euclidean distance calculation.
-
-        Parameters
-        ----------
-        values1 : np.ndarray or list of pd.Series
-            Value list (same length as values2).
-        values2 : np.ndarray or list of pd.Series
-            Value list (same length as values1).
-        distance : float
-            Euclidean distance between two value lists.
-        """
-
-        feature_distances = FeatureDistances()
-        score_calculated = feature_distances._scaled_euclidean_distance(values1, values2)
-
-        assert np.isclose(score_calculated, distance, rtol=1e-04)
-
-    @pytest.mark.parametrize(
-        "values1, values2, distance",
-        [
-            ([0, 0], [4, 3], 3.5),
-            (np.array([0, 0]), np.array([4, 3]), 3.5),
-            (pd.Series([0, 0]), pd.Series([4, 3]), 3.5),
-        ],
-    )
-    def test_scaled_cityblock_distance(self, values1, values2, distance):
-        """
-        Test Manhattan distance calculation.
-
-        Parameters
-        ----------
-        values1 : np.ndarray or list of pd.Series
-            Value list (same length as values2).
-        values2 : np.ndarray or list of pd.Series
-            Value list (same length as values1).
-        distance : float
-            Manhattan distance between two value lists.
-        """
-
-        feature_distances = FeatureDistances()
-        score_calculated = feature_distances._scaled_cityblock_distance(values1, values2)
-
-        assert np.isclose(score_calculated, distance, rtol=1e-04)
 
     @pytest.mark.parametrize(
         "feature_pair, distance_measure, distance",
@@ -163,7 +108,9 @@ class TestsFeatureDistances:
             (pd.Series([1, 1, 1, 1, np.nan]), pd.Series([0, 0, 0, 0, np.nan]), 0.5, 0.8),
         ],
     )
-    def test_from_features(self, feature1, feature2, distance, bit_coverage):
+    def test_get_feature_distances_and_bit_coverages(
+        self, feature1, feature2, distance, bit_coverage
+    ):
         """
         Test if feature distance and bit coverage is correct for given feature bits.
 
@@ -180,9 +127,10 @@ class TestsFeatureDistances:
         """
 
         feature_distances = FeatureDistances()
-        distance_calculated, bit_coverage_calculated = feature_distances.from_features(
-            feature1, feature2
-        )
+        (
+            distance_calculated,
+            bit_coverage_calculated,
+        ) = feature_distances._get_feature_distances_and_bit_coverages(feature1, feature2)
 
         assert np.isclose(distance_calculated, distance, rtol=1e-04)
         assert np.isclose(bit_coverage_calculated, bit_coverage, rtol=1e-04)
@@ -190,7 +138,7 @@ class TestsFeatureDistances:
     @pytest.mark.parametrize(
         "feature1, feature2", [(pd.Series([1, 1, 1, 1]), pd.Series([0, 0, 0]))]
     )
-    def test_from_features_valueerror(self, feature1, feature2):
+    def test_get_feature_distances_and_bit_coverages_valueerror(self, feature1, feature2):
         """
         Test ValueError exceptions in feature distance calculation.
 
@@ -205,7 +153,7 @@ class TestsFeatureDistances:
         feature_distances = FeatureDistances()
 
         with pytest.raises(ValueError):
-            feature_distances.from_features(feature1, feature2)
+            feature_distances._get_feature_distances_and_bit_coverages(feature1, feature2)
 
     def test_from_fingerprints(self, fingerprint_generator):
         """
@@ -221,16 +169,13 @@ class TestsFeatureDistances:
         fingerprints = list(fingerprint_generator.data.values())
 
         # Get feature distances
-        feature_distances = FeatureDistances()
-        feature_distances.from_fingerprints(
-            fingerprint1=fingerprints[0],
-            fingerprint2=fingerprints[1],
-            distance_measure="scaled_euclidean",
+        feature_distances = FeatureDistances.from_fingerprints(
+            fingerprint1=fingerprints[0], fingerprint2=fingerprints[1]
         )
 
         # Class attribute types and dimensions correct?
-        assert isinstance(feature_distances.molecule_pair_code, tuple)
-        assert len(feature_distances.molecule_pair_code) == 2
+        assert isinstance(feature_distances.structure_pair_ids, tuple)
+        assert len(feature_distances.structure_pair_ids) == 2
 
         assert isinstance(feature_distances.distances, np.ndarray)
         assert len(feature_distances.distances) == 15
@@ -248,3 +193,23 @@ class TestsFeatureDistances:
             [8, 4, 3], index="physicochemical distances moments".split()
         )
         assert all(feature_type_dimension_calculated == feature_type_dimension)
+
+    @pytest.mark.parametrize(
+        "feature_distances_dict",
+        [
+            {
+                "structure_pair_ids": ["pdb1", "pdb2"],
+                "kinase_pair_ids": ["kinase1", "kinase2"],
+                "distances": [1.0] * 15,
+                "bit_coverages": [1.0] * 15,
+            }
+        ],
+    )
+    def test_from_dict(self, feature_distances_dict):
+
+        feature_distances_calculated = FeatureDistances._from_dict(feature_distances_dict)
+        assert isinstance(feature_distances_calculated, FeatureDistances)
+        assert isinstance(feature_distances_calculated.structure_pair_ids, tuple)
+        assert isinstance(feature_distances_calculated.kinase_pair_ids, tuple)
+        assert isinstance(feature_distances_calculated.distances, np.ndarray)
+        assert isinstance(feature_distances_calculated.bit_coverages, np.ndarray)

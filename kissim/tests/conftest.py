@@ -1,17 +1,15 @@
 """
-Unit and regression tests for kissim.similarity class methods.
+Fixures to be used in unit testing.
 """
 
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from kissim.api import encode
 from kissim.comparison import (
     FeatureDistances,
-    FingerprintDistance,
     FeatureDistancesGenerator,
     FingerprintDistanceGenerator,
 )
@@ -19,7 +17,7 @@ from kissim.comparison import (
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def fingerprint_generator():
     """
     Get FingerprintGenerator instance with dummy data, i.e. multiple fingerprints
@@ -36,7 +34,7 @@ def fingerprint_generator():
 
     # Encode structures
     LOCAL_KLIFS_PATH = PATH_TEST_DATA / "KLIFS_download"
-    fingerprint_generator = encode(structure_klifs_ids, local_klifs_session=LOCAL_KLIFS_PATH)
+    fingerprint_generator = encode(structure_klifs_ids, local_klifs_download_path=LOCAL_KLIFS_PATH)
 
     return fingerprint_generator
 
@@ -53,7 +51,8 @@ def feature_distances():
         Distances and bit coverages between two fingerprints for each of their features.
     """
 
-    molecule_pair_code = ["molecule1", "molecule2"]
+    structure_pair_ids = ("molecule1", "molecule2")
+    kinase_pair_ids = ("kinase1", "kinase2")
     distances = np.array(
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     )
@@ -63,7 +62,8 @@ def feature_distances():
 
     # FeatureDistances (lf._get_incoming_resp class attributes manually)
     feature_distances = FeatureDistances()
-    feature_distances.molecule_pair_code = molecule_pair_code
+    feature_distances.structure_pair_ids = structure_pair_ids
+    feature_distances.kinase_pair_ids = kinase_pair_ids
     feature_distances.distances = distances
     feature_distances.bit_coverages = bit_coverages
 
@@ -83,35 +83,38 @@ def feature_distances_generator():
 
     # FeatureDistances
     feature_distances1 = FeatureDistances()
-    feature_distances1.molecule_pair_code = ("HUMAN/kinase1_pdb1", "HUMAN/kinase1_pdb2")
-    feature_distances1.kinase_pair = ("kinase1", "kinase1")
-    feature_distances1.distances = [1.0] * 15
-    feature_distances1.bit_coverages = [1.0] * 15
+    feature_distances1.structure_pair_ids = ("pdb1", "pdb2")
+    feature_distances1.kinase_pair_ids = ("kinase1", "kinase1")
+    feature_distances1.distances = np.array([1.0] * 15)
+    feature_distances1.bit_coverages = np.array([1.0] * 15)
 
     feature_distances2 = FeatureDistances()
-    feature_distances2.molecule_pair_code = ("HUMAN/kinase1_pdb1", "HUMAN/kinase2_pdb1")
-    feature_distances2.kinase_pair = ("kinase1", "kinase2")
-    feature_distances2.distances = [0.0] * 15
-    feature_distances2.bit_coverages = [1.0] * 15
+    feature_distances2.structure_pair_ids = ("pdb1", "pdb3")
+    feature_distances2.kinase_pair_ids = ("kinase1", "kinase2")
+    feature_distances2.distances = np.array([0.0] * 15)
+    feature_distances2.bit_coverages = np.array([1.0] * 15)
 
     feature_distances3 = FeatureDistances()
-    feature_distances3.molecule_pair_code = ("HUMAN/kinase1_pdb2", "HUMAN/kinase2_pdb1")
-    feature_distances3.kinase_pair = ("kinase1", "kinase2")
-    feature_distances3.distances = [0.0] * 15
-    feature_distances3.bit_coverages = [0.0] * 15
+    feature_distances3.structure_pair_ids = ("pdb2", "pdb3")
+    feature_distances3.kinase_pair_ids = ("kinase1", "kinase2")
+    feature_distances3.distances = np.array([0.0] * 15)
+    feature_distances3.bit_coverages = np.array([0.0] * 15)
 
     # FeatureDistancesGenerator
-    distance_measure = "scaled_euclidean"
     data = {
-        feature_distances1.molecule_pair_code: feature_distances1,
-        feature_distances2.molecule_pair_code: feature_distances2,
-        feature_distances3.molecule_pair_code: feature_distances3,
+        feature_distances1.structure_pair_ids: feature_distances1,
+        feature_distances2.structure_pair_ids: feature_distances2,
+        feature_distances3.structure_pair_ids: feature_distances3,
     }
 
     # FeatureDistancesGenerator
     feature_distances_generator = FeatureDistancesGenerator()
-    feature_distances_generator.distance_measure = distance_measure
     feature_distances_generator.data = data
+    feature_distances_generator.structure_kinase_ids = [
+        ("pdb1", "kinase1"),
+        ("pdb2", "kinase1"),
+        ("pdb3", "kinase2"),
+    ]
 
     return feature_distances_generator
 
@@ -127,21 +130,25 @@ def fingerprint_distance_generator():
         Fingerprint distance for multiple fingerprint pairs.
     """
 
-    molecule_codes = "HUMAN/kinase1_pdb1 HUMAN/kinase1_pdb2 HUMAN/kinase2_pdb1".split()
-    kinase_names = "kinase1 kinase2".split()
-    data = pd.DataFrame(
-        [
-            ["HUMAN/kinase1_pdb1", "HUMAN/kinase1_pdb2", 0.5, 1.0],
-            ["HUMAN/kinase1_pdb1", "HUMAN/kinase2_pdb1", 0.75, 1.0],
-            ["HUMAN/kinase1_pdb2", "HUMAN/kinase2_pdb1", 1.0, 1.0],
-        ],
-        columns="molecule_code_1 molecule_code_2 distance coverage".split(),
-    )
+    structures1 = ["pdb1", "pdb1", "pdb2"]
+    structures2 = ["pdb2", "pdb3", "pdb3"]
+    kinases1 = ["kinase1", "kinase1", "kinase1"]
+    kinases2 = ["kinase1", "kinase2", "kinase2"]
+    distances = np.array([0.75, 1.0, 0.8])
+    bit_coverages = np.array([1.0, 1.0, 1.0])
 
     # FingerprintDistanceGenerator
     fingerprint_distance_generator = FingerprintDistanceGenerator()
-    fingerprint_distance_generator.molecule_codes = molecule_codes
-    fingerprint_distance_generator.kinase_names = kinase_names
-    fingerprint_distance_generator.data = data
+    fingerprint_distance_generator.structure_kinase_ids = [
+        ("pdb1", "kinase1"),
+        ("pdb2", "kinase1"),
+        ("pdb3", "kinase2"),
+    ]
+    fingerprint_distance_generator._structures1 = structures1
+    fingerprint_distance_generator._structures2 = structures2
+    fingerprint_distance_generator._kinases1 = kinases1
+    fingerprint_distance_generator._kinases2 = kinases2
+    fingerprint_distance_generator._distances = distances
+    fingerprint_distance_generator._bit_coverages = bit_coverages
 
     return fingerprint_distance_generator

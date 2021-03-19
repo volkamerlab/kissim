@@ -4,12 +4,16 @@ Unit and regression test for the kissim.comparison.FeatureDistancesGenerator cla
 from pathlib import Path
 
 import pytest
+import pandas as pd
+from opencadd.databases.klifs import setup_local, setup_remote
 
+from kissim.utils import enter_temp_directory
 from kissim.encoding import Fingerprint
 from kissim.comparison import FeatureDistances, FeatureDistancesGenerator
-from kissim.tests.comparison.fixures import fingerprint_generator
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+REMOTE = setup_remote()
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 class TestsFeatureDistancesGenerator:
@@ -18,29 +22,91 @@ class TestsFeatureDistancesGenerator:
     """
 
     @pytest.mark.parametrize(
-        "fingerprints, empty_fingerprints",
+        "feature_weights, structure_ids, kinase_ids",
         [
-            ({"a": Fingerprint(), "b": None}, {"a": Fingerprint()}),
-            ({"a": Fingerprint()}, {"a": Fingerprint()}),
+            (
+                None,
+                ["HUMAN/ABL1_2g2i_chainA", "HUMAN/AAK1_4wsq_altA_chainB"],
+                ["AAK1", "ABL1"],
+            )
         ],
     )
-    def test_remove_empty_fingerprints(self, fingerprints, empty_fingerprints):
+    def test_from_fingerprints(
+        self,
+        fingerprint_generator,
+        feature_weights,
+        structure_ids,
+        kinase_ids,
+    ):
         """
-        Test removal of empty fingerprints (None) from fingerprints dictionary.
-
-        Parameters
-        ----------
-        fingerprints : dict of kissim.encoding.Fingerprint
-            Dictionary of fingerprints: Keys are molecule codes and values are fingerprint data.
-        empty_fingerprints : dict of kissim.encoding.Fingerprint
-            Dictionary of non-empty fingerprints: Keys are molecule codes and values are
-            fingerprint data.
+        Test FeatureDistancesGenerator class attributes.
         """
 
-        generator = FeatureDistancesGenerator()
-        empty_fingerprints_calculated = generator._remove_empty_fingerprints(fingerprints)
+        # Test FeatureDistancesGenerator class attributes
+        feature_distances_generator = FeatureDistancesGenerator.from_fingerprint_generator(
+            fingerprint_generator
+        )
+        assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
 
-        assert empty_fingerprints_calculated.keys() == empty_fingerprints.keys()
+        # Test attributes
+        assert isinstance(feature_distances_generator.data, dict)
+        assert isinstance(feature_distances_generator.structure_kinase_ids, list)
+
+        # Test example value from dictionary
+        example_key = list(feature_distances_generator.data.keys())[0]
+        assert isinstance(feature_distances_generator.data[example_key], FeatureDistances)
+
+    @pytest.mark.parametrize(
+        "structure_klifs_ids, klifs_session, n_cores",
+        [
+            ([110, 118], REMOTE, 1),
+            ([110, 118], REMOTE, 2),
+            ([110, 118], LOCAL, 1),
+            ([110, 118], LOCAL, 2),
+            ([110, 118], None, None),
+        ],
+    )
+    def test_from_structure_klifs_ids(self, structure_klifs_ids, klifs_session, n_cores):
+
+        # Test FeatureDistancesGenerator class attributes
+        feature_distances_generator = FeatureDistancesGenerator.from_structure_klifs_ids(
+            structure_klifs_ids, klifs_session, n_cores
+        )
+        assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
+
+        # Test attributes
+        assert isinstance(feature_distances_generator.data, dict)
+        assert isinstance(feature_distances_generator.structure_kinase_ids, list)
+
+        # Test example value from dictionary
+        example_key = list(feature_distances_generator.data.keys())[0]
+        assert isinstance(feature_distances_generator.data[example_key], FeatureDistances)
+
+    def test_to_from_json(self, feature_distances_generator):
+
+        with enter_temp_directory():
+
+            json_filepath = Path("test.json")
+
+            feature_distances_generator.to_json(json_filepath)
+            assert json_filepath.exists()
+
+            feature_distances_generator_from_json = FeatureDistancesGenerator.from_json(
+                json_filepath
+            )
+            assert isinstance(feature_distances_generator_from_json, FeatureDistancesGenerator)
+
+    @pytest.mark.parametrize("structure_ids", [["pdb1", "pdb2", "pdb3"]])
+    def test_structure_ids(self, feature_distances_generator, structure_ids):
+
+        structure_ids_calculated = feature_distances_generator.structure_ids
+        assert structure_ids_calculated == structure_ids
+
+    @pytest.mark.parametrize("kinase_ids", [["kinase1", "kinase2"]])
+    def test_kinase_ids(self, feature_distances_generator, kinase_ids):
+
+        kinase_ids_calculated = feature_distances_generator.kinase_ids
+        assert kinase_ids_calculated == kinase_ids
 
     @pytest.mark.parametrize(
         "fingerprints, pairs",
@@ -51,7 +117,7 @@ class TestsFeatureDistancesGenerator:
             )
         ],
     )
-    def test_get_fingerprint_pairs(self, fingerprints, pairs):
+    def test_fingerprint_pairs(self, fingerprints, pairs):
         """
         Test calculation of all fingerprint pair combinations from fingerprints dictionary.
 
@@ -64,10 +130,24 @@ class TestsFeatureDistancesGenerator:
         """
 
         generator = FeatureDistancesGenerator()
-        pairs_calculated = generator._get_fingerprint_pairs(fingerprints)
+        pairs_calculated = generator._fingerprint_pairs(fingerprints)
 
         for pair_calculated, pair in zip(pairs_calculated, pairs):
             assert pair_calculated == pair
+
+    @pytest.mark.parametrize("structure_id1, structure_id2", [("pdb1", "pdb3")])
+    def test_by_structure_pair(self, feature_distances_generator, structure_id1, structure_id2):
+
+        feature_distances_data = feature_distances_generator.by_structure_pair(
+            structure_id1, structure_id2
+        )
+        assert isinstance(feature_distances_data, pd.DataFrame)
+        assert feature_distances_data.columns.to_list() == [
+            "feature_type",
+            "feature_name",
+            "distance",
+            "bit_coverage",
+        ]
 
     def test_get_feature_distances(self, fingerprint_generator):
         """
@@ -112,43 +192,3 @@ class TestsFeatureDistancesGenerator:
 
         for i in feature_distances_list:
             assert isinstance(i, FeatureDistances)
-
-    @pytest.mark.parametrize(
-        "distance_measure, feature_weights, molecule_codes, kinase_names",
-        [
-            (
-                "scaled_euclidean",
-                None,
-                ["HUMAN/ABL1_2g2i_chainA", "HUMAN/AAK1_4wsq_altA_chainB"],
-                ["AAK1", "ABL1"],
-            )
-        ],
-    )
-    def test_from_fingerprints(
-        self,
-        fingerprint_generator,
-        distance_measure,
-        feature_weights,
-        molecule_codes,
-        kinase_names,
-    ):
-        """
-        Test FeatureDistancesGenerator class attributes.
-
-        Parameters
-        ----------
-        distance_measure : str
-            Type of distance measure, defaults to Euclidean distance.
-        """
-
-        # Test FeatureDistancesGenerator class attributes
-        feature_distances_generator = FeatureDistancesGenerator()
-        feature_distances_generator.from_fingerprint_generator(fingerprint_generator)
-
-        # Test attributes
-        assert feature_distances_generator.distance_measure == distance_measure
-        assert isinstance(feature_distances_generator.data, dict)
-
-        # Test example value from dictionary
-        example_key = list(feature_distances_generator.data.keys())[0]
-        assert isinstance(feature_distances_generator.data[example_key], FeatureDistances)

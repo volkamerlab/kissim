@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 
 from kissim.comparison import FingerprintDistance
-from kissim.tests.comparison.fixures import feature_distances
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
@@ -20,220 +19,13 @@ class TestsFingerprintDistance:
     """
 
     @pytest.mark.parametrize(
-        "feature_weights, feature_weights_formatted",
-        [
-            (None, np.array([0.0667] * 15)),
-            (
-                [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                np.array(
-                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                ),
-            ),
-            ([1.0, 0.0, 0.0], np.array([0.125] * 8 + [0.0] * 7)),
-        ],
-    )
-    def test_format_weights(self, feature_weights, feature_weights_formatted):
-        """
-        Test if feature weights are added correctly to feature distance DataFrame.
-
-        Parameters
-        ----------
-        feature_weights : None or list of float
-            Feature weights.
-        feature_weights_formatted : list of float
-            Formatted feature weights of length 15.
-        """
-
-        # FingerprintDistance
-        fingerprint_distance = FingerprintDistance()
-        feature_weights_formatted_calculated = fingerprint_distance._format_weights(
-            feature_weights
-        )
-
-        assert np.isclose(
-            np.std(feature_weights_formatted),
-            np.std(feature_weights_formatted_calculated),
-            rtol=1e-04,
-        )
-
-    @pytest.mark.parametrize("feature_weights", [{"a": 0}, "bla"])
-    def test_format_weights_typeerror(self, feature_weights):
-        """
-        Test if wrong data type of input feature weights raises TypeError.
-        """
-
-        with pytest.raises(TypeError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weights(feature_weights)
-
-    @pytest.mark.parametrize(
-        "feature_weights",
-        [
-            [0],
-        ],
-    )
-    def test_format_weights_valueerror(self, feature_weights):
-        """
-        Test if wrong data type of input feature weights raises TypeError.
-        """
-
-        with pytest.raises(ValueError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weights(feature_weights)
-
-    @pytest.mark.parametrize(
-        "feature_type_weights, feature_weights",
-        [
-            (
-                [0.0, 1.0, 0.0],
-                np.array(
-                    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25, 0.0, 0.0, 0.0]
-                ),
-            )
-        ],
-    )
-    def test_format_weight_per_feature_type(self, feature_type_weights, feature_weights):
-        """
-        Test formatting of weights per feature type (weights need to be equally distributed
-        between all features in feature type and transformed into a DataFrame).
-
-        Parameters
-        ----------
-        feature_type_weights : dict of float (3 items) or None
-            Weights per feature type which need to sum up to 1.0.
-        feature_weights : dict of float (15 items) or None
-            Weights per feature which need to sum up to 1.0.
-        """
-
-        # FingerprintDistance
-        fingerprint_distance = FingerprintDistance()
-        feature_weights_calculated = fingerprint_distance._format_weight_per_feature_type(
-            feature_type_weights
-        )
-
-        # Test weight values
-        assert np.isclose(np.std(feature_weights_calculated), np.std(feature_weights), rtol=1e-04)
-
-    @pytest.mark.parametrize(
-        "feature_type_weights",
-        [
-            ([0.1]),  # Features missing
-            ([0.5, 0.5, 0.5]),  # Weights do not sum up to 1.0
-        ],
-    )
-    def test_format_weight_per_feature_type_valueerror(self, feature_type_weights):
-        """
-        Test if incorrect input feature type weights raise ValueError.
-        """
-
-        with pytest.raises(ValueError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
-
-    @pytest.mark.parametrize(
-        "feature_type_weights",
-        [
-            ({"a": 1.0}),  # Input is no list
-        ],
-    )
-    def test_format_weight_per_feature_type_typeerror(self, feature_type_weights):
-        """
-        Test if incorrect input feature type weights raise TypeError.
-        """
-
-        with pytest.raises(TypeError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weight_per_feature_type(feature_type_weights)
-
-    @pytest.mark.parametrize(
-        "feature_weights, feature_weights_formatted",
-        [
-            (
-                [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                np.array(
-                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                ),
-            ),
-            (None, [0.0667] * 15),
-        ],
-    )
-    def test_format_weight_per_feature(self, feature_weights, feature_weights_formatted):
-        """
-        Test formatting of weights per feature type (weights need to be transformed into a
-        DataFrame).
-
-        Parameters
-        ----------
-        feature_weights : dict of float or None (15 items)
-            Weights per feature which need to sum up to 1.0.
-        feature_weights_formatted : xxx
-            Formatted feature weights.
-        """
-
-        # FingerprintDistance
-        fingerprint_distance = FingerprintDistance()
-        feature_weights_formatted_calculated = fingerprint_distance._format_weight_per_feature(
-            feature_weights
-        )
-
-        assert np.isclose(
-            np.std(feature_weights_formatted_calculated),
-            np.std(feature_weights_formatted),
-            rtol=1e-04,
-        )
-
-    @pytest.mark.parametrize(
-        "feature_weights",
-        [
-            ([0.1]),  # Features missing
-            (
-                [
-                    0.5,
-                    0.0625,
-                    0.0625,
-                    0.0625,
-                    0.0625,
-                    0.0625,
-                    0.0625,
-                    0.0625,
-                    0.125,
-                    0.125,
-                    0.125,
-                    0.125,
-                    0.0,
-                    0.0,
-                    0.0,
-                ]
-            ),  # Weights do not sum up to 1.0
-        ],
-    )
-    def test_format_weight_per_feature_valueerror(self, feature_weights):
-        """
-        Test if incorrect input feature weights raise ValueError.
-        """
-
-        with pytest.raises(ValueError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weight_per_feature(feature_weights)
-
-    @pytest.mark.parametrize("feature_weights", [("is_string")])  # Input is no list
-    def test_format_weight_per_feature_typeerror(self, feature_weights):
-        """
-        Test if incorrect input feature weights raise TypeError.
-        """
-
-        with pytest.raises(TypeError):
-            fingerprint_distance = FingerprintDistance()
-            fingerprint_distance._format_weight_per_feature(feature_weights)
-
-    @pytest.mark.parametrize(
         "feature_weights, distance, coverage",
         [
             (
                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.25],
                 0.5,
                 0.75,
-            )
+            ),
         ],
     )
     def test_from_feature_distances(self, feature_distances, feature_weights, distance, coverage):
@@ -253,16 +45,89 @@ class TestsFingerprintDistance:
         """
 
         # FingerprintDistance
-        fingerprint_distance = FingerprintDistance()
-        fingerprint_distance.from_feature_distances(feature_distances, feature_weights)
+        fingerprint_distance = FingerprintDistance.from_feature_distances(
+            feature_distances, feature_weights
+        )
 
-        # Test class attributes:
-
-        # Molecule codes
-        assert fingerprint_distance.molecule_pair_code == feature_distances.molecule_pair_code
-
-        # Fingerprint distance
+        # Test class attributes
+        assert fingerprint_distance.structure_pair_ids == feature_distances.structure_pair_ids
+        assert fingerprint_distance.kinase_pair_ids == feature_distances.kinase_pair_ids
         assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
-
-        # Fingerprint coverage
         assert np.isclose(fingerprint_distance.bit_coverage, coverage, rtol=1e-04)
+        assert np.array_equal(fingerprint_distance.feature_weights, np.array(feature_weights))
+
+    @pytest.mark.parametrize(
+        "values, weights, calculated_weighted_sum",
+        [
+            (
+                np.array([0.1, 0.2]),
+                np.array([0.5, 0.5]),
+                0.15,
+            ),
+            (
+                np.array([0.1, 0.2]),
+                np.array([1.0, 0.0]),
+                0.1,
+            ),
+            (
+                np.array([0.1, 0.2]),
+                np.array([0.2, 0.8]),
+                0.18,
+            ),
+        ],
+    )
+    def test_calculate_weighted_sum(self, values, weights, calculated_weighted_sum):
+
+        fingerprint_distance = FingerprintDistance()
+        calculated_weighted_sum_calculated = fingerprint_distance._calculate_weighted_sum(
+            values, weights
+        )
+        assert np.isclose(calculated_weighted_sum_calculated, calculated_weighted_sum, rtol=1e-04)
+
+    @pytest.mark.parametrize(
+        "values, weights",
+        [
+            (
+                np.array([0.1, np.nan]),  # Values contain NaN
+                np.array([0.5, 0.5]),
+            ),
+            (
+                np.array([0.1, 0.1]),
+                np.array([0.5, 0.0]),  # Sum is not 1.0
+            ),
+        ],
+    )
+    def test_calculate_weighted_sum_raises(self, values, weights):
+
+        with pytest.raises(ValueError):
+            fingerprint_distance = FingerprintDistance()
+            fingerprint_distance._calculate_weighted_sum(values, weights)
+
+    @pytest.mark.parametrize(
+        "distances, weights, distances_wo_nan, weights_wo_nan_recalibrated",
+        [
+            (
+                np.array([np.nan, 0.1, 0.2, 0.8, 0.9]),
+                np.array([0.2, 0.2, 0.2, 0.2, 0.2]),
+                np.array([0.1, 0.2, 0.8, 0.9]),
+                np.array([0.25, 0.25, 0.25, 0.25]),
+            ),
+            (
+                np.array([np.nan, 0.1, 0.2, 0.8, 0.9]),
+                np.array([0.1, 0.2, 0.3, 0.3, 0.1]),
+                np.array([0.1, 0.2, 0.8, 0.9]),
+                np.array([0.2, 0.3, 0.3, 0.1]) + np.array([0.2, 0.3, 0.3, 0.1]) * 0.1 / 0.9,
+            ),
+        ],
+    )
+    def test_remove_nan_distances_and_recalibrate_weights(
+        self, distances, weights, distances_wo_nan, weights_wo_nan_recalibrated
+    ):
+
+        fingerprint_distance = FingerprintDistance()
+        (
+            distances_wo_nan_calculated,
+            weights_wo_nan_recalibrated_calculated,
+        ) = fingerprint_distance._remove_nan_distances_and_recalibrate_weights(distances, weights)
+        assert np.array_equal(distances_wo_nan_calculated, distances_wo_nan)
+        assert np.array_equal(weights_wo_nan_recalibrated_calculated, weights_wo_nan_recalibrated)

@@ -95,19 +95,6 @@ class TestFingerprintGenerator:
         )
 
     @pytest.mark.parametrize(
-        "n_cores",
-        [1000000000000],
-    )
-    def test_get_n_cores_valueerror(self, n_cores):
-        """
-        Test if number of cores are set correctly.
-        """
-
-        fingerprint_generator = FingerprintGenerator()
-        with pytest.raises(ValueError):
-            fingerprint_generator._set_n_cores(n_cores)
-
-    @pytest.mark.parametrize(
         "structure_klifs_ids, normalize, values_array_sum",
         [([110, 118], False, 10152.4256), ([110, 118], True, 10152.4256)],
     )
