@@ -70,7 +70,7 @@ class FeatureDistancesGenerator:
             return deduplicated_kinase_ids
 
     @classmethod
-    def from_fingerprint_generator(cls, fingerprints_generator, n_cores=None):
+    def from_fingerprint_generator(cls, fingerprints_generator, n_cores=1):
         """
         Calculate feature distances for all possible structure pairs.
 
@@ -86,6 +86,9 @@ class FeatureDistancesGenerator:
         kissim.comparison.FeatureDistancesGenerator
             Feature distances generator.
         """
+
+        logger.info("GENERATE FEATURE DISTANCES")
+        logger.info(f"Number of input input fingerprints: {len(fingerprints_generator.data)}")
 
         start_time = datetime.datetime.now()
         logger.info(f"Feature distances generation started at: {start_time}")
@@ -108,14 +111,15 @@ class FeatureDistancesGenerator:
             for structure_id, fingerprint in fingerprints_generator.data.items()
         ]
 
+        logger.info(f"Number of ouput feature distances: {len(feature_distances_generator.data)}")
+
         end_time = datetime.datetime.now()
-        logger.info(f"Number of feature distances: {len(feature_distances_generator.data)}")
         logger.info(f"Runtime: {end_time - start_time}")
 
         return feature_distances_generator
 
     @classmethod
-    def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=None):
+    def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=1):
         """
         Calculate feature distances for all possible structure pairs.
 
@@ -240,7 +244,7 @@ class FeatureDistancesGenerator:
         pairs = [(i, j) for i, j in combinations(fingerprints.keys(), 2)]
         return pairs
 
-    def _get_feature_distances_from_list(self, _get_feature_distances, fingerprints, n_cores=None):
+    def _get_feature_distances_from_list(self, _get_feature_distances, fingerprints, n_cores):
         """
         Get feature distances for multiple fingerprint pairs.
         Uses parallel computing.

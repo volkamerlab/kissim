@@ -44,7 +44,7 @@ class FingerprintGenerator:
         self.data_normalized = None
 
     @classmethod
-    def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=None):
+    def from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None, n_cores=1):
         """
         Calculate fingerprints for one or more KLIFS structures (by structure KLIFS IDs).
 
@@ -64,9 +64,11 @@ class FingerprintGenerator:
             Fingerprint generator object containing fingerprints.
         """
 
+        logger.info("GENERATE FINGERPRINTS")
+        logger.info(f"Number of input structures: {len(structure_klifs_ids)}")
+
         start_time = datetime.datetime.now()
         logger.info(f"Fingerprint generation started at: {start_time}")
-        logger.info(f"Number of input structures: {len(structure_klifs_ids)}")
 
         # Set up KLIFS session if needed
         if klifs_session is None:
@@ -87,9 +89,9 @@ class FingerprintGenerator:
         }
         fingerprint_generator.data_normalized = fingerprint_generator._normalize_fingerprints()
 
+        logger.info(f"Number of output fingerprints: {len(fingerprint_generator.data)}")
+
         end_time = datetime.datetime.now()
-        logger.info(f"Number of input structures: {len(structure_klifs_ids)}")
-        logger.info(f"Number of successful fingerprints: {len(fingerprint_generator.data)}")
         logger.info(f"Runtime: {end_time - start_time}")
 
         return fingerprint_generator
@@ -345,44 +347,6 @@ class FingerprintGenerator:
     def _get_fingerprint_list(self, n_cores):
         """
         Generate fingerprints.
-
-        Parameters
-        ----------
-        n_cores : int
-            Number of cores.
-
-        Returns
-        -------
-        list of kissim.encoding.fingerprint
-            List of fingerprints
-        """
-
-        if n_cores == 1:
-            fingerprints_list = self._process_fingerprints_in_sequence()
-        else:
-            fingerprints_list = self._process_fingerprints_in_parallel(n_cores)
-
-        return fingerprints_list
-
-    def _process_fingerprints_in_sequence(self):
-        """
-        Generate fingerprints in sequence.
-
-        Returns
-        -------
-        list of kissim.encoding.fingerprint
-            List of fingerprints
-        """
-
-        fingerprints_list = [
-            self._get_fingerprint(structure_klifs_id, self.klifs_session)
-            for structure_klifs_id in self.structure_klifs_ids
-        ]
-        return fingerprints_list
-
-    def _process_fingerprints_in_parallel(self, n_cores):
-        """
-        Generate fingerprints in parallel.
 
         Parameters
         ----------

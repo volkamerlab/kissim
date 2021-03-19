@@ -185,7 +185,7 @@ class TestsFeatureDistancesGenerator:
         generator = FeatureDistancesGenerator()
 
         feature_distances_list = generator._get_feature_distances_from_list(
-            generator._get_feature_distances, fingerprint_generator.data
+            generator._get_feature_distances, fingerprint_generator.data, 1
         )
 
         assert isinstance(feature_distances_list, list)

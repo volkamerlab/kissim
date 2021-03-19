@@ -8,7 +8,7 @@ import datetime
 from itertools import repeat
 import json
 import logging
-from multiprocessing import cpu_count, Pool
+from multiprocessing import Pool
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +16,7 @@ import pandas as pd
 
 from kissim.comparison import FingerprintDistance, FeatureDistancesGenerator
 from kissim.comparison.utils import format_weights
+from kissim.utils import set_n_cores
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +139,9 @@ class FingerprintDistanceGenerator:
         )
 
     @classmethod
-    def from_feature_distances_generator(cls, feature_distances_generator, feature_weights=None):
+    def from_feature_distances_generator(
+        cls, feature_distances_generator, feature_weights=None, n_cores=1
+    ):
         """
         Generate fingerprint distances for multiple fingerprint pairs based on their feature
         distances, given a feature weighting scheme.
@@ -158,6 +161,8 @@ class FingerprintDistanceGenerator:
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
                 All floats must sum up to 1.0.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
 
         Returns
         -------
@@ -165,8 +170,18 @@ class FingerprintDistanceGenerator:
             Fingerprint distance generator.
         """
 
+        logger.info("GENERATE FINGERPRINT DISTANCES")
+        logger.info(f"Number of input feature distances: {len(feature_distances_generator.data)}")
+
         start_time = datetime.datetime.now()
         logger.info(f"Fingerprint distance generation started at: {start_time}")
+
+        # Set number of cores to be used
+        n_cores = set_n_cores(n_cores)
+
+        # Format input feature weights
+        feature_weights = format_weights(feature_weights)
+        logger.info(f"Feature weights: {feature_weights}")
 
         fingerprint_distance_generator = cls()
 
@@ -175,12 +190,13 @@ class FingerprintDistanceGenerator:
             fingerprint_distance_generator._get_fingerprint_distance_from_list(
                 fingerprint_distance_generator._get_fingerprint_distance,
                 list(feature_distances_generator.data.values()),
-                fingerprint_distance_generator.feature_weights,
+                feature_weights,
+                n_cores,
             )
         )
 
         # Set class attributes
-        fingerprint_distance_generator.feature_weights = format_weights(feature_weights)
+        fingerprint_distance_generator.feature_weights = feature_weights
         fingerprint_distance_generator.structure_kinase_ids = (
             feature_distances_generator.structure_kinase_ids
         )
@@ -212,15 +228,18 @@ class FingerprintDistanceGenerator:
             fingerprint_distance_generator._bit_coverages
         )
 
+        logger.info(
+            f"Number of output fingerprint distances: {len(fingerprint_distance_generator.data)}"
+        )
+
         end_time = datetime.datetime.now()
-        logger.info(f"Number of fingerprint distances: {len(fingerprint_distance_generator.data)}")
         logger.info(f"Runtime: {end_time - start_time}")
 
         return fingerprint_distance_generator
 
     @classmethod
     def from_structure_klifs_ids(
-        cls, structure_klifs_ids, klifs_session=None, n_cores=None, feature_weights=None
+        cls, structure_klifs_ids, klifs_session=None, feature_weights=None, n_cores=1
     ):
         """
         Calculate fingerprint distances for all possible structure pairs.
@@ -232,8 +251,6 @@ class FingerprintDistanceGenerator:
             structures could not be encoded).
         klifs_session : opencadd.databases.klifs.session.Session
             Local or remote KLIFS session.
-        n_cores : int or None
-            Number of cores to be used for fingerprint generation as defined by the user.
         feature_weights : None or list of float
             Feature weights of the following form:
             (i) None
@@ -244,6 +261,8 @@ class FingerprintDistanceGenerator:
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
                 All floats must sum up to 1.0.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
 
         Returns
         -------
@@ -255,7 +274,7 @@ class FingerprintDistanceGenerator:
             structure_klifs_ids, klifs_session, n_cores
         )
         fingerprint_distance_generator = cls.from_feature_distances_generator(
-            feature_distances_generator, feature_weights
+            feature_distances_generator, feature_weights, n_cores
         )
         return fingerprint_distance_generator
 
@@ -328,7 +347,7 @@ class FingerprintDistanceGenerator:
 
     @staticmethod
     def _get_fingerprint_distance_from_list(
-        _get_fingerprint_distance, feature_distances_list, feature_weights=None
+        _get_fingerprint_distance, feature_distances_list, feature_weights=None, n_cores=1
     ):
         """
         Get fingerprint distances based on multiple feature distances
@@ -353,6 +372,8 @@ class FingerprintDistanceGenerator:
                 aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
                 distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
                 All floats must sum up to 1.0.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
 
         Returns
         -------
@@ -361,30 +382,12 @@ class FingerprintDistanceGenerator:
             weights and feature coverage.
         """
 
-        # Get start time of computation
-        start = datetime.datetime.now()
-        logger.info(f"Calculate pairwise fingerprint distances...")
-
-        # Number of CPUs on machine
-        num_cores = cpu_count() - 1
-        logger.info(f"Number of cores used: {num_cores}")
-
-        # Create pool with `num_processes` processes
-        pool = Pool(processes=num_cores)
+        pool = Pool(processes=n_cores)
         fingerprint_distances_list = pool.starmap(
             _get_fingerprint_distance, zip(feature_distances_list, repeat(feature_weights))
         )
-
-        # Close and join pool
         pool.close()
         pool.join()
-
-        # Get end time of computation
-        logger.info(f"Number of fingerprint distances: {len(fingerprint_distances_list)}")
-        end = datetime.datetime.now()
-
-        logger.info(f"Start: {start}")
-        logger.info(f"End: {end}")
 
         return fingerprint_distances_list
 
