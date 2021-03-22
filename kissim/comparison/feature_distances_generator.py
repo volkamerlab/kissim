@@ -166,15 +166,18 @@ class FeatureDistancesGenerator:
         filepath = Path(filepath)
         with open(filepath, "r") as f:
             json_string = f.read()
-        feature_distances_list = json.loads(json_string)
+        feature_distances_generator_dict = json.loads(json_string)
 
         data = {}
-        for feature_distances_dict in feature_distances_list:
+        for feature_distances_dict in feature_distances_generator_dict["data"]:
             feature_distances = FeatureDistances._from_dict(feature_distances_dict)
             data[feature_distances.structure_pair_ids] = feature_distances
 
         feature_distances_generator = cls()
         feature_distances_generator.data = data
+        feature_distances_generator.structure_kinase_ids = feature_distances_generator_dict[
+            "structure_kinase_ids"
+        ]
 
         return feature_distances_generator
 
@@ -188,16 +191,20 @@ class FeatureDistancesGenerator:
             Path to json file.
         """
 
-        feature_distances_list = [
-            feature_distances.__dict__.copy()
-            for structure_pair_ids, feature_distances in self.data.items()
-        ]
-        # Cast np.array to list
-        for feature_distances in feature_distances_list:
-            feature_distances["distances"] = feature_distances["distances"].tolist()
-            feature_distances["bit_coverages"] = feature_distances["bit_coverages"].tolist()
+        feature_distances_generator_dict = self.__dict__.copy()
 
-        json_string = json.dumps(feature_distances_list)
+        # Format attribute data for JSON
+        data = []
+        for _, feature_distances in feature_distances_generator_dict["data"].items():
+            feature_distances_dict = feature_distances.__dict__.copy()
+            feature_distances_dict["distances"] = feature_distances_dict["distances"].tolist()
+            feature_distances_dict["bit_coverages"] = feature_distances_dict[
+                "bit_coverages"
+            ].tolist()
+            data.append(feature_distances_dict)
+        feature_distances_generator_dict["data"] = data
+
+        json_string = json.dumps(feature_distances_generator_dict)
         filepath = Path(filepath)
         with open(filepath, "w") as f:
             f.write(json_string)
