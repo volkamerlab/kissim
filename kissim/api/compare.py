@@ -53,12 +53,7 @@ def compare(
         output_path = Path(output_path)
         output_path.mkdir(parents=True, exist_ok=True)
         feature_distances_json_filepath = output_path / "feature_distances.json"
-        feature_weights_tag = "-".join(
-            [str(int(i * 1000)) for i in format_weights(feature_weights)]
-        )
-        fingerprint_distance_json_filepath = (
-            output_path / f"fingerprint_distances_{feature_weights_tag}.json"
-        )
+        fingerprint_distance_json_filepath = output_path / f"fingerprint_distances.json"
     else:
         feature_distances_json_filepath = None
         fingerprint_distance_json_filepath = None

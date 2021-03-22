@@ -16,19 +16,19 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     "args",
     [
         Namespace(
-            input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+            input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
             output=".",
             weights=None,
             ncores=None,
         ),
         Namespace(
-            input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+            input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
             output=".",
             weights=None,
             ncores=2,
         ),
         Namespace(
-            input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+            input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
             output=".",
             weights=[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             ncores=2,
@@ -43,10 +43,8 @@ def test_compare_from_cli(args):
         # Feature distances JSON there?
         assert Path("feature_distances.json").exists()
 
-        # Fingerprint distance JSON there? (File has weights-specific name, thus glob)
-        paths = list(Path(".").glob("fingerprint_distances_*.json"))
-        assert len(paths) == 1
-        assert paths[0].exists()
+        # Fingerprint distance JSON there?
+        assert Path("fingerprint_distances.json").exists()
 
         # Distances LOG there?
         assert Path("distances.log").exists()
@@ -66,7 +64,7 @@ def test_compare_from_cli(args):
         ),
         (
             Namespace(
-                input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+                input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
                 output=None,  # Missing
                 weights=None,
                 ncores=None,
@@ -94,7 +92,7 @@ def test_compare_from_cli(args):
         # TODO incorrect file
         (
             Namespace(
-                input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+                input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
                 output=".",
                 weights=[1.0],  # Must be 15 floats
                 ncores=None,
@@ -103,7 +101,7 @@ def test_compare_from_cli(args):
         ),
         (
             Namespace(
-                input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+                input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
                 output=".",
                 weights=[
                     1.0,
@@ -128,7 +126,7 @@ def test_compare_from_cli(args):
         ),
         (
             Namespace(
-                input=(PATH_TEST_DATA / "fingerprints.json").absolute(),
+                input=(PATH_TEST_DATA / "fingerprints_test.json").absolute(),
                 output=".",
                 weights=None,
                 ncores=10000,  # Too many
