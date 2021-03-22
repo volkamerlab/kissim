@@ -8,7 +8,6 @@ from pathlib import Path
 import logging
 
 from kissim.comparison import FeatureDistancesGenerator, FingerprintDistanceGenerator
-from kissim.comparison.utils import format_weights
 
 logger = logging.getLogger(__name__)
 
