@@ -164,6 +164,7 @@ class FingerprintGenerator:
             coordinates_series.name = structure_klifs_id
             coordinates.append(coordinates_series)
         coordinates = pd.DataFrame(coordinates)
+        coordinates.columns.names = ["subpocket", "dimension"]
 
         return coordinates
 
