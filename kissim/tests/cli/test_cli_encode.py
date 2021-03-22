@@ -1,5 +1,5 @@
 """
-Unit and regression test for kissim's compare CLI.
+Unit and regression test for kissim's encode CLI.
 """
 
 from argparse import Namespace
