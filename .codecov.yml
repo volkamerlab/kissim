@@ -12,3 +12,6 @@ comment:
   behavior: default
   flags: null
   paths: null
+ignore:
+    - "kissim/tests"
+    - "kissim/_version.py"
