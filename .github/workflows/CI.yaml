@@ -55,7 +55,7 @@ jobs:
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
-        pytest -v --cov=kissim --cov-report=xml --color=yes kissim/tests/
+        pytest -v --cov=kissim --cov-report=xml --cov-config=setup.cfg --color=yes kissim/tests/
     - name: CodeCov
       uses: codecov/codecov-action@v1
       with:
