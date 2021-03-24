@@ -532,7 +532,6 @@ class FingerprintDistanceGenerator:
         by_terms = "minimum maximum mean size".split()
 
         if by == "minimum":
-            print(structure_distances_grouped_by_kinases.groups)
             kinase_distances = structure_distances_grouped_by_kinases.min()
             kinase_distances = kinase_distances.reset_index().set_index(
                 ["kinase1", "kinase2", "structure1", "structure2"]

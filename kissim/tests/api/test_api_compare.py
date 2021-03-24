@@ -30,7 +30,6 @@ def test_compare(fingerprint_generator, output_path, feature_weights, n_cores):
         assert feature_distances_json_filepath.exists()
         feature_distances_json_filepath.unlink()
 
-        fingerprint_distance_json_filepaths = output_path.glob("*.json")
-        for fingerprint_distance_json_filepath in fingerprint_distance_json_filepaths:
-            assert fingerprint_distance_json_filepath.exists()
-            fingerprint_distance_json_filepath.unlink()
+        fingerprint_distance_json_filepath = output_path / "fingerprint_distances.json"
+        assert fingerprint_distance_json_filepath.exists()
+        fingerprint_distance_json_filepath.unlink()

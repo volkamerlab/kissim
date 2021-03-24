@@ -52,8 +52,8 @@ def test_compare(fingerprint_generator, args):
 
     ### Fingerprint distance generator
     # Json file there?
-    fingerprint_distance_json_filepath = list(output_path.glob("fingerprint_distances_*.json"))[0]
-    fingerprint_distance_json_filepath.exists()
+    fingerprint_distance_json_filepath = output_path / "fingerprint_distances.json"
+    assert fingerprint_distance_json_filepath.exists()
     # Log file there?
     # TODO
     # Json file can be loaded as FingerprintDistanceGeneration object?
