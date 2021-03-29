@@ -18,7 +18,7 @@ dependencies:
   - jupyterlab=2
   - ipywidgets>=7.5
   # Testing
-  - pytest
+  - pytest 5.*
   - pytest-cov
   - codecov
   # Docs
