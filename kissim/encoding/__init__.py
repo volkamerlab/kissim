@@ -1,5 +1,5 @@
 """
-kissim.encoding
+Encode kinase pockets as subpocket-based structural fingerprint.
 """
 
 from .base import FingerprintBase

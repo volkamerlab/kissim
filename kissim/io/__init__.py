@@ -1,5 +1,5 @@
 """
-kissim.io
+Pocket data using biopython or biopandas.
 """
 
 from .data import KlifsToKissimData

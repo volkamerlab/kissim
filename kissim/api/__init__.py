@@ -1,5 +1,5 @@
 """
-kissim.api
+Defines easy programmatic access for any entry point.
 """
 
 from .encode import encode
