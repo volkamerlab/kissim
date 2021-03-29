@@ -5,9 +5,11 @@ Defines a Biopython-based pocket class.
 """
 
 import logging
+import warnings
 
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
+from Bio.PDB.PDBExceptions import PDBConstructionWarning
 from opencadd.io import Biopython
 from opencadd.structure.pocket import PocketBase
 
@@ -20,6 +22,7 @@ from ..definitions import (
 from ..utils import enter_temp_directory
 
 logger = logging.getLogger(__name__)
+warnings.simplefilter("ignore", PDBConstructionWarning)
 
 
 class PocketBioPython(PocketBase):
