@@ -50,6 +50,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
+    'sphinx.ext.todo',
+    'nbsphinx',
 ]
 
 autosummary_generate = True
@@ -172,3 +174,4 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
