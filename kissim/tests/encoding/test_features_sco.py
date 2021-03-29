@@ -114,13 +114,13 @@ class TestsSideChainOrientationFeature:
     @pytest.mark.parametrize(
         "vertex_angle, category",
         [
-            (0.0, 0.0),
-            (1.0, 0.0),
-            (45.0, 0.0),
-            (46.0, 1.0),
-            (90.0, 1.0),
-            (91.0, 2.0),
-            (180.0, 2.0),
+            (0.0, 1.0),
+            (1.0, 1.0),
+            (45.0, 1.0),
+            (46.0, 2.0),
+            (90.0, 2.0),
+            (91.0, 3.0),
+            (180.0, 3.0),
             (np.nan, np.nan),
         ],
     )
@@ -142,7 +142,7 @@ class TestsSideChainOrientationFeature:
         "vertex_angle",
         [200],  # > 180.0
     )
-    def test_get_category(self, vertex_angle):
+    def test_get_category_raises(self, vertex_angle):
         """
         Test tranformation of vertex angle to category for invalid angle.
         """

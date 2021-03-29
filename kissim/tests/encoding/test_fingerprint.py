@@ -102,7 +102,7 @@ class TestFingerprint:
 
     @pytest.mark.parametrize(
         "structure_klifs_id, values_array_mean",
-        [(109, 4.7811), (12347, 4.9610)],
+        [(109, 4.9905), (12347, 5.1622)],
     )
     def test_values_array(self, structure_klifs_id, values_array_mean):
         """
@@ -112,6 +112,17 @@ class TestFingerprint:
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         values_array_mean_calculated = np.nanmean(fingerprint.values_array(True, True, True))
         assert pytest.approx(values_array_mean_calculated, abs=1e-4) == values_array_mean
+
+        # Test the different lengths of the final fingerprint based on the selection of
+        # physicochemical, distances and moments features.
+        assert fingerprint.values_array(False, False, False).size == 0
+        assert fingerprint.values_array(True, False, False).size == 680
+        assert fingerprint.values_array(False, True, False).size == 340
+        assert fingerprint.values_array(False, False, True).size == 12
+        assert fingerprint.values_array(True, True, False).size == 1020
+        assert fingerprint.values_array(True, False, True).size == 692
+        assert fingerprint.values_array(False, True, True).size == 352
+        assert fingerprint.values_array(True, True, True).size == 1032
 
     @pytest.mark.parametrize(
         "structure_klifs_id",
@@ -154,26 +165,6 @@ class TestFingerprint:
         assert fingerprint.moments.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert fingerprint.moments.index.to_list() == [1, 2, 3]
         assert fingerprint.moments.index.name == "moments"
-
-    @pytest.mark.parametrize(
-        "structure_klifs_id",
-        [109],
-    )
-    def test_values_array(self, structure_klifs_id):
-        """
-        Test the different lengths of the final fingerprint based on the selection of
-        physicochemical, distances and moments features.
-        """
-
-        fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
-        assert fingerprint.values_array(False, False, False).size == 0
-        assert fingerprint.values_array(True, False, False).size == 680
-        assert fingerprint.values_array(False, True, False).size == 340
-        assert fingerprint.values_array(False, False, True).size == 12
-        assert fingerprint.values_array(True, True, False).size == 1020
-        assert fingerprint.values_array(True, False, True).size == 692
-        assert fingerprint.values_array(False, True, True).size == 352
-        assert fingerprint.values_array(True, True, True).size == 1032
 
     @pytest.mark.parametrize(
         "structure_klifs_id",
