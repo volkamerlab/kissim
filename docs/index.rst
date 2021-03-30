@@ -11,7 +11,7 @@ Subpocket-based structural fingerprint for kinase pocket comparison
 .. raw:: html
 
    <p align="center">
-   <img src="_static/kissim_fingerprint.png" alt="Subpocket-based structural fingerprint for kinase pockets" width="400"/>
+   <img src="_static/kissim_toc.png" alt="Subpocket-based structural fingerprint for kinase pockets" width="600"/>
    <br>
    <font size="1">
    Subpocket-based structural fingerprint for kinase pockets
@@ -25,7 +25,7 @@ which defines 85 pocket residues for all kinase structures.
 This enables a residue-by-residue comparison without a computationally expensive alignment step. 
 The pocket fingerprint consists of 85 concatenated residue fingerprints, 
 each encoding a residue’s spatial and physicochemical properties. 
-The spatial properties describe the residue’s position in relation to the kinase pocket centroid and 
+The spatial properties describe the residue’s position in relation to the kinase pocket center and 
 important kinase subpockets, i.e. the hinge region, the DFG region, and the front pocket. 
 The physicochemical properties encompass for each residue its size and pharmacophoric features, solvent exposure and side chain orientation.
 Pairwise comparison of all kinases and clustering reveals kinome-wide similarities.
