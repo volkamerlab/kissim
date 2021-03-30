@@ -1,5 +1,5 @@
 """
-kissim.comparison
+Pairwise fingerprint comparison.
 """
 
 from .feature_distances import FeatureDistances

@@ -17,4 +17,4 @@ Eventually, we will have a ``conda`` package, but for now you need to create a n
 
     python -m pip install https://github.com/volkamerlab/kissim/archive/master.tar.gz
 
-6. [Not implemented yet] Run ``kissim -h`` to test it works.
+6. Run ``kissim -h`` to test it works.

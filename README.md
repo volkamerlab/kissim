@@ -4,9 +4,13 @@ Structural kinase similarity (`kissim`)
 [![GitHub Actions Build Status](https://github.com/volkamerlab/kissim/workflows/CI/badge.svg)](https://github.com/volkamerlab/kissim/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/master/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim/branch/master)
 
-> ⚠ This project is work-in-progress. The API is not final.
+> ⚠ This project is work-in-progress.
 
 **Subpocket-based structural fingerprint for kinase pocket comparison** 
+
+![Subpocket-based structural fingerprint for kinase pockets](docs/_static/kissim_toc.png)
+
+## Description
 
 The `kissim` packages offers a novel fingerprinting strategy designed specifically for kinase pockets, 
 allowing for similarity studies across the structurally covered kinome. 
@@ -15,20 +19,73 @@ which defines 85 pocket residues for all kinase structures.
 This enables a residue-by-residue comparison without a computationally expensive alignment step. 
 The pocket fingerprint consists of 85 concatenated residue fingerprints, 
 each encoding a residue’s spatial and physicochemical properties. 
-The spatial properties describe the residue’s position in relation to the kinase pocket centroid and 
+The spatial properties describe the residue’s position in relation to the kinase pocket center and 
 important kinase subpockets, i.e. the hinge region, the DFG region, and the front pocket. 
-The physicochemical properties encompass for each residue its pocket exposure, side chain angle, 
-size and pharmacophoric features. 
-Pairwise comparison of all kinases and clustering reveals kinome-wide similarities.
+The physicochemical properties encompass for each residue its size and pharmacophoric features, solvent exposure and side chain orientation.
+Pairwise comparison of all kinases and clustering reveals kinome-wide similarities as investiged in the [`kissim_app` repository](https://github.com/volkamerlab/kissim_app).
 
+## Documentation
 
+> This package is still in development.
 
-### Copyright
+The `kissim` package documentation is available [here](https://kissim.readthedocs.io/).
+
+## Contact
+
+Please [open an issue](https://github.com/volkamerlab/kissim/issues) if you have questions or suggestions.
+
+We are looking forward to hearing from you!
+
+## License
+
+This work is published under the [MIT license](https://github.com/volkamerlab/kissim/blob/master/LICENSE).
 
 Copyright (c) 2019, Volkamer Lab
 
 
-#### Acknowledgements
- 
-Project based on the 
+## Acknowledgements
+
+### Funding
+
+Volkamer Lab's projects are supported by several public funding sources
+(for more info see our [webpage](https://volkamerlab.org/)).
+
+### Collaborators
+
+The `kissim` project is a collaboration between the Volkamer Lab (Dominique Sydow, Eva Aßmann and Andrea Volkamer), Albert Kooistra (University of Copenhagen) and Friedrich Rippmann (Merck).
+
+### External resources
+
+#### Databases
+
+- [KLIFS](https://klifs.net/)
+
+#### Python packages
+
+- Cheminformatics and structural bioinformatics:
+  [`opencadd`](https://opencadd.readthedocs.io/en/latest/),
+  [`biopython`](https://biopython.org/),
+  [`biopandas`](http://rasbt.github.io/biopandas/)
+- Data science (PyData stack):
+  [`numpy`](https://numpy.org/),
+  [`pandas`](https://pandas.pydata.org/),
+  [`scikit-learn`](https://scikit-learn.org/),
+  [`jupyter`](https://jupyter.org/),
+  [`ipywidgets`](https://ipywidgets.readthedocs.io)
+- Data visualization:
+  [`matplotlib`](https://matplotlib.org/), 
+  [`seaborn`](https://seaborn.pydata.org/),
+  [`nglview`](http://nglviewer.org/nglview/latest/)
+- Continuous integration:
+  [`pytest`](https://docs.pytest.org),
+  [`nbval`](https://nbval.readthedocs.io)
+- Documentation:
+  [`sphinx`](https://www.sphinx-doc.org),
+  [`nbsphinx`](https://nbsphinx.readthedocs.io)
+- Code style:
+  [`black-nb`](https://github.com/tomcatling/black-nb)
+
+#### Repository
+
+Project is based on the 
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.5.
