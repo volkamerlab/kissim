@@ -6,6 +6,7 @@ Defines the feature distances for multiple fingerprint pairs.
 
 import datetime
 import json
+import ijson
 import logging
 from multiprocessing import Pool
 from pathlib import Path
@@ -162,20 +163,21 @@ class FeatureDistancesGenerator:
         """
 
         filepath = Path(filepath)
-        with open(filepath, "r") as f:
-            json_string = f.read()
-        feature_distances_generator_dict = json.loads(json_string)
-
-        data = {}
-        for feature_distances_dict in feature_distances_generator_dict["data"]:
-            feature_distances = FeatureDistances._from_dict(feature_distances_dict)
-            data[feature_distances.structure_pair_ids] = feature_distances
+        with open(filepath, "rb") as file:
+            data = ijson.items(file, "data.item", use_float=True)
+            data = [
+                FeatureDistances._from_dict(feature_distances_dict)
+                for feature_distances_dict in data
+            ]
+        with open(filepath, "rb") as file:
+            structure_kinase_ids = ijson.items(file, "structure_kinase_ids.item")
+            structure_kinase_ids = [
+                tuple(structure_kinase_id) for structure_kinase_id in structure_kinase_ids
+            ]
 
         feature_distances_generator = cls()
         feature_distances_generator.data = data
-        feature_distances_generator.structure_kinase_ids = feature_distances_generator_dict[
-            "structure_kinase_ids"
-        ]
+        feature_distances_generator.structure_kinase_ids = structure_kinase_ids
 
         return feature_distances_generator
 
@@ -202,7 +204,7 @@ class FeatureDistancesGenerator:
             data.append(feature_distances_dict)
         feature_distances_generator_dict["data"] = data
 
-        json_string = json.dumps(feature_distances_generator_dict)
+        json_string = json.dumps(feature_distances_generator_dict).replace("NaN", "null")
         filepath = Path(filepath)
         with open(filepath, "w") as f:
             f.write(json_string)
