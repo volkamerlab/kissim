@@ -7,7 +7,6 @@ Defines the pairwise fingerprint distances for a set of fingerprints.
 import datetime
 from itertools import repeat
 import json
-import ijson
 import logging
 from multiprocessing import Pool
 from pathlib import Path
