@@ -7,6 +7,7 @@ Defines the pairwise fingerprint distances for a set of fingerprints.
 import datetime
 from itertools import repeat
 import json
+import ijson
 import logging
 from multiprocessing import Pool
 from pathlib import Path
@@ -308,13 +309,13 @@ class FingerprintDistanceGenerator:
             tuple(i) for i in fingerprint_distance_generator.structure_kinase_ids
         ]
         fingerprint_distance_generator.feature_weights = np.array(
-            fingerprint_distance_generator.feature_weights
+            fingerprint_distance_generator.feature_weights, dtype=np.float
         )
         fingerprint_distance_generator._distances = np.array(
-            fingerprint_distance_generator._distances
+            fingerprint_distance_generator._distances, dtype=np.float
         )
         fingerprint_distance_generator._bit_coverages = np.array(
-            fingerprint_distance_generator._bit_coverages
+            fingerprint_distance_generator._bit_coverages, dtype=np.float
         )
 
         return fingerprint_distance_generator
