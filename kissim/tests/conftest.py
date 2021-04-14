@@ -101,11 +101,7 @@ def feature_distances_generator():
     feature_distances3.bit_coverages = np.array([0.0] * 15)
 
     # FeatureDistancesGenerator
-    data = {
-        feature_distances1.structure_pair_ids: feature_distances1,
-        feature_distances2.structure_pair_ids: feature_distances2,
-        feature_distances3.structure_pair_ids: feature_distances3,
-    }
+    data = [feature_distances1, feature_distances2, feature_distances3]
 
     # FeatureDistancesGenerator
     feature_distances_generator = FeatureDistancesGenerator()

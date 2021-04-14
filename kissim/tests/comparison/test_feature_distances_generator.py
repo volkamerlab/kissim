@@ -49,12 +49,9 @@ class TestsFeatureDistancesGenerator:
         assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
 
         # Test attributes
-        assert isinstance(feature_distances_generator.data, dict)
+        assert isinstance(feature_distances_generator.data, list)
+        assert isinstance(feature_distances_generator.data[0], FeatureDistances)
         assert isinstance(feature_distances_generator.structure_kinase_ids, list)
-
-        # Test example value from dictionary
-        example_key = list(feature_distances_generator.data.keys())[0]
-        assert isinstance(feature_distances_generator.data[example_key], FeatureDistances)
 
     @pytest.mark.parametrize(
         "structure_klifs_ids, klifs_session, n_cores",
@@ -75,12 +72,9 @@ class TestsFeatureDistancesGenerator:
         assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
 
         # Test attributes
-        assert isinstance(feature_distances_generator.data, dict)
+        assert isinstance(feature_distances_generator.data, list)
+        assert isinstance(feature_distances_generator.data[0], FeatureDistances)
         assert isinstance(feature_distances_generator.structure_kinase_ids, list)
-
-        # Test example value from dictionary
-        example_key = list(feature_distances_generator.data.keys())[0]
-        assert isinstance(feature_distances_generator.data[example_key], FeatureDistances)
 
     def test_to_from_json(self, feature_distances_generator):
 
