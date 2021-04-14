@@ -17,6 +17,7 @@ dependencies:
   - jupyter
   - jupyterlab=2
   - ipywidgets>=7.5
+  - ijson
   # Testing
   - pytest 5.*
   - pytest-cov
