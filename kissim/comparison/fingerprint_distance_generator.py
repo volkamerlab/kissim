@@ -189,7 +189,7 @@ class FingerprintDistanceGenerator:
         fingerprint_distance_list = (
             fingerprint_distance_generator._get_fingerprint_distance_from_list(
                 fingerprint_distance_generator._get_fingerprint_distance,
-                list(feature_distances_generator.data.values()),
+                feature_distances_generator.data,
                 feature_weights,
                 n_cores,
             )
@@ -308,13 +308,13 @@ class FingerprintDistanceGenerator:
             tuple(i) for i in fingerprint_distance_generator.structure_kinase_ids
         ]
         fingerprint_distance_generator.feature_weights = np.array(
-            fingerprint_distance_generator.feature_weights
+            fingerprint_distance_generator.feature_weights, dtype=np.float
         )
         fingerprint_distance_generator._distances = np.array(
-            fingerprint_distance_generator._distances
+            fingerprint_distance_generator._distances, dtype=np.float
         )
         fingerprint_distance_generator._bit_coverages = np.array(
-            fingerprint_distance_generator._bit_coverages
+            fingerprint_distance_generator._bit_coverages, dtype=np.float
         )
 
         return fingerprint_distance_generator

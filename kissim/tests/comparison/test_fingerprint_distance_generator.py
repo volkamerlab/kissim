@@ -124,7 +124,7 @@ class TestsFingerprintDistanceGenerator:
         fingerprint_distance_list = (
             fingerprint_distance_generator._get_fingerprint_distance_from_list(
                 fingerprint_distance_generator._get_fingerprint_distance,
-                list(feature_distances_generator.data.values()),
+                feature_distances_generator.data,
                 None,
                 1,
             )

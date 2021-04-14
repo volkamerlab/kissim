@@ -6,6 +6,7 @@ Defines the feature distances for multiple fingerprint pairs.
 
 import datetime
 import json
+import ijson
 import logging
 from multiprocessing import Pool
 from pathlib import Path
@@ -26,8 +27,8 @@ class FeatureDistancesGenerator:
 
     Attributes
     ----------
-    data : dict of tuple of str: np.ndarray
-        Feature distances and bit coverage (value) for each fingerprint pair (key: molecule codes).
+    data : list of tuple of str: np.ndarray
+        Feature distances and bit coverage (value) for each fingerprint pair.
     structure_kinase_ids : list of tuple
         Structure and kinase IDs for structures in dataset.
     """
@@ -48,7 +49,7 @@ class FeatureDistancesGenerator:
         """
 
         if self.data is not None:
-            structure_ids = self.data.keys()
+            structure_ids = [i.structure_pair_ids for i in self.data]
             deduplicated_structure_ids = sorted(set(chain.from_iterable(structure_ids)))
             return deduplicated_structure_ids
 
@@ -65,7 +66,7 @@ class FeatureDistancesGenerator:
         """
 
         if self.data is not None:
-            kinase_ids = [i.kinase_pair_ids for i in self.data.values()]
+            kinase_ids = [i.kinase_pair_ids for i in self.data]
             deduplicated_kinase_ids = sorted(set(chain.from_iterable(kinase_ids)))
             return deduplicated_kinase_ids
 
@@ -103,9 +104,7 @@ class FeatureDistancesGenerator:
             fingerprints_generator.data,
             n_cores,
         )
-        feature_distances_generator.data = {
-            i.structure_pair_ids: i for i in feature_distances_list
-        }
+        feature_distances_generator.data = feature_distances_list
         feature_distances_generator.structure_kinase_ids = [
             (structure_id, fingerprint.kinase_name)
             for structure_id, fingerprint in fingerprints_generator.data.items()
@@ -164,20 +163,21 @@ class FeatureDistancesGenerator:
         """
 
         filepath = Path(filepath)
-        with open(filepath, "r") as f:
-            json_string = f.read()
-        feature_distances_generator_dict = json.loads(json_string)
-
-        data = {}
-        for feature_distances_dict in feature_distances_generator_dict["data"]:
-            feature_distances = FeatureDistances._from_dict(feature_distances_dict)
-            data[feature_distances.structure_pair_ids] = feature_distances
+        with open(filepath, "rb") as file:
+            data = ijson.items(file, "data.item", use_float=True)
+            data = [
+                FeatureDistances._from_dict(feature_distances_dict)
+                for feature_distances_dict in data
+            ]
+        with open(filepath, "rb") as file:
+            structure_kinase_ids = ijson.items(file, "structure_kinase_ids.item")
+            structure_kinase_ids = [
+                tuple(structure_kinase_id) for structure_kinase_id in structure_kinase_ids
+            ]
 
         feature_distances_generator = cls()
         feature_distances_generator.data = data
-        feature_distances_generator.structure_kinase_ids = feature_distances_generator_dict[
-            "structure_kinase_ids"
-        ]
+        feature_distances_generator.structure_kinase_ids = structure_kinase_ids
 
         return feature_distances_generator
 
@@ -195,7 +195,7 @@ class FeatureDistancesGenerator:
 
         # Format attribute data for JSON
         data = []
-        for _, feature_distances in feature_distances_generator_dict["data"].items():
+        for feature_distances in feature_distances_generator_dict["data"]:
             feature_distances_dict = feature_distances.__dict__.copy()
             feature_distances_dict["distances"] = feature_distances_dict["distances"].tolist()
             feature_distances_dict["bit_coverages"] = feature_distances_dict[
@@ -204,7 +204,7 @@ class FeatureDistancesGenerator:
             data.append(feature_distances_dict)
         feature_distances_generator_dict["data"] = data
 
-        json_string = json.dumps(feature_distances_generator_dict)
+        json_string = json.dumps(feature_distances_generator_dict).replace("NaN", "null")
         filepath = Path(filepath)
         with open(filepath, "w") as f:
             f.write(json_string)
@@ -229,8 +229,20 @@ class FeatureDistancesGenerator:
         """
 
         if self.data is not None:
-            feature_distances = self.data[(structure_id1, structure_id2)]
-            return feature_distances.data
+            feature_distances = [
+                i
+                for i in self.data
+                if (i.structure_pair_ids == (structure_id1, structure_id2))
+                or (i.structure_pair_ids == (structure_id2, structure_id1))
+            ]
+            if len(feature_distances) != 1:
+                raise ValueError(
+                    f"{len(feature_distances)} entries for distance between "
+                    f"{structure_id1} and {structure_id2} available, only 1 allowed."
+                )
+            else:
+                feature_distances = feature_distances[0]
+                return feature_distances.data
 
     @staticmethod
     def _fingerprint_pairs(fingerprints):
