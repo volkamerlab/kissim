@@ -11,6 +11,7 @@ import sys
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 
+
 def main(argv):
     """Main function for the kissim_to_newick tool."""
     print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
@@ -23,7 +24,7 @@ def main(argv):
 
         # Read in KISSIM similarity matrix from provided inputfile
         print("Reading KISSIM data from {}".format(inputfile))
-        similarity_matrix = pd.read_csv(inputfile, index_col = 0)
+        similarity_matrix = pd.read_csv(inputfile, index_col=0)
         distance_matrix = 1 - similarity_matrix
 
         # Removing problematic entries if they exist
@@ -40,7 +41,7 @@ def main(argv):
         # Hierarchical clustering (Ward by default)
         # Alternatives: 'complete', 'weighted', 'average', 'centroid'
         print("Clustering and calculating branch similarities")
-        cmethod = 'ward'
+        cmethod = "ward"
         hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=cmethod)
         tree = sch.to_tree(hclust, False)
 
@@ -58,12 +59,13 @@ def main(argv):
         # Done
         print("\033[0;31mDone!\033[0m")
 
+
 def getMeanIndex(node, distance_matrix, results):
     """Method for calculating an assiging the mean similarity for tree branches."""
     if node.id not in results:
         results[node.id] = 1
     if not node.is_leaf():
-        for left in range(0,2):
+        for left in range(0, 2):
             if left:
                 # get list of indices cluster left
                 indices = node.get_left().pre_order(lambda x: x.id)
@@ -73,7 +75,7 @@ def getMeanIndex(node, distance_matrix, results):
 
             if len(indices) > 1:
                 # calculate mean similarity - cluster A
-                similarity_cluster = (1 - distance_matrix.iloc[indices,indices]).values
+                similarity_cluster = (1 - distance_matrix.iloc[indices, indices]).values
                 si = similarity_cluster[np.tril_indices(similarity_cluster.shape[0], -1)]
                 if left:
                     results[node.get_left().id] = np.average(si)
@@ -83,6 +85,7 @@ def getMeanIndex(node, distance_matrix, results):
                     getMeanIndex(node.get_right(), distance_matrix, results)
             else:
                 results[node.get_left().id] = 1
+
 
 def getNewick(node, newick, parentdist, leaf_names, mean_similarity):
     """Method for converting scipy Tree object into Newick string with annotated branches."""
@@ -94,12 +97,13 @@ def getNewick(node, newick, parentdist, leaf_names, mean_similarity):
             newick = ")%.3f:%.3f%s" % (si_node, parentdist - node.dist, newick)
         else:
             newick = ");"
-        newick = getNewick(node.get_left(), newick, node.dist,
-                           leaf_names, mean_similarity)
-        newick = getNewick(node.get_right(), ",%s" % (
-            newick), node.dist, leaf_names, mean_similarity)
+        newick = getNewick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
+        newick = getNewick(
+            node.get_right(), ",%s" % (newick), node.dist, leaf_names, mean_similarity
+        )
         newick = "(%s" % (newick)
         return newick
 
+
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    main(sys.argv[1:])
