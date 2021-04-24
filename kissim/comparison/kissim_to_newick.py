@@ -24,8 +24,7 @@ def main(argv):
 
         # Read in KISSIM similarity matrix from provided inputfile
         print("Reading KISSIM data from {}".format(inputfile))
-        similarity_matrix = pd.read_csv(inputfile, index_col=0)
-        distance_matrix = 1 - similarity_matrix
+        distance_matrix = pd.read_csv(inputfile, index_col=0)
 
         # Removing problematic entries if they exist
         # Removal of SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
