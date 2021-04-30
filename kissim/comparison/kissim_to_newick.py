@@ -41,11 +41,11 @@ def kissim_to_newick(inputfile, outputfile):
 
     # Calculate and assign mean similarity for each of the branches
     mean_similarity = {}
-    getMeanIndex(tree, distance_matrix, mean_similarity)
+    get_mean_index(tree, distance_matrix, mean_similarity)
 
     # Output in Newick format
     print(f"Writing resulting tree to {outputfile}")
-    newick = getNewick(tree, "", tree.dist, list(distance_matrix), mean_similarity)
+    newick = get_newick(tree, "", tree.dist, list(distance_matrix), mean_similarity)
     tree_file = open(outputfile, "w")
     tree_file.write(newick)
     tree_file.close()
@@ -54,7 +54,7 @@ def kissim_to_newick(inputfile, outputfile):
     print("\033[0;31mDone!\033[0m")
 
 
-def getMeanIndex(node, distance_matrix, results):
+def get_mean_index(node, distance_matrix, results):
     """Method for calculating an assiging the mean similarity for tree branches."""
     if node.id not in results:
         results[node.id] = 1
@@ -73,15 +73,15 @@ def getMeanIndex(node, distance_matrix, results):
                 si = similarity_cluster[np.tril_indices(similarity_cluster.shape[0], -1)]
                 if left:
                     results[node.get_left().id] = np.average(si)
-                    getMeanIndex(node.get_left(), distance_matrix, results)
+                    get_mean_index(node.get_left(), distance_matrix, results)
                 else:
                     results[node.get_right().id] = np.average(si)
-                    getMeanIndex(node.get_right(), distance_matrix, results)
+                    get_mean_index(node.get_right(), distance_matrix, results)
             else:
                 results[node.get_left().id] = 1
 
 
-def getNewick(node, newick, parentdist, leaf_names, mean_similarity):
+def get_newick(node, newick, parentdist, leaf_names, mean_similarity):
     """Method for converting scipy Tree object into Newick string with annotated branches."""
     if node.is_leaf():
         return f"{leaf_names[node.id]}:{round(parentdist - node.dist, 3)}{newick}"
@@ -91,8 +91,8 @@ def getNewick(node, newick, parentdist, leaf_names, mean_similarity):
             newick = f"){round(si_node, 3)}:{round(parentdist - node.dist, 3)}{newick}"
         else:
             newick = ");"
-        newick = getNewick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
-        newick = getNewick(
+        newick = get_newick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
+        newick = get_newick(
             node.get_right(), f",{newick}", node.dist, leaf_names, mean_similarity
         )
         newick = f"({newick}"
