@@ -16,7 +16,7 @@ def kissim_to_newick(inputfile, outputfile):
     print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
 
     # Read in KISSIM similarity matrix from provided inputfile
-    print("Reading KISSIM data from {}".format(inputfile))
+    print(f"Reading KISSIM data from {inputfile}")
     distance_matrix = pd.read_csv(inputfile, index_col=0)
 
     # Removing problematic entries if they exist
@@ -42,7 +42,7 @@ def kissim_to_newick(inputfile, outputfile):
     getMeanIndex(tree, distance_matrix, mean_similarity)
 
     # Output in Newick format
-    print("Writing resulting tree to {}".format(outputfile))
+    print(f"Writing resulting tree to {outputfile}")
     newick = getNewick(tree, "", tree.dist, list(distance_matrix), mean_similarity)
     tree_file = open(outputfile, "w")
     tree_file.write(newick)
@@ -82,16 +82,16 @@ def getMeanIndex(node, distance_matrix, results):
 def getNewick(node, newick, parentdist, leaf_names, mean_similarity):
     """Method for converting scipy Tree object into Newick string with annotated branches."""
     if node.is_leaf():
-        return "%s:%.3f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
+        return f"{leaf_names[node.id]}:{round(parentdist - node.dist, 3)}{newick}"
     else:
         si_node = mean_similarity[node.id]
         if len(newick) > 0:
-            newick = ")%.3f:%.3f%s" % (si_node, parentdist - node.dist, newick)
+            newick = f"){round(si_node, 3)}:{round(parentdist - node.dist, 3)}{newick}"
         else:
             newick = ");"
         newick = getNewick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
         newick = getNewick(
-            node.get_right(), ",%s" % (newick), node.dist, leaf_names, mean_similarity
+            node.get_right(), f",{newick}", node.dist, leaf_names, mean_similarity
         )
-        newick = "(%s" % (newick)
+        newick = f"({newick}"
         return newick
