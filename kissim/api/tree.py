@@ -14,9 +14,9 @@ def tree(inputfile, outputfile):
 
     Parameters
     ----------
-    input_path : str or pathlib.Path
+    inputfile : str or pathlib.Path
         Path to kissim kinase matrix (CSV file).
-    output_path : str or pathlib.Path
+    outputfile : str or pathlib.Path
         Path to kinase tree file (TREE file) in Newick format. 
     """
 
