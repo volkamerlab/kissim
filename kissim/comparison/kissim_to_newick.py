@@ -11,6 +11,10 @@ import sys
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 
+# Problematic kinases
+# - SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
+PROBLAMATIC_KINASES = ["SgK495"]
+
 def kissim_to_newick(inputfile, outputfile):
     """Main function for the kissim_to_newick tool."""
     print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
@@ -20,9 +24,7 @@ def kissim_to_newick(inputfile, outputfile):
     distance_matrix = pd.read_csv(inputfile, index_col=0)
 
     # Removing problematic entries if they exist
-    # Removal of SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
-    problematic_entries = ["SgK495"]
-    for entry in problematic_entries:
+    for entry in PROBLAMATIC_KINASES:
         if entry in distance_matrix:
             distance_matrix.drop(entry, axis=0, inplace=True)
             distance_matrix.drop(entry, axis=1, inplace=True)
