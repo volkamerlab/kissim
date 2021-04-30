@@ -6,7 +6,6 @@ The resulting tree is written to an output file in Newick format.
 """
 
 from pathlib import Path
-import sys
 
 import numpy as np
 import pandas as pd
