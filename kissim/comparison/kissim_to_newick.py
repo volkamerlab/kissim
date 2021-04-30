@@ -57,9 +57,8 @@ def kissim_to_newick(inputfile, outputfile):
     print(f"Writing resulting tree to {outputfile}")
     newick = ""
     newick = get_newick(tree, newick, tree.dist, list(distance_matrix), mean_similarity)
-    tree_file = open(outputfile, "w")
-    tree_file.write(newick)
-    tree_file.close()
+    with open(outputfile, "w") as f:
+        f.write(newick)
 
     # Done
     print("\033[0;31mDone!\033[0m")
