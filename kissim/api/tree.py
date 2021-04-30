@@ -4,7 +4,7 @@ kissim.api.tree
 Main API for kissim tree generation.
 """
 
-from kissim.comparison import kissim_to_newick
+from kissim.comparison import tree
 
 
 def tree(inputfile, outputfile):
@@ -19,4 +19,4 @@ def tree(inputfile, outputfile):
         Path to kinase tree file (TREE file) in Newick format.
     """
 
-    kissim_to_newick(inputfile, outputfile)
+    tree(inputfile, outputfile)

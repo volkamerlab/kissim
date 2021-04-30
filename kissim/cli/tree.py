@@ -1,7 +1,8 @@
-"""kissim_to_newick
+"""
+kissim.cli.tree
 
-This is a small tool for processing a KISSIM similarity matrix into a clustered
-kissim-based tree with assignment of the mean similarity to each branch.
+Process a KISSIM similarity matrix into a clustered kissim-based tree with assignment of the 
+mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """
 

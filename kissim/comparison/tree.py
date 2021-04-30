@@ -1,7 +1,6 @@
-"""kissim_to_newick
-
-This is a small tool for processing a KISSIM similarity matrix into a clustered
-kissim-based tree with assignment of the mean similarity to each branch.
+"""
+Process a KISSIM similarity matrix into a clustered kissim-based tree with assignment of the 
+mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """
 
@@ -17,7 +16,7 @@ import scipy.spatial.distance as ssd
 PROBLAMATIC_KINASES = ["SgK495"]
 
 
-def kissim_to_newick(inputfile, outputfile):
+def tree(inputfile, outputfile):
     """
     Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
 
@@ -32,7 +31,7 @@ def kissim_to_newick(inputfile, outputfile):
     input_path = Path(inputfile)
     output_path = Path(outputfile)
 
-    print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
+    print("\033[1mConverting kissim similarities to a Newick tree\033[0m\n---")
 
     # Read in KISSIM similarity matrix from provided inputfile
     print(f"Reading KISSIM data from {inputfile}")
