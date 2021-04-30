@@ -5,6 +5,7 @@ kissim-based tree with assignment of the mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """
 
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import sys
@@ -26,6 +27,9 @@ def kissim_to_newick(inputfile, outputfile):
     outputfile : str or pathlib.Path
         Path to kinase tree file (TREE file) in Newick format. 
     """
+
+    input_path = Path(inputfile)
+    output_path = Path(outputfile)
 
     print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
 
