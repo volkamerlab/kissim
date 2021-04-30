@@ -16,6 +16,5 @@ def tree_from_cli(args):
     args : argsparse.Namespace
         CLI arguments.
     """
-    print("bla")
 
     tree(args.input, args.output)
