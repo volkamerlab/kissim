@@ -17,16 +17,17 @@ import scipy.spatial.distance as ssd
 # - SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
 PROBLAMATIC_KINASES = ["SgK495"]
 
+
 def kissim_to_newick(inputfile, outputfile):
     """
     Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
-    
+
     Parameters
     ----------
     inputfile : str or pathlib.Path
         Path to kissim kinase matrix (CSV file).
     outputfile : str or pathlib.Path
-        Path to kinase tree file (TREE file) in Newick format. 
+        Path to kinase tree file (TREE file) in Newick format.
     """
 
     input_path = Path(inputfile)
@@ -85,7 +86,7 @@ def get_mean_index(node, distance_matrix, results):
     Returns
     -------
     results : dict of int: float
-        Mean distance (value) for each node index (key). 
+        Mean distance (value) for each node index (key).
         Note: The return value is the populated input `results` object.
     """
 
@@ -147,8 +148,6 @@ def get_newick(node, newick, parentdist, leaf_names, mean_similarity):
         else:
             newick = ");"
         newick = get_newick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
-        newick = get_newick(
-            node.get_right(), f",{newick}", node.dist, leaf_names, mean_similarity
-        )
+        newick = get_newick(node.get_right(), f",{newick}", node.dist, leaf_names, mean_similarity)
         newick = f"({newick}"
         return newick

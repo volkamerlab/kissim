@@ -7,6 +7,7 @@ The resulting tree is written to an output file in Newick format.
 
 from kissim.api import tree
 
+
 def tree_from_cli(args):
     """
     Generate kissim-based kinase tree.

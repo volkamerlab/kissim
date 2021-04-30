@@ -100,7 +100,6 @@ def main():
     )
     compare_subparser.set_defaults(func=compare_from_cli)
 
-
     # Arguments and function to be called for sub-command encode
     tree_subparser.add_argument(
         "-i",
@@ -119,7 +118,7 @@ def main():
     tree_subparser.set_defaults(func=tree_from_cli)
 
     args = parser.parse_args()
-    try: 
+    try:
         args.func(args)
     except AttributeError:
         # Run help if no arguments were given
