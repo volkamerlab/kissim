@@ -98,4 +98,8 @@ def main():
     compare_subparser.set_defaults(func=compare_from_cli)
 
     args = parser.parse_args()
-    args.func(args)
+    try: 
+        args.func(args)
+    except AttributeError:
+        # Run help if no arguments were given
+        subprocess.run(["kissim", "-h"])
