@@ -11,52 +11,45 @@ import sys
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 
-
-def main(argv):
+def kissim_to_newick(inputfile, outputfile):
     """Main function for the kissim_to_newick tool."""
     print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
 
-    if len(argv) != 2:
-        print("Syntax: kissim_to_newick.py <inputfile> <outputfile>")
-    else:
-        inputfile = argv[0]
-        outputfile = argv[1]
+    # Read in KISSIM similarity matrix from provided inputfile
+    print("Reading KISSIM data from {}".format(inputfile))
+    distance_matrix = pd.read_csv(inputfile, index_col=0)
 
-        # Read in KISSIM similarity matrix from provided inputfile
-        print("Reading KISSIM data from {}".format(inputfile))
-        distance_matrix = pd.read_csv(inputfile, index_col=0)
+    # Removing problematic entries if they exist
+    # Removal of SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
+    problematic_entries = ["SgK495"]
+    for entry in problematic_entries:
+        if entry in distance_matrix:
+            distance_matrix.drop(entry, axis=0, inplace=True)
+            distance_matrix.drop(entry, axis=1, inplace=True)
 
-        # Removing problematic entries if they exist
-        # Removal of SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
-        problematic_entries = ["SgK495"]
-        for entry in problematic_entries:
-            if entry in distance_matrix:
-                distance_matrix.drop(entry, axis=0, inplace=True)
-                distance_matrix.drop(entry, axis=1, inplace=True)
+    # Curate diagonal - set to 0
+    np.fill_diagonal(distance_matrix.values, 0)
 
-        # Curate diagonal - set to 0
-        np.fill_diagonal(distance_matrix.values, 0)
+    # Hierarchical clustering (Ward by default)
+    # Alternatives: 'complete', 'weighted', 'average', 'centroid'
+    print("Clustering and calculating branch similarities")
+    cmethod = "ward"
+    hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=cmethod)
+    tree = sch.to_tree(hclust, False)
 
-        # Hierarchical clustering (Ward by default)
-        # Alternatives: 'complete', 'weighted', 'average', 'centroid'
-        print("Clustering and calculating branch similarities")
-        cmethod = "ward"
-        hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=cmethod)
-        tree = sch.to_tree(hclust, False)
+    # Calculate and assign mean similarity for each of the branches
+    mean_similarity = {}
+    getMeanIndex(tree, distance_matrix, mean_similarity)
 
-        # Calculate and assign mean similarity for each of the branches
-        mean_similarity = {}
-        getMeanIndex(tree, distance_matrix, mean_similarity)
+    # Output in Newick format
+    print("Writing resulting tree to {}".format(outputfile))
+    newick = getNewick(tree, "", tree.dist, list(distance_matrix), mean_similarity)
+    tree_file = open(outputfile, "w")
+    tree_file.write(newick)
+    tree_file.close()
 
-        # Output in Newick format
-        print("Writing resulting tree to {}".format(outputfile))
-        newick = getNewick(tree, "", tree.dist, list(distance_matrix), mean_similarity)
-        tree_file = open(outputfile, "w")
-        tree_file.write(newick)
-        tree_file.close()
-
-        # Done
-        print("\033[0;31mDone!\033[0m")
+    # Done
+    print("\033[0;31mDone!\033[0m")
 
 
 def getMeanIndex(node, distance_matrix, results):
@@ -102,7 +95,3 @@ def getNewick(node, newick, parentdist, leaf_names, mean_similarity):
         )
         newick = "(%s" % (newick)
         return newick
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
