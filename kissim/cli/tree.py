@@ -6,7 +6,7 @@ mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """
 
-from kissim.api import tree
+from kissim.comparison import tree
 
 
 def tree_from_cli(args):
