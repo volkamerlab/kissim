@@ -16,7 +16,17 @@ import scipy.spatial.distance as ssd
 PROBLAMATIC_KINASES = ["SgK495"]
 
 def kissim_to_newick(inputfile, outputfile):
-    """Main function for the kissim_to_newick tool."""
+    """
+    Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
+    
+    Parameters
+    ----------
+    input_path : str or pathlib.Path
+        Path to kissim kinase matrix (CSV file).
+    output_path : str or pathlib.Path
+        Path to kinase tree file (TREE file) in Newick format. 
+    """
+
     print("\033[1mkissim_to_newick - converting kissim similarities to a Newick tree\033[0m\n---")
 
     # Read in KISSIM similarity matrix from provided inputfile
@@ -45,7 +55,8 @@ def kissim_to_newick(inputfile, outputfile):
 
     # Output in Newick format
     print(f"Writing resulting tree to {outputfile}")
-    newick = get_newick(tree, "", tree.dist, list(distance_matrix), mean_similarity)
+    newick = ""
+    newick = get_newick(tree, newick, tree.dist, list(distance_matrix), mean_similarity)
     tree_file = open(outputfile, "w")
     tree_file.write(newick)
     tree_file.close()
@@ -55,7 +66,25 @@ def kissim_to_newick(inputfile, outputfile):
 
 
 def get_mean_index(node, distance_matrix, results):
-    """Method for calculating an assiging the mean similarity for tree branches."""
+    """
+    Calculating and assign the mean similarity for tree branches.
+
+    Parameters
+    ----------
+    node : scipy.cluster.hierarchy.ClusterNode
+        Cluster node.
+    distance_matrix : pandas.DataFrame
+        Distance matrix on which clustering is based.
+    results : dict of int: float
+        Mean distance (value) for each node index (key).
+
+    Returns
+    -------
+    results : dict of int: float
+        Mean distance (value) for each node index (key). 
+        Note: The return value is the populated input `results` object.
+    """
+
     if node.id not in results:
         results[node.id] = 1
     if not node.is_leaf():
@@ -82,7 +111,29 @@ def get_mean_index(node, distance_matrix, results):
 
 
 def get_newick(node, newick, parentdist, leaf_names, mean_similarity):
-    """Method for converting scipy Tree object into Newick string with annotated branches."""
+    """
+    Convert scipy Tree object into Newick string with annotated branches.
+
+    Parameters
+    ----------
+    node : scipy.cluster.hierarchy.ClusterNode
+        Cluster node.
+    newick : str
+        Newick string.
+    parentdist : float
+        Distance of parent node.
+    leaf_names : list of str
+        Leaf names (kinases).
+    mean_similarity : dict of int: float
+        Mean distance (value) for each node index (key). Generated with `get_mean_index`.
+
+    Returns
+    -------
+    newick : str
+        Newick string.
+        Note: The return value is the populated input `newick` object.
+    """
+
     if node.is_leaf():
         return f"{leaf_names[node.id]}:{round(parentdist - node.dist, 3)}{newick}"
     else:
