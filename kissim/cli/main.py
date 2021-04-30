@@ -115,6 +115,14 @@ def main():
         help="Path to the output file in Newick format.",
         required=True,
     )
+    tree_subparser.add_argument(
+        "-c",
+        "--clustering",
+        type=str,
+        help="Clustering method.",
+        required=False,
+        choices=["ward", "complete", "weighted", "average", "centroid"]
+    )
     tree_subparser.set_defaults(func=tree_from_cli)
 
     args = parser.parse_args()

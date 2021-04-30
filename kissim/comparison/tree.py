@@ -16,7 +16,7 @@ import scipy.spatial.distance as ssd
 PROBLAMATIC_KINASES = ["SgK495"]
 
 
-def tree(inputfile, outputfile):
+def tree(inputfile, outputfile, clustering_method="ward"):
     """
     Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
 
@@ -26,6 +26,13 @@ def tree(inputfile, outputfile):
         Path to kissim kinase matrix (CSV file).
     outputfile : str or pathlib.Path
         Path to kinase tree file (TREE file) in Newick format.
+    cmethod : str
+        Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e. 
+        "complete", "weighted", "average", "centroid".
+
+    References
+    ----------
+    [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
     """
 
     input_path = Path(inputfile)
@@ -48,9 +55,8 @@ def tree(inputfile, outputfile):
 
     # Hierarchical clustering (Ward by default)
     # Alternatives: 'complete', 'weighted', 'average', 'centroid'
-    print("Clustering and calculating branch similarities")
-    cmethod = "ward"
-    hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=cmethod)
+    print(f"Clustering (method: {clustering_method}) and calculating branch similarities")
+    hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=clustering_method)
     tree = sch.to_tree(hclust, False)
 
     # Calculate and assign mean similarity for each of the branches
