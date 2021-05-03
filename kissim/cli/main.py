@@ -121,7 +121,7 @@ def main():
         type=str,
         help="Clustering method.",
         required=False,
-        choices=["ward", "complete", "weighted", "average", "centroid"]
+        choices=["ward", "complete", "weighted", "average", "centroid"],
     )
     tree_subparser.set_defaults(func=tree_from_cli)
 
