@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
+from opencadd.databases import klifs
 
 # Problematic kinases
 # - SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
@@ -47,16 +48,12 @@ def from_file(inputfile, outputfile=None, clustering_method="ward"):
     distance_matrix = pd.read_csv(inputfile, index_col=0)
 
     # Generate tree
-    tree, mean_similarity = from_distance_matrix(distance_matrix, clustering_method)
-
-    # Save tree to file
-    if outputfile:
-        _to_newick(tree, mean_similarity, distance_matrix, outputfile)
+    tree, mean_similarity = from_distance_matrix(distance_matrix, outputfile, clustering_method)
 
     return tree, mean_similarity
 
 
-def from_distance_matrix(distance_matrix, clustering_method="ward"):
+def from_distance_matrix(distance_matrix, outputfile=None, clustering_method="ward"):
     """
     Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
 
@@ -64,6 +61,8 @@ def from_distance_matrix(distance_matrix, clustering_method="ward"):
     ----------
     distance_matrix : pandas.DataFrame
         Distance matrix on which clustering is based.
+    outputfile : str or pathlib.Path
+        Path to kinase tree file (TREE file) in Newick format.
     cmethod : str
         Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e.
         "complete", "weighted", "average", "centroid".
@@ -79,6 +78,8 @@ def from_distance_matrix(distance_matrix, clustering_method="ward"):
     ----------
     [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
     """
+
+    outputfile = Path(outputfile)
 
     # Removing problematic entries if they exist
     for entry in PROBLAMATIC_KINASES:
@@ -100,6 +101,11 @@ def from_distance_matrix(distance_matrix, clustering_method="ward"):
     mean_similarity = {}
     _get_mean_index(tree, distance_matrix, mean_similarity)
 
+    # Save tree to file
+    if outputfile:
+        _to_newick(tree, mean_similarity, distance_matrix, outputfile)
+        _to_kinase_annotation(distance_matrix, outputfile.parent / "kinase_annotations.csv")
+
     return tree, mean_similarity
 
 
@@ -119,12 +125,40 @@ def _to_newick(tree, mean_similarity, distance_matrix, outputfile):
         Path to kinase tree file (TREE file) in Newick format.
     """
 
-    # Output in Newick format
+    outputfile = Path(outputfile)
+
     print(f"Writing resulting tree to {outputfile}")
     newick = ""
     newick = _get_newick(tree, newick, tree.dist, list(distance_matrix), mean_similarity)
     with open(outputfile, "w") as f:
         f.write(newick)
+
+
+def _to_kinase_annotation(distance_matrix, outputfile):
+    """
+    Save kinase annotations to file used for FigTree.
+
+    Parameters
+    ----------
+    distance_matrix : pandas.DataFrame
+        Distance matrix on which clustering is based.
+    outputfile : str or pathlib.Path
+        Path to kinase annotation file (CSV file) in FigTree format.
+    """
+
+    outputfile = Path(outputfile)
+
+    # Get kinase names from matrix
+    kinase_names = distance_matrix.columns.to_list()
+
+    # Query KLIFS for kinase details
+    klifs_session = klifs.setup_remote()
+    kinases = klifs_session.kinases.by_kinase_name(kinase_names)
+    kinases = kinases[kinases["species.klifs"] == "Human"]
+    kinases = kinases[["kinase.klifs_name", "kinase.family", "kinase.group"]]
+
+    # Save to file
+    kinases.to_csv(outputfile, sep="\t", index=False)
 
 
 def _get_mean_index(node, distance_matrix, results):
