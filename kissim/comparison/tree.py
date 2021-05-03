@@ -16,9 +16,10 @@ import scipy.spatial.distance as ssd
 PROBLAMATIC_KINASES = ["SgK495"]
 
 
-def tree(inputfile, outputfile, clustering_method="ward"):
+def from_file(inputfile, outputfile=None, clustering_method="ward"):
     """
-    Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
+    Generate kissim-based kinase tree from file.
+    Cluster kinases and save clusters in the Newick format.
 
     Parameters
     ----------
@@ -27,22 +28,57 @@ def tree(inputfile, outputfile, clustering_method="ward"):
     outputfile : str or pathlib.Path
         Path to kinase tree file (TREE file) in Newick format.
     cmethod : str
-        Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e. 
+        Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e.
         "complete", "weighted", "average", "centroid".
 
-    References
-    ----------
-    [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
+    Returns
+    -------
+    tree : scipy.cluster.hierarchy.ClusterNode
+        Cluster node.
+    mean_similarity : dict of int: float
+        Mean distance (value) for each node index (key).
     """
 
     input_path = Path(inputfile)
     output_path = Path(outputfile)
 
-    print("\033[1mConverting kissim similarities to a Newick tree\033[0m\n---")
-
     # Read in KISSIM similarity matrix from provided inputfile
-    print(f"Reading KISSIM data from {inputfile}")
+    print(f"Reading kinase matrix from {inputfile}")
     distance_matrix = pd.read_csv(inputfile, index_col=0)
+
+    # Generate tree
+    tree, mean_similarity = from_distance_matrix(distance_matrix, clustering_method)
+
+    # Save tree to file
+    if outputfile:
+        _to_newick(tree, mean_similarity, distance_matrix, outputfile)
+
+    return tree, mean_similarity
+
+
+def from_distance_matrix(distance_matrix, clustering_method="ward"):
+    """
+    Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
+
+    Parameters
+    ----------
+    distance_matrix : pandas.DataFrame
+        Distance matrix on which clustering is based.
+    cmethod : str
+        Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e.
+        "complete", "weighted", "average", "centroid".
+
+    Returns
+    -------
+    tree : scipy.cluster.hierarchy.ClusterNode
+        Cluster node.
+    mean_similarity : dict of int: float
+        Mean distance (value) for each node index (key).
+
+    References
+    ----------
+    [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
+    """
 
     # Removing problematic entries if they exist
     for entry in PROBLAMATIC_KINASES:
@@ -57,24 +93,41 @@ def tree(inputfile, outputfile, clustering_method="ward"):
     # Alternatives: 'complete', 'weighted', 'average', 'centroid'
     print(f"Clustering (method: {clustering_method}) and calculating branch similarities")
     hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=clustering_method)
+    print("Converting clustering to a Newick tree")
     tree = sch.to_tree(hclust, False)
 
     # Calculate and assign mean similarity for each of the branches
     mean_similarity = {}
-    get_mean_index(tree, distance_matrix, mean_similarity)
+    _get_mean_index(tree, distance_matrix, mean_similarity)
+
+    return tree, mean_similarity
+
+
+def _to_newick(tree, mean_similarity, distance_matrix, outputfile):
+    """
+    Save Newick tree to file.
+
+    Parameters
+    ----------
+    tree : scipy.cluster.hierarchy.ClusterNode
+        Cluster node.
+    mean_similarity : dict of int: float
+        Mean distance (value) for each node index (key).
+    distance_matrix : pandas.DataFrame
+        Distance matrix on which clustering is based.
+    outputfile : str or pathlib.Path
+        Path to kinase tree file (TREE file) in Newick format.
+    """
 
     # Output in Newick format
     print(f"Writing resulting tree to {outputfile}")
     newick = ""
-    newick = get_newick(tree, newick, tree.dist, list(distance_matrix), mean_similarity)
+    newick = _get_newick(tree, newick, tree.dist, list(distance_matrix), mean_similarity)
     with open(outputfile, "w") as f:
         f.write(newick)
 
-    # Done
-    print("\033[0;31mDone!\033[0m")
 
-
-def get_mean_index(node, distance_matrix, results):
+def _get_mean_index(node, distance_matrix, results):
     """
     Calculating and assign the mean similarity for tree branches.
 
@@ -111,15 +164,15 @@ def get_mean_index(node, distance_matrix, results):
                 si = similarity_cluster[np.tril_indices(similarity_cluster.shape[0], -1)]
                 if left:
                     results[node.get_left().id] = np.average(si)
-                    get_mean_index(node.get_left(), distance_matrix, results)
+                    _get_mean_index(node.get_left(), distance_matrix, results)
                 else:
                     results[node.get_right().id] = np.average(si)
-                    get_mean_index(node.get_right(), distance_matrix, results)
+                    _get_mean_index(node.get_right(), distance_matrix, results)
             else:
                 results[node.get_left().id] = 1
 
 
-def get_newick(node, newick, parentdist, leaf_names, mean_similarity):
+def _get_newick(node, newick, parentdist, leaf_names, mean_similarity):
     """
     Convert scipy Tree object into Newick string with annotated branches.
 
@@ -134,7 +187,7 @@ def get_newick(node, newick, parentdist, leaf_names, mean_similarity):
     leaf_names : list of str
         Leaf names (kinases).
     mean_similarity : dict of int: float
-        Mean distance (value) for each node index (key). Generated with `get_mean_index`.
+        Mean distance (value) for each node index (key). Generated with `_get_mean_index`.
 
     Returns
     -------
@@ -151,7 +204,9 @@ def get_newick(node, newick, parentdist, leaf_names, mean_similarity):
             newick = f"){round(si_node, 3)}:{round(parentdist - node.dist, 3)}{newick}"
         else:
             newick = ");"
-        newick = get_newick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
-        newick = get_newick(node.get_right(), f",{newick}", node.dist, leaf_names, mean_similarity)
+        newick = _get_newick(node.get_left(), newick, node.dist, leaf_names, mean_similarity)
+        newick = _get_newick(
+            node.get_right(), f",{newick}", node.dist, leaf_names, mean_similarity
+        )
         newick = f"({newick}"
         return newick
