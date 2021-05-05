@@ -232,6 +232,15 @@ class TestsFingerprintDistanceGenerator:
                     index="kinase1 kinase2".split(),
                 ),
             ),  # Size
+            (
+                "std",
+                False,
+                pd.DataFrame(
+                    [[np.nan, 0.141], [0.141, np.nan]],
+                    columns="kinase1 kinase2".split(),
+                    index="kinase1 kinase2".split(),
+                ),
+            ),  # Std
         ],
     )
     def test_kinase_distance_matrix(
