@@ -532,23 +532,19 @@ class FingerprintDistanceGenerator:
         by_terms = "minimum maximum mean median size".split()
 
         if by == "minimum":
-            kinase_distances = structure_distances_grouped_by_kinases.min()
-            kinase_distances = kinase_distances.reset_index().set_index(
-                ["kinase1", "kinase2", "structure1", "structure2"]
-            )
+            kinase_distances = data.iloc[
+                structure_distances_grouped_by_kinases["distance"].idxmin()
+            ].set_index(["kinase1", "kinase2"])
         elif by == "maximum":
-            kinase_distances = structure_distances_grouped_by_kinases.max()
-            kinase_distances = kinase_distances.reset_index().set_index(
-                ["kinase1", "kinase2", "structure1", "structure2"]
-            )
+            kinase_distances = data.iloc[
+                structure_distances_grouped_by_kinases["distance"].idxmax()
+            ].set_index(["kinase1", "kinase2"])
         elif by == "mean":
-            kinase_distances = structure_distances_grouped_by_kinases.mean()
-            kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
+            kinase_distances = structure_distances_grouped_by_kinases.mean()[["distance"]]
         elif by == "median":
-            kinase_distances = structure_distances_grouped_by_kinases.median()
-            kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
+            kinase_distances = structure_distances_grouped_by_kinases.median()[["distance"]]
         elif by == "size":
-            kinase_distances = structure_distances_grouped_by_kinases.size()
+            kinase_distances = structure_distances_grouped_by_kinases.size().to_frame("distance")
             kinase_distances.name = "distance"
             kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
         else:
