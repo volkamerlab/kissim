@@ -11,7 +11,6 @@ from kissim.utils import enter_temp_directory
 from kissim.comparison import tree
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
-PATH_TEST_DATA = Path(__file__).parent / "../data"
 
 
 @pytest.mark.parametrize(
