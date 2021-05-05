@@ -455,7 +455,7 @@ class FingerprintDistanceGenerator:
 
         return matrix
 
-    def kinase_distance_matrix(self, by="minimum"):
+    def kinase_distance_matrix(self, by="minimum", fill_diagonal=True):
         """
         Extract per kinase pair one distance value from the set of structure pair distance values
         and return these  fingerprint distances for all kinase pairs in the form of a matrix
@@ -466,12 +466,19 @@ class FingerprintDistanceGenerator:
         by : str
             Condition on which the distance value per kinase pair is extracted from the set of
             distances values per structure pair. Default: Minimum distance value.
+        fill_diagonal : bool
+            Fill diagonal with 0 (same kinase has distance of 0) by default. If `False`, diagonal
+            will be a experimental values calculated based on the structure pairs per kinase pair.
+            Is by default set to False, if `by="size"`.
 
         Returns
         -------
         pandas.DataFrame
             Kinase distance matrix.
         """
+
+        if by == "size":
+            fill_diagonal = False
 
         # Data for upper half of the matrix
         pairs_upper = self.kinase_distances(by).reset_index()[["kinase1", "kinase2", "distance"]]
@@ -488,8 +495,14 @@ class FingerprintDistanceGenerator:
 
         # Convert to matrix
         matrix = pairs.pivot(columns="kinase2", index="kinase1", values="distance")
-        # Matrix diagonal is NaN > set to 0.0
-        matrix = matrix.fillna(0.0)
+
+        if fill_diagonal:
+            np.fill_diagonal(matrix.values, 0)
+
+        # If matrix contains number of structure pairs: NaN > 0, cast to int
+        if by == "size":
+            matrix = matrix.fillna(0)
+            matrix = matrix.astype("int")
 
         return matrix
 
@@ -509,45 +522,33 @@ class FingerprintDistanceGenerator:
             Fingerprint distance and coverage for kinase pairs.
         """
 
-        # Add self-comparisons
         data = self.data
-        data_self_comparisons = pd.DataFrame(
-            [
-                [structure_id, structure_id, kinase_id, kinase_id, 0.0, np.nan]
-                for (
-                    structure_id,
-                    kinase_id,
-                ) in self.structure_kinase_ids
-            ],
-            columns=["structure1", "structure2", "kinase1", "kinase2", "distance", "coverage"],
-        )
-        data = pd.concat([data, data_self_comparisons])
-
         # Group by kinase names
         structure_distances_grouped_by_kinases = data.groupby(
             by=["kinase1", "kinase2"], sort=False
         )
 
         # Get distance values per kinase pair based on given condition
-        by_terms = "minimum maximum mean size".split()
+        # Note: For min/max we'd like to know which structure pairs were selected!
+        by_terms = "minimum maximum mean median size std".split()
 
         if by == "minimum":
-            kinase_distances = structure_distances_grouped_by_kinases.min()
-            kinase_distances = kinase_distances.reset_index().set_index(
-                ["kinase1", "kinase2", "structure1", "structure2"]
-            )
+            kinase_distances = data.iloc[
+                structure_distances_grouped_by_kinases["distance"].idxmin()
+            ].set_index(["kinase1", "kinase2"])
         elif by == "maximum":
-            kinase_distances = structure_distances_grouped_by_kinases.max()
-            kinase_distances = kinase_distances.reset_index().set_index(
-                ["kinase1", "kinase2", "structure1", "structure2"]
-            )
+            kinase_distances = data.iloc[
+                structure_distances_grouped_by_kinases["distance"].idxmax()
+            ].set_index(["kinase1", "kinase2"])
         elif by == "mean":
-            kinase_distances = structure_distances_grouped_by_kinases.mean()
-            kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
+            kinase_distances = structure_distances_grouped_by_kinases.mean()[["distance"]]
+        elif by == "median":
+            kinase_distances = structure_distances_grouped_by_kinases.median()[["distance"]]
         elif by == "size":
-            kinase_distances = structure_distances_grouped_by_kinases.size()
-            kinase_distances.name = "distance"
-            kinase_distances = kinase_distances.reset_index().set_index(["kinase1", "kinase2"])
+            kinase_distances = structure_distances_grouped_by_kinases.size().to_frame("distance")
+        elif by == "std":
+            kinase_distances = structure_distances_grouped_by_kinases.std()[["distance"]]
+            kinase_distances = round(kinase_distances, 3)
         else:
             raise ValueError(f'Condition "by" unknown. Choose from: {", ".join(by_terms)}')
 
