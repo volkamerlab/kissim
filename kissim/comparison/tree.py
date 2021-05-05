@@ -14,7 +14,7 @@ from opencadd.databases import klifs
 
 # Problematic kinases
 # - SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
-PROBLAMATIC_KINASES = ["SgK495"]
+PROBLEMATIC_KINASES = ["SgK495"]
 
 
 def from_file(inputfile, outputfile=None, clustering_method="ward"):
@@ -82,7 +82,7 @@ def from_distance_matrix(distance_matrix, outputfile=None, clustering_method="wa
     outputfile = Path(outputfile)
 
     # Removing problematic entries if they exist
-    for entry in PROBLAMATIC_KINASES:
+    for entry in PROBLEMATIC_KINASES:
         if entry in distance_matrix:
             distance_matrix.drop(entry, axis=0, inplace=True)
             distance_matrix.drop(entry, axis=1, inplace=True)
