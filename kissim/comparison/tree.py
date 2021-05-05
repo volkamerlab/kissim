@@ -26,8 +26,11 @@ def from_file(inputfile, outputfile=None, clustering_method="ward"):
     ----------
     inputfile : str or pathlib.Path
         Path to kissim kinase matrix (CSV file).
-    outputfile : str or pathlib.Path
-        Path to kinase tree file (TREE file) in Newick format.
+    outputfile : None or str or pathlib.Path
+        By default (None), no output file is written.
+        Optionally: Path to kinase tree file (TREE file) in Newick format. In the same folder, an
+        FigTree annotation file containing kinase-group-family mappings is written
+        (`kinase_annotation.csv`).
     cmethod : str
         Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e.
         "complete", "weighted", "average", "centroid".
@@ -41,7 +44,6 @@ def from_file(inputfile, outputfile=None, clustering_method="ward"):
     """
 
     input_path = Path(inputfile)
-    output_path = Path(outputfile)
 
     # Read in KISSIM similarity matrix from provided inputfile
     print(f"Reading kinase matrix from {inputfile}")
@@ -61,8 +63,11 @@ def from_distance_matrix(distance_matrix, outputfile=None, clustering_method="wa
     ----------
     distance_matrix : pandas.DataFrame
         Distance matrix on which clustering is based.
-    outputfile : str or pathlib.Path
-        Path to kinase tree file (TREE file) in Newick format.
+    outputfile : None or str or pathlib.Path
+        By default (None), no output file is written.
+        Optionally: Path to kinase tree file (TREE file) in Newick format. In the same folder, an
+        FigTree annotation file containing kinase-group-family mappings is written
+        (`kinase_annotation.csv`).
     cmethod : str
         Clustering methods as offered by scipy, see [1]. Default is "ward", alternatives i.e.
         "complete", "weighted", "average", "centroid".
@@ -78,8 +83,6 @@ def from_distance_matrix(distance_matrix, outputfile=None, clustering_method="wa
     ----------
     [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
     """
-
-    outputfile = Path(outputfile)
 
     # Removing problematic entries if they exist
     for entry in PROBLEMATIC_KINASES:
@@ -103,6 +106,7 @@ def from_distance_matrix(distance_matrix, outputfile=None, clustering_method="wa
 
     # Save tree to file
     if outputfile:
+        outputfile = Path(outputfile)
         _to_newick(tree, mean_similarity, distance_matrix, outputfile)
         _to_kinase_annotation(distance_matrix, outputfile.parent / "kinase_annotations.csv")
 
