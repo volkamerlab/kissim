@@ -46,6 +46,7 @@ Take a look at the ``kissim_app`` `repository <https://github.com/volkamerlab/ki
 
    tutorials/encoding
    tutorials/comparison
+   tutorials/tree
    tutorials/io
 
 .. toctree::
