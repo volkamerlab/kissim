@@ -120,7 +120,7 @@ def main():
         "--clustering",
         type=str,
         help="Clustering method.",
-        required=False,
+        default="ward",
         choices=["ward", "complete", "weighted", "average", "centroid"],
     )
     tree_subparser.set_defaults(func=tree_from_cli)
