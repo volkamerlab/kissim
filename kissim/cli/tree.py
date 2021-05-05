@@ -19,4 +19,4 @@ def tree_from_cli(args):
         CLI arguments.
     """
 
-    tree.from_file(args.input, args.output, args.clustering)
+    tree.from_file(args.input, args.output, args.annotation, args.clustering)

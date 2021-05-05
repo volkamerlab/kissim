@@ -112,8 +112,15 @@ def main():
         "-o",
         "--output",
         type=str,
-        help="Path to the output file in Newick format.",
+        help="Path to the output tree file in Newick format.",
         required=True,
+    )
+    tree_subparser.add_argument(
+        "-a",
+        "--annotation",
+        type=str,
+        help="Path to the output annotation CSV file.",
+        required=False,
     )
     tree_subparser.add_argument(
         "-c",

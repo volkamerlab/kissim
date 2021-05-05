@@ -16,6 +16,7 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     "args",
     [
         f"kissim tree -i {(PATH_TEST_DATA / 'kinase_matrix.csv').absolute()} -o kissim.tree",
+        f"kissim tree -i {(PATH_TEST_DATA / 'kinase_matrix.csv').absolute()} -o kissim.tree -a kinase_annotation.csv",
         f"kissim tree -i {(PATH_TEST_DATA / 'kinase_matrix.csv').absolute()} -o kissim.tree -c centroid",
     ],
 )
@@ -25,7 +26,7 @@ def test_encode(args):
     """
 
     tree_path = Path("kissim.tree")
-    annotation_path = Path("kinase_annotations.csv")
+    annotation_path = Path("kinase_annotation.csv")
 
     args = args.split()
 
@@ -34,8 +35,11 @@ def test_encode(args):
 
         # Tree file there?
         assert tree_path.exists()
-        # Annotation file there?
-        assert annotation_path.exists()
+        print(args)
+        print("-a" in args)
+        if "-a" in args:
+            # Annotation file there?
+            assert annotation_path.exists()
 
 
 @pytest.mark.parametrize(
