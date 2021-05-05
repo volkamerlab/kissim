@@ -37,8 +37,6 @@ def test_encode(args):
         # Annotation file there?
         assert annotation_path.exists()
 
-        # Load files?
-
 
 @pytest.mark.parametrize(
     "args",
