@@ -1,7 +1,7 @@
 """
 kissim.cli.tree
 
-Process a KISSIM similarity matrix into a clustered kissim-based tree with assignment of the 
+Process a KISSIM distance matrix into a clustered kissim-based tree with assignment of the 
 mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """

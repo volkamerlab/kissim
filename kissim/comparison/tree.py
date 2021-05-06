@@ -1,5 +1,5 @@
 """
-Process a KISSIM similarity matrix into a clustered kissim-based tree with assignment of the 
+Process a KISSIM distance matrix into a clustered kissim-based tree with assignment of the 
 mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """
@@ -42,12 +42,12 @@ def from_file(
     tree : scipy.cluster.hierarchy.ClusterNode
         Cluster node.
     mean_similarity : dict of int: float
-        Mean distance (value) for each node index (key).
+        Mean similarity (value) for each node index (key).
     """
 
     distance_matrix_path = Path(distance_matrix_path)
 
-    # Read in KISSIM similarity matrix from provided input file
+    # Read in KISSIM distance matrix from provided input file
     print(f"Reading kinase matrix from {distance_matrix_path}")
     distance_matrix = pd.read_csv(distance_matrix_path, index_col=0)
 
@@ -83,7 +83,7 @@ def from_distance_matrix(
     tree : scipy.cluster.hierarchy.ClusterNode
         Cluster node.
     mean_similarity : dict of int: float
-        Mean distance (value) for each node index (key).
+        Mean similarity (value) for each node index (key).
 
     References
     ----------
@@ -128,7 +128,7 @@ def _to_newick(tree, mean_similarity, distance_matrix, outputfile):
     tree : scipy.cluster.hierarchy.ClusterNode
         Cluster node.
     mean_similarity : dict of int: float
-        Mean distance (value) for each node index (key).
+        Mean similarity (value) for each node index (key).
     distance_matrix : pandas.DataFrame
         Distance matrix on which clustering is based.
     outputfile : str or pathlib.Path
