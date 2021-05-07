@@ -74,9 +74,11 @@ class FingerprintDistance:
         fingerprint_distance.kinase_pair_ids = feature_distances.kinase_pair_ids
 
         # Calculate weighted sum of feature bit coverages
-        fingerprint_distance.distance = fingerprint_distance._bit_coverage(bit_coverages, weights)
+        fingerprint_distance.distance = fingerprint_distance._distance(distances, weights)
         # Calculate weighted sum of feature distances
-        fingerprint_distance.bit_coverage = fingerprint_distance._distance(distances, weights)
+        fingerprint_distance.bit_coverage = fingerprint_distance._bit_coverage(
+            bit_coverages, weights
+        )
 
         return fingerprint_distance
 
