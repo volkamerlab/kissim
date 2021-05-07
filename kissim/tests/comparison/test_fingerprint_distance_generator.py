@@ -23,13 +23,15 @@ class TestsFingerprintDistanceGenerator:
     """
 
     @pytest.mark.parametrize(
-        "feature_weights, structure_ids, kinase_ids, structure_kinase_ids",
+        "feature_weights, structure_kinase_ids, structure_pair_ids, kinase_pair_ids, structure_ids, kinase_ids",
         [
             (
                 None,
-                "pdb1 pdb2 pdb3".split(),
-                "kinase1 kinase2".split(),
-                [("pdb1", "kinase1"), ("pdb2", "kinase1"), ("pdb3", "kinase2")],
+                [("pdbA", "kinaseA"), ("pdbB", "kinaseA"), ("pdbC", "kinaseB")],
+                [["pdbA", "pdbB"], ["pdbA", "pdbC"], ["pdbB", "pdbC"]],
+                [["kinaseA", "kinaseA"], ["kinaseA", "kinaseB"], ["kinaseA", "kinaseB"]],
+                ["pdbA", "pdbB", "pdbC"],
+                ["kinaseA", "kinaseB"],
             )
         ],
     )
@@ -37,9 +39,11 @@ class TestsFingerprintDistanceGenerator:
         self,
         feature_distances_generator,
         feature_weights,
+        structure_kinase_ids,
+        structure_pair_ids,
+        kinase_pair_ids,
         structure_ids,
         kinase_ids,
-        structure_kinase_ids,
     ):
         """
         Test FingerprintDistanceGenerator class attributes.
@@ -53,95 +57,54 @@ class TestsFingerprintDistanceGenerator:
         )
 
         # Test attributes
+        assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
+        data_columns = [
+            "structure.1",
+            "structure.2",
+            "kinase.1",
+            "kinase.2",
+            "distance",
+            "bit_coverage",
+        ]
+        assert fingerprint_distance_generator.data.columns.to_list() == data_columns
         assert fingerprint_distance_generator.structure_kinase_ids == structure_kinase_ids
-        assert isinstance(fingerprint_distance_generator.feature_weights, np.ndarray)
-        assert len(fingerprint_distance_generator.feature_weights) == 15
-        assert isinstance(fingerprint_distance_generator._structures1, list)
-        assert isinstance(fingerprint_distance_generator._structures2, list)
-        assert isinstance(fingerprint_distance_generator._kinases1, list)
-        assert isinstance(fingerprint_distance_generator._kinases2, list)
-        assert isinstance(fingerprint_distance_generator._distances, np.ndarray)
-        assert isinstance(fingerprint_distance_generator._bit_coverages, np.ndarray)
 
         # Test properties
+        assert fingerprint_distance_generator.structure_pair_ids == structure_pair_ids
+        assert fingerprint_distance_generator.kinase_pair_ids == kinase_pair_ids
         assert fingerprint_distance_generator.structure_ids == structure_ids
         assert fingerprint_distance_generator.kinase_ids == kinase_ids
-        assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
-        data_columns = "structure1 structure2 kinase1 kinase2 distance coverage".split()
-        assert list(fingerprint_distance_generator.data.columns) == data_columns
+        assert isinstance(fingerprint_distance_generator.distances, np.ndarray)
+        assert isinstance(fingerprint_distance_generator.bit_coverages, np.ndarray)
 
     @pytest.mark.parametrize(
-        "structure_klifs_ids, klifs_session, feature_weights, n_cores",
+        "structure_klifs_ids, klifs_session, feature_weights",
         [
-            ([110, 118], REMOTE, None, 1),
-            ([110, 118], REMOTE, None, 2),
-            ([110, 118], LOCAL, None, 1),
-            ([110, 118], LOCAL, None, 2),
-            ([110, 118], None, None, None),
+            ([110, 118], REMOTE, None),
+            ([110, 118], REMOTE, None),
+            ([110, 118], LOCAL, None),
+            ([110, 118], LOCAL, None),
+            ([110, 118], None, None),
         ],
     )
-    def test_from_structure_klifs_ids(
-        self, structure_klifs_ids, klifs_session, feature_weights, n_cores
-    ):
+    def test_from_structure_klifs_ids(self, structure_klifs_ids, klifs_session, feature_weights):
         """
         Test FeatureDistancesGenerator class attributes.
         """
 
         # Test FeatureDistancesGenerator class attributes
         feature_distances_generator = FingerprintDistanceGenerator.from_structure_klifs_ids(
-            structure_klifs_ids, klifs_session, feature_weights, n_cores
+            structure_klifs_ids, klifs_session, feature_weights
         )
         assert isinstance(feature_distances_generator, FingerprintDistanceGenerator)
-
-    def test_get_fingerprint_distance(self, feature_distances):
-        """
-        Test if return type is FingerprintDistance class instance.
-
-        Parameters
-        ----------
-        feature_distances : kissim.similarity.FeatureDistances
-            Distances and bit coverages between two fingerprints for each of their features.
-        """
-
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_calculated = fingerprint_distance_generator._get_fingerprint_distance(
-            feature_distances
-        )
-
-        assert isinstance(fingerprint_distance_calculated, FingerprintDistance)
-
-    def test_get_fingerprint_distance_from_list(self, feature_distances_generator):
-        """
-        Test if return type is instance of list of FingerprintDistance class instances.
-
-        Parameters
-        ----------
-        feature_distances_generator : FeatureDistancesGenerator
-            Feature distances for multiple fingerprints.
-        """
-
-        fingerprint_distance_generator = FingerprintDistanceGenerator()
-        fingerprint_distance_list = (
-            fingerprint_distance_generator._get_fingerprint_distance_from_list(
-                fingerprint_distance_generator._get_fingerprint_distance,
-                feature_distances_generator.data,
-                None,
-                1,
-            )
-        )
-
-        assert isinstance(fingerprint_distance_list, list)
-
-        for i in fingerprint_distance_list:
-            assert isinstance(i, FingerprintDistance)
 
     @pytest.mark.parametrize(
         "structure_distance_matrix",
         [
             pd.DataFrame(
                 [[0.0, 0.75, 1.0], [0.75, 0.0, 0.8], [1.0, 0.8, 0.0]],
-                columns="pdb1 pdb2 pdb3".split(),
-                index="pdb1 pdb2 pdb3".split(),
+                columns="pdbA pdbB pdbC".split(),
+                index="pdbA pdbB pdbC".split(),
             )
         ],
     )
@@ -163,6 +126,8 @@ class TestsFingerprintDistanceGenerator:
         structure_distance_matrix_calculated = (
             fingerprint_distance_generator.structure_distance_matrix()
         )
+        structure_distance_matrix.columns.name = "structure.2"
+        structure_distance_matrix.index.name = "structure.1"
 
         assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
 
@@ -174,8 +139,8 @@ class TestsFingerprintDistanceGenerator:
                 False,
                 pd.DataFrame(
                     [[0.75, 0.8], [0.8, np.nan]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Minimum
             (
@@ -183,8 +148,8 @@ class TestsFingerprintDistanceGenerator:
                 True,
                 pd.DataFrame(
                     [[0, 0.8], [0.8, 0]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Minimum
             (
@@ -192,8 +157,8 @@ class TestsFingerprintDistanceGenerator:
                 False,
                 pd.DataFrame(
                     [[0.75, 1.0], [1.0, np.nan]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Maximum
             (
@@ -201,8 +166,8 @@ class TestsFingerprintDistanceGenerator:
                 False,
                 pd.DataFrame(
                     [[0.75, 0.9], [0.9, np.nan]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Mean
             (
@@ -210,8 +175,8 @@ class TestsFingerprintDistanceGenerator:
                 False,
                 pd.DataFrame(
                     [[0.75, 0.9], [0.9, np.nan]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Median
             (
@@ -219,8 +184,8 @@ class TestsFingerprintDistanceGenerator:
                 False,
                 pd.DataFrame(
                     [[1, 2], [2, 0]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Size
             (
@@ -228,8 +193,8 @@ class TestsFingerprintDistanceGenerator:
                 True,
                 pd.DataFrame(
                     [[1, 2], [2, 0]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Size
             (
@@ -237,8 +202,8 @@ class TestsFingerprintDistanceGenerator:
                 False,
                 pd.DataFrame(
                     [[np.nan, 0.141], [0.141, np.nan]],
-                    columns="kinase1 kinase2".split(),
-                    index="kinase1 kinase2".split(),
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
                 ),
             ),  # Std
         ],

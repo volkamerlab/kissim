@@ -27,8 +27,6 @@ class FingerprintDistance:
         Fingerprint distance (weighted per feature).
     bit_coverage : float
         Fingerprint coverage (weighted per feature).
-    feature_weights : np.array
-        Weights set per feature.
     """
 
     def __init__(self):
@@ -37,7 +35,6 @@ class FingerprintDistance:
         self.kinase_pair_ids = None
         self.distance = None
         self.bit_coverage = None
-        self.feature_weights = None
 
     @classmethod
     def from_feature_distances(cls, feature_distances, feature_weights=None):
@@ -73,7 +70,6 @@ class FingerprintDistance:
         distances = feature_distances.distances
 
         # Set class attributes
-        fingerprint_distance.feature_weights = weights
         fingerprint_distance.structure_pair_ids = feature_distances.structure_pair_ids
         fingerprint_distance.kinase_pair_ids = feature_distances.kinase_pair_ids
 

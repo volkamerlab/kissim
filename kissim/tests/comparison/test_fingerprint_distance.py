@@ -54,7 +54,6 @@ class TestsFingerprintDistance:
         assert fingerprint_distance.kinase_pair_ids == feature_distances.kinase_pair_ids
         assert np.isclose(fingerprint_distance.distance, distance, rtol=1e-04)
         assert np.isclose(fingerprint_distance.bit_coverage, coverage, rtol=1e-04)
-        assert np.array_equal(fingerprint_distance.feature_weights, np.array(feature_weights))
 
     @pytest.mark.parametrize(
         "values, weights, calculated_weighted_sum",
