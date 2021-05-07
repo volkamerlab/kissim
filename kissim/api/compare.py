@@ -58,12 +58,9 @@ def compare(
         fingerprint_distance_filepath = None
 
     # Generate feature distances
-    print("b", feature_distances_filepath, n_cores)
     feature_distances_generator = compare_fingerprint_features(
         fingerprint_generator, feature_distances_filepath, n_cores
     )
-    print(type(feature_distances_generator))
-    print(feature_distances_generator.data)
 
     # Generate fingerprint distance
     fingerprint_distance_generator = weight_feature_distances(
@@ -91,7 +88,7 @@ def compare_fingerprint_features(
     n_cores : int
         Number of cores used to generate fingerprint distances.
     """
-    print("c", fingerprint_generator, n_cores)
+
     feature_distances_generator = FeatureDistancesGenerator.from_fingerprint_generator(
         fingerprint_generator, n_cores
     )

@@ -35,7 +35,6 @@ class BaseGenerator:
         list of str or int
             Structure IDs.
         """
-        print("bla")
 
         return sorted(
             pd.DataFrame(self.structure_kinase_ids, columns=["structure_id", "kinase_id"])[
