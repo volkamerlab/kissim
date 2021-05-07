@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 import subprocess
 
+import pandas as pd
+
 from kissim.comparison import FeatureDistancesGenerator, FingerprintDistanceGenerator
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
@@ -38,35 +40,30 @@ def test_compare(fingerprint_generator, args):
     subprocess.run(args, check=True)
 
     ### Feature distances generator
-    # Json file there?
-    feature_distances_json_filepath = output_path / "feature_distances.json"
-    assert feature_distances_json_filepath.exists()
-    # Log file there?
-    # TODO
-    # Json file can be loaded as FeatureDistancesGeneration object?
-    feature_distances_generator = FeatureDistancesGenerator.from_json(
-        feature_distances_json_filepath
-    )
+    # CSV file there?
+    feature_distances_filepath = output_path / "feature_distances.csv"
+    assert feature_distances_filepath.exists()
+    # CSV file can be loaded as FeatureDistancesGeneration object?
+    feature_distances_generator = FeatureDistancesGenerator.from_csv(feature_distances_filepath)
     assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
-    assert feature_distances_generator.data  # Is not empty
+    assert isinstance(feature_distances_generator.data, pd.DataFrame)
 
     ### Fingerprint distance generator
-    # Json file there?
-    fingerprint_distance_json_filepath = output_path / "fingerprint_distances.json"
-    assert fingerprint_distance_json_filepath.exists()
-    # Log file there?
-    # TODO
-    # Json file can be loaded as FingerprintDistanceGeneration object?
-    fingerprint_distance_generator = FingerprintDistanceGenerator.from_json(
-        fingerprint_distance_json_filepath
+    # CSV file there?
+    fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
+    assert fingerprint_distance_filepath.exists()
+    # CSV file can be loaded as FingerprintDistanceGeneration object?
+    fingerprint_distance_generator = FingerprintDistanceGenerator.from_csv(
+        fingerprint_distance_filepath
     )
     assert isinstance(fingerprint_distance_generator, FingerprintDistanceGenerator)
+    assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
 
     # Delete file - cannot be done within enter_tmp_directory, since temporary files
     # apparently cannot be read from CLI
     input_filepath.unlink()
-    feature_distances_json_filepath.unlink()
-    fingerprint_distance_json_filepath.unlink()
+    feature_distances_filepath.unlink()
+    fingerprint_distance_filepath.unlink()
 
 
 @pytest.mark.parametrize(

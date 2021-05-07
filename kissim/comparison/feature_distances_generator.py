@@ -69,6 +69,7 @@ class FeatureDistancesGenerator(BaseGenerator):
 
         # Set number of cores to be used
         n_cores = set_n_cores(n_cores)
+        print(fingerprints_generator.data)
 
         # Initialize FeatureDistancesGenerator object
         feature_distances_generator = cls()
@@ -77,6 +78,7 @@ class FeatureDistancesGenerator(BaseGenerator):
             fingerprints_generator.data,
             n_cores,
         )
+        print(feature_distances_list)
         feature_distances_generator.data = (
             feature_distances_generator._feature_distances_list_to_df(feature_distances_list)
         )
