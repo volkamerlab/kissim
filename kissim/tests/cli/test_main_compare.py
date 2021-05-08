@@ -25,7 +25,7 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
         f"-w 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0",
     ],
 )
-def test_compare(fingerprint_generator, args):
+def test_main_compare(fingerprint_generator, args):
     """
     Test CLI for encoding using subprocesses.
     """
