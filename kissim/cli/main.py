@@ -108,18 +108,18 @@ def main():
         required=True,
     )
     weights_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to output folder where fingerprint distance CSV file will be saved.",
+        required=True,
+    )
+    weights_subparser.add_argument(
         "-w",
         "--weights",
         type=float,
         nargs=15,
         help="Feature weights. Each feature must be set individually, all weights must sum up to 1.0.",
-        required=False,
-    )
-    weights_subparser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Path to output folder where fingerprint distance CSV file will be saved.",
         required=False,
     )
     weights_subparser.set_defaults(func=weights_from_cli)
@@ -133,18 +133,18 @@ def main():
         required=True,
     )
     outliers_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to output folder where outlier-free fingerprint data will be saved.",
+        required=True,
+    )
+    outliers_subparser.add_argument(
         "-d",
         "--distance_max",
         type=float,
         help="Distance maximum value used to detect outliers that shall be removed.",
         required=True,
-    )
-    outliers_subparser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Path to output folder where outlier-free fingerprint data will be saved.",
-        required=False,
     )
     outliers_subparser.set_defaults(func=outliers_from_cli)
 
