@@ -16,13 +16,13 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     "fingerprints_path, distance_cutoff, fingerprints_wo_outliers_path, n_fingerprints_wo_outliers",
     [
         (
-            PATH_TEST_DATA / "fingerprints_test.json",
+            (PATH_TEST_DATA / "fingerprints_test.json").absolute(),
             5,  # Low max > outliers!
             "fingerprints_clean_test.json.json",
             0,
         ),
         (
-            PATH_TEST_DATA / "fingerprints_test.json",
+            (PATH_TEST_DATA / "fingerprints_test.json").absolute(),
             100,  # High max > no outliers!
             None,  # No output!
             2,

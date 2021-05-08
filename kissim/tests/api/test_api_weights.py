@@ -16,9 +16,9 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     "feature_distances_path, feature_weights, fingerprint_distances_path",
     [
         (
-            PATH_TEST_DATA / "feature_distances_test.csv",
+            (PATH_TEST_DATA / "feature_distances_test.csv").absolute(),
             None,
-            PATH_TEST_DATA / "fingerprint_distances_test.csv",
+            "fingerprint_distances_test.csv",
         )
     ],
 )
