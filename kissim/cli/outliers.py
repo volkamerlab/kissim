@@ -4,8 +4,6 @@ kissim.cli.outliers
 CLI to remove outliers from fingerprints (defined by spatial distances maximum).
 """
 
-import numpy as np
-
 from kissim.api import outliers
 from kissim.cli.utils import configure_logger
 

@@ -4,8 +4,6 @@ kissim.cli.weights
 CLI to perform kissim feature distances weighting to produce fingerprint distances.
 """
 
-import numpy as np
-
 from kissim.api import weights
 from kissim.cli.utils import configure_logger
 

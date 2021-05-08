@@ -7,10 +7,7 @@ Main API for kissim feature distances weighting to produce fingerprint distances
 import logging
 from pathlib import Path
 
-import pandas as pd
-
 from kissim.comparison import FeatureDistancesGenerator, FingerprintDistanceGenerator
-from kissim.api.compare import weight_feature_distances
 
 logger = logging.getLogger(__name__)
 
