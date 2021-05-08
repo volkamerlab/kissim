@@ -148,7 +148,8 @@ class FingerprintDistance:
         if np.isnan(values).any():
             raise ValueError(f"Input values cannot contain NaN values: {values}")
 
-        if not np.isclose(np.sum(weights), 1.0):
+        # NOTE: Sync with rtol in kissim.comparison.utils.format_weights
+        if not np.isclose(np.sum(weights), 1.0, rtol=1e-02):
             raise ValueError(f"Sum of input weights must be 1 but is {np.sum(weights)}.")
 
         return np.sum(values * weights)

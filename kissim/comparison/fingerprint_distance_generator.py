@@ -99,7 +99,7 @@ class FingerprintDistanceGenerator(BaseGenerator):
         fingerprint_distance_generator = cls()
         fingerprint_distance_generator.data = feature_distances_generator.data[
             ["structure.1", "structure.2", "kinase.1", "kinase.2"]
-        ]
+        ].copy()
         fingerprint_distance_generator.data["distance"] = distances
         fingerprint_distance_generator.data["bit_coverage"] = bit_coverages
         fingerprint_distance_generator.structure_kinase_ids = (
