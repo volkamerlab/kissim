@@ -15,7 +15,22 @@ logger = logging.getLogger(__name__)
 
 def outliers(fingerprints_path, distance_cutoff, fingerprints_wo_outliers_path=None):
     """
-    TODO
+    Remove outlier fingerprints (defined by spatial distances maximum).
+
+    Parameters
+    ----------
+    fingerprints_path : str or pathlib.Path
+        Path to fingerprints JSON file.
+    distance_cutoff : float
+        Tolerated distance maximum; fingerprints with distances greater than this cutoff will be
+        removed.
+    fingerprints_wo_outliers_path : None or str or pathlib.Path
+        Path to fingerprints JSON file with outliers removed.
+
+    Returns
+    -------
+    kissim.encoding.FingerprintGenerator
+        Fingerprints without outliers.
     """
 
     # Load fingerprints
