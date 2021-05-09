@@ -83,15 +83,19 @@ class FingerprintDistanceGenerator(BaseGenerator):
 
         # Weighted sum of pairwise feature distances and bit coverages
         fingerprint_distance = FingerprintDistance()
-        logger.info("Calculate pairwise distances...")
         distances = [
             fingerprint_distance._distance(distances, feature_weights)
-            for distances in tqdm(feature_distances_generator.distances)
+            for distances in tqdm(
+                feature_distances_generator.distances,
+                desc="Calculate pairwise fingerprint distance",
+            )
         ]
-        logger.info("Calculate pairwise bit coverages...")
         bit_coverages = [
             fingerprint_distance._bit_coverage(bit_coverages, feature_weights)
-            for bit_coverages in tqdm(feature_distances_generator.bit_coverages)
+            for bit_coverages in tqdm(
+                feature_distances_generator.bit_coverages,
+                desc="Calculate pairwise fingerprint coverage",
+            )
         ]
 
         # Set class attributes
