@@ -39,7 +39,8 @@ def format_weights(feature_weights=None):
         if len(feature_weights) != 15:
             raise ValueError(f"List must have length 15, but has length {len(feature_weights)}.")
         # Sum of weights must be 1.0
-        if not np.isclose(sum(feature_weights), 1.0, rtol=1e-04):
+        # NOTE: Sync with rtol in FingerprintDistance._calculate_weighted_sum
+        if not np.isclose(sum(feature_weights), 1.0, rtol=1e-02):
             raise ValueError(f"Sum of all weights must be one, but is {sum(feature_weights)}.")
 
     else:

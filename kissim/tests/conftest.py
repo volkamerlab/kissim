@@ -4,8 +4,9 @@ Fixures to be used in unit testing.
 
 from pathlib import Path
 
-import numpy as np
 import pytest
+import numpy as np
+import pandas as pd
 
 from kissim.api import encode
 from kissim.comparison import (
@@ -52,7 +53,7 @@ def feature_distances():
     """
 
     structure_pair_ids = ("molecule1", "molecule2")
-    kinase_pair_ids = ("kinase1", "kinase2")
+    kinase_pair_ids = ("kinaseA", "kinaseB")
     distances = np.array(
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     )
@@ -83,20 +84,20 @@ def feature_distances_generator():
 
     # FeatureDistances
     feature_distances1 = FeatureDistances()
-    feature_distances1.structure_pair_ids = ("pdb1", "pdb2")
-    feature_distances1.kinase_pair_ids = ("kinase1", "kinase1")
+    feature_distances1.structure_pair_ids = ("pdbA", "pdbB")
+    feature_distances1.kinase_pair_ids = ("kinaseA", "kinaseA")
     feature_distances1.distances = np.array([1.0] * 15)
     feature_distances1.bit_coverages = np.array([1.0] * 15)
 
     feature_distances2 = FeatureDistances()
-    feature_distances2.structure_pair_ids = ("pdb1", "pdb3")
-    feature_distances2.kinase_pair_ids = ("kinase1", "kinase2")
+    feature_distances2.structure_pair_ids = ("pdbA", "pdbC")
+    feature_distances2.kinase_pair_ids = ("kinaseA", "kinaseB")
     feature_distances2.distances = np.array([0.0] * 15)
     feature_distances2.bit_coverages = np.array([1.0] * 15)
 
     feature_distances3 = FeatureDistances()
-    feature_distances3.structure_pair_ids = ("pdb2", "pdb3")
-    feature_distances3.kinase_pair_ids = ("kinase1", "kinase2")
+    feature_distances3.structure_pair_ids = ("pdbB", "pdbC")
+    feature_distances3.kinase_pair_ids = ("kinaseA", "kinaseB")
     feature_distances3.distances = np.array([0.0] * 15)
     feature_distances3.bit_coverages = np.array([0.0] * 15)
 
@@ -105,11 +106,12 @@ def feature_distances_generator():
 
     # FeatureDistancesGenerator
     feature_distances_generator = FeatureDistancesGenerator()
+    data = feature_distances_generator._feature_distances_list_to_df(data)
     feature_distances_generator.data = data
     feature_distances_generator.structure_kinase_ids = [
-        ("pdb1", "kinase1"),
-        ("pdb2", "kinase1"),
-        ("pdb3", "kinase2"),
+        ("pdbA", "kinaseA"),
+        ("pdbB", "kinaseA"),
+        ("pdbC", "kinaseB"),
     ]
 
     return feature_distances_generator
@@ -126,25 +128,24 @@ def fingerprint_distance_generator():
         Fingerprint distance for multiple fingerprint pairs.
     """
 
-    structures1 = ["pdb1", "pdb1", "pdb2"]
-    structures2 = ["pdb2", "pdb3", "pdb3"]
-    kinases1 = ["kinase1", "kinase1", "kinase1"]
-    kinases2 = ["kinase1", "kinase2", "kinase2"]
-    distances = np.array([0.75, 1.0, 0.8])
-    bit_coverages = np.array([1.0, 1.0, 1.0])
+    data = pd.DataFrame(
+        {
+            "structure.1": ["pdbA", "pdbA", "pdbB"],
+            "structure.2": ["pdbB", "pdbC", "pdbC"],
+            "kinase.1": ["kinaseA", "kinaseA", "kinaseA"],
+            "kinase.2": ["kinaseA", "kinaseB", "kinaseB"],
+            "distance": np.array([0.75, 1.0, 0.8]),
+            "bit_coverage": np.array([1.0, 1.0, 1.0]),
+        }
+    )
 
     # FingerprintDistanceGenerator
     fingerprint_distance_generator = FingerprintDistanceGenerator()
+    fingerprint_distance_generator.data = data
     fingerprint_distance_generator.structure_kinase_ids = [
-        ("pdb1", "kinase1"),
-        ("pdb2", "kinase1"),
-        ("pdb3", "kinase2"),
+        ("pdbA", "kinaseA"),
+        ("pdbB", "kinaseA"),
+        ("pdbC", "kinaseB"),
     ]
-    fingerprint_distance_generator._structures1 = structures1
-    fingerprint_distance_generator._structures2 = structures2
-    fingerprint_distance_generator._kinases1 = kinases1
-    fingerprint_distance_generator._kinases2 = kinases2
-    fingerprint_distance_generator._distances = distances
-    fingerprint_distance_generator._bit_coverages = bit_coverages
 
     return fingerprint_distance_generator

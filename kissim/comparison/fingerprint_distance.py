@@ -27,8 +27,6 @@ class FingerprintDistance:
         Fingerprint distance (weighted per feature).
     bit_coverage : float
         Fingerprint coverage (weighted per feature).
-    feature_weights : np.array
-        Weights set per feature.
     """
 
     def __init__(self):
@@ -37,7 +35,6 @@ class FingerprintDistance:
         self.kinase_pair_ids = None
         self.distance = None
         self.bit_coverage = None
-        self.feature_weights = None
 
     @classmethod
     def from_feature_distances(cls, feature_distances, feature_weights=None):
@@ -73,27 +70,62 @@ class FingerprintDistance:
         distances = feature_distances.distances
 
         # Set class attributes
-        fingerprint_distance.feature_weights = weights
         fingerprint_distance.structure_pair_ids = feature_distances.structure_pair_ids
         fingerprint_distance.kinase_pair_ids = feature_distances.kinase_pair_ids
 
         # Calculate weighted sum of feature bit coverages
-        fingerprint_distance.bit_coverage = fingerprint_distance._calculate_weighted_sum(
+        fingerprint_distance.distance = fingerprint_distance._distance(distances, weights)
+        # Calculate weighted sum of feature distances
+        fingerprint_distance.bit_coverage = fingerprint_distance._bit_coverage(
             bit_coverages, weights
         )
-        # Calculate weighted sum of feature distances
+
+        return fingerprint_distance
+
+    def _distance(self, distances, weights):
+        """
+        Weighte sum of distances (weights recalibrated in case distances contain NaN values).
+
+        Parameters
+        ----------
+        distances : np.ndarray
+            Distances vector. Same length as weights vector.
+        weights : np.ndarray
+            Weights vector. Same length as values vector.
+
+        Returns
+        -------
+        float
+            Weighted sum of distances.
+        """
+
         if np.isnan(distances).any():
             (
                 distances,
                 weights,
-            ) = fingerprint_distance._remove_nan_distances_and_recalibrate_weights(
-                distances, weights
-            )
-        fingerprint_distance.distance = fingerprint_distance._calculate_weighted_sum(
-            distances, weights
-        )
+            ) = self._remove_nan_distances_and_recalibrate_weights(distances, weights)
+        distance = self._calculate_weighted_sum(distances, weights)
+        return distance
 
-        return fingerprint_distance
+    def _bit_coverage(self, bit_coverages, weights):
+        """
+        Weighte sum of bit coverages.
+
+        Parameters
+        ----------
+        bit_coverages : np.ndarray
+            Bit coverages vector. Same length as weights vector.
+        weights : np.ndarray
+            Weights vector. Same length as values vector.
+
+        Returns
+        -------
+        float
+            Weighted sum of bit coverages.
+        """
+
+        bit_coverage = self._calculate_weighted_sum(bit_coverages, weights)
+        return bit_coverage
 
     @staticmethod
     def _calculate_weighted_sum(values, weights):
@@ -103,7 +135,7 @@ class FingerprintDistance:
         Parameters
         ----------
         values : np.ndarray
-            Values vector. Same length as weights vector
+            Values vector. Same length as weights vector.
         weights : np.ndarray
             Weights vector. Same length as values vector.
 
@@ -116,7 +148,8 @@ class FingerprintDistance:
         if np.isnan(values).any():
             raise ValueError(f"Input values cannot contain NaN values: {values}")
 
-        if not np.isclose(np.sum(weights), 1.0):
+        # NOTE: Sync with rtol in kissim.comparison.utils.format_weights
+        if not np.isclose(np.sum(weights), 1.0, rtol=1e-02):
             raise ValueError(f"Sum of input weights must be 1 but is {np.sum(weights)}.")
 
         return np.sum(values * weights)
@@ -129,7 +162,7 @@ class FingerprintDistance:
         Parameters
         ----------
         distances : np.ndarray
-            Distances vector. Same length as weights vector
+            Distances vector. Same length as weights vector.
         weights : np.ndarray
             Weights vector. Same length as distances vector.
 

@@ -22,7 +22,7 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
         f"kissim encode -i 12347 109 -o fingerprints.json -l {(PATH_TEST_DATA / 'KLIFS_download').absolute()}",
     ],
 )
-def test_encode(args):
+def test_main_encode(args):
     """
     Test CLI for encoding using subprocesses.
     """
