@@ -12,38 +12,37 @@ from scipy.cluster import hierarchy
 from kissim.utils import enter_temp_directory
 from kissim.comparison import tree
 
-# PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
-PATH_TEST_DATA = Path(__file__).parent / "../data"
+PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
 
 @pytest.mark.parametrize(
     "distance_matrix_path, tree_path, annotation_path, clustering_method, similarity, tree_string",
     [
         (
-            PATH_TEST_DATA / "kinase_matrix.csv",
-            PATH_TEST_DATA / "kissim_test.tree",
-            PATH_TEST_DATA / "kinase_annotation.csv",
+            (PATH_TEST_DATA / "kinase_matrix.csv").absolute(),
+            "kissim_test.tree",
+            "kinase_annotation.csv",
             "ward",
             True,
             "(((ACK:2.0,AAK1:2.0)0.6:3.431,(ACTR2:1.0,ABL1:1.0)0.8:4.431)0.367:0.322,ABL2:5.753);",
         ),
         (
-            PATH_TEST_DATA / "kinase_matrix.csv",
-            PATH_TEST_DATA / "kissim_test.tree",
-            PATH_TEST_DATA / "kinase_annotation.csv",
+            (PATH_TEST_DATA / "kinase_matrix.csv").absolute(),
+            "kissim_test.tree",
+            "kinase_annotation.csv",
             "ward",
             False,
             "(((ACK:2.0,AAK1:2.0)2.0:3.431,(ACTR2:1.0,ABL1:1.0)1.0:4.431)3.167:0.322,ABL2:5.753);",
         ),
         (
-            PATH_TEST_DATA / "kinase_matrix.csv",
-            PATH_TEST_DATA / "kissim_test.tree",
+            (PATH_TEST_DATA / "kinase_matrix.csv").absolute(),
+            "kissim_test.tree",
             None,
             "centroid",
             True,
             "(((ACK:2.0,AAK1:2.0)0.6:1.841,(ACTR2:1.0,ABL1:1.0)0.8:2.841)0.367:0.708,ABL2:4.548);",
         ),
-        (PATH_TEST_DATA / "kinase_matrix.csv", None, None, "ward", True, None),
+        ((PATH_TEST_DATA / "kinase_matrix.csv").absolute(), None, None, "ward", True, None),
     ],
 )
 def test_from_file(
