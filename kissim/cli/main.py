@@ -1,7 +1,7 @@
 """
 kissim.cli.main
 
-Main command line interface (CLI) script defining sub-commands (encode, compare) and arguments.
+Main command line interface (CLI) script defining sub-commands and arguments.
 
 Resources:
 - https://gist.github.com/lusis/624782
@@ -11,8 +11,9 @@ Special thanks to @jaimergp for the pointers.
 """
 
 import argparse
+import subprocess
 
-from kissim.cli import encode_from_cli, compare_from_cli
+from kissim.cli import encode_from_cli, compare_from_cli, tree_from_cli
 
 
 def main():
@@ -23,6 +24,7 @@ def main():
     Sub-commands are:
     - encode
     - compare
+    - tree
     """
 
     parser = argparse.ArgumentParser()
@@ -30,6 +32,7 @@ def main():
 
     encode_subparser = subparsers.add_parser("encode")
     compare_subparser = subparsers.add_parser("compare")
+    tree_subparser = subparsers.add_parser("tree")
 
     # Arguments and function to be called for sub-command encode
     encode_subparser.add_argument(
@@ -97,5 +100,41 @@ def main():
     )
     compare_subparser.set_defaults(func=compare_from_cli)
 
+    # Arguments and function to be called for sub-command encode
+    tree_subparser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Path to a kissim kinase matrix CSV file.",
+        required=True,
+    )
+    tree_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to the output tree file in Newick format.",
+        required=True,
+    )
+    tree_subparser.add_argument(
+        "-a",
+        "--annotation",
+        type=str,
+        help="Path to the output annotation CSV file.",
+        required=False,
+    )
+    tree_subparser.add_argument(
+        "-c",
+        "--clustering",
+        type=str,
+        help="Clustering method.",
+        default="ward",
+        choices=["ward", "complete", "weighted", "average", "centroid"],
+    )
+    tree_subparser.set_defaults(func=tree_from_cli)
+
     args = parser.parse_args()
-    args.func(args)
+    try:
+        args.func(args)
+    except AttributeError:
+        # Run help if no arguments were given
+        subprocess.run(["kissim", "-h"])
