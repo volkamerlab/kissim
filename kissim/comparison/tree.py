@@ -4,6 +4,7 @@ mean similarity to each branch.
 The resulting tree is written to an output file in Newick format.
 """
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +13,7 @@ import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 from opencadd.databases import klifs
 
+logger = logging.getLogger(__name__)
 
 # Problematic kinases
 # - SgK495, a pseudokinase with incorrect annotation in KLIFS (will be resolved)
@@ -60,7 +62,7 @@ def from_file(
     distance_matrix_path = Path(distance_matrix_path)
 
     # Read in KISSIM distance matrix from provided input file
-    print(f"Reading kinase matrix from {distance_matrix_path}")
+    logger.info(f"Reading kinase matrix from {distance_matrix_path}")
     distance_matrix = pd.read_csv(distance_matrix_path, index_col=0)
 
     # Generate tree
@@ -119,9 +121,9 @@ def from_distance_matrix(
     np.fill_diagonal(distance_matrix.values, 0)
 
     # Hierarchical clustering
-    print(f"Clustering (method: {clustering_method}) and calculating branch similarities")
+    logger.info(f"Clustering (method: {clustering_method}) and calculating branch similarities")
     hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=clustering_method)
-    print("Converting clustering to a Newick tree")
+    logger.info("Converting clustering to a Newick tree")
     tree = sch.to_tree(hclust, False)
 
     # Calculate and assign mean similarity for each of the branches
@@ -155,10 +157,9 @@ def _to_newick(tree, node_means, distance_matrix, outputfile):
 
     outputfile = Path(outputfile)
 
-    print(f"Writing resulting tree to {outputfile}")
+    logger.info(f"Writing resulting tree to {outputfile}")
     newick = ""
     newick = _get_newick(tree, newick, tree.dist, list(distance_matrix), node_means)
-    print(newick)
     with open(outputfile, "w") as f:
         f.write(newick)
 
@@ -177,7 +178,7 @@ def _to_kinase_annotation(distance_matrix, outputfile):
 
     outputfile = Path(outputfile)
 
-    print(f"Writing resulting kinase annotation to {outputfile}")
+    logger.info(f"Writing resulting kinase annotation to {outputfile}")
 
     # Get kinase names from matrix
     kinase_names = distance_matrix.columns.to_list()
