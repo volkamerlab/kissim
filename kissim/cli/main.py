@@ -13,7 +13,13 @@ Special thanks to @jaimergp for the pointers.
 import argparse
 import subprocess
 
-from kissim.cli import encode_from_cli, compare_from_cli, weights_from_cli, outliers_from_cli, tree_from_cli
+from kissim.cli import (
+    encode_from_cli,
+    compare_from_cli,
+    weights_from_cli,
+    outliers_from_cli,
+    tree_from_cli,
+)
 
 
 def main():
