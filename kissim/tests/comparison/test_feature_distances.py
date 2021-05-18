@@ -198,8 +198,8 @@ class TestsFeatureDistances:
         "feature_distances_dict",
         [
             {
-                "structure_pair_ids": ["pdb1", "pdb2"],
-                "kinase_pair_ids": ["kinase1", "kinase2"],
+                "structure_pair_ids": ["pdbA", "pdbB"],
+                "kinase_pair_ids": ["kinaseA", "kinaseB"],
                 "distances": [1.0] * 15,
                 "bit_coverages": [1.0] * 15,
             }

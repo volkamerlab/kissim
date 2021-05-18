@@ -51,20 +51,20 @@ def compare(
     if output_path is not None:
         output_path = Path(output_path)
         output_path.mkdir(parents=True, exist_ok=True)
-        feature_distances_json_filepath = output_path / "feature_distances.json"
-        fingerprint_distance_json_filepath = output_path / f"fingerprint_distances.json"
+        feature_distances_filepath = output_path / "feature_distances.csv"
+        fingerprint_distance_filepath = output_path / f"fingerprint_distances.csv"
     else:
-        feature_distances_json_filepath = None
-        fingerprint_distance_json_filepath = None
+        feature_distances_filepath = None
+        fingerprint_distance_filepath = None
 
     # Generate feature distances
     feature_distances_generator = compare_fingerprint_features(
-        fingerprint_generator, feature_distances_json_filepath, n_cores
+        fingerprint_generator, feature_distances_filepath, n_cores
     )
 
     # Generate fingerprint distance
     fingerprint_distance_generator = weight_feature_distances(
-        feature_distances_generator, fingerprint_distance_json_filepath, feature_weights, n_cores
+        feature_distances_generator, fingerprint_distance_filepath, feature_weights
     )
 
     return feature_distances_generator, fingerprint_distance_generator
@@ -95,13 +95,13 @@ def compare_fingerprint_features(
 
     if output_filepath:
         output_filepath = Path(output_filepath)
-        feature_distances_generator.to_json(output_filepath)
+        feature_distances_generator.to_csv(output_filepath)
 
     return feature_distances_generator
 
 
 def weight_feature_distances(
-    feature_distances_generator, output_filepath=None, feature_weights=None, n_cores=1
+    feature_distances_generator, output_filepath=None, feature_weights=None
 ):
     """
     Weight feature distances: Generates per fingerprint pair a fingerprint distance.
@@ -122,16 +122,14 @@ def weight_feature_distances(
             aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
             distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
             All floats must sum up to 1.0.
-    n_cores : int
-        Number of cores used to generate fingerprint distances.
     """
 
     fingerprint_distance_generator = FingerprintDistanceGenerator.from_feature_distances_generator(
-        feature_distances_generator, feature_weights, n_cores
+        feature_distances_generator, feature_weights
     )
 
     if output_filepath:
         output_filepath = Path(output_filepath)
-        fingerprint_distance_generator.to_json(output_filepath)
+        fingerprint_distance_generator.to_csv(output_filepath)
 
     return fingerprint_distance_generator

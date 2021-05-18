@@ -26,10 +26,10 @@ def test_compare(fingerprint_generator, output_path, feature_weights, n_cores):
     if output_path is not None:
         output_path = Path(output_path)
 
-        feature_distances_json_filepath = output_path / "feature_distances.json"
-        assert feature_distances_json_filepath.exists()
-        feature_distances_json_filepath.unlink()
+        feature_distances_filepath = output_path / "feature_distances.csv"
+        assert feature_distances_filepath.exists()
+        feature_distances_filepath.unlink()
 
-        fingerprint_distance_json_filepath = output_path / "fingerprint_distances.json"
-        assert fingerprint_distance_json_filepath.exists()
-        fingerprint_distance_json_filepath.unlink()
+        fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
+        assert fingerprint_distance_filepath.exists()
+        fingerprint_distance_filepath.unlink()

@@ -13,7 +13,7 @@ Special thanks to @jaimergp for the pointers.
 import argparse
 import subprocess
 
-from kissim.cli import encode_from_cli, compare_from_cli, tree_from_cli
+from kissim.cli import encode_from_cli, compare_from_cli, weights_from_cli, outliers_from_cli, tree_from_cli
 
 
 def main():
@@ -32,6 +32,8 @@ def main():
 
     encode_subparser = subparsers.add_parser("encode")
     compare_subparser = subparsers.add_parser("compare")
+    weights_subparser = subparsers.add_parser("weights")
+    outliers_subparser = subparsers.add_parser("outliers")
     tree_subparser = subparsers.add_parser("tree")
 
     # Arguments and function to be called for sub-command encode
@@ -47,7 +49,7 @@ def main():
         "-o",
         "--output",
         type=str,
-        help="Path to output json file containing fingerprint data.",
+        help="Path to output JSON file containing fingerprint data.",
         required=True,
     )
     encode_subparser.add_argument(
@@ -72,14 +74,14 @@ def main():
         "-i",
         "--input",
         type=str,
-        help="Path to json file containing fingerprint data.",
+        help="Path to JSON file containing fingerprint data.",
         required=True,
     )
     compare_subparser.add_argument(
         "-o",
         "--output",
         type=str,
-        help="Path to output folder where distance json files will be saved.",
+        help="Path to output folder where distance CSV files will be saved.",
         required=True,
     )
     compare_subparser.add_argument(
@@ -100,7 +102,56 @@ def main():
     )
     compare_subparser.set_defaults(func=compare_from_cli)
 
-    # Arguments and function to be called for sub-command encode
+    # Arguments and function to be called for sub-command weights
+    weights_subparser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Path to CSV file containing feature distances.",
+        required=True,
+    )
+    weights_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to output folder where fingerprint distance CSV file will be saved.",
+        required=True,
+    )
+    weights_subparser.add_argument(
+        "-w",
+        "--weights",
+        type=float,
+        nargs=15,
+        help="Feature weights. Each feature must be set individually, all weights must sum up to 1.0.",
+        required=False,
+    )
+    weights_subparser.set_defaults(func=weights_from_cli)
+
+    # Arguments and function to be called for sub-command outliers
+    outliers_subparser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Path to JSON file containing fingerprint data.",
+        required=True,
+    )
+    outliers_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to output folder where outlier-free fingerprint data will be saved.",
+        required=True,
+    )
+    outliers_subparser.add_argument(
+        "-d",
+        "--distance_max",
+        type=float,
+        help="Distance maximum value used to detect outliers that shall be removed.",
+        required=True,
+    )
+    outliers_subparser.set_defaults(func=outliers_from_cli)
+
+    # Arguments and function to be called for sub-command tree
     tree_subparser.add_argument(
         "-i",
         "--input",

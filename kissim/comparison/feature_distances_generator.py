@@ -5,70 +5,43 @@ Defines the feature distances for multiple fingerprint pairs.
 """
 
 import datetime
-import json
-import ijson
 import logging
 from multiprocessing import Pool
-from pathlib import Path
+from itertools import combinations, repeat
 
-from itertools import combinations, repeat, chain
+import pandas as pd
 
-from kissim.encoding import FingerprintGenerator
 from kissim.utils import set_n_cores
-from . import FeatureDistances
+from kissim.encoding import FingerprintGenerator
+from kissim.comparison import BaseGenerator, FeatureDistances
 
 logger = logging.getLogger(__name__)
 
 
-class FeatureDistancesGenerator:
+class FeatureDistancesGenerator(BaseGenerator):
     """
     Generate feature distances for multiple fingerprint pairs, given a distance measure.
     Uses parallel computing of fingerprint pairs.
 
     Attributes
     ----------
-    data : list of tuple of str: np.ndarray
-        Feature distances and bit coverage (value) for each fingerprint pair.
-    structure_kinase_ids : list of tuple
+    data : pandas.DataFrame
+        Feature distances and bit coverages for each structure pair (kinase pair).
+    structure_kinase_ids : list of list
         Structure and kinase IDs for structures in dataset.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.data = None
         self.structure_kinase_ids = None
 
-    @property
-    def structure_ids(self):
-        """
-        Unique structure IDs associated with all fingerprints (sorted alphabetically).
+    def __eq__(self, other):
 
-        Returns
-        -------
-        list of str or int
-            Structure IDs.
-        """
-
-        if self.data is not None:
-            structure_ids = [i.structure_pair_ids for i in self.data]
-            deduplicated_structure_ids = sorted(set(chain.from_iterable(structure_ids)))
-            return deduplicated_structure_ids
-
-    @property
-    def kinase_ids(self):
-        """
-        Unique kinase IDs (e.g. kinase names) associated with all fingerprints (sorted
-        alphabetically).
-
-        Returns
-        -------
-        list of str or int
-            Kinase IDs.
-        """
-
-        if self.data is not None:
-            kinase_ids = [i.kinase_pair_ids for i in self.data]
-            deduplicated_kinase_ids = sorted(set(chain.from_iterable(kinase_ids)))
-            return deduplicated_kinase_ids
+        if isinstance(other, FeatureDistancesGenerator):
+            return (
+                self.data.equals(other.data)
+                and self.structure_kinase_ids == other.structure_kinase_ids
+            )
 
     @classmethod
     def from_fingerprint_generator(cls, fingerprints_generator, n_cores=1):
@@ -104,11 +77,12 @@ class FeatureDistancesGenerator:
             fingerprints_generator.data,
             n_cores,
         )
-        feature_distances_generator.data = feature_distances_list
-        feature_distances_generator.structure_kinase_ids = [
-            (structure_id, fingerprint.kinase_name)
-            for structure_id, fingerprint in fingerprints_generator.data.items()
-        ]
+        feature_distances_generator.data = (
+            feature_distances_generator._feature_distances_list_to_df(feature_distances_list)
+        )
+        feature_distances_generator.structure_kinase_ids = (
+            feature_distances_generator._structure_kinase_ids
+        )
 
         logger.info(f"Number of ouput feature distances: {len(feature_distances_generator.data)}")
 
@@ -145,104 +119,6 @@ class FeatureDistancesGenerator:
             fingerprint_generator, n_cores
         )
         return feature_distances_generator
-
-    @classmethod
-    def from_json(cls, filepath):
-        """
-        Initialize a FeatureDistancesGenerator object from a json file.
-
-        Parameters
-        ----------
-        filepath : str or pathlib.Path
-            Path to json file.
-
-        Returns
-        -------
-        kissim.comparison.FeatureDistancesGenerator
-            Feature distances generator.
-        """
-
-        filepath = Path(filepath)
-        with open(filepath, "rb") as file:
-            data = ijson.items(file, "data.item", use_float=True)
-            data = [
-                FeatureDistances._from_dict(feature_distances_dict)
-                for feature_distances_dict in data
-            ]
-        with open(filepath, "rb") as file:
-            structure_kinase_ids = ijson.items(file, "structure_kinase_ids.item")
-            structure_kinase_ids = [
-                tuple(structure_kinase_id) for structure_kinase_id in structure_kinase_ids
-            ]
-
-        feature_distances_generator = cls()
-        feature_distances_generator.data = data
-        feature_distances_generator.structure_kinase_ids = structure_kinase_ids
-
-        return feature_distances_generator
-
-    def to_json(self, filepath):
-        """
-        Write FeatureDistancesGenerator class attributes to a json file.
-
-        Parameters
-        ----------
-        filepath : str or pathlib.Path
-            Path to json file.
-        """
-
-        feature_distances_generator_dict = self.__dict__.copy()
-
-        # Format attribute data for JSON
-        data = []
-        for feature_distances in feature_distances_generator_dict["data"]:
-            feature_distances_dict = feature_distances.__dict__.copy()
-            feature_distances_dict["distances"] = feature_distances_dict["distances"].tolist()
-            feature_distances_dict["bit_coverages"] = feature_distances_dict[
-                "bit_coverages"
-            ].tolist()
-            data.append(feature_distances_dict)
-        feature_distances_generator_dict["data"] = data
-
-        json_string = json.dumps(feature_distances_generator_dict).replace("NaN", "null")
-        filepath = Path(filepath)
-        with open(filepath, "w") as f:
-            f.write(json_string)
-
-    def by_structure_pair(self, structure_id1, structure_id2):
-        """
-        Get feature distances for fingerprint pair by their structure IDs, with details on
-        feature types, feature names, and feature bit coverages.
-
-        Parameters
-        ----------
-        structure_id1 : str
-            Structure ID 1.
-        structure_id2 : str
-            Structure ID 2.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Feature distances for fingerprint pair with details on feature types, features names,
-            and feature bit coverages.
-        """
-
-        if self.data is not None:
-            feature_distances = [
-                i
-                for i in self.data
-                if (i.structure_pair_ids == (structure_id1, structure_id2))
-                or (i.structure_pair_ids == (structure_id2, structure_id1))
-            ]
-            if len(feature_distances) != 1:
-                raise ValueError(
-                    f"{len(feature_distances)} entries for distance between "
-                    f"{structure_id1} and {structure_id2} available, only 1 allowed."
-                )
-            else:
-                feature_distances = feature_distances[0]
-                return feature_distances.data
 
     @staticmethod
     def _fingerprint_pairs(fingerprints):
@@ -316,3 +192,35 @@ class FeatureDistancesGenerator:
         feature_distances = FeatureDistances.from_fingerprints(fingerprint1, fingerprint2)
 
         return feature_distances
+
+    @staticmethod
+    def _feature_distances_list_to_df(feature_distances_list):
+
+        structure_pair_ids_list = []
+        kinase_pair_ids_list = []
+        distances_list = []
+        bit_coverages_list = []
+
+        for feature_distances in feature_distances_list:
+            structure_pair_ids_list.append(feature_distances.structure_pair_ids)
+            kinase_pair_ids_list.append(feature_distances.kinase_pair_ids)
+            distances_list.append(feature_distances.distances)
+            bit_coverages_list.append(feature_distances.bit_coverages)
+
+        return pd.concat(
+            [
+                pd.DataFrame(structure_pair_ids_list, columns=["structure.1", "structure.2"]),
+                pd.DataFrame(kinase_pair_ids_list, columns=["kinase.1", "kinase.2"]),
+                pd.DataFrame(
+                    distances_list,
+                    columns=[f"distance.{i}" for i in range(1, len(distances_list[0]) + 1)],
+                ),
+                pd.DataFrame(
+                    bit_coverages_list,
+                    columns=[
+                        f"bit_coverage.{i}" for i in range(1, len(bit_coverages_list[0]) + 1)
+                    ],
+                ),
+            ],
+            axis=1,
+        )

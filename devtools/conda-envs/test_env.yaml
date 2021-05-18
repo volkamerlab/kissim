@@ -21,6 +21,7 @@ dependencies:
   # Testing
   - pytest 5.*
   - pytest-cov
+  - nbval
   - codecov
   # Docs
   - sphinx
@@ -35,6 +36,7 @@ dependencies:
   - tqdm
   - pip:
     - black-nb
+    - flake8-nb
     - https://github.com/volkamerlab/opencadd/archive/2a6cf9bcee72a3626114cda82af758e05ed5af18.zip
 
 ## For Jupyter lab extensions, run:

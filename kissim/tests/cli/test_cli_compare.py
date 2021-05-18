@@ -41,10 +41,10 @@ def test_compare_from_cli(args):
         compare_from_cli(args)
 
         # Feature distances JSON there?
-        assert Path("feature_distances.json").exists()
+        assert Path("feature_distances.csv").exists()
 
         # Fingerprint distance JSON there?
-        assert Path("fingerprint_distances.json").exists()
+        assert Path("fingerprint_distances.csv").exists()
 
         # Distances LOG there?
         assert Path("distances.log").exists()

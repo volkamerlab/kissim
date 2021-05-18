@@ -49,8 +49,18 @@ class TestsFeatureDistancesGenerator:
         assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
 
         # Test attributes
-        assert isinstance(feature_distances_generator.data, list)
-        assert isinstance(feature_distances_generator.data[0], FeatureDistances)
+        assert isinstance(feature_distances_generator.data, pd.DataFrame)
+        assert (
+            feature_distances_generator.data.columns.to_list()
+            == [
+                "structure.1",
+                "structure.2",
+                "kinase.1",
+                "kinase.2",
+            ]
+            + [f"distance.{i}" for i in range(1, 16)]
+            + [f"bit_coverage.{i}" for i in range(1, 16)]
+        )
         assert isinstance(feature_distances_generator.structure_kinase_ids, list)
 
     @pytest.mark.parametrize(
@@ -72,35 +82,53 @@ class TestsFeatureDistancesGenerator:
         assert isinstance(feature_distances_generator, FeatureDistancesGenerator)
 
         # Test attributes
-        assert isinstance(feature_distances_generator.data, list)
-        assert isinstance(feature_distances_generator.data[0], FeatureDistances)
+        assert isinstance(feature_distances_generator.data, pd.DataFrame)
         assert isinstance(feature_distances_generator.structure_kinase_ids, list)
 
-    def test_to_from_json(self, feature_distances_generator):
+    @pytest.mark.parametrize(
+        "structure_kinase_ids",
+        [[["pdbA", "kinaseA"], ["pdbB", "kinaseA"], ["pdbC", "kinaseB"]]],
+    )
+    def test_structure_kinase_ids(self, feature_distances_generator, structure_kinase_ids):
+
+        assert feature_distances_generator._structure_kinase_ids == structure_kinase_ids
+
+    @pytest.mark.parametrize(
+        "structure_pair_ids", [[["pdbA", "pdbB"], ["pdbA", "pdbC"], ["pdbB", "pdbC"]]]
+    )
+    def test_structure_pair_ids(self, feature_distances_generator, structure_pair_ids):
+
+        assert feature_distances_generator.structure_pair_ids == structure_pair_ids
+
+    @pytest.mark.parametrize(
+        "kinase_pair_ids",
+        [[["kinaseA", "kinaseA"], ["kinaseA", "kinaseB"], ["kinaseA", "kinaseB"]]],
+    )
+    def test_kinase_pair_ids(self, feature_distances_generator, kinase_pair_ids):
+
+        assert feature_distances_generator.kinase_pair_ids == kinase_pair_ids
+
+    @pytest.mark.parametrize("structure_ids", [["pdbA", "pdbB", "pdbC"]])
+    def test_structure_ids(self, feature_distances_generator, structure_ids):
+
+        assert feature_distances_generator.structure_ids == structure_ids
+
+    @pytest.mark.parametrize("kinase_ids", [["kinaseA", "kinaseB"]])
+    def test_kinase_ids(self, feature_distances_generator, kinase_ids):
+
+        assert feature_distances_generator.kinase_ids == kinase_ids
+
+    def test_to_from_csv(self, feature_distances_generator):
 
         with enter_temp_directory():
 
-            json_filepath = Path("test.json")
+            filepath = Path("test.csv")
 
-            feature_distances_generator.to_json(json_filepath)
-            assert json_filepath.exists()
+            feature_distances_generator.to_csv(filepath)
+            assert filepath.exists()
 
-            feature_distances_generator_from_json = FeatureDistancesGenerator.from_json(
-                json_filepath
-            )
-            assert isinstance(feature_distances_generator_from_json, FeatureDistancesGenerator)
-
-    @pytest.mark.parametrize("structure_ids", [["pdb1", "pdb2", "pdb3"]])
-    def test_structure_ids(self, feature_distances_generator, structure_ids):
-
-        structure_ids_calculated = feature_distances_generator.structure_ids
-        assert structure_ids_calculated == structure_ids
-
-    @pytest.mark.parametrize("kinase_ids", [["kinase1", "kinase2"]])
-    def test_kinase_ids(self, feature_distances_generator, kinase_ids):
-
-        kinase_ids_calculated = feature_distances_generator.kinase_ids
-        assert kinase_ids_calculated == kinase_ids
+            feature_distances_generator_from_csv = FeatureDistancesGenerator.from_csv(filepath)
+            assert isinstance(feature_distances_generator_from_csv, FeatureDistancesGenerator)
 
     @pytest.mark.parametrize(
         "fingerprints, pairs",
@@ -128,20 +156,6 @@ class TestsFeatureDistancesGenerator:
 
         for pair_calculated, pair in zip(pairs_calculated, pairs):
             assert pair_calculated == pair
-
-    @pytest.mark.parametrize("structure_id1, structure_id2", [("pdb1", "pdb3")])
-    def test_by_structure_pair(self, feature_distances_generator, structure_id1, structure_id2):
-
-        feature_distances_data = feature_distances_generator.by_structure_pair(
-            structure_id1, structure_id2
-        )
-        assert isinstance(feature_distances_data, pd.DataFrame)
-        assert feature_distances_data.columns.to_list() == [
-            "feature_type",
-            "feature_name",
-            "distance",
-            "bit_coverage",
-        ]
 
     def test_get_feature_distances(self, fingerprint_generator):
         """
