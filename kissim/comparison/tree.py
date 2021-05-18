@@ -1,6 +1,6 @@
 """
 Process a KISSIM distance matrix into a clustered kissim-based tree with assignment of the 
-mean similarity to each branch.
+mean distance (or mean similarity) to each branch.
 The resulting tree is written to an output file in Newick format.
 """
 
@@ -25,7 +25,7 @@ def from_file(
     tree_path=None,
     annotation_path=None,
     clustering_method="ward",
-    similarity=True,
+    similarity=False,
 ):
     """
     Generate kissim-based kinase tree from file.
@@ -45,14 +45,15 @@ def from_file(
         "complete", "weighted", "average", "centroid".
     similarity : bool
         If `True`, convert distance matrix into similarity matrix using
-        `1 - distance_matrix / distance_matrix.max().max()`, else use distance matrix directly.
+        `1 - distance_matrix / distance_matrix.max().max()`, else use distance matrix directly
+        (default).
 
     Returns
     -------
     tree : scipy.cluster.hierarchy.ClusterNode
         Cluster node.
     node_means : dict of int: float
-        Mean similarities (value) for each node index (key).
+        Mean distance or similarity (value) for each node index (key).
 
     References
     ----------
@@ -78,7 +79,7 @@ def from_distance_matrix(
     tree_path=None,
     annotation_path=None,
     clustering_method="ward",
-    similarity=True,
+    similarity=False,
 ):
     """
     Generate kissim-based kinase tree (cluster kinases and save clusters in the Newick format).
@@ -97,14 +98,15 @@ def from_distance_matrix(
         "complete", "weighted", "average", "centroid".
     similarity : bool
         If `True`, convert distance matrix into similarity matrix using
-        `1 - distance_matrix / distance_matrix.max().max()`, else use distance matrix directly.
+        `1 - distance_matrix / distance_matrix.max().max()`, else use distance matrix directly
+        (default).
 
     Returns
     -------
     tree : scipy.cluster.hierarchy.ClusterNode
         Cluster node.
     node_means : dict of int: float
-        Mean similarity (value) for each node index (key).
+        Mean distance or similarity (value) for each node index (key).
 
     References
     ----------
@@ -121,14 +123,23 @@ def from_distance_matrix(
     np.fill_diagonal(distance_matrix.values, 0)
 
     # Hierarchical clustering
-    logger.info(f"Clustering (method: {clustering_method}) and calculating branch similarities")
+    logger.info(
+        f"Clustering (method: {clustering_method}) and "
+        f"calculating branch {'similarities' if similarity else 'distances'}"
+    )
     hclust = sch.linkage(ssd.squareform(distance_matrix.values), method=clustering_method)
     logger.info("Converting clustering to a Newick tree")
     tree = sch.to_tree(hclust, False)
 
-    # Calculate and assign mean similarity for each of the branches
+    # Calculate and assign mean distances - or mean similarities - for each of the branches
+    if similarity:
+        matrix = (1 - distance_matrix / distance_matrix.max().max()).copy()
+        leaf_mean = 1
+    else:
+        matrix = distance_matrix.copy()
+        leaf_mean = 0
     node_means = {}
-    _get_node_means(tree, distance_matrix, node_means, similarity)
+    _get_node_means(tree, matrix, node_means, leaf_mean)
 
     # Optionally: Save tree and annotation to file
     if tree_path:
@@ -148,7 +159,7 @@ def _to_newick(tree, node_means, distance_matrix, outputfile):
     tree : scipy.cluster.hierarchy.ClusterNode
         Cluster node.
     node_means : dict of int: float
-        Mean similarity (value) for each node index (key).
+        Mean distance or similarity (value) for each node index (key).
     distance_matrix : pandas.DataFrame
         Distance matrix on which clustering is based.
     outputfile : str or pathlib.Path
@@ -193,21 +204,21 @@ def _to_kinase_annotation(distance_matrix, outputfile):
     kinases.to_csv(outputfile, sep="\t", index=False)
 
 
-def _get_node_means(tree, distance_matrix, node_means, similarity=True):
+def _get_node_means(tree, matrix, node_means, leaf_mean):
     """
-    Calculating and assign the mean similarity (default) or mean distance for tree branches.
+    Calculate and assign the mean of a tree clade based on their distance or similarity matrix.
 
     Parameters
     ----------
     tree : scipy.cluster.hierarchy.ClusterNode
         Clustering tree.
-    distance_matrix : pandas.DataFrame
+    matrix : pandas.DataFrame
         Distance matrix on which clustering is based.
     node_means : dict of int: float
         Mean distance (value) for each node index (key).
-    similarity : bool
-        If `True`, convert distance matrix into similarity matrix using
-        `1 - distance_matrix / distance_matrix.max().max()`, else use distance matrix directly.
+    leaf_mean : int
+        Leaves technically do not have a mean; set identity value instead. In case `matrix` is a
+        similarity matrix, set 1, in case it is a distance matrix, set 0.
 
     Returns
     -------
@@ -215,14 +226,6 @@ def _get_node_means(tree, distance_matrix, node_means, similarity=True):
         Mean similarities (value) for each node index (key).
         Note: The return value is the populated input `node_means` object.
     """
-
-    # Calculate mean similarities or mean distances?
-    if similarity:
-        matrix = (1 - distance_matrix / distance_matrix.max().max()).copy()
-        leaf_mean = 1
-    else:
-        matrix = distance_matrix.copy()
-        leaf_mean = 0
 
     # Set mean for root node
     if tree.id not in node_means:
@@ -257,10 +260,10 @@ def _get_node_means(tree, distance_matrix, node_means, similarity=True):
                 # Calculate mean within a cluster
                 if left:
                     node_means[tree.get_left().id] = np.average(values_by_cluster)
-                    _get_node_means(tree.get_left(), distance_matrix, node_means, similarity)
+                    _get_node_means(tree.get_left(), matrix, node_means, leaf_mean)
                 else:
                     node_means[tree.get_right().id] = np.average(values_by_cluster)
-                    _get_node_means(tree.get_right(), distance_matrix, node_means, similarity)
+                    _get_node_means(tree.get_right(), matrix, node_means, leaf_mean)
             # Set leaf "mean" to identity (similarity=1; distance=0)
             else:
                 if left:
