@@ -75,7 +75,7 @@ def test_compare_from_cli(args):
         ),
         (
             Namespace(
-                input=".",  # Not a file
+                input=PATH_TEST_DATA.absolute(),  # Not a file
                 output=".",
                 weights=None,
                 ncores=None,
