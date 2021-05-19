@@ -224,7 +224,7 @@ class TestsFingerprintDistanceGenerator:
         fill : bool
             Fill or fill not (default) lower triangle of distance matrix.
         kinase_distance_matrix : pandas.DataFrame
-            xxx
+            Kinase distance matrix.
         """
 
         # Set index and column names for template kinase distance matrix
