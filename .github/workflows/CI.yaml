@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macOS-latest, ubuntu-latest]  # windows-latest
+        os: [macOS-latest, ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v1
@@ -56,11 +56,15 @@ jobs:
       shell: bash -l {0}
       run: |
         pytest -v --cov=kissim --cov-report=xml --cov-config=setup.cfg --color=yes kissim/tests/
-    - name: Run docs notebooks tests
+    - name: Run docs notebooks tests (on Linux only)
       shell: bash -l {0}
       run: |
-        PYTEST_ARGS="--nbval-lax --current-env --nbval-cell-timeout=900"
-        pytest $PYTEST_ARGS docs/tutorials/*.ipynb -vvv
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          PYTEST_ARGS="--nbval-lax --current-env --nbval-cell-timeout=900"
+          pytest $PYTEST_ARGS docs/tutorials/*.ipynb -vvv
+        else
+              echo "Do not run notebooks under $RUNNER_OS"
+        fi
     - name: CodeCov
       uses: codecov/codecov-action@v1
       with:

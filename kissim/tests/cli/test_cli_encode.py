@@ -4,6 +4,7 @@ Unit and regression test for kissim's encode CLI.
 
 from argparse import Namespace
 from pathlib import Path
+import platform
 import pytest
 
 from kissim.utils import enter_temp_directory
@@ -51,8 +52,13 @@ def test_encode_from_cli(args):
 
     with enter_temp_directory():
         encode_from_cli(args)
+
+        # Fingerprints JSON there?
         assert Path("fingerprints.json").exists()
-        assert Path("fingerprints.log").exists()
+
+        # Fingerprints LOG there?
+        if platform.system() != "Windows":
+            assert Path("fingerprints.log").exists()
 
 
 @pytest.mark.parametrize(

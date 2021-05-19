@@ -3,6 +3,7 @@ Unit and regression test for kissim's weights CLI.
 """
 
 from pathlib import Path
+import platform
 import pytest
 import subprocess
 
@@ -35,4 +36,5 @@ def test_main_weights(args):
         # Json file there?
         assert output.exists()
         # Log file there?
-        assert Path(f"{output.stem}.log").exists()
+        if platform.system() != "Windows":
+            assert Path(f"{output.stem}.log").exists()

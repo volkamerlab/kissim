@@ -3,6 +3,7 @@ Unit and regression test for kissim's encoding CLI.
 """
 
 from pathlib import Path
+import platform
 import pytest
 import subprocess
 
@@ -36,7 +37,8 @@ def test_main_encode(args):
         # Json file there?
         assert output.exists()
         # Log file there?
-        assert Path(f"{output.stem}.log").exists()
+        if platform.system() != "Windows":
+            assert Path(f"{output.stem}.log").exists()
 
         # Json file can be loaded as FingerprintGenerator object?
         fingerprint_generator = FingerprintGenerator.from_json(output)

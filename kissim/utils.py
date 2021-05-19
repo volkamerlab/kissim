@@ -39,7 +39,7 @@ def set_n_cores(n_cores):
     ----------
     n_cores : int or None
         Number of cores as defined by the user.
-        If no number is given, use all available CPUs - 1.
+        If no number is given, use 1 core.
         If a number is given, raise error if it exceeds the number of available CPUs - 1.
 
     Returns
@@ -55,7 +55,7 @@ def set_n_cores(n_cores):
 
     max_n_cores = cpu_count()
     if n_cores is None:
-        n_cores = max_n_cores
+        n_cores = 1
     else:
         if n_cores > max_n_cores:
             raise ValueError(

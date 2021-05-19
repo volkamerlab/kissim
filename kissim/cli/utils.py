@@ -6,6 +6,7 @@ Utilities for CLI commands.
 
 import logging
 from pathlib import Path
+import platform
 
 
 def configure_logger(filename=None, level=logging.INFO):
@@ -39,7 +40,11 @@ def configure_logger(filename=None, level=logging.INFO):
     logger_kissim.addHandler(s_handler)
     logger_opencadd.addHandler(s_handler)
 
-    if filename:
+    # Set up file handler if
+    # - log file is given
+    # - we are not under Windows, since logging and multiprocessing do not work here
+    #   see more details here: https://github.com/volkamerlab/kissim/pull/49
+    if filename and platform.system() != "Windows":
         filename = Path(filename)
         f_handler = logging.FileHandler(filename.parent / f"{filename.stem}.log", mode="w")
         f_handler.setFormatter(formatter)
