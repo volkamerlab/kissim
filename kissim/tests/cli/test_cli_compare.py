@@ -48,9 +48,7 @@ def test_compare_from_cli(args):
         assert Path("fingerprint_distances.csv").exists()
 
         # Distances LOG there?
-        # TODO Under Windows: PermissionError: [WinError 32] The process cannot access the file because
-        # it is being used by another process:
-        # assert Path("distances.log").exists()
+        assert Path("distances.log").exists()
 
 
 @pytest.mark.parametrize(

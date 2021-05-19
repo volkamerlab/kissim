@@ -56,9 +56,7 @@ def test_encode_from_cli(args):
         assert Path("fingerprints.json").exists()
 
         # Fingerprints LOG there?
-        # TODO Under Windows: PermissionError: [WinError 32] The process cannot access the file because
-        # it is being used by another process:
-        # assert Path("fingerprints.log").exists()
+        assert Path("fingerprints.log").exists()
 
 
 @pytest.mark.parametrize(
