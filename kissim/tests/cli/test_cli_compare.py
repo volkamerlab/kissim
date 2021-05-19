@@ -3,8 +3,8 @@ Unit and regression test for kissim's compare CLI.
 """
 
 from argparse import Namespace
-import logging
 from pathlib import Path
+import platform
 import pytest
 
 from kissim.utils import enter_temp_directory
@@ -48,7 +48,8 @@ def test_compare_from_cli(args):
         assert Path("fingerprint_distances.csv").exists()
 
         # Distances LOG there?
-        assert Path("distances.log").exists()
+        if platform.system() != "Windows":
+            assert Path("distances.log").exists()
 
 
 @pytest.mark.parametrize(
