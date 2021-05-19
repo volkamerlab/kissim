@@ -62,6 +62,9 @@ jobs:
         if [ "$RUNNER_OS" == "Linux" ]; then
           PYTEST_ARGS="--nbval-lax --current-env --nbval-cell-timeout=900"
           pytest $PYTEST_ARGS docs/tutorials/*.ipynb -vvv
+        else
+              echo "Do not run notebooks under $RUNNER_OS"
+        fi
     - name: CodeCov
       uses: codecov/codecov-action@v1
       with:
