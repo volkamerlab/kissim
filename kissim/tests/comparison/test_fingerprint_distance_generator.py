@@ -227,6 +227,10 @@ class TestsFingerprintDistanceGenerator:
             xxx
         """
 
+        # Set index and column names for template kinase distance matrix
+        kinase_distance_matrix.index.name = "kinase.1"
+        kinase_distance_matrix.columns.name = "kinase.2"
+
         # Test generation of structure distance matrix
         kinase_distance_matrix_calculated = fingerprint_distance_generator.kinase_distance_matrix(
             by, fill_diagonal
