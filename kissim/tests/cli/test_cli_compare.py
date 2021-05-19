@@ -3,6 +3,7 @@ Unit and regression test for kissim's compare CLI.
 """
 
 from argparse import Namespace
+import logging
 from pathlib import Path
 import pytest
 
@@ -47,6 +48,7 @@ def test_compare_from_cli(args):
         assert Path("fingerprint_distances.csv").exists()
 
         # Distances LOG there?
+        logging.shutdown()
         assert Path("distances.log").exists()
 
 
