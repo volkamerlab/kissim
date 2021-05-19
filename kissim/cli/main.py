@@ -30,6 +30,8 @@ def main():
     Sub-commands are:
     - encode
     - compare
+    - weights
+    - outliers
     - tree
     """
 
