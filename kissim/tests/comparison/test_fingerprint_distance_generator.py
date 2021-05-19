@@ -129,11 +129,7 @@ class TestsFingerprintDistanceGenerator:
         structure_distance_matrix.columns.name = "structure.2"
         structure_distance_matrix.index.name = "structure.1"
 
-        # pandas `equals` returns `False` under Windows, therefore use workaround with `to_dict`
-        # https://stackoverflow.com/questions/62128721/pandas-equals-method-returns-different-results-between-windows-and-linux
-        assert (
-            structure_distance_matrix_calculated.to_dict() == structure_distance_matrix.to_dict()
-        )
+        assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
 
     @pytest.mark.parametrize(
         "by, fill_diagonal, kinase_distance_matrix",
