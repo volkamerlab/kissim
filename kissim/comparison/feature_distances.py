@@ -156,9 +156,9 @@ class FeatureDistances:
         feature_distances = cls()
         feature_distances.structure_pair_ids = tuple(feature_distances_dict["structure_pair_ids"])
         feature_distances.kinase_pair_ids = tuple(feature_distances_dict["kinase_pair_ids"])
-        feature_distances.distances = np.array(feature_distances_dict["distances"], dtype=np.float)
+        feature_distances.distances = np.array(feature_distances_dict["distances"], dtype=float)
         feature_distances.bit_coverages = np.array(
-            feature_distances_dict["bit_coverages"], dtype=np.float
+            feature_distances_dict["bit_coverages"], dtype=float
         )
         return feature_distances
 

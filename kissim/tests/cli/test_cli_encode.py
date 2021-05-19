@@ -70,15 +70,6 @@ def test_encode_from_cli(args):
         (
             Namespace(
                 input=["12347"],
-                output=None,
-                local=None,
-                ncores=None,
-            ),
-            TypeError,
-        ),
-        (
-            Namespace(
-                input=["12347"],
                 output="fingerprints.json",
                 local=None,
                 ncores=10000,
