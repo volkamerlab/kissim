@@ -33,3 +33,11 @@ def test_compare(fingerprint_generator, output_path, feature_weights, n_cores):
         fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
         assert fingerprint_distance_filepath.exists()
         fingerprint_distance_filepath.unlink()
+
+        feature_distances_filepath = output_path / "fingerprint_distances_to_kinase_matrix.csv"
+        assert feature_distances_filepath.exists()
+        feature_distances_filepath.unlink()
+
+        feature_distances_filepath = output_path / "fingerprint_distances_to_kinase_clusters.tree"
+        assert feature_distances_filepath.exists()
+        feature_distances_filepath.unlink()

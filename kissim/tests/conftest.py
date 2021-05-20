@@ -31,7 +31,7 @@ def fingerprint_generator():
     """
 
     # Example structure KLIFS IDs
-    structure_klifs_ids = [109, 110, 118]
+    structure_klifs_ids = [109, 110, 118, 12347, 3833]
 
     # Encode structures
     LOCAL_KLIFS_PATH = PATH_TEST_DATA / "KLIFS_download"

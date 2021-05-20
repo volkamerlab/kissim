@@ -8,6 +8,7 @@ from pathlib import Path
 import logging
 
 from kissim.comparison import FeatureDistancesGenerator, FingerprintDistanceGenerator
+from kissim.comparison import tree
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ def weight_feature_distances(
     feature_distances_generator : kissim.encoding.FeatureDistancesGenerator
         Feature distances.
     output_path : str
-        Path to output folder.
+        Path to output file.
     feature_weights : None or list of float
         Feature weights of the following form:
         (i) None
@@ -130,6 +131,24 @@ def weight_feature_distances(
 
     if output_filepath:
         output_filepath = Path(output_filepath)
-        fingerprint_distance_generator.to_csv(output_filepath)
+
+        # Write fingerprint distances to file
+        fingerprint_distances_filepath = output_filepath
+        fingerprint_distance_generator.to_csv(fingerprint_distances_filepath)
+
+        # Write default kinase distances to file
+        kinase_distances_filepath = (
+            output_filepath.parent / f"{output_filepath.stem}_to_kinase_matrix.csv"
+        )
+        kinase_matrix = fingerprint_distance_generator.kinase_distance_matrix()
+        kinase_matrix.index.name = None
+        kinase_matrix.columns.name = None
+        kinase_matrix.to_csv(kinase_distances_filepath, index=True)
+        print(kinase_matrix)
+
+        # Write default tree to file
+        tree_filepath = output_filepath.parent / f"{output_filepath.stem}_to_kinase_clusters.tree"
+        annotation_filepath = output_filepath.parent / "kinase_annotation.csv"
+        tree.from_distance_matrix(kinase_matrix, tree_filepath, annotation_filepath)
 
     return fingerprint_distance_generator
