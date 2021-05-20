@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from kissim.encoding.features import BaseFeature
+from kissim.definitions import EXPOSURE_RADIUS
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class SolventExposureFeature(BaseFeature):
         self._ratio_cb = None
 
     @classmethod
-    def from_pocket(cls, pocket, radius=12.0):  # pylint: disable=W0221
+    def from_pocket(cls, pocket, radius=EXPOSURE_RADIUS):  # pylint: disable=W0221
         """
         Get exposure for each pocket residue from a Biopython-based pocket object.
 
@@ -125,7 +126,7 @@ class SolventExposureFeature(BaseFeature):
         features.index.name = "residue.ix"
         return features
 
-    def _get_exposures(self, pocket, radius=12.0):
+    def _get_exposures(self, pocket, radius=EXPOSURE_RADIUS):
         """
         Get half sphere exposure calculation based on CB and CA atoms for full molecule.
 
@@ -160,7 +161,7 @@ class SolventExposureFeature(BaseFeature):
         return exposures_both
 
     @staticmethod
-    def _get_exposures_by_method(pocket, radius=12.0, method="HSExposureCB"):
+    def _get_exposures_by_method(pocket, radius=EXPOSURE_RADIUS, method="HSExposureCB"):
         """
         Get exposure values for a given Half Sphere Exposure method,
         i.e. HSExposureCA or HSExposureCB.
