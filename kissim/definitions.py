@@ -89,7 +89,10 @@ SIDE_CHAIN_REPRESENTATIVE = {
     "VAL": "CB",
 }
 
+# Sphere radius used to calculate solvent exposure
 EXPOSURE_RADIUS = 12.0
+# Cutoffs that split exposure ratio into categories low, intermediate, and high solvent exposure
+EXPOSURE_RATIO_CUTOFFS = [0.45, 0.55]
 
 ANCHOR_RESIDUES = {
     "hinge_region": [16, 47, 80],
