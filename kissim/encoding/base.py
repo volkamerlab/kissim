@@ -150,7 +150,7 @@ class FingerprintBase:
 
         return subpocket_centers_df
 
-    def values_array(self, physicochemical=True, spatial_distances=False, spatial_moments=True):
+    def values_array(self, physicochemical=True, spatial_distances=True, spatial_moments=True):
         """
         Get the full set or subset of features as 1D array.
         Default set of features includes physicochemical and spatial moments features.
