@@ -116,7 +116,19 @@ class BaseGenerator:
 
     @classmethod
     def from_csv(cls, filepath):
-        """TODO"""
+        """
+        Load distances from CSV file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to distances CSV file.
+
+        Returns
+        -------
+        kissim.comparison.BaseGenerator
+            Distances.
+        """
 
         filepath = Path(filepath)
 
@@ -129,7 +141,14 @@ class BaseGenerator:
         return base_generator
 
     def to_csv(self, filepath):
-        """TODO"""
+        """
+        Write distances to CSV file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to distances CSV file.
+        """
 
         filepath = Path(filepath)
 

@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from opencadd.databases.klifs import setup_local, setup_remote
 
-from kissim.comparison import FingerprintDistance, FingerprintDistanceGenerator
+from kissim.comparison import FingerprintDistanceGenerator
 
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
@@ -89,14 +89,23 @@ class TestsFingerprintDistanceGenerator:
     )
     def test_from_structure_klifs_ids(self, structure_klifs_ids, klifs_session, feature_weights):
         """
-        Test FeatureDistancesGenerator class attributes.
+        Test FingerprintDistanceGenerator generation from structure KLIFS IDs.
         """
 
-        # Test FeatureDistancesGenerator class attributes
-        feature_distances_generator = FingerprintDistanceGenerator.from_structure_klifs_ids(
+        fingerprint_distance_generator = FingerprintDistanceGenerator.from_structure_klifs_ids(
             structure_klifs_ids, klifs_session, feature_weights
         )
-        assert isinstance(feature_distances_generator, FingerprintDistanceGenerator)
+        assert isinstance(fingerprint_distance_generator, FingerprintDistanceGenerator)
+
+    def test_from_fingerprint_generator(self, fingerprint_generator):
+        """
+        Test FingerprintDistanceGenerator generation from a fingerprint generator.
+        """
+
+        fingerprint_distance_generator = FingerprintDistanceGenerator.from_fingerprint_generator(
+            fingerprint_generator
+        )
+        assert isinstance(fingerprint_distance_generator, FingerprintDistanceGenerator)
 
     @pytest.mark.parametrize(
         "structure_distance_matrix",

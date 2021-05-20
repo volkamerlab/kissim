@@ -8,16 +8,15 @@ dependencies:
   - pip
     # Package dependencies
   - biopandas
-  - biopython 1.77
+  - biopython=1.77
   - numpy
-  - nglview
   - scipy
   - matplotlib
   - seaborn
   - jupyter
-  - jupyterlab=2
+  - jupyterlab>=3
   - ipywidgets>=7.5
-  - ijson
+  - nglview>=3
   # Testing
   - pytest 5.*
   - pytest-cov
@@ -40,6 +39,5 @@ dependencies:
     - https://github.com/volkamerlab/opencadd/archive/2a6cf9bcee72a3626114cda82af758e05ed5af18.zip
 
 ## For Jupyter lab extensions, run:
-# conda install nodejs
-# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @jupyterlab/toc @ijmbarr/jupyterlab_spellchecker
+# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @ijmbarr/jupyterlab_spellchecker
 

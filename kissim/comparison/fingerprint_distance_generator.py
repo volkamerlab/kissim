@@ -160,6 +160,42 @@ class FingerprintDistanceGenerator(BaseGenerator):
         )
         return fingerprint_distance_generator
 
+    @classmethod
+    def from_fingerprint_generator(cls, fingerprint_generator, feature_weights=None, n_cores=1):
+        """
+        Calculate fingerprint distances for all possible structure pairs.
+
+        Parameters
+        ----------
+        fingerprint_generator : kissim.encoding.FingerprintGenerator
+            Fingerprints.
+        feature_weights : None or list of float
+            Feature weights of the following form:
+            (i) None
+                Default feature weights: All features equally distributed to 1/15
+                (15 features in total).
+            (ii) By feature (list of 15 floats):
+                Features to be set in the following order: size, hbd, hba, charge, aromatic,
+                aliphatic, sco, exposure, distance_to_centroid, distance_to_hinge_region,
+                distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
+                All floats must sum up to 1.0.
+        n_cores : int or None
+            Number of cores to be used for fingerprint generation as defined by the user.
+
+        Returns
+        -------
+        kissim.comparison.FingerprintDistancesGenerator
+            Fingerprint distance generator.
+        """
+
+        feature_distances_generator = FeatureDistancesGenerator.from_fingerprint_generator(
+            fingerprint_generator, n_cores
+        )
+        fingerprint_distance_generator = cls.from_feature_distances_generator(
+            feature_distances_generator, feature_weights
+        )
+        return fingerprint_distance_generator
+
     def structure_distance_matrix(self):
         """
         Get fingerprint distances for all structure pairs in the form of a matrix (DataFrame).
