@@ -36,7 +36,7 @@ dependencies:
   - pip:
     - black-nb
     - flake8-nb
-    - https://github.com/volkamerlab/opencadd/archive/2a6cf9bcee72a3626114cda82af758e05ed5af18.zip
+    - https://github.com/volkamerlab/opencadd/archive/master.zip
 
 ## For Jupyter lab extensions, run:
 # jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @ijmbarr/jupyterlab_spellchecker
