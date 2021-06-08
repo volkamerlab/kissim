@@ -112,6 +112,18 @@ SUBPOCKETS = {
     "subpocket.color": ["magenta", "cornflowerblue", "green"],
 }
 
+# Summary of possible discrete feature values
+DISCRETE_FEATURE_VALUES = {
+    "size": [1.0, 2.0, 3.0],
+    "hbd": [0.0, 1.0, 2.0, 3.0],
+    "hba": [0.0, 1.0, 2.0],
+    "charge": [-1.0, 0.0, 1.0],
+    "aromatic": [0.0, 1.0],
+    "aliphatic": [0.0, 1.0],
+    "sco": [1.0, 2.0, 3.0],
+    "exposure": [1.0, 2.0, 3.0],
+}
+
 # Distance and moment cutoffs used for fingerprint normalization
 # Cutoffs defined in this notebook:
 # https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb

@@ -1,1 +1,1 @@
-from .base import Viewer
+from .structure import StructureViewer
