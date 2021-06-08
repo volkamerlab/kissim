@@ -124,6 +124,25 @@ DISCRETE_FEATURE_VALUES = {
     "exposure": [1.0, 2.0, 3.0],
 }
 
+# Metadata for features (useful for plotting!)
+FEATURE_METADATA = {
+    "size": ("size", ["small", "intermediate", "large"]),
+    "hbd": ("number of HBDs", ["0", "1", "2", "3"]),
+    "hba": ("number of HBAs", ["0", "1", "2"]),
+    "charge": ("charge", ["negative", "neutral", "positive"]),
+    "aromatic": ("aromatic?", ["no", "yes"]),
+    "aliphatic": ("aliphatic?", ["no", "yes"]),
+    "sco": (
+        "side chain orientation w.r.t. pocket center",
+        ["inwards", "intermediate", "outwards"],
+    ),
+    "exposure": ("solvent exposure", ["low", "intermediate", "high"]),
+    "hinge_region": ("distance to hinge region center [$\AA$]", None),
+    "dfg_region": ("distance to DFG region center [$\AA$]", None),
+    "front_pocket": ("distance to front pocket center [$\AA$]", None),
+    "center": ("distance to pocket center [$\AA$]", None),
+}
+
 # Distance and moment cutoffs used for fingerprint normalization
 # Cutoffs defined in this notebook:
 # https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb
