@@ -6,6 +6,7 @@ Handles definitions.
 
 import pandas as pd
 
+# Standard amino acids
 STANDARD_AMINO_ACIDS = [
     "ALA",
     "ARG",
@@ -29,6 +30,7 @@ STANDARD_AMINO_ACIDS = [
     "VAL",
 ]
 
+# Non-standard amino acids their conversion to parent standard amino acids
 NON_STANDARD_AMINO_ACID_CONVERSION = {
     "CAF": "CYS",
     "CME": "CYS",
@@ -40,6 +42,7 @@ NON_STANDARD_AMINO_ACID_CONVERSION = {
     "PTR": "TYR",
 }
 
+# Site Align features for standard amino acids
 SITEALIGN_FEATURES = pd.DataFrame.from_dict(
     {
         "ALA": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
@@ -67,6 +70,7 @@ SITEALIGN_FEATURES = pd.DataFrame.from_dict(
     columns=["size", "hbd", "hba", "charge", "aromatic", "aliphatic"],
 )
 
+# Side chain representative atom for standard amino acids
 SIDE_CHAIN_REPRESENTATIVE = {
     "ALA": "CB",
     "ARG": "CG",
@@ -88,24 +92,27 @@ SIDE_CHAIN_REPRESENTATIVE = {
     "TYR": "OH",
     "VAL": "CB",
 }
+# Cutoffs that split side chain angle into categories inwards, intermediate, and outwards
+SIDE_CHAIN_ANGLE_CUTOFFS = [45.0, 90.0]
 
 # Sphere radius used to calculate solvent exposure
 EXPOSURE_RADIUS = 12.0
 # Cutoffs that split exposure ratio into categories low, intermediate, and high solvent exposure
 EXPOSURE_RATIO_CUTOFFS = [0.45, 0.55]
 
+# Define subpockets based on anchor residues
 ANCHOR_RESIDUES = {
     "hinge_region": [16, 47, 80],
     "dfg_region": [19, 24, 81],
     "front_pocket": [10, 48, 72],
 }
-
 SUBPOCKETS = {
     "anchor_residue.klifs_ids": list(ANCHOR_RESIDUES.values()),
     "subpocket.name": list(ANCHOR_RESIDUES.keys()),
     "subpocket.color": ["magenta", "cornflowerblue", "green"],
 }
 
+# Distance and moment cutoffs used for fingerprint normalization
 # Cutoffs defined in this notebook:
 # https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb
 DISTANCE_CUTOFFS = {

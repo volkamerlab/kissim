@@ -11,6 +11,7 @@ import numpy as np
 from Bio.PDB import calc_angle
 
 from kissim.encoding.features import BaseFeature
+from kissim.definitions import SIDE_CHAIN_ANGLE_CUTOFFS
 
 logger = logging.getLogger(__name__)
 
@@ -188,11 +189,13 @@ class SideChainOrientationFeature(BaseFeature):
 
         if np.isnan(vertex_angle):
             return np.nan
-        elif 0.0 <= vertex_angle <= 45.0:  # Inwards
+        elif 0.0 <= vertex_angle <= SIDE_CHAIN_ANGLE_CUTOFFS[0]:  # Inwards
             return 1.0
-        elif 45.0 < vertex_angle <= 90.0:  # Intermediate
+        elif (
+            SIDE_CHAIN_ANGLE_CUTOFFS[0] < vertex_angle <= SIDE_CHAIN_ANGLE_CUTOFFS[1]
+        ):  # Intermediate
             return 2.0
-        elif 90.0 < vertex_angle <= 180.0:  # Outwards
+        elif SIDE_CHAIN_ANGLE_CUTOFFS[1] < vertex_angle <= 180.0:  # Outwards
             return 3.0
         else:
             raise ValueError(
