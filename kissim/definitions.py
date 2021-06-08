@@ -88,6 +88,8 @@ SIDE_CHAIN_REPRESENTATIVE = {
     "TYR": "OH",
     "VAL": "CB",
 }
+# Cutoffs that split side chain angle into categories inwards, intermediate, and outwards
+SIDE_CHAIN_ANGLE_CUTOFFS = [45.0, 90.0]
 
 # Sphere radius used to calculate solvent exposure
 EXPOSURE_RADIUS = 12.0
