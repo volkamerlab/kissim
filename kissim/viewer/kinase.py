@@ -4,8 +4,6 @@ kissim.viewer.kinase
 Visualizes a kinase's fingerprint variability in 3D.
 """
 
-from ipywidgets import interact
-import ipywidgets as widgets
 from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import FingerprintGenerator
@@ -14,12 +12,14 @@ from kissim.viewer.base import _BaseViewer
 
 class KinaseViewer(_BaseViewer):
     """
-    View a kinase's fingerprint TODO.
+    View a kinase's fingerprint variability.
 
     Attributes
     ----------
     _text : str
-        PDB text for first input structure.
+        PDB text for example structure.
+    _fingerprint : str
+        Fingerprint for example structure.
     _fingerprints : kissim.encoding.FingerprintGenerator
         Fingerprints.
     """
@@ -30,7 +30,7 @@ class KinaseViewer(_BaseViewer):
     ):
         """
         Initialize viewer from kinase KLIFS ID: Generate fingerprints for all kinase structures and
-        fetch example structure in PDB format).
+        fetch example structure in PDB format.
         """
 
         viewer = cls()
@@ -50,6 +50,12 @@ class KinaseViewer(_BaseViewer):
         if example_structure_klifs_id is None:
             # Choose structure with best quality score
             example_structure_klifs_id = structure_klifs_ids[0]
+        else:
+            if example_structure_klifs_id not in structure_klifs_ids:
+                raise ValueError(
+                    f"Input example structure {example_structure_klifs_id} is not "
+                    f"deposited under kinase {kinase_klifs_id} in KLIFS."
+                )
         text = klifs_session.coordinates.to_text(example_structure_klifs_id, "complex", "pdb")
 
         # Generate fingerprints for all structures
@@ -68,24 +74,6 @@ class KinaseViewer(_BaseViewer):
     def _std(self):
 
         return self._fingerprints_features.std(level="residue_ix")
-
-    def show(self):
-        """
-        Show features mapped onto the 3D pocket (select feature interactively).
-        """
-
-        interact(
-            self._show,
-            feature_name=widgets.Dropdown(
-                options=self._feature_names,
-                value="sco",
-                description="Feature: ",
-                disabled=False,
-            ),
-            show_side_chains=widgets.Checkbox(
-                value=True, description="Show side chains", disabled=False, indent=False
-            ),
-        )
 
     def residue_to_color_mapping(self, feature_name):
         """

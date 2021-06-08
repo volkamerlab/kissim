@@ -9,7 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 import nglview
-from IPython.core.display import display
+from ipywidgets import interact
+import ipywidgets as widgets
 
 from kissim.definitions import FEATURE_METADATA
 
@@ -59,6 +60,24 @@ class _BaseViewer:
                 self._fingerprints.distances_exploded(),
             ]
         )[self._feature_names]
+
+    def show(self):
+        """
+        Show features mapped onto the 3D pocket (select feature interactively).
+        """
+
+        interact(
+            self._show,
+            feature_name=widgets.Dropdown(
+                options=self._feature_names,
+                value="size",
+                description="Feature: ",
+                disabled=False,
+            ),
+            show_side_chains=widgets.Checkbox(
+                value=True, description="Show side chains", disabled=False, indent=False
+            ),
+        )
 
     def _show(self, feature_name, show_side_chains=True):
         """
@@ -169,7 +188,6 @@ class _BaseViewer:
         # Map residues to colors based on category
         # Normalize continuous features by maximum value
         feature_max = features.max()
-        print(feature_max)
         if feature_max != 0:
             features = features / feature_max
         residue_ids = self._fingerprint.residue_ids
@@ -201,7 +219,6 @@ def cmap_colorbar(cmap, feature_name, vmin_max=None, categorial=False, label_pre
 
     fig, ax = plt.subplots(figsize=(6, 1))
     fig.subplots_adjust(bottom=0.5)
-    print(vmin_max)
 
     if categorial:
         norm = colors.NoNorm(vmin=vmin_max[0], vmax=vmin_max[1])

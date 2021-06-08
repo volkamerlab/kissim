@@ -4,9 +4,6 @@ kissim.viewer.structure
 Visualizes a structure's fingerprint in 3D.
 """
 
-
-from ipywidgets import interact
-import ipywidgets as widgets
 from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import Fingerprint
@@ -30,7 +27,7 @@ class StructureViewer(_BaseViewer):
     def from_structure_klifs_id(cls, structure_klifs_id, klifs_session=None):
         """
         Initialize viewer from structure KLIFS ID: Generate fingerprint and fetch structure in PDB
-        format).
+        format.
         """
 
         viewer = cls()
@@ -46,24 +43,6 @@ class StructureViewer(_BaseViewer):
         viewer._fingerprint = fingerprint
 
         return viewer
-
-    def show(self):
-        """
-        Show features mapped onto the 3D pocket (select feature interactively).
-        """
-
-        interact(
-            self._show,
-            feature_name=widgets.Dropdown(
-                options=self._feature_names,
-                value="size",
-                description="Feature: ",
-                disabled=False,
-            ),
-            show_side_chains=widgets.Checkbox(
-                value=True, description="Show side chains", disabled=False, indent=False
-            ),
-        )
 
     def residue_to_color_mapping(self, feature_name):
         """
