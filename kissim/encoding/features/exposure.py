@@ -261,5 +261,5 @@ class SolventExposureFeature(BaseFeature):
         else:
             raise ValueError(
                 f"Molecule {self.name}: Unknown solvent exposure ratio {ratio}. "
-                f"Only values between 0.0 and 180.0 allowed."
+                f"Only values between 0.0 and 1.0 allowed."
             )
