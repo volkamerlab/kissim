@@ -109,7 +109,7 @@ class _BaseViewer:
         return view.display(gui=True)
 
     def _discrete_residue_to_color_mapping(
-        self, feature_name, features, feature_categories, cmap_name="viridis", label_prefix=""
+        self, feature_name, data, feature_categories, divergent=False, label_prefix=""
     ):
         """
         Map (discrete) feature values using color on residues.
@@ -130,39 +130,44 @@ class _BaseViewer:
             List of color-residue ID pairs. Color given as hex string, residue PDB IDs as string.
         """
 
-        # Map categories to colors
+        # Define color map
+        if divergent:
+            cmap_name = "PiYG"
+        else:
+            cmap_name = "viridis"
         cmap = cm.get_cmap(cmap_name, len(feature_categories))
-        # Convert RGB to HEX
-        value_to_color = {
-            value: colors.rgb2hex(color) for value, color in zip(feature_categories, cmap.colors)
-        }
+
+        # Get normalized colors and data
+        norm = colors.NoNorm(vmin=min(feature_categories), vmax=max(feature_categories))
+        data_normed = (data - min(feature_categories)) / (
+            max(feature_categories) - min(feature_categories)
+        )
 
         # Map residues to colors based on category
         residue_ids = self._fingerprint.residue_ids
-
         residue_to_color = []
-        for residue_id, value in zip(residue_ids, features):
-
-            try:
-                # Look up color for category
-                color = value_to_color[value]
-            except KeyError:
-                # If category unknown (np.nan), choose grey
+        for residue_id, value in zip(residue_ids, data_normed):
+            if np.isnan(value):
+                # If no value given, choose grey
                 color = "#808080"
+            else:
+                # Look up color for value
+                color = cmap(value)
+                # Convert RGB to HEX
+                color = colors.rgb2hex(color)
             residue_to_color.append([color, str(residue_id)])
 
-        cmap_colorbar(
+        self.cmap_colorbar(
             cmap,
+            norm,
             feature_name,
-            vmin_max=[feature_categories[0], feature_categories[-1]],
-            categorial=True,
             label_prefix=label_prefix,
         )
 
         return residue_to_color
 
     def _continuous_residue_to_color_mapping(
-        self, feature_name, features, cmap_name="viridis", label_prefix=""
+        self, feature_name, data, divergent=False, label_prefix=""
     ):
         """
         Map (continuous) feature values using color on residues.
@@ -181,55 +186,57 @@ class _BaseViewer:
             List of color-residue ID pairs. Color given as hex string, residue PDB IDs as string.
         """
 
-        # Get fine-grained colormap (1000 colors)
-        # Access colors by `value` in [0, 1] using `cmap(value)`
-        cmap = cm.get_cmap(cmap_name, 1000)
+        # Define color map
+        if divergent:
+            cmap_name = "PiYG"
+        else:
+            cmap_name = "viridis"
+        cmap = cm.get_cmap(cmap_name)
+
+        # Get normalized colors and data
+        print(data.min(), data.max())
+        if divergent:
+            norm = colors.TwoSlopeNorm(vmin=data.min(), vcenter=0.0, vmax=data.max())
+        else:
+            norm = colors.Normalize(vmin=data.min(), vmax=data.max())
+        data_normed = norm(data)
 
         # Map residues to colors based on category
-        # Normalize continuous features by maximum value
-        feature_max = features.max()
-        if feature_max != 0:
-            features = features / feature_max
         residue_ids = self._fingerprint.residue_ids
-
         residue_to_color = []
-        for residue_id, value in zip(residue_ids, features):
+        for residue_id, value in zip(residue_ids, data_normed):
             if np.isnan(value):
                 # If no value given, choose grey
                 color = "#808080"
             else:
                 # Look up color for value
                 color = cmap(value)
-            # Convert RGB to HEX
-            residue_to_color.append([colors.rgb2hex(color), str(residue_id)])
+                # Convert RGB to HEX
+                color = colors.rgb2hex(color)
+            residue_to_color.append([color, str(residue_id)])
 
-        cmap_colorbar(
+        self.cmap_colorbar(
             cmap,
+            norm,
             feature_name,
-            vmin_max=[0, feature_max],
             label_prefix=label_prefix,
         )
 
         return residue_to_color
 
+    @staticmethod
+    def cmap_colorbar(cmap, norm, feature_name, label_prefix=""):
 
-def cmap_colorbar(cmap, feature_name, vmin_max=None, categorial=False, label_prefix=""):
+        label, xticklabels = FEATURE_METADATA[feature_name]
 
-    label, xticklabels = FEATURE_METADATA[feature_name]
+        fig, ax = plt.subplots(figsize=(6, 1))
+        fig.subplots_adjust(bottom=0.5)
 
-    fig, ax = plt.subplots(figsize=(6, 1))
-    fig.subplots_adjust(bottom=0.5)
-
-    if categorial:
-        norm = colors.NoNorm(vmin=vmin_max[0], vmax=vmin_max[1])
-    else:
-        norm = colors.Normalize(vmin=vmin_max[0], vmax=vmin_max[1])
-
-    fig.colorbar(
-        cm.ScalarMappable(norm=norm, cmap=cmap),
-        cax=ax,
-        orientation="horizontal",
-        label=f"{label_prefix}{label}",
-    )
-    if categorial:
-        ax.set_xticklabels(xticklabels)
+        fig.colorbar(
+            cm.ScalarMappable(norm=norm, cmap=cmap),
+            cax=ax,
+            orientation="horizontal",
+            label=f"{label_prefix}{label}",
+        )
+        if isinstance(norm, colors.NoNorm):
+            ax.set_xticklabels(xticklabels)

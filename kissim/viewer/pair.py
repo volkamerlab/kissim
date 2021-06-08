@@ -81,7 +81,7 @@ class StructurePairViewer(_BaseViewer):
             raise ValueError(f"Feature name {feature_name} unknown.")
 
         residue_to_color = self._continuous_residue_to_color_mapping(
-            feature_name, self._diff[feature_name], label_prefix="difference in "
+            feature_name, self._diff[feature_name], divergent=True, label_prefix="difference in "
         )
 
         return residue_to_color
