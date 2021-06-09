@@ -8,7 +8,6 @@ from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import Fingerprint
 from kissim.viewer.base import _BaseViewer
-from kissim.definitions import DISCRETE_FEATURE_VALUES
 
 
 class StructureViewer(_BaseViewer):
@@ -60,14 +59,18 @@ class StructureViewer(_BaseViewer):
         """
 
         if feature_name in self._fingerprint.physicochemical:
-            residue_to_color = self._discrete_residue_to_color_mapping(
+            residue_to_color = self._residue_to_color_mapping(
                 feature_name,
                 self._fingerprint.physicochemical[feature_name],
-                DISCRETE_FEATURE_VALUES[feature_name],
+                discrete=True,
+                divergent=False,
             )
         elif feature_name in self._fingerprint.distances:
-            residue_to_color = self._continuous_residue_to_color_mapping(
-                feature_name, self._fingerprint.distances[feature_name]
+            residue_to_color = self._residue_to_color_mapping(
+                feature_name,
+                self._fingerprint.distances[feature_name],
+                discrete=False,
+                divergent=False,
             )
         else:
             raise ValueError(f"Feature name {feature_name} unknown.")

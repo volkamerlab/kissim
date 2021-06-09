@@ -12,7 +12,7 @@ import nglview
 from ipywidgets import interact
 import ipywidgets as widgets
 
-from kissim.definitions import FEATURE_METADATA
+from kissim.definitions import FEATURE_METADATA, DISCRETE_FEATURE_VALUES
 
 
 class _BaseViewer:
@@ -25,18 +25,33 @@ class _BaseViewer:
         PDB text.
     _fingerprint : kissim.encoding.Fingerprint
         Fingerprint.
+    _fingerprints : kissim.encoding.FingerprintGenerator
+        Fingerprints.
+    _discrete_feature_values : TODO
+        TODO
+    _feature_metadata : TODO
+        TODO
     """
 
-    def __init__(self):
+    def __init__(
+        self, discrete_feature_values=DISCRETE_FEATURE_VALUES, feature_metadata=FEATURE_METADATA
+    ):
 
         self._text = None
         self._fingerprint = None
         self._fingerprints = None
+        self._discrete_feature_values = discrete_feature_values
+        self._feature_metadata = feature_metadata
 
     @property
     def _feature_names(self):
         """
         All possible feature names.
+
+        Returns
+        -------
+        list of str
+            List of feature names.
         """
 
         feature_names = (
@@ -47,6 +62,14 @@ class _BaseViewer:
 
     @property
     def _fingerprints_features(self):
+        """
+        All fingerprints' feature values.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Features (columns) for each fingerprint and residue (multiindexed row).
+        """
 
         if self._fingerprints is None:
             raise NotImplementedError(
@@ -75,13 +98,26 @@ class _BaseViewer:
                 disabled=False,
             ),
             show_side_chains=widgets.Checkbox(
-                value=True, description="Show side chains", disabled=False, indent=False
+                value=False, description="Show side chains", disabled=False, indent=False
             ),
         )
 
     def _show(self, feature_name, show_side_chains=True):
         """
         Show a feature mapped onto the 3D pocket.
+
+        Parameters
+        ----------
+        feature_name : str
+            Feature name.
+        show_side_chains : bool
+            Show side chains colored by feature defined in `feature_name` (by default) or show
+            no side chains and map color onto structure backbone.
+
+        Returns
+        -------
+        nglview.NGLWidget
+            View.
         """
 
         residue_ids = self._fingerprint.residue_ids
@@ -108,21 +144,23 @@ class _BaseViewer:
 
         return view.display(gui=True)
 
-    def _discrete_residue_to_color_mapping(
-        self, feature_name, data, feature_categories, divergent=False, label_prefix=""
+    def _residue_to_color_mapping(
+        self, feature_name, data, discrete=False, divergent=False, label_prefix=""
     ):
         """
         Map (discrete) feature values using color on residues.
 
         Parameters
         ----------
-        features : pd.Series
+        feature_name : str
+            Feature name.
+        data : pd.Series
             Values for feature.
-        TODO
-        feature_categories : dict
-            Al possible categories for discrete feature.
-        cmap_name : str
-            Colormap name (default: viridis).
+        discrete : None or list
+            All possible categories for discrete feature.
+        divergent : bool
+            Use divergent colormap (PiYG) or sequential colormap (viridis)
+        label_prefix
 
         Returns
         -------
@@ -135,72 +173,32 @@ class _BaseViewer:
             cmap_name = "PiYG"
         else:
             cmap_name = "viridis"
-        cmap = cm.get_cmap(cmap_name, len(feature_categories))
 
-        # Get normalized colors and data
-        norm = colors.NoNorm(vmin=min(feature_categories), vmax=max(feature_categories))
-        data_normed = (data - min(feature_categories)) / (
-            max(feature_categories) - min(feature_categories)
-        )
-
-        # Map residues to colors based on category
-        residue_ids = self._fingerprint.residue_ids
-        residue_to_color = []
-        for residue_id, value in zip(residue_ids, data_normed):
-            if np.isnan(value):
-                # If no value given, choose grey
-                color = "#808080"
-            else:
-                # Look up color for value
-                color = cmap(value)
-                # Convert RGB to HEX
-                color = colors.rgb2hex(color)
-            residue_to_color.append([color, str(residue_id)])
-
-        self.cmap_colorbar(
-            cmap,
-            norm,
-            feature_name,
-            label_prefix=label_prefix,
-        )
-
-        return residue_to_color
-
-    def _continuous_residue_to_color_mapping(
-        self, feature_name, data, divergent=False, label_prefix=""
-    ):
-        """
-        Map (continuous) feature values using color on residues.
-
-        Parameters
-        ----------
-        TODO
-        features : pd.Series
-            Values for feature.
-        cmap_name : str
-            Colormap name (default: viridis).
-
-        Returns
-        -------
-        list of list of [str, str]
-            List of color-residue ID pairs. Color given as hex string, residue PDB IDs as string.
-        """
-
-        # Define color map
-        if divergent:
-            cmap_name = "PiYG"
-        else:
-            cmap_name = "viridis"
-        cmap = cm.get_cmap(cmap_name)
-
-        # Get normalized colors and data
-        print(data.min(), data.max())
-        if divergent:
-            norm = colors.TwoSlopeNorm(vmin=data.min(), vcenter=0.0, vmax=data.max())
-        else:
+        # Define norm
+        # Discrete values and seqential colormap
+        if discrete and not divergent:
+            discrete_options = self._discrete_feature_values[feature_name]
+            norm = colors.Normalize(vmin=min(discrete_options), vmax=max(discrete_options))
+            cmap = cm.get_cmap(cmap_name, len(discrete_options))
+        # Continuous values and seqential colormap
+        elif not discrete and not divergent:
             norm = colors.Normalize(vmin=data.min(), vmax=data.max())
-        data_normed = norm(data)
+            cmap = cm.get_cmap(cmap_name)
+        # Continuous values and divergent colormap
+        elif not discrete and divergent:
+            if data.min() != data.max():
+                norm = colors.TwoSlopeNorm(vmin=data.min(), vcenter=0.0, vmax=data.max())
+                cmap = cm.get_cmap(cmap_name)
+            else:
+                norm = colors.NoNorm(vmin=data.min(), vmax=data.min())
+                cmap = cm.get_cmap(cmap_name, 1)
+        else:
+            raise NotImplementedError(
+                f"The combination of discrete values and divergent colormap is not implemented."
+            )
 
+        # Normalize data
+        data_normed = norm(data)
         # Map residues to colors based on category
         residue_ids = self._fingerprint.residue_ids
         residue_to_color = []
@@ -215,28 +213,45 @@ class _BaseViewer:
                 color = colors.rgb2hex(color)
             residue_to_color.append([color, str(residue_id)])
 
-        self.cmap_colorbar(
-            cmap,
-            norm,
-            feature_name,
-            label_prefix=label_prefix,
-        )
+        # Add colobar (if discrete, remove normalization)
+        if discrete:
+            norm = colors.NoNorm(vmin=min(discrete_options), vmax=max(discrete_options))
+        label, xticklabels = self._feature_metadata[feature_name]
+        self.cmap_colorbar(cmap, norm, f"{label_prefix}{label}", xticklabels)
 
         return residue_to_color
 
     @staticmethod
-    def cmap_colorbar(cmap, norm, feature_name, label_prefix=""):
+    def cmap_colorbar(cmap, norm, label, xticklabels):
+        """
+        Plot colormap as colorbar with data-to-color mappings.
 
-        label, xticklabels = FEATURE_METADATA[feature_name]
+        Parameters
+        ----------
+        cmap : matplotlib.colors.Colormap
+            Color map.
+        norm : matplotlib.colors.NoNorm or TwoSlopeNorm or Normalize
+            Data to color normalizer.
+        label : str
+            Colorbar label.
+        xticklabels : list of str
+            Labels for x-axis ticks.
+        """
+
+        # Exception: If minimum and maximum the same, colormap only needs one element!
+        if norm.vmin == norm.vmax:
+            norm = colors.NoNorm(vmin=norm.vmin, vmax=norm.vmax)
+            cmap = cm.get_cmap(cmap.name, 1)
+            xticklabels = [norm.vmin]
 
         fig, ax = plt.subplots(figsize=(6, 1))
         fig.subplots_adjust(bottom=0.5)
-
         fig.colorbar(
             cm.ScalarMappable(norm=norm, cmap=cmap),
             cax=ax,
             orientation="horizontal",
-            label=f"{label_prefix}{label}",
+            label=label,
         )
+        # If categorial, exchange tick labels with meaningful text
         if isinstance(norm, colors.NoNorm):
             ax.set_xticklabels(xticklabels)

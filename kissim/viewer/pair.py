@@ -9,7 +9,6 @@ from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import FingerprintGenerator
 from kissim.viewer.base import _BaseViewer
-from kissim.definitions import DISCRETE_FEATURE_VALUES
 
 
 class StructurePairViewer(_BaseViewer):
@@ -80,8 +79,12 @@ class StructurePairViewer(_BaseViewer):
         if feature_name not in self._feature_names:
             raise ValueError(f"Feature name {feature_name} unknown.")
 
-        residue_to_color = self._continuous_residue_to_color_mapping(
-            feature_name, self._diff[feature_name], divergent=True, label_prefix="difference in "
+        residue_to_color = self._residue_to_color_mapping(
+            feature_name,
+            self._diff[feature_name],
+            discrete=False,
+            divergent=True,
+            label_prefix="difference in ",
         )
 
         return residue_to_color

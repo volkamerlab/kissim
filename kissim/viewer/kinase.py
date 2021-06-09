@@ -93,8 +93,12 @@ class KinaseViewer(_BaseViewer):
         if feature_name not in self._feature_names:
             raise ValueError(f"Feature name {feature_name} unknown.")
 
-        residue_to_color = self._continuous_residue_to_color_mapping(
-            feature_name, self._std[feature_name], label_prefix="standard deviation of "
+        residue_to_color = self._residue_to_color_mapping(
+            feature_name,
+            self._std[feature_name],
+            discrete=False,
+            divergent=False,
+            label_prefix="standard deviation of ",
         )
 
         return residue_to_color
