@@ -26,7 +26,7 @@ class KinaseViewer(_BaseViewer):
 
     @classmethod
     def from_kinase_klifs_id(
-        cls, kinase_klifs_id, klifs_session=None, example_structure_klifs_id=None
+        cls, kinase_klifs_id, klifs_session=None, example_structure_klifs_id=None, n_sampled=None
     ):
         """
         Initialize viewer from kinase KLIFS ID: Generate fingerprints for all kinase structures and
@@ -56,6 +56,13 @@ class KinaseViewer(_BaseViewer):
                     f"Input example structure {example_structure_klifs_id} is not "
                     f"deposited under kinase {kinase_klifs_id} in KLIFS."
                 )
+
+        # Optionally: Sample from kinase structures
+        if n_sampled is not None:
+            if n_sampled < len(structure_klifs_ids):
+                samples = list(set(structure_klifs_ids) - set([example_structure_klifs_id]))
+                structure_klifs_ids = sample(samples, n_sampled - 1)
+                structure_klifs_ids = [example_structure_klifs_id] + structure_klifs_ids
         text = klifs_session.coordinates.to_text(example_structure_klifs_id, "complex", "pdb")
 
         # Generate fingerprints for all structures
