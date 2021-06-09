@@ -27,14 +27,17 @@ class _BaseViewer:
         Fingerprint.
     _fingerprints : kissim.encoding.FingerprintGenerator
         Fingerprints.
-    _discrete_feature_values : TODO
-        TODO
-    _feature_metadata : TODO
-        TODO
+    _discrete_feature_values : dict of str: list of float
+        For all discrete features (keys) list discrete value options (values).
+    _feature_metadata : dict of str: tuple of (str, list of str)
+        For all features (keys) list a descriptive feature name and a list of descriptive feature
+        value names. Useful for plotting!
     """
 
-    def __init__(
-        self, discrete_feature_values=DISCRETE_FEATURE_VALUES, feature_metadata=FEATURE_METADATA
+    def __init__(  # pylint: disable=W0102
+        self,
+        discrete_feature_values=DISCRETE_FEATURE_VALUES,
+        feature_metadata=FEATURE_METADATA,
     ):
 
         self._text = None

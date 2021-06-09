@@ -137,10 +137,10 @@ FEATURE_METADATA = {
         ["inwards", "intermediate", "outwards"],
     ),
     "exposure": ("solvent exposure", ["low", "intermediate", "high"]),
-    "hinge_region": ("distance to hinge region center [$\AA$]", None),
-    "dfg_region": ("distance to DFG region center [$\AA$]", None),
-    "front_pocket": ("distance to front pocket center [$\AA$]", None),
-    "center": ("distance to pocket center [$\AA$]", None),
+    "hinge_region": (r"distance to hinge region center [$\AA$]", None),
+    "dfg_region": (r"distance to DFG region center [$\AA$]", None),
+    "front_pocket": (r"distance to front pocket center [$\AA$]", None),
+    "center": (r"distance to pocket center [$\AA$]", None),
 }
 
 # Distance and moment cutoffs used for fingerprint normalization
