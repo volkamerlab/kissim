@@ -4,6 +4,8 @@ kissim.viewer.kinase
 Visualizes a kinase's fingerprint variability in 3D.
 """
 
+from random import sample
+
 from opencadd.databases.klifs import setup_remote
 
 from kissim.encoding import FingerprintGenerator
@@ -63,6 +65,19 @@ class KinaseViewer(_BaseViewer):
                 samples = list(set(structure_klifs_ids) - set([example_structure_klifs_id]))
                 structure_klifs_ids = sample(samples, n_sampled - 1)
                 structure_klifs_ids = [example_structure_klifs_id] + structure_klifs_ids
+
+        # Check if we have enough structures for the kinase viewer
+        if len(structure_klifs_ids) == 0:
+            raise ValueError(f"Kinase viewer cannot be created because kinase no structures.")
+        if len(structure_klifs_ids) == 1:
+            raise ValueError(
+                f"Kinase viewer cannot be created because kinase has only 1 structure.\n"
+                f"You can look at the structure with:\n"
+                f"from kissim.viewer import StructureViewer\n"
+                f"StructureViewer.from_structure_klifs_id({structure_klifs_ids[0]})\n"
+            )
+
+        # Get PDB file content
         text = klifs_session.coordinates.to_text(example_structure_klifs_id, "complex", "pdb")
 
         # Generate fingerprints for all structures
