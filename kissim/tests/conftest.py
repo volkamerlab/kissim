@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 import numpy as np
 import pandas as pd
+from opencadd.databases.klifs import setup_local
 
 from kissim.api import encode
 from kissim.comparison import (
@@ -14,8 +15,10 @@ from kissim.comparison import (
     FeatureDistancesGenerator,
     FingerprintDistanceGenerator,
 )
+from kissim.viewer import StructureViewer, KinaseViewer, StructurePairViewer
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+KLIFS_SESSION = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 @pytest.fixture(scope="module")
@@ -149,3 +152,24 @@ def fingerprint_distance_generator():
     ]
 
     return fingerprint_distance_generator
+
+
+@pytest.fixture(scope="module")
+def structure_viewer():
+    """Get example kinase viewer."""
+
+    return StructureViewer.from_structure_klifs_id(3833, klifs_session=KLIFS_SESSION)
+
+
+@pytest.fixture(scope="module")
+def kinase_viewer():
+    """Get example kinase viewer."""
+
+    return KinaseViewer.from_kinase_klifs_id(393, klifs_session=KLIFS_SESSION)
+
+
+@pytest.fixture(scope="module")
+def structure_pair_viewer():
+    """Get example structure pair viewer."""
+
+    return StructurePairViewer.from_structure_klifs_ids(3833, 12347, klifs_session=KLIFS_SESSION)
