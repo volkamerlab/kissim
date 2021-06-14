@@ -130,7 +130,8 @@ class _BaseViewer:
         view = nglview.NGLWidget()
         view._remote_call("setSize", target="Widget", args=["1000px", "600px"])
         view.camera = "orthographic"
-        view.add_component(self._text, ext="pdb")
+        component = nglview.TextStructure(self._text, ext="pdb")
+        view.add_component(component)
 
         if show_side_chains:
             selection = " or ".join([str(i) for i in residue_ids])
