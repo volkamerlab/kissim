@@ -2,7 +2,7 @@ Structural kinase similarity (`kissim`)
 ==============================
 [//]: # (Badges)
 [![GitHub Actions Build Status](https://github.com/volkamerlab/kissim/workflows/CI/badge.svg)](https://github.com/volkamerlab/kissim/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/master/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim/branch/master)
+[![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/main/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim)
 [![Documentation Status](https://readthedocs.org/projects/kissim/badge/?version=latest)](https://kissim.readthedocs.io/en/latest/?badge=latest)
 
 > ⚠ This project is work-in-progress.
