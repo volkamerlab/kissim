@@ -108,17 +108,28 @@ class TestsFingerprintDistanceGenerator:
         assert isinstance(fingerprint_distance_generator, FingerprintDistanceGenerator)
 
     @pytest.mark.parametrize(
-        "structure_distance_matrix",
+        "coverage_min, structure_distance_matrix",
         [
-            pd.DataFrame(
-                [[0.0, 0.75, 1.0], [0.75, 0.0, 0.8], [1.0, 0.8, 0.0]],
-                columns="pdbA pdbB pdbC".split(),
-                index="pdbA pdbB pdbC".split(),
-            )
+            (
+                0.0,
+                pd.DataFrame(
+                    [[0.0, 0.75, 1.0], [0.75, 0.0, 0.8], [1.0, 0.8, 0.0]],
+                    columns="pdbA pdbB pdbC".split(),
+                    index="pdbA pdbB pdbC".split(),
+                ),
+            ),
+            (
+                0.9,
+                pd.DataFrame(
+                    [[0.0, 0.75, 1.0], [0.75, 0.0, np.nan], [1.0, np.nan, 0.0]],
+                    columns="pdbA pdbB pdbC".split(),
+                    index="pdbA pdbB pdbC".split(),
+                ),
+            ),  # Coverage minimum set
         ],
     )
     def test_structure_distance_matrix(
-        self, fingerprint_distance_generator, structure_distance_matrix
+        self, fingerprint_distance_generator, coverage_min, structure_distance_matrix
     ):
         """
         Test if structure distance matrix is correct.
@@ -127,13 +138,16 @@ class TestsFingerprintDistanceGenerator:
         ----------
         fingerprint_distance_generator : FingerprintDistanceGenerator
             Fingerprint distance for multiple fingerprint pairs.
+        coverage_min : float
+            Returns only pairs with a user-defined minimum coverage (defaults to 0.0, i.e. no
+            coverage restrictions).
         structure_distance_matrix : pandas.DataFrame
             Structure distance matrix.
         """
 
         # Test generation of structure distance matrix
         structure_distance_matrix_calculated = (
-            fingerprint_distance_generator.structure_distance_matrix()
+            fingerprint_distance_generator.structure_distance_matrix(coverage_min)
         )
         structure_distance_matrix.columns.name = "structure.2"
         structure_distance_matrix.index.name = "structure.1"
@@ -141,11 +155,12 @@ class TestsFingerprintDistanceGenerator:
         assert structure_distance_matrix_calculated.equals(structure_distance_matrix)
 
     @pytest.mark.parametrize(
-        "by, fill_diagonal, kinase_distance_matrix",
+        "by, fill_diagonal, coverage_min, kinase_distance_matrix",
         [
             (
                 "minimum",
                 False,
+                0.0,
                 pd.DataFrame(
                     [[0.75, 0.8], [0.8, np.nan]],
                     columns=["kinaseA", "kinaseB"],
@@ -155,15 +170,27 @@ class TestsFingerprintDistanceGenerator:
             (
                 "minimum",
                 True,
+                0.0,
                 pd.DataFrame(
                     [[0, 0.8], [0.8, 0]],
                     columns=["kinaseA", "kinaseB"],
                     index=["kinaseA", "kinaseB"],
                 ),
-            ),  # Minimum
+            ),  # Minimum and fill diagonal
+            (
+                "minimum",
+                False,
+                0.9,
+                pd.DataFrame(
+                    [[0.75, 1.0], [1.0, np.nan]],
+                    columns=["kinaseA", "kinaseB"],
+                    index=["kinaseA", "kinaseB"],
+                ),
+            ),  # Minimum and coverage
             (
                 "maximum",
                 False,
+                0.0,
                 pd.DataFrame(
                     [[0.75, 1.0], [1.0, np.nan]],
                     columns=["kinaseA", "kinaseB"],
@@ -173,6 +200,7 @@ class TestsFingerprintDistanceGenerator:
             (
                 "mean",
                 False,
+                0.0,
                 pd.DataFrame(
                     [[0.75, 0.9], [0.9, np.nan]],
                     columns=["kinaseA", "kinaseB"],
@@ -182,6 +210,7 @@ class TestsFingerprintDistanceGenerator:
             (
                 "median",
                 False,
+                0.0,
                 pd.DataFrame(
                     [[0.75, 0.9], [0.9, np.nan]],
                     columns=["kinaseA", "kinaseB"],
@@ -191,6 +220,7 @@ class TestsFingerprintDistanceGenerator:
             (
                 "size",
                 False,
+                0.0,
                 pd.DataFrame(
                     [[1, 2], [2, 0]],
                     columns=["kinaseA", "kinaseB"],
@@ -200,6 +230,7 @@ class TestsFingerprintDistanceGenerator:
             (
                 "size",
                 True,
+                0.0,
                 pd.DataFrame(
                     [[1, 2], [2, 0]],
                     columns=["kinaseA", "kinaseB"],
@@ -209,6 +240,7 @@ class TestsFingerprintDistanceGenerator:
             (
                 "std",
                 False,
+                0.0,
                 pd.DataFrame(
                     [[np.nan, 0.141], [0.141, np.nan]],
                     columns=["kinaseA", "kinaseB"],
@@ -218,7 +250,12 @@ class TestsFingerprintDistanceGenerator:
         ],
     )
     def test_kinase_distance_matrix(
-        self, fingerprint_distance_generator, by, fill_diagonal, kinase_distance_matrix
+        self,
+        fingerprint_distance_generator,
+        by,
+        fill_diagonal,
+        coverage_min,
+        kinase_distance_matrix,
     ):
         """
         Test if kinase distance matrix is correct.
@@ -232,6 +269,9 @@ class TestsFingerprintDistanceGenerator:
             distances values per structure pair. Default: Minimum distance value.
         fill : bool
             Fill or fill not (default) lower triangle of distance matrix.
+        coverage_min : float
+            Returns only pairs with a user-defined minimum coverage (defaults to 0.0, i.e. no
+            coverage restrictions).
         kinase_distance_matrix : pandas.DataFrame
             Kinase distance matrix.
         """
@@ -242,7 +282,7 @@ class TestsFingerprintDistanceGenerator:
 
         # Test generation of structure distance matrix
         kinase_distance_matrix_calculated = fingerprint_distance_generator.kinase_distance_matrix(
-            by, fill_diagonal
+            by, fill_diagonal, coverage_min
         )
 
         assert kinase_distance_matrix_calculated.equals(kinase_distance_matrix)

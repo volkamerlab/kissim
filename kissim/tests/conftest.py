@@ -138,7 +138,7 @@ def fingerprint_distance_generator():
             "kinase.1": ["kinaseA", "kinaseA", "kinaseA"],
             "kinase.2": ["kinaseA", "kinaseB", "kinaseB"],
             "distance": np.array([0.75, 1.0, 0.8]),
-            "bit_coverage": np.array([1.0, 1.0, 1.0]),
+            "bit_coverage": np.array([1.0, 1.0, 0.6]),
         }
     )
 

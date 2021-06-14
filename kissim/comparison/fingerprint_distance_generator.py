@@ -196,7 +196,7 @@ class FingerprintDistanceGenerator(BaseGenerator):
         )
         return fingerprint_distance_generator
 
-    def structure_distance_matrix(self):
+    def structure_distance_matrix(self, coverage_min=0.0):
         """
         Get fingerprint distances for all structure pairs in the form of a matrix (DataFrame).
 
@@ -204,6 +204,9 @@ class FingerprintDistanceGenerator(BaseGenerator):
         ----------
         fill : bool
             Fill or fill not (default) lower triangle of distance matrix.
+        coverage_min : float
+            Returns only pairs with a user-defined minimum coverage (defaults to 0.0, i.e. no
+            coverage restrictions).
 
         Returns
         -------
@@ -211,8 +214,10 @@ class FingerprintDistanceGenerator(BaseGenerator):
             Structure distance matrix.
         """
 
+        # Filter by coverage
+        data = self.data[self.data["bit_coverage"] >= coverage_min]
         # Data for upper half of the matrix
-        pairs_upper = self.data[["structure.1", "structure.2", "distance"]]
+        pairs_upper = data[["structure.1", "structure.2", "distance"]]
         # Data for lower half of the matrix
         pairs_lower = pairs_upper.rename(
             columns={"structure.1": "structure.2", "structure.2": "structure.1"}
@@ -223,11 +228,11 @@ class FingerprintDistanceGenerator(BaseGenerator):
         # Convert to matrix
         matrix = pairs.pivot(columns="structure.2", index="structure.1", values="distance")
         # Matrix diagonal is NaN > set to 0.0
-        matrix = matrix.fillna(0.0)
+        np.fill_diagonal(matrix.values, 0)
 
         return matrix
 
-    def kinase_distance_matrix(self, by="minimum", fill_diagonal=True):
+    def kinase_distance_matrix(self, by="minimum", fill_diagonal=True, coverage_min=0.0):
         """
         Extract per kinase pair one distance value from the set of structure pair distance values
         and return these  fingerprint distances for all kinase pairs in the form of a matrix
@@ -242,6 +247,9 @@ class FingerprintDistanceGenerator(BaseGenerator):
             Fill diagonal with 0 (same kinase has distance of 0) by default. If `False`, diagonal
             will be a experimental values calculated based on the structure pairs per kinase pair.
             Is by default set to False, if `by="size"`.
+        coverage_min : float
+            Returns only pairs with a user-defined minimum coverage (defaults to 0.0, i.e. no
+            coverage restrictions).
 
         Returns
         -------
@@ -253,7 +261,9 @@ class FingerprintDistanceGenerator(BaseGenerator):
             fill_diagonal = False
 
         # Data for upper half of the matrix
-        pairs_upper = self.kinase_distances(by).reset_index()[["kinase.1", "kinase.2", "distance"]]
+        pairs_upper = self.kinase_distances(by, coverage_min).reset_index()[
+            ["kinase.1", "kinase.2", "distance"]
+        ]
         # Data for lower half of the matrix
         pairs_lower = pairs_upper.rename(columns={"kinase.1": "kinase.2", "kinase.2": "kinase.1"})
 
@@ -278,7 +288,7 @@ class FingerprintDistanceGenerator(BaseGenerator):
 
         return matrix
 
-    def kinase_distances(self, by="minimum"):
+    def kinase_distances(self, by="minimum", coverage_min=0.0):
         """
         Extract per kinase pair one distance value from the set of structure pair distance values.
 
@@ -287,6 +297,9 @@ class FingerprintDistanceGenerator(BaseGenerator):
         by : str
             Condition on which the distance value per kinase pair is extracted from the set of
             distances values per structure pair. Default: Minimum distance value.
+        coverage_min : float
+            Returns only pairs with a user-defined minimum coverage (defaults to 0.0, i.e. no
+            coverage restrictions).
 
         Returns
         -------
@@ -294,7 +307,8 @@ class FingerprintDistanceGenerator(BaseGenerator):
             Fingerprint distance and coverage for kinase pairs.
         """
 
-        data = self.data
+        # Filter by coverage
+        data = self.data[self.data["bit_coverage"] >= coverage_min].reset_index()
         # Group by kinase names
         structure_distances_grouped_by_kinases = data.groupby(
             by=["kinase.1", "kinase.2"], sort=False
