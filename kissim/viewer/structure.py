@@ -4,9 +4,6 @@ kissim.viewer.structure
 Visualizes a structure's fingerprint in 3D.
 """
 
-from opencadd.databases.klifs import setup_remote
-
-from kissim.encoding import Fingerprint
 from kissim.viewer.base import _BaseViewer
 
 
@@ -16,10 +13,7 @@ class StructureViewer(_BaseViewer):
 
     Attributes
     ----------
-    _text : str
-        PDB text.
-    _fingerprint : kissim.encoding.Fingerprint
-        Fingerprint.
+    Inherited from kissim.viewer.base._BaseViewer
     """
 
     @classmethod
@@ -29,21 +23,12 @@ class StructureViewer(_BaseViewer):
         format.
         """
 
-        viewer = cls()
-
-        if klifs_session is None:
-            klifs_session = setup_remote()
-        text = klifs_session.coordinates.to_text(structure_klifs_id, "complex", "pdb")
-        fingerprint = Fingerprint.from_structure_klifs_id(
-            structure_klifs_id, klifs_session=klifs_session
-        )
-
-        viewer._text = text
-        viewer._fingerprint = fingerprint
+        structure_klifs_ids = [structure_klifs_id]
+        viewer = cls._from_structure_klifs_id(structure_klifs_ids, klifs_session)
 
         return viewer
 
-    def residue_to_color_mapping(self, feature_name):
+    def residue_to_color_mapping(self, feature_name, fingerprint, plot_cmap=False):
         """
         Map feature values using color on residues.
 
@@ -51,6 +36,10 @@ class StructureViewer(_BaseViewer):
         ----------
         feature_name : str
             Name of a continuous feature.
+        fingerprint : kissim.encoding.Fingerprint
+            Fingerprint.
+        plot_cmap : bool
+            Plot color map (default: False).
 
         Returns
         -------
@@ -59,18 +48,24 @@ class StructureViewer(_BaseViewer):
         """
 
         if feature_name in self._fingerprint.physicochemical:
+            data = fingerprint.physicochemical[feature_name]
+            data.index = fingerprint.residue_ids
             residue_to_color = self._residue_to_color_mapping(
                 feature_name,
-                self._fingerprint.physicochemical[feature_name],
+                data,
                 discrete=True,
                 divergent=False,
+                plot_cmap=plot_cmap,
             )
         elif feature_name in self._fingerprint.distances:
+            data = fingerprint.distances[feature_name]
+            data.index = fingerprint.residue_ids
             residue_to_color = self._residue_to_color_mapping(
                 feature_name,
-                self._fingerprint.distances[feature_name],
+                data,
                 discrete=False,
                 divergent=False,
+                plot_cmap=plot_cmap,
             )
         else:
             raise ValueError(f"Feature name {feature_name} unknown.")

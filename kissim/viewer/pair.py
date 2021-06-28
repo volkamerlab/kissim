@@ -17,12 +17,7 @@ class StructurePairViewer(_BaseViewer):
 
     Attributes
     ----------
-    _text : str
-        PDB text for example structure.
-    _fingerprint : str
-        Fingerprint for example structure.
-    _fingerprints : kissim.encoding.FingerprintGenerator
-        Fingerprints.
+    Inherited from kissim.viewer.base._BaseViewer
     """
 
     @classmethod
@@ -34,20 +29,8 @@ class StructurePairViewer(_BaseViewer):
         fetch structure in PDB format for first structure.
         """
 
-        viewer = cls()
-
-        if klifs_session is None:
-            klifs_session = setup_remote()
-        text = klifs_session.coordinates.to_text(structure_klifs_id1, "complex", "pdb")
-
-        print("Generate fingerprints...")
-        fingerprints = FingerprintGenerator.from_structure_klifs_ids(
-            [structure_klifs_id1, structure_klifs_id2], klifs_session=klifs_session
-        )
-
-        viewer._text = text
-        viewer._fingerprint = fingerprints.data[structure_klifs_id1]
-        viewer._fingerprints = fingerprints
+        structure_klifs_ids = [structure_klifs_id1, structure_klifs_id2]
+        viewer = cls._from_structure_klifs_id(structure_klifs_ids, klifs_session)
 
         return viewer
 
@@ -61,7 +44,7 @@ class StructurePairViewer(_BaseViewer):
 
         return features_pair[0] - features_pair[1]
 
-    def residue_to_color_mapping(self, feature_name):
+    def residue_to_color_mapping(self, feature_name, fingerprint, plot_cmap=False):
         """
         Map feature values using color on residues.
 
@@ -69,6 +52,10 @@ class StructurePairViewer(_BaseViewer):
         ----------
         feature_name : str
             Name of a continuous feature.
+        fingerprint : kissim.encoding.Fingerprint
+            Fingerprint.
+        plot_cmap : bool
+            Plot color map (default: False).
 
         Returns
         -------
@@ -79,12 +66,15 @@ class StructurePairViewer(_BaseViewer):
         if feature_name not in self._feature_names:
             raise ValueError(f"Feature name {feature_name} unknown.")
 
+        data = self._diff[feature_name]
+        data.index = fingerprint.residue_ids
         residue_to_color = self._residue_to_color_mapping(
             feature_name,
-            self._diff[feature_name],
+            data,
             discrete=False,
             divergent=True,
             label_prefix="difference in ",
+            plot_cmap=plot_cmap,
         )
 
         return residue_to_color

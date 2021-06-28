@@ -18,12 +18,7 @@ class KinaseViewer(_BaseViewer):
 
     Attributes
     ----------
-    _text : str
-        PDB text for example structure.
-    _fingerprint : str
-        Fingerprint for example structure.
-    _fingerprints : kissim.encoding.FingerprintGenerator
-        Fingerprints.
+    Inherited from kissim.viewer.base._BaseViewer
     """
 
     @classmethod
@@ -34,8 +29,6 @@ class KinaseViewer(_BaseViewer):
         Initialize viewer from kinase KLIFS ID: Generate fingerprints for all kinase structures and
         fetch example structure in PDB format.
         """
-
-        viewer = cls()
 
         if klifs_session is None:
             klifs_session = setup_remote()
@@ -77,18 +70,7 @@ class KinaseViewer(_BaseViewer):
                 f"StructureViewer.from_structure_klifs_id({structure_klifs_ids[0]})\n"
             )
 
-        # Get PDB file content
-        text = klifs_session.coordinates.to_text(example_structure_klifs_id, "complex", "pdb")
-
-        # Generate fingerprints for all structures
-        print("Generate fingerprints...")
-        fingerprints = FingerprintGenerator.from_structure_klifs_ids(
-            structure_klifs_ids, klifs_session=klifs_session
-        )
-
-        viewer._text = text
-        viewer._fingerprint = fingerprints.data[example_structure_klifs_id]
-        viewer._fingerprints = fingerprints
+        viewer = cls._from_structure_klifs_id(structure_klifs_ids, klifs_session)
 
         return viewer
 
@@ -97,7 +79,7 @@ class KinaseViewer(_BaseViewer):
 
         return self._fingerprints_features.std(level="residue_ix")
 
-    def residue_to_color_mapping(self, feature_name):
+    def residue_to_color_mapping(self, feature_name, fingerprint, plot_cmap=False):
         """
         Map feature values using color on residues.
 
@@ -105,6 +87,10 @@ class KinaseViewer(_BaseViewer):
         ----------
         feature_name : str
             Name of a continuous feature.
+        fingerprint : kissim.encoding.Fingerprint
+            Fingerprint.
+        plot_cmap : bool
+            Plot color map (default: False).
 
         Returns
         -------
@@ -115,12 +101,15 @@ class KinaseViewer(_BaseViewer):
         if feature_name not in self._feature_names:
             raise ValueError(f"Feature name {feature_name} unknown.")
 
+        data = self._std[feature_name]
+        data.index = fingerprint.residue_ids
         residue_to_color = self._residue_to_color_mapping(
             feature_name,
-            self._std[feature_name],
+            data,
             discrete=False,
             divergent=False,
             label_prefix="standard deviation of ",
+            plot_cmap=plot_cmap,
         )
 
         return residue_to_color
