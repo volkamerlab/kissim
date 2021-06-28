@@ -30,11 +30,11 @@ class TestFingerprintGenerator:
     @pytest.mark.parametrize(
         "structure_klifs_ids, klifs_session, n_cores, fingerprints_values_array_sum",
         [
-            ([110, 118], REMOTE, 1, 10152.4256),
-            ([110, 118], REMOTE, 2, 10152.4256),
-            ([110, 118], LOCAL, 1, 10152.4256),
-            ([110, 118], LOCAL, 2, 10152.4256),
-            ([110, 118], None, None, 10152.4256),
+            ([110, 118], REMOTE, 1, 10148.4256),
+            ([110, 118], REMOTE, 2, 10148.4256),
+            ([110, 118], LOCAL, 1, 10148.4256),
+            ([110, 118], LOCAL, 2, 10148.4256),
+            ([110, 118], None, None, 10148.4256),
         ],
     )
     def test_from_structure_klifs_id(
@@ -96,7 +96,7 @@ class TestFingerprintGenerator:
 
     @pytest.mark.parametrize(
         "structure_klifs_ids, normalize, values_array_sum",
-        [([110, 118], False, 10152.4256), ([110, 118], True, 10152.4256)],
+        [([110, 118], False, 10148.4256), ([110, 118], True, 10148.4256)],
     )
     def test_to_from_json(self, structure_klifs_ids, normalize, values_array_sum):
         """
