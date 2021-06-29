@@ -11,8 +11,10 @@ from matplotlib import cm, colors
 import nglview
 from ipywidgets import interact
 import ipywidgets as widgets
+from opencadd.databases.klifs import setup_remote
 
 from kissim.definitions import FEATURE_METADATA, DISCRETE_FEATURE_VALUES
+from kissim.encoding.fingerprint_generator import FingerprintGenerator
 
 
 class _BaseViewer:
@@ -21,12 +23,14 @@ class _BaseViewer:
 
     Attributes
     ----------
-    _text : str
-        PDB text.
-    _fingerprint : kissim.encoding.Fingerprint
-        Fingerprint.
+    _reference_structure_id : str or int
+        ID for reference structure (=primary structure to be shown in the NGLviewer)
+    _texts : dict of (str or int): str
+        PDB text (values) per structure ID (keys).
     _fingerprints : kissim.encoding.FingerprintGenerator
         Fingerprints.
+    _ligands : dict of (str or int): str
+        Ligand expo ID (values) per structure ID (keys).
     _discrete_feature_values : dict of str: list of float
         For all discrete features (keys) list discrete value options (values).
     _feature_metadata : dict of str: tuple of (str, list of str)
@@ -40,11 +44,51 @@ class _BaseViewer:
         feature_metadata=FEATURE_METADATA,
     ):
 
-        self._text = None
-        self._fingerprint = None
+        self._reference_structure_id = None
+        self._texts = {}
         self._fingerprints = None
+        self._ligands = {}
         self._discrete_feature_values = discrete_feature_values
         self._feature_metadata = feature_metadata
+
+    @property
+    def _fingerprint(self):
+        """
+        Fingerprint for reference structure.
+
+        Returns
+        -------
+        kissim.encoding.Fingerprint
+            Fingerprint.
+        """
+
+        return self._fingerprints.data[self._reference_structure_id]
+
+    @property
+    def _text(self):
+        """
+        PDB text for reference structure.
+
+        Returns
+        -------
+        str
+            PDB text.
+        """
+
+        return self._texts[self._reference_structure_id]
+
+    @property
+    def _ligand(self):
+        """
+        Ligand for reference structure.
+
+        Returns
+        -------
+        str
+            Ligand expo ID.
+        """
+
+        return self._ligands[self._reference_structure_id]
 
     @property
     def _feature_names(self):
@@ -87,6 +131,46 @@ class _BaseViewer:
             ]
         )[self._feature_names]
 
+    @classmethod
+    def _from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None):
+        """
+        Initialize viewer from structure KLIFS ID: Generate fingerprint and fetch structure in PDB
+        format.
+        """
+
+        viewer = cls()
+
+        if klifs_session is None:
+            klifs_session = setup_remote()
+
+        # Get structure text, ligand, and fingerprint
+        # With a local KLIFS session PDB files can be missing
+        # FingerprintGenerator will omit respective structure KLIFS IDs; the same behaviour must
+        # be implemented here for fetching the PDB texts (try-except)
+        texts = {}
+        for structure_klifs_id in structure_klifs_ids:
+            try:
+                texts[structure_klifs_id] = klifs_session.coordinates.to_text(
+                    structure_klifs_id, "complex", "pdb"
+                )
+            except FileNotFoundError:
+                pass
+        fingerprints = FingerprintGenerator.from_structure_klifs_ids(
+            structure_klifs_ids, klifs_session=klifs_session
+        )
+        structures = klifs_session.structures.by_structure_klifs_id(structure_klifs_ids)
+        ligands = {
+            row["structure.klifs_id"]: row["ligand.expo_id"] for _, row in structures.iterrows()
+        }
+
+        # Set attributes
+        viewer._reference_structure_id = structure_klifs_ids[0]
+        viewer._texts = texts
+        viewer._fingerprints = fingerprints
+        viewer._ligands = ligands
+
+        return viewer
+
     def show(self):
         """
         Show features mapped onto the 3D pocket (select feature interactively).
@@ -123,33 +207,103 @@ class _BaseViewer:
             View.
         """
 
-        residue_ids = self._fingerprint.residue_ids
-        residue_to_color = self.residue_to_color_mapping(feature_name)
-        color_scheme = nglview.color._ColorScheme(residue_to_color, label="scheme_regions")
-
         view = nglview.NGLWidget()
         view._remote_call("setSize", target="Widget", args=["1000px", "600px"])
         view.camera = "orthographic"
-        component = nglview.TextStructure(self._text, ext="pdb")
-        view.add_component(component)
 
-        if show_side_chains:
-            selection = " or ".join([str(i) for i in residue_ids])
-            view.clear_representations()
-            view.add_representation("cartoon", selection="protein", color="grey")
-            view.add_representation("ball+stick", selection=selection, color=color_scheme)
-        else:
-            view.clear_representations()
-            view.add_representation("cartoon", selection="protein", color=color_scheme)
+        component_counter = 0
 
-        if feature_name in self._fingerprint.subpocket_centers.columns:
-            center = self._fingerprint.subpocket_centers[feature_name].to_list()
-            view.shape.add_sphere(center, [0.0, 0.0, 0.0], 1, f"{feature_name}")
+        for structure_id, fingerprint in self._fingerprints.data.items():
+            text = self._texts[structure_id]
+            ligand = self._ligands[structure_id]
+            view, component_counter = self._show_structure(
+                view,
+                structure_id,
+                text,
+                fingerprint,
+                ligand,
+                feature_name,
+                show_side_chains,
+                component_counter,
+            )
 
         return view.display(gui=True)
 
+    def _show_structure(
+        self,
+        view,
+        structure_id,
+        text,
+        fingerprint,
+        ligand,
+        feature_name,
+        show_side_chains,
+        component_counter,
+    ):
+        """
+        TODO
+        """
+
+        # Residue coloring based on feature name
+        if self._reference_structure_id == structure_id:
+            plot_cmap = True
+        else:
+            plot_cmap = False
+        residue_to_color = self.residue_to_color_mapping(feature_name, fingerprint, plot_cmap)
+        color_scheme = nglview.color._ColorScheme(residue_to_color, label="scheme_regions")
+
+        component = nglview.TextStructure(text, ext="pdb")
+        view.add_component(component, name=f"{structure_id}")
+
+        # Add reference protein with/without side chains
+        if show_side_chains:
+            residue_ids = fingerprint.residue_ids
+            selection = " or ".join([str(i) for i in residue_ids])
+            view.clear_representations(component=component_counter)
+            view.add_representation(
+                "cartoon",
+                selection="protein",
+                color="grey",
+                name=f"Structure",
+                component=component_counter,
+            )
+            view.add_representation(
+                "ball+stick",
+                selection=selection,
+                color=color_scheme,
+                name=f"Pocket",
+                component=component_counter,
+            )
+        else:
+            view.clear_representations(component=component_counter)
+            view.add_representation(
+                "cartoon",
+                selection="protein",
+                color=color_scheme,
+                name=f"Structure",
+                component=component_counter,
+            )
+
+        # Add reference ligand
+        view.add_representation(
+            "licorice",
+            selection=f"ligand and {ligand}",
+            name=f"Ligand",
+            component=component_counter,
+        )
+
+        component_counter += 1
+
+        # Add subpocket center
+        if feature_name in fingerprint.subpocket_centers.columns:
+            center = fingerprint.subpocket_centers[feature_name].to_list()
+            view.shape.add_sphere(center, [0.0, 0.0, 0.0], 1, f"{feature_name}")
+            component_counter += 1
+
+        return view, component_counter
+
     def _residue_to_color_mapping(
-        self, feature_name, data, discrete=False, divergent=False, label_prefix=""
+        self, feature_name, data, discrete=False, divergent=False, label_prefix="", plot_cmap=False
     ):
         """
         Map (discrete) feature values using color on residues.
@@ -164,7 +318,10 @@ class _BaseViewer:
             All possible categories for discrete feature.
         divergent : bool
             Use divergent colormap (PiYG) or sequential colormap (viridis)
-        label_prefix
+        label_prefix : str
+            Add prefix to color map label.
+        plot_cmap : bool
+            Plot color map (default: False).
 
         Returns
         -------
@@ -204,7 +361,7 @@ class _BaseViewer:
         # Normalize data
         data_normed = norm(data)
         # Map residues to colors based on category
-        residue_ids = self._fingerprint.residue_ids
+        residue_ids = data.index
         residue_to_color = []
         for residue_id, value in zip(residue_ids, data_normed):
             if np.isnan(value):
@@ -221,7 +378,8 @@ class _BaseViewer:
         if discrete:
             norm = colors.NoNorm(vmin=min(discrete_options), vmax=max(discrete_options))
         label, xticklabels = self._feature_metadata[feature_name]
-        self.cmap_colorbar(cmap, norm, f"{label_prefix}{label}", xticklabels)
+        if plot_cmap:
+            self.cmap_colorbar(cmap, norm, f"{label_prefix}{label}", xticklabels)
 
         return residue_to_color
 
