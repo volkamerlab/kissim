@@ -100,13 +100,6 @@ def kinase_distance_matrix(
     if fill_diagonal:
         np.fill_diagonal(matrix.values, 0)
 
-    # If matrix contains missing values, respective rows and columns must be dropped
-    column_has_missing_values = matrix.isna().any()
-    column_names_with_missing_values = column_has_missing_values[column_has_missing_values].index
-    matrix = matrix.drop(column_names_with_missing_values, axis=0).drop(
-        column_names_with_missing_values, axis=1
-    )
-
     # If matrix contains number of structure pairs: NaN > 0, cast to int
     if by == "size":
         matrix = matrix.astype("int64")
