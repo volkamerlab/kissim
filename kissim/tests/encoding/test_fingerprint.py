@@ -102,7 +102,7 @@ class TestFingerprint:
 
     @pytest.mark.parametrize(
         "structure_klifs_id, values_array_mean",
-        [(109, 4.9905), (12347, 5.1622)],
+        [(109, 4.9885), (12347, 5.1590)],
     )
     def test_values_array(self, structure_klifs_id, values_array_mean):
         """
@@ -111,6 +111,8 @@ class TestFingerprint:
 
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         values_array_mean_calculated = np.nanmean(fingerprint.values_array(True, True, True))
+        print(fingerprint.values_array(True, True, True)[:8])
+        print(fingerprint.values_array(True, True, True)[17 * 8 : 18 * 8])
         assert pytest.approx(values_array_mean_calculated, abs=1e-4) == values_array_mean
 
         # Test the different lengths of the final fingerprint based on the selection of
