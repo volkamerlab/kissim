@@ -48,6 +48,7 @@ Take a look at the ``kissim_app`` `repository <https://github.com/volkamerlab/ki
    tutorials/comparison
    tutorials/tree
    tutorials/io
+   tutorials/viewer
 
 .. toctree::
    :maxdepth: 1
