@@ -144,12 +144,17 @@ class _BaseViewer:
             klifs_session = setup_remote()
 
         # Get structure text, ligand, and fingerprint
-        texts = {
-            structure_klifs_id: klifs_session.coordinates.to_text(
-                structure_klifs_id, "complex", "pdb"
-            )
-            for structure_klifs_id in structure_klifs_ids
-        }
+        # With a local KLIFS session PDB files can be missing
+        # FingerprintGenerator will omit respective structure KLIFS IDs; the same behaviour must
+        # be implemented here for fetching the PDB texts (try-except)
+        texts = {}
+        for structure_klifs_id in structure_klifs_ids:
+            try:
+                texts[structure_klifs_id] = klifs_session.coordinates.to_text(
+                    structure_klifs_id, "complex", "pdb"
+                )
+            except FileNotFoundError:
+                pass
         fingerprints = FingerprintGenerator.from_structure_klifs_ids(
             structure_klifs_ids, klifs_session=klifs_session
         )
