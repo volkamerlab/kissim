@@ -132,7 +132,7 @@ class _BaseViewer:
         )[self._feature_names]
 
     @classmethod
-    def _from_structure_klifs_id(cls, structure_klifs_ids, klifs_session=None):
+    def _from_structure_klifs_ids(cls, structure_klifs_ids, klifs_session=None):
         """
         Initialize viewer from structure KLIFS ID: Generate fingerprint and fetch structure in PDB
         format.

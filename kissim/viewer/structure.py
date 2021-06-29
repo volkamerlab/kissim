@@ -24,7 +24,7 @@ class StructureViewer(_BaseViewer):
         """
 
         structure_klifs_ids = [structure_klifs_id]
-        viewer = cls._from_structure_klifs_id(structure_klifs_ids, klifs_session)
+        viewer = cls._from_structure_klifs_ids(structure_klifs_ids, klifs_session)
 
         return viewer
 

@@ -69,7 +69,7 @@ class KinaseViewer(_BaseViewer):
                 f"StructureViewer.from_structure_klifs_id({structure_klifs_ids[0]})\n"
             )
 
-        viewer = cls._from_structure_klifs_id(structure_klifs_ids, klifs_session)
+        viewer = cls._from_structure_klifs_ids(structure_klifs_ids, klifs_session)
 
         return viewer
 
