@@ -8,7 +8,6 @@ from random import sample
 
 from opencadd.databases.klifs import setup_remote
 
-from kissim.encoding import FingerprintGenerator
 from kissim.viewer.base import _BaseViewer
 
 

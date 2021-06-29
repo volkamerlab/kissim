@@ -5,9 +5,7 @@ Visualizes a two structures' fingerprint difference in 3D.
 """
 
 import pandas as pd
-from opencadd.databases.klifs import setup_remote
 
-from kissim.encoding import FingerprintGenerator
 from kissim.viewer.base import _BaseViewer
 
 
