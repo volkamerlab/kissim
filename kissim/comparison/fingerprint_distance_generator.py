@@ -8,10 +8,9 @@ import datetime
 import logging
 
 from tqdm.auto import tqdm
-import numpy as np
-import pandas as pd
 
 from kissim.comparison import BaseGenerator, FingerprintDistance, FeatureDistancesGenerator
+from kissim.comparison import matrix
 from kissim.comparison.utils import format_weights
 
 logger = logging.getLogger(__name__)
@@ -25,7 +24,7 @@ class FingerprintDistanceGenerator(BaseGenerator):
     Attributes
     ----------
     data : pandas.DataFrame
-        Fingerprint distance and bit coverag for each structure pair (kinase pair).
+        Fingerprint distance and bit coverage for each structure pair (kinase pair).
     structure_kinase_ids : list of list
         Structure and kinase IDs for structures in dataset.
     """
@@ -214,23 +213,7 @@ class FingerprintDistanceGenerator(BaseGenerator):
             Structure distance matrix.
         """
 
-        # Filter by coverage
-        data = self.data[self.data["bit_coverage"] >= coverage_min]
-        # Data for upper half of the matrix
-        pairs_upper = data[["structure.1", "structure.2", "distance"]]
-        # Data for lower half of the matrix
-        pairs_lower = pairs_upper.rename(
-            columns={"structure.1": "structure.2", "structure.2": "structure.1"}
-        )
-
-        # Concatenate upper and lower matrix data
-        pairs = pd.concat([pairs_upper, pairs_lower]).sort_values(["structure.1", "structure.2"])
-        # Convert to matrix
-        matrix = pairs.pivot(columns="structure.2", index="structure.1", values="distance")
-        # Matrix diagonal is NaN > set to 0.0
-        np.fill_diagonal(matrix.values, 0)
-
-        return matrix
+        return matrix.structure_distance_matrix(self.data, coverage_min)
 
     def kinase_distance_matrix(self, by="minimum", fill_diagonal=True, coverage_min=0.0):
         """
@@ -257,36 +240,7 @@ class FingerprintDistanceGenerator(BaseGenerator):
             Kinase distance matrix.
         """
 
-        if by == "size":
-            fill_diagonal = False
-
-        # Data for upper half of the matrix
-        pairs_upper = self.kinase_distances(by, coverage_min).reset_index()[
-            ["kinase.1", "kinase.2", "distance"]
-        ]
-        # Data for lower half of the matrix
-        pairs_lower = pairs_upper.rename(columns={"kinase.1": "kinase.2", "kinase.2": "kinase.1"})
-
-        # Concatenate upper and lower matrix data
-        pairs = (
-            pd.concat([pairs_upper, pairs_lower])
-            .sort_values(["kinase.1", "kinase.2"])
-            .drop_duplicates()
-            .reset_index(drop=True)
-        )
-
-        # Convert to matrix
-        matrix = pairs.pivot(columns="kinase.2", index="kinase.1", values="distance")
-
-        if fill_diagonal:
-            np.fill_diagonal(matrix.values, 0)
-
-        # If matrix contains number of structure pairs: NaN > 0, cast to int
-        if by == "size":
-            matrix = matrix.fillna(0)
-            matrix = matrix.astype("int64")
-
-        return matrix
+        return matrix.kinase_distance_matrix(self.data, by, fill_diagonal, coverage_min)
 
     def kinase_distances(self, by="minimum", coverage_min=0.0):
         """
@@ -307,35 +261,4 @@ class FingerprintDistanceGenerator(BaseGenerator):
             Fingerprint distance and coverage for kinase pairs.
         """
 
-        # Filter by coverage
-        data = self.data[self.data["bit_coverage"] >= coverage_min].reset_index()
-        # Group by kinase names
-        structure_distances_grouped_by_kinases = data.groupby(
-            by=["kinase.1", "kinase.2"], sort=False
-        )
-
-        # Get distance values per kinase pair based on given condition
-        # Note: For min/max we'd like to know which structure pairs were selected!
-        by_terms = "minimum maximum mean median size std".split()
-
-        if by == "minimum":
-            kinase_distances = data.iloc[
-                structure_distances_grouped_by_kinases["distance"].idxmin()
-            ].set_index(["kinase.1", "kinase.2"])
-        elif by == "maximum":
-            kinase_distances = data.iloc[
-                structure_distances_grouped_by_kinases["distance"].idxmax()
-            ].set_index(["kinase.1", "kinase.2"])
-        elif by == "mean":
-            kinase_distances = structure_distances_grouped_by_kinases.mean()[["distance"]]
-        elif by == "median":
-            kinase_distances = structure_distances_grouped_by_kinases.median()[["distance"]]
-        elif by == "size":
-            kinase_distances = structure_distances_grouped_by_kinases.size().to_frame("distance")
-        elif by == "std":
-            kinase_distances = structure_distances_grouped_by_kinases.std()[["distance"]]
-            kinase_distances = round(kinase_distances, 3)
-        else:
-            raise ValueError(f'Condition "by" unknown. Choose from: {", ".join(by_terms)}')
-
-        return kinase_distances
+        return matrix.kinase_distances(self.data, by, coverage_min)
