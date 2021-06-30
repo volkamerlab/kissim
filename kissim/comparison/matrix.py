@@ -102,6 +102,7 @@ def kinase_distance_matrix(
 
     # If matrix contains number of structure pairs: NaN > 0, cast to int
     if by == "size":
+        matrix = matrix.fillna(0)
         matrix = matrix.astype("int64")
 
     return matrix
