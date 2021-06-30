@@ -62,10 +62,10 @@ class KlifsToKissimData:
             KLIFS data.
         """
 
-        data = cls()
-        data.structure_klifs_id = structure_klifs_id
-
         try:
+
+            data = cls()
+            data.structure_klifs_id = structure_klifs_id
 
             # If no KLIFS session is given, set up remote KLIFS session
             if klifs_session is None:
@@ -85,12 +85,13 @@ class KlifsToKissimData:
             data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
             data.kinase_name = data._get_kinase_name()
 
+            return data
+
         except ValueError:
             logger.ERROR(
                 f"The following structure could not be loaded into kissim: {structure_klifs_id}"
             )
-
-        return data
+            return None
 
     def _structure_klifs_id_exists(self):
         """
