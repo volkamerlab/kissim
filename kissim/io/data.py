@@ -65,23 +65,30 @@ class KlifsToKissimData:
         data = cls()
         data.structure_klifs_id = structure_klifs_id
 
-        # If no KLIFS session is given, set up remote KLIFS session
-        if klifs_session is None:
-            klifs_session = setup_remote()
-        data.klifs_session = klifs_session
+        try:
 
-        # Structure KLIFS ID exists
-        if not data._structure_klifs_id_exists():
-            return None
+            # If no KLIFS session is given, set up remote KLIFS session
+            if klifs_session is None:
+                klifs_session = setup_remote()
+            data.klifs_session = klifs_session
 
-        # In case of a local KLIFS session, test if complex and pocket structural files exist
-        if data.klifs_session._database is not None:
-            if not data._local_session_files_exist():
+            # Structure KLIFS ID exists
+            if not data._structure_klifs_id_exists():
                 return None
 
-        data.text, data.extension = data._get_text_and_extension()
-        data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
-        data.kinase_name = data._get_kinase_name()
+            # In case of a local KLIFS session, test if complex and pocket structural files exist
+            if data.klifs_session._database is not None:
+                if not data._local_session_files_exist():
+                    return None
+
+            data.text, data.extension = data._get_text_and_extension()
+            data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
+            data.kinase_name = data._get_kinase_name()
+
+        except ValueError:
+            logger.ERROR(
+                f"The following structure could not be loaded into kissim: {structure_klifs_id}"
+            )
 
         return data
 
