@@ -87,9 +87,10 @@ class KlifsToKissimData:
 
             return data
 
-        except ValueError:
-            logger.ERROR(
-                f"The following structure could not be loaded into kissim: {structure_klifs_id}"
+        except ValueError as e:
+            logger.error(
+                f"The following structure could not be loaded into kissim: {structure_klifs_id}: "
+                f"{e}"
             )
             return None
 
