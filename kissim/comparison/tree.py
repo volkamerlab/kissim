@@ -122,6 +122,13 @@ def from_distance_matrix(
     # Curate diagonal - set to 0
     np.fill_diagonal(distance_matrix.values, 0)
 
+    # If matrix contains missing values, respective rows and columns must be dropped
+    column_has_missing_values = distance_matrix.isna().any()
+    column_names_with_missing_values = column_has_missing_values[column_has_missing_values].index
+    distance_matrix = distance_matrix.drop(column_names_with_missing_values, axis=0).drop(
+        column_names_with_missing_values, axis=1
+    )
+
     # Hierarchical clustering
     logger.info(
         f"Clustering (method: {clustering_method}) and "
