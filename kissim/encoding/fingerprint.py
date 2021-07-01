@@ -38,20 +38,23 @@ class Fingerprint(FingerprintBase):
             Fingerprint.
         """
 
-        data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
-        if data is None:
-            logger.warning(f"{structure_klifs_id}: Empty fingerprint (data unaccessible).")
-            fingerprint = None
-        else:
-            fingerprint = cls.from_text(
-                data.text,
-                data.extension,
-                data.residue_ids,
-                data.residue_ixs,
-                data.structure_klifs_id,
-                data.kinase_name,
-            )
-        return fingerprint
+        try:
+            data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
+            if data is None:
+                logger.warning(f"{structure_klifs_id}: Empty fingerprint (data unaccessible).")
+                fingerprint = None
+            else:
+                fingerprint = cls.from_text(
+                    data.text,
+                    data.extension,
+                    data.residue_ids,
+                    data.residue_ixs,
+                    data.structure_klifs_id,
+                    data.kinase_name,
+                )
+            return fingerprint
+        except Exception as e:
+            logger.error(f"Fingerprint generation throw error for {structure_klifs_id}:  {e}")
 
     @classmethod
     def from_text(cls, text, extension, residue_ids, residue_ixs, structure_name, kinase_name):
