@@ -132,8 +132,13 @@ def kinase_distances(structure_distances, by="minimum", coverage_min=0.0):
     data = structure_distances
 
     # Filter by coverage
-    data = data[data["bit_coverage"] >= coverage_min].reset_index()
-    # Group by kinase names
+    data = data[data["bit_coverage"] >= coverage_min].reset_index(drop=True)
+    # Note: Kinase pair names must be sorted alphabetically to allow grouping by kinase pair names
+    kinase_pair_alphabetically_sorted = (
+        pd.Series(zip(data["kinase.1"], data["kinase.2"])).map(list).map(sorted)
+    )
+    data[["kinase.1", "kinase.2"]] = kinase_pair_alphabetically_sorted.to_list()
+    # Group by kinase pair names (which have been alphabetically sorted before!)
     structure_distances_grouped_by_kinases = data.groupby(by=["kinase.1", "kinase.2"], sort=False)
 
     # Get distance values per kinase pair based on given condition
