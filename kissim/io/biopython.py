@@ -4,6 +4,7 @@ kissim.io.biopython
 Defines a Biopython-based pocket class.
 """
 
+import collections
 import logging
 import warnings
 
@@ -479,7 +480,14 @@ class PocketBioPython(PocketBase):
         elif len(residue) == 0:
             return None
         else:
-            raise KeyError(f"{len(residue)} residues were found, but must be 1 or 0.")
+            residue_ids = [residue.get_id()[1] for residue in residues]
+            residue_ids_duplicated = [
+                item for item, count in collections.Counter(residue_ids).items() if count > 1
+            ]
+            raise KeyError(
+                f"{len(residue)} residues were found, but must be 1 or 0. "
+                f"Duplicated residue serial number(s): {residue_ids_duplicated}"
+            )
 
     def center_of_mass(self, entity, geometric=False):
         """
