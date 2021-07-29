@@ -9,6 +9,10 @@ import logging
 from bravado_core.exception import SwaggerMappingError
 
 from opencadd.databases.klifs import setup_remote
+from opencadd.databases.klifs.exceptions import (
+    KlifsPocketIncompleteError,
+    KlifsPocketUnequalSequenceStructure,
+)
 from opencadd.structure.pocket import PocketBase
 
 logger = logging.getLogger(__name__)
@@ -62,37 +66,38 @@ class KlifsToKissimData:
             KLIFS data.
         """
 
-        try:
+        data = cls()
+        data.structure_klifs_id = structure_klifs_id
 
-            data = cls()
-            data.structure_klifs_id = structure_klifs_id
+        # If no KLIFS session is given, set up remote KLIFS session
+        if klifs_session is None:
+            klifs_session = setup_remote()
+        data.klifs_session = klifs_session
 
-            # If no KLIFS session is given, set up remote KLIFS session
-            if klifs_session is None:
-                klifs_session = setup_remote()
-            data.klifs_session = klifs_session
+        # Structure KLIFS ID exists
+        if not data._structure_klifs_id_exists():
+            return None
 
-            # Structure KLIFS ID exists
-            if not data._structure_klifs_id_exists():
+        # In case of a local KLIFS session, test if complex and pocket structural files exist
+        if data.klifs_session._database is not None:
+            if not data._local_session_files_exist():
                 return None
 
-            # In case of a local KLIFS session, test if complex and pocket structural files exist
-            if data.klifs_session._database is not None:
-                if not data._local_session_files_exist():
-                    return None
-
-            data.text, data.extension = data._get_text_and_extension()
+        # Get the complex structure text and extension
+        data.text, data.extension = data._get_text_and_extension()
+        # Get the pocket residue PDB IDs and KLIFS indices
+        try:
             data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
-            data.kinase_name = data._get_kinase_name()
-
-            return data
-
-        except ValueError as e:
+        except (KlifsPocketIncompleteError, KlifsPocketUnequalSequenceStructure) as e:
             logger.error(
                 f"The following structure could not be loaded into kissim: {structure_klifs_id}: "
                 f"{e}"
             )
             return None
+        # Get the kinase name
+        data.kinase_name = data._get_kinase_name()
+
+        return data
 
     def _structure_klifs_id_exists(self):
         """
