@@ -110,7 +110,7 @@ class KlifsToKissimData:
             try:
                 self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)
             except SwaggerMappingError as e:
-                logger.warning(
+                logger.error(
                     f"{self.structure_klifs_id}: Structure KLIFS ID unknown to remote session "
                     f"(KLIFS response: SwaggerMappingError: {e})"
                 )
@@ -119,7 +119,7 @@ class KlifsToKissimData:
             try:
                 self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)
             except ValueError as e:
-                logger.warning(
+                logger.error(
                     f"{self.structure_klifs_id}: Structure KLIFS ID unknown to local session. "
                     f"(ValueError: {e})"
                 )
@@ -149,7 +149,7 @@ class KlifsToKissimData:
         if complex_filepath.exists() and pocket_filepath.exists():
             return True
         else:
-            logger.warning(
+            logger.error(
                 f"{self.structure_klifs_id}: Local complex.pdb or pocket.pdb file missing: "
                 f"{complex_filepath}"
             )
