@@ -281,7 +281,7 @@ class PocketBioPython(PocketBase):
         return {
             residue: exposure
             for residue, exposure in self._hse_ca_complex.property_dict.items()
-            if residue[1][1] in self._residue_ids
+            if (residue[1][1] in self._residue_ids) and (residue[1][2] == " ")
         }
 
     @property
@@ -303,7 +303,7 @@ class PocketBioPython(PocketBase):
         return {
             residue: exposure
             for residue, exposure in self._hse_cb_complex.property_dict.items()
-            if residue[1][1] in self._residue_ids
+            if (residue[1][1] in self._residue_ids) and (residue[1][2] == " ")
         }
 
     def _ca_atom(self, residue_id):
@@ -473,7 +473,14 @@ class PocketBioPython(PocketBase):
         """
 
         residues = list(self._data_complex.get_residues())
-        residue = [residue for residue in residues if residue.get_id()[1] == residue_id]
+        # Select residue of interest
+        # residue.get_id()[2] == " " makes sure that only the first residue is selected in case
+        # there are residues with insertion codes for the residue of interest
+        residue = [
+            residue
+            for residue in residues
+            if (residue.get_id()[1] == residue_id) and (residue.get_id()[2] == " ")
+        ]
 
         if len(residue) == 1:
             return residue[0]
