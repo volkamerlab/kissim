@@ -29,6 +29,8 @@ class TestKlifsToKissimData:
             (100000, LOCAL, False),  # Invalid ID
             (117, LOCAL, False),  # Missing complex.pdb
             (100000, REMOTE, False),  # Invalid ID
+            (13623, LOCAL, False), # Incomplete pocket sequence
+            (1243, LOCAL, False), # Pocket length not the same in sequence and structure
         ],
     )
     def test_from_structure_klifs_id(self, structure_klifs_id, klifs_session, exists):
