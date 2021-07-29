@@ -9,6 +9,10 @@ import logging
 from bravado_core.exception import SwaggerMappingError
 
 from opencadd.databases.klifs import setup_remote
+from opencadd.databases.klifs.exceptions import (
+    KlifsPocketIncompleteError,
+    KlifsPocketUnequalSequenceStructure,
+)
 from opencadd.structure.pocket import PocketBase
 
 logger = logging.getLogger(__name__)
@@ -79,8 +83,18 @@ class KlifsToKissimData:
             if not data._local_session_files_exist():
                 return None
 
+        # Get the complex structure text and extension
         data.text, data.extension = data._get_text_and_extension()
-        data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
+        # Get the pocket residue PDB IDs and KLIFS indices
+        try:
+            data.residue_ids, data.residue_ixs = data._get_pocket_residue_ids_and_ixs()
+        except (KlifsPocketIncompleteError, KlifsPocketUnequalSequenceStructure) as e:
+            logger.error(
+                f"The following structure could not be loaded into kissim: {structure_klifs_id}: "
+                f"{e}"
+            )
+            return None
+        # Get the kinase name
         data.kinase_name = data._get_kinase_name()
 
         return data
@@ -101,7 +115,7 @@ class KlifsToKissimData:
             try:
                 self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)
             except SwaggerMappingError as e:
-                logger.warning(
+                logger.error(
                     f"{self.structure_klifs_id}: Structure KLIFS ID unknown to remote session "
                     f"(KLIFS response: SwaggerMappingError: {e})"
                 )
@@ -110,7 +124,7 @@ class KlifsToKissimData:
             try:
                 self.klifs_session.structures.by_structure_klifs_id(self.structure_klifs_id)
             except ValueError as e:
-                logger.warning(
+                logger.error(
                     f"{self.structure_klifs_id}: Structure KLIFS ID unknown to local session. "
                     f"(ValueError: {e})"
                 )
@@ -140,7 +154,7 @@ class KlifsToKissimData:
         if complex_filepath.exists() and pocket_filepath.exists():
             return True
         else:
-            logger.warning(
+            logger.error(
                 f"{self.structure_klifs_id}: Local complex.pdb or pocket.pdb file missing: "
                 f"{complex_filepath}"
             )
