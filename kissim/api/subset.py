@@ -67,8 +67,9 @@ def subset(
     )
 
     # Log input and output fingerprint lengths
-    n_bits = len(fingerprint_generator.data[3].values_array())
-    n_bits_subset = len(fingerprint_generator_subset.data[3].values_array())
+    example_id = list(fingerprint_generator.data.keys())[0]
+    n_bits = len(fingerprint_generator.data[example_id].values_array())
+    n_bits_subset = len(fingerprint_generator_subset.data[example_id].values_array())
     n_residues = len(klifs_residue_ids)
     n_residues_theory = 12 * n_residues + 12
     if n_bits_subset == n_residues_theory:
