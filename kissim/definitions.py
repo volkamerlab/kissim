@@ -4,7 +4,12 @@ kissim.encoding.definitions
 Handles definitions.
 """
 
+from pathlib import Path
+
 import pandas as pd
+import json
+
+PATH_DATA = Path(__file__).parent / "data"
 
 # Standard amino acids
 STANDARD_AMINO_ACIDS = [
@@ -153,3 +158,7 @@ DISTANCE_CUTOFFS = {
     "center": (1.0, 29.0),
 }
 MOMENT_CUTOFFS = {1: (11.0, 17.0), 2: (2.0, 7.0), 3: (-3.0, 7.0)}
+
+# KLIFS pocket residue subsets by DFG conformation
+with open(PATH_DATA / "klifs_pocket_residue_subset.json") as f:
+    KLIFS_POCKET_RESIDUE_SUBSET = json.load(f)
