@@ -10,7 +10,7 @@ from kissim.cli.utils import configure_logger
 
 def subset_from_cli(args):
     """
-    Remove fingerprint outliers.
+    Subset fingerprints.
 
     Parameters
     ----------
