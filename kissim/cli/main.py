@@ -19,6 +19,7 @@ from kissim.cli import (
     weights_from_cli,
     outliers_from_cli,
     tree_from_cli,
+    subset_from_cli,
 )
 
 
@@ -33,6 +34,7 @@ def main():
     - weights
     - outliers
     - tree
+    - subset
     """
 
     parser = argparse.ArgumentParser()
@@ -43,6 +45,7 @@ def main():
     weights_subparser = subparsers.add_parser("weights")
     outliers_subparser = subparsers.add_parser("outliers")
     tree_subparser = subparsers.add_parser("tree")
+    subset_subparser = subparsers.add_parser("subset")
 
     # Arguments and function to be called for sub-command encode
     encode_subparser.add_argument(
@@ -190,6 +193,30 @@ def main():
         choices=["ward", "complete", "weighted", "average", "centroid"],
     )
     tree_subparser.set_defaults(func=tree_from_cli)
+
+    # Arguments and function to be called for sub-command subset
+    subset_subparser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Path to fingerprints JSON file.",
+        required=True,
+    )
+    subset_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to subset fingerprints JSON file.",
+        required=False,
+    )
+    subset_subparser.add_argument(
+        "-s",
+        "--subset",
+        type=str,
+        help="Criterion to be used to select residue subset.",
+        required=False,
+    )
+    subset_subparser.set_defaults(func=subset_from_cli)
 
     args = parser.parse_args()
     try:
