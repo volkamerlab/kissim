@@ -153,7 +153,7 @@ FEATURE_METADATA = {
 
 # Distance and moment cutoffs used for fingerprint normalization
 # Cutoffs defined in this notebook:
-# https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb
+# https://github.com/volkamerlab/kissim_app/blob/master/notebooks/004_fingerprints/002_spatial_feature_cutoffs.ipynb
 DISTANCE_CUTOFFS = {
     "hinge_region": (2.0, 31.0),
     "dfg_region": (0.0, 34.0),
