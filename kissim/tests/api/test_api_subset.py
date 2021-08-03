@@ -3,14 +3,19 @@ Unit and regression test for the kissim.api.subset module.
 """
 
 from pathlib import Path
+
+import numpy as np
 import pytest
+from opencadd.databases.klifs import setup_local
 
 from kissim.utils import enter_temp_directory
 from kissim.api import subset
+from kissim.api.subset import _subset_fingerprint_generator_data
 from kissim.encoding import FingerprintGenerator
 from kissim.definitions import KLIFS_POCKET_RESIDUE_SUBSET
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
+LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 
 @pytest.mark.parametrize(
@@ -95,3 +100,27 @@ def test_subset(
             fingerprints_subset_path.unlink()
 
         fingerprints_path.unlink()
+
+
+@pytest.mark.parametrize(
+    "structure_klifs_id, klifs_session, subset_residue_ids, fp_subset_sum",
+    [
+        (110, LOCAL, [1, 2, 3], 250.981),
+        (118, LOCAL, [10, 20, 30], 252.108),
+    ],
+)
+def test_subset_fingerprint_generator_data(
+    structure_klifs_id, klifs_session, subset_residue_ids, fp_subset_sum
+):
+
+    fingerprint_generator = FingerprintGenerator.from_structure_klifs_ids(
+        [structure_klifs_id], klifs_session
+    )
+    fingerprint_generator_data = _subset_fingerprint_generator_data(
+        fingerprint_generator, subset_residue_ids
+    )
+    fp_subset_sum_calculated = np.nansum(
+        fingerprint_generator_data[structure_klifs_id].values_array()
+    )
+    print(fp_subset_sum_calculated)
+    assert pytest.approx(fp_subset_sum_calculated, abs=1e-3) == fp_subset_sum
