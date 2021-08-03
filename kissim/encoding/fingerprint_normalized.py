@@ -132,19 +132,21 @@ class FingerprintNormalized(FingerprintBase):
                 )
                 for value in values["aliphatic"]
             ]
+            # TODO Do not hardcode min/max
             values_normalized["sco"] = [
                 self._min_max_normalization(
                     value,
-                    min(DISCRETE_FEATURE_VALUES["sco"]),
-                    max(DISCRETE_FEATURE_VALUES["sco"]),
+                    0.0,
+                    180.0,
                 )
                 for value in values["sco"]
             ]
+            # TODO Do not hardcode min/max
             values_normalized["exposure"] = [
                 self._min_max_normalization(
                     value,
-                    min(DISCRETE_FEATURE_VALUES["exposure"]),
-                    max(DISCRETE_FEATURE_VALUES["exposure"]),
+                    0.0,
+                    1.0,
                 )
                 for value in values["exposure"]
             ]
