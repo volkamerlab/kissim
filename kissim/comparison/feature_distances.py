@@ -122,7 +122,7 @@ class FeatureDistances:
         f1, f2 = fingerprint1.distances, fingerprint2.distances
         for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
             distance, bit_coverage = feature_distances._get_feature_distances_and_bit_coverages(
-                ff1, ff2, "scaled_euclidean"
+                ff1, ff2, "scaled_cityblock"
             )
             distances.append(distance)
             bit_coverages.append(bit_coverage)
@@ -131,7 +131,7 @@ class FeatureDistances:
         f1, f2 = fingerprint1.moments.transpose(), fingerprint2.moments.transpose()
         for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
             distance, bit_coverage = feature_distances._get_feature_distances_and_bit_coverages(
-                ff1, ff2, "scaled_euclidean"
+                ff1, ff2, "scaled_cityblock"
             )
             distances.append(distance)
             bit_coverages.append(bit_coverage)
