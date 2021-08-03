@@ -83,7 +83,7 @@ class SolventExposureFeature(BaseFeature):
         feature._ratio = exposures["exposure"].to_list()
         feature._ratio_ca = exposures["ca.exposure"].to_list()
         feature._ratio_cb = exposures["cb.exposure"].to_list()
-        feature._categories = [feature._get_category(ratio) for ratio in feature._ratio]
+        feature._categories = feature._ratio
         return feature
 
     @property
