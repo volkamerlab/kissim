@@ -113,7 +113,7 @@ class FeatureDistances:
         f1, f2 = fingerprint1.physicochemical, fingerprint2.physicochemical
         for (_, ff1), (_, ff2) in zip(f1.items(), f2.items()):
             distance, bit_coverage = feature_distances._get_feature_distances_and_bit_coverages(
-                ff1, ff2, "scaled_cityblock"
+                ff1, ff2, "scaled_euclidean"
             )
             distances.append(distance)
             bit_coverages.append(bit_coverage)
