@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from kissim.encoding.features import BaseFeature
-from kissim.definitions import EXPOSURE_RADIUS, EXPOSURE_RATIO_CUTOFFS
+from kissim.definitions import EXPOSURE_RADIUS, EXPOSURE_RATIO_CUTOFFS, DISCRETE_FEATURE_VALUES
 
 logger = logging.getLogger(__name__)
 
@@ -251,13 +251,13 @@ class SolventExposureFeature(BaseFeature):
         if np.isnan(ratio):
             return np.nan
         elif 0.0 <= ratio <= EXPOSURE_RATIO_CUTOFFS[0]:  # Low solvent exposure
-            return 1.0
+            return DISCRETE_FEATURE_VALUES["exposure"][0]
         elif (
             EXPOSURE_RATIO_CUTOFFS[0] < ratio <= EXPOSURE_RATIO_CUTOFFS[1]
         ):  # Intermediate solvent exposure
-            return 2.0
+            return DISCRETE_FEATURE_VALUES["exposure"][1]
         elif EXPOSURE_RATIO_CUTOFFS[1] < ratio <= 1.0:  # High solvent exposure
-            return 3.0
+            return DISCRETE_FEATURE_VALUES["exposure"][2]
         else:
             raise ValueError(
                 f"Molecule {self.name}: Unknown solvent exposure ratio {ratio}. "
