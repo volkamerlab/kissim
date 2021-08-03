@@ -8,7 +8,7 @@ import logging
 
 import numpy as np
 
-from kissim.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
+from kissim.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS, DISCRETE_FEATURE_VALUES
 from kissim.encoding import FingerprintBase
 
 logger = logging.getLogger(__name__)
@@ -84,28 +84,68 @@ class FingerprintNormalized(FingerprintBase):
 
         if values is not None:
             values_normalized["size"] = [
-                self._min_max_normalization(value, 1.0, 3.0) for value in values["size"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["size"]),
+                    max(DISCRETE_FEATURE_VALUES["size"]),
+                )
+                for value in values["size"]
             ]
             values_normalized["hbd"] = [
-                self._min_max_normalization(value, 0.0, 3.0) for value in values["hbd"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["hbd"]),
+                    max(DISCRETE_FEATURE_VALUES["hbd"]),
+                )
+                for value in values["hbd"]
             ]
             values_normalized["hba"] = [
-                self._min_max_normalization(value, 0.0, 2.0) for value in values["hba"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["hba"]),
+                    max(DISCRETE_FEATURE_VALUES["hba"]),
+                )
+                for value in values["hba"]
             ]
             values_normalized["charge"] = [
-                self._min_max_normalization(value, -1.0, 1.0) for value in values["charge"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["charge"]),
+                    max(DISCRETE_FEATURE_VALUES["charge"]),
+                )
+                for value in values["charge"]
             ]
             values_normalized["aromatic"] = [
-                self._min_max_normalization(value, 0.0, 1.0) for value in values["aromatic"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["aromatic"]),
+                    max(DISCRETE_FEATURE_VALUES["aromatic"]),
+                )
+                for value in values["aromatic"]
             ]
             values_normalized["aliphatic"] = [
-                self._min_max_normalization(value, 0.0, 1.0) for value in values["aliphatic"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["aliphatic"]),
+                    max(DISCRETE_FEATURE_VALUES["aliphatic"]),
+                )
+                for value in values["aliphatic"]
             ]
             values_normalized["sco"] = [
-                self._min_max_normalization(value, 1.0, 3.0) for value in values["sco"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["sco"]),
+                    max(DISCRETE_FEATURE_VALUES["sco"]),
+                )
+                for value in values["sco"]
             ]
             values_normalized["exposure"] = [
-                self._min_max_normalization(value, 1.0, 3.0) for value in values["exposure"]
+                self._min_max_normalization(
+                    value,
+                    min(DISCRETE_FEATURE_VALUES["exposure"]),
+                    max(DISCRETE_FEATURE_VALUES["exposure"]),
+                )
+                for value in values["exposure"]
             ]
             return values_normalized
 
