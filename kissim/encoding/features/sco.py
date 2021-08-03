@@ -94,9 +94,7 @@ class SideChainOrientationFeature(BaseFeature):
             feature._calculate_vertex_angle(sc_atom, ca_atom, feature._pocket_center)
             for ca_atom, sc_atom in zip(feature._ca_atoms, feature._sc_atoms)
         ]
-        feature._categories = [
-            feature._get_category(vertex_angle) for vertex_angle in feature._vertex_angles
-        ]
+        feature._categories = feature._vertex_angles
         return feature
 
     @property
