@@ -32,6 +32,12 @@ class TestFingerprintNormalized:
 
         fingerprint = Fingerprint.from_structure_klifs_id(structure_klifs_id, LOCAL)
         fingerprint_normalized = FingerprintNormalized.from_fingerprint(fingerprint)
+        assert isinstance(fingerprint_normalized, FingerprintNormalized)
+        assert fingerprint.structure_klifs_id == fingerprint_normalized.structure_klifs_id
+        assert fingerprint.kinase_name == fingerprint_normalized.kinase_name
+        assert fingerprint.residue_ids == fingerprint_normalized.residue_ids
+        assert fingerprint.residue_ixs == fingerprint_normalized.residue_ixs
+        # Test the only remaining attribute `values_dict` below!
 
     @pytest.mark.parametrize(
         "values, values_normalized",

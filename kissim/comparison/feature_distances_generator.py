@@ -62,7 +62,7 @@ class FeatureDistancesGenerator(BaseGenerator):
         """
 
         logger.info("GENERATE FEATURE DISTANCES")
-        logger.info(f"Number of input input fingerprints: {len(fingerprints_generator.data)}")
+        logger.info(f"Number of input fingerprints: {len(fingerprints_generator.data)}")
 
         start_time = datetime.datetime.now()
         logger.info(f"Feature distances generation started at: {start_time}")

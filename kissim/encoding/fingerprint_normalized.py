@@ -33,6 +33,7 @@ class FingerprintNormalized(FingerprintBase):
 
         fingerprint_normalized = cls()
         fingerprint_normalized.structure_klifs_id = fingerprint.structure_klifs_id
+        fingerprint_normalized.kinase_name = fingerprint.kinase_name
         fingerprint_normalized.residue_ids = fingerprint.residue_ids
         fingerprint_normalized.residue_ixs = fingerprint.residue_ixs
 
