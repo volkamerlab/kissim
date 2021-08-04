@@ -144,7 +144,6 @@ def weight_feature_distances(
         kinase_matrix.index.name = None
         kinase_matrix.columns.name = None
         kinase_matrix.to_csv(kinase_distances_filepath, index=True)
-        print(kinase_matrix)
 
         # Write default tree to file
         tree_filepath = output_filepath.parent / f"{output_filepath.stem}_to_kinase_clusters.tree"
