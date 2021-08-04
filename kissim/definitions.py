@@ -4,7 +4,13 @@ kissim.encoding.definitions
 Handles definitions.
 """
 
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
+import json
+
+PATH_DATA = Path(__file__).parent / "data"
 
 # Standard amino acids
 STANDARD_AMINO_ACIDS = [
@@ -113,13 +119,15 @@ SUBPOCKETS = {
 }
 
 # Summary of possible discrete feature values
+# Note: HBA only contains 0.0, 1.0 and 3.0 but we want to include the missing 2.0 as well to
+# emphasize on the larger step between the first and last two categories
 DISCRETE_FEATURE_VALUES = {
-    "size": [1.0, 2.0, 3.0],
-    "hbd": [0.0, 1.0, 2.0, 3.0],
-    "hba": [0.0, 1.0, 2.0],
-    "charge": [-1.0, 0.0, 1.0],
-    "aromatic": [0.0, 1.0],
-    "aliphatic": [0.0, 1.0],
+    "size": SITEALIGN_FEATURES["size"].sort_values().unique().tolist(),
+    "hbd": np.arange(SITEALIGN_FEATURES["hbd"].min(), SITEALIGN_FEATURES["hbd"].max() + 1),
+    "hba": SITEALIGN_FEATURES["hba"].sort_values().unique().tolist(),
+    "charge": SITEALIGN_FEATURES["charge"].sort_values().unique().tolist(),
+    "aromatic": SITEALIGN_FEATURES["aromatic"].sort_values().unique().tolist(),
+    "aliphatic": SITEALIGN_FEATURES["aliphatic"].sort_values().unique().tolist(),
     "sco": [1.0, 2.0, 3.0],
     "exposure": [1.0, 2.0, 3.0],
 }
@@ -145,7 +153,7 @@ FEATURE_METADATA = {
 
 # Distance and moment cutoffs used for fingerprint normalization
 # Cutoffs defined in this notebook:
-# https://github.com/volkamerlab/kissim_app/blob/master/notebooks/fingerprints/spatial_feature_cutoffs.ipynb
+# https://github.com/volkamerlab/kissim_app/blob/master/notebooks/004_fingerprints/002_spatial_feature_cutoffs.ipynb
 DISTANCE_CUTOFFS = {
     "hinge_region": (2.0, 31.0),
     "dfg_region": (0.0, 34.0),
@@ -153,3 +161,7 @@ DISTANCE_CUTOFFS = {
     "center": (1.0, 29.0),
 }
 MOMENT_CUTOFFS = {1: (11.0, 17.0), 2: (2.0, 7.0), 3: (-3.0, 7.0)}
+
+# KLIFS pocket residue subsets by DFG conformation
+with open(PATH_DATA / "klifs_pocket_residue_subset.json") as f:
+    KLIFS_POCKET_RESIDUE_SUBSET = json.load(f)

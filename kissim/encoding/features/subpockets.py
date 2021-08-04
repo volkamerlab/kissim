@@ -8,11 +8,10 @@ import logging
 
 import numpy as np
 import pandas as pd
-from scipy.special import cbrt
-from scipy.stats.stats import moment
 
 from kissim.encoding.features import BaseFeature
 from kissim.definitions import SUBPOCKETS
+from kissim.utils import calculate_first_second_third_moments
 
 logger = logging.getLogger(__name__)
 
@@ -299,33 +298,7 @@ class SubpocketsFeature(BaseFeature):
 
         moments = {}
         for name, distances in self._distances.items():
-            moment1, moment2, moment3 = self.calculate_first_second_third_moments(distances)
+            moment1, moment2, moment3 = calculate_first_second_third_moments(distances)
             # Must be cast to list of floats (removing all numpy data types) to allow json dump
             moments[name] = np.array([moment1, moment2, moment3]).tolist()
         return moments
-
-    @staticmethod
-    def calculate_first_second_third_moments(
-        values,
-    ):  # TODO Could be moved to something like utils
-        """
-        Get first, second, and third moment (mean, standard deviation, and skewness)
-        for a distribution of values.
-        Note: Moments are based only on non-NaN values.
-
-        Parameters
-        ----------
-        values : list or numpy.array or pd.Series of (float or int)
-            List of values.
-        """
-
-        values = np.array(values)
-
-        if len(values) > 0 and not all(np.isnan(values)):
-            moment1 = np.nanmean(values)
-            # Second and third moment: delta degrees of freedom = 0 (divisor N)
-            moment2 = np.nanstd(values, ddof=0)
-            moment3 = cbrt(moment(values, moment=3, nan_policy="omit"))
-            return moment1, moment2, moment3
-        else:
-            return np.nan, np.nan, np.nan

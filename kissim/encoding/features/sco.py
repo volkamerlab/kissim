@@ -11,7 +11,7 @@ import numpy as np
 from Bio.PDB import calc_angle
 
 from kissim.encoding.features import BaseFeature
-from kissim.definitions import SIDE_CHAIN_ANGLE_CUTOFFS
+from kissim.definitions import SIDE_CHAIN_ANGLE_CUTOFFS, DISCRETE_FEATURE_VALUES
 
 logger = logging.getLogger(__name__)
 
@@ -190,13 +190,13 @@ class SideChainOrientationFeature(BaseFeature):
         if np.isnan(vertex_angle):
             return np.nan
         elif 0.0 <= vertex_angle <= SIDE_CHAIN_ANGLE_CUTOFFS[0]:  # Inwards
-            return 1.0
+            return DISCRETE_FEATURE_VALUES["sco"][0]
         elif (
             SIDE_CHAIN_ANGLE_CUTOFFS[0] < vertex_angle <= SIDE_CHAIN_ANGLE_CUTOFFS[1]
         ):  # Intermediate
-            return 2.0
+            return DISCRETE_FEATURE_VALUES["sco"][1]
         elif SIDE_CHAIN_ANGLE_CUTOFFS[1] < vertex_angle <= 180.0:  # Outwards
-            return 3.0
+            return DISCRETE_FEATURE_VALUES["sco"][2]
         else:
             raise ValueError(
                 f"Molecule {self.name}: Unknown vertex angle {vertex_angle}. "

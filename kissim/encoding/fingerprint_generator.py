@@ -391,7 +391,14 @@ class FingerprintGenerator:
         return fingerprint
 
     def _normalize_fingerprints(self):
-        """TODO"""
+        """
+        Normalize fingerprints in fingerprint generator.
+
+        Returns
+        -------
+        dict
+            Normalized fingerprints (values) by fingerprint ID (keys).
+        """
         return {
             key: FingerprintNormalized.from_fingerprint(value) for key, value in self.data.items()
         }
