@@ -45,7 +45,6 @@ def weights(feature_distances_path, feature_weights=None, fingerprint_distances_
     feature_distances_generator = FeatureDistancesGenerator.from_csv(feature_distances_path)
 
     # Calculate fingerprint distances
-    logger.info(f"Feature weights: {feature_weights}")
     fingerprint_distance_generator = FingerprintDistanceGenerator.from_feature_distances_generator(
         feature_distances_generator, feature_weights
     )
