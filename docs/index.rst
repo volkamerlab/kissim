@@ -8,6 +8,19 @@ Welcome to the ``kissim`` documentation
 
 Subpocket-based structural fingerprint for kinase pocket comparison
 
+.. image::
+   https://github.com/volkamerlab/kissim/workflows/CI/badge.svg
+   :target: https://github.com/volkamerlab/kissim/actions
+.. image::
+   https://codecov.io/gh/volkamerlab/kissim/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/volkamerlab/kissim/branch/main
+.. image::
+   https://img.shields.io/badge/License-MIT-blue.svg
+   :target: https://opensource.org/licenses/MIT
+.. image::
+   https://readthedocs.org/projects/kissim/badge/?version=latest
+   :target: https://maxsmi.readthedocs.io/en/kissim/?badge=latest
+
 .. raw:: html
 
    <p align="center">
