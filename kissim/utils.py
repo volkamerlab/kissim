@@ -125,14 +125,14 @@ def spatial_min_max_from_fingerprint_generator(
     """
 
     if feature == "distances":
-        fps_data = fingerprint_generator.distances_exploded()
+        fps_data = fingerprint_generator.distances_exploded
         index1_name = "subpocket"
         if fine_grained:
             column_names = fps_data.index.get_level_values(1).unique().to_list()
         else:
             column_names = ["any"]
     elif feature == "moments":
-        fps_data = fingerprint_generator.moments_exploded().stack().unstack(1)
+        fps_data = fingerprint_generator.moments_exploded.stack().unstack(1)
         index1_name = "moment"
         if fine_grained:
             column_names = fps_data.index.get_level_values(1).unique().to_list()

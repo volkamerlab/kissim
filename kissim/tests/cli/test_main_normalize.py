@@ -10,7 +10,7 @@ import subprocess
 from kissim.utils import enter_temp_directory
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
-PATH_TEST_DATA = Path(__file__).parent / "../data"
+# PATH_TEST_DATA = Path(__file__).parent / "../data"
 
 
 @pytest.mark.parametrize(
