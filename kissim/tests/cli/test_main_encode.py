@@ -8,7 +8,7 @@ import pytest
 import subprocess
 
 from kissim.utils import enter_temp_directory
-from kissim.encoding import Fingerprint, FingerprintGenerator
+from kissim.encoding import FingerprintBase, FingerprintGenerator
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 
@@ -43,7 +43,7 @@ def test_main_encode(args):
         # Json file can be loaded as FingerprintGenerator object?
         fingerprint_generator = FingerprintGenerator.from_json(output)
         assert isinstance(fingerprint_generator, FingerprintGenerator)
-        assert isinstance(list(fingerprint_generator.data.values())[0], Fingerprint)
+        assert isinstance(list(fingerprint_generator.data.values())[0], FingerprintBase)
 
 
 @pytest.mark.parametrize(

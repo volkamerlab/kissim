@@ -20,7 +20,7 @@ LOCAL = setup_local(PATH_TEST_DATA / "KLIFS_download")
 
 class TestFingerprintGenerator:
     """
-    Test common functionalities in the PocketBioPython and PocketDataFrame classes.
+    Test fingerprints class.
     """
 
     @pytest.mark.parametrize(
