@@ -8,7 +8,6 @@ import pytest
 import numpy as np
 from opencadd.databases.klifs import setup_local
 
-from kissim.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS
 from kissim.encoding import Fingerprint, FingerprintNormalized
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
@@ -79,36 +78,15 @@ class TestFingerprintNormalized:
         assert values_normalized_calculated == values_normalized
 
     @pytest.mark.parametrize(
-        "values, values_normalized",
+        "values, fine_grained, values_normalized",
         [
-            (None, None),
+            (None, False, None),
             (
                 {
-                    "hinge_region": [
-                        DISTANCE_CUTOFFS["hinge_region"][0] - 1,
-                        DISTANCE_CUTOFFS["hinge_region"][0],
-                        DISTANCE_CUTOFFS["hinge_region"][1],
-                        DISTANCE_CUTOFFS["hinge_region"][1] + 1,
-                    ],
-                    "dfg_region": [
-                        DISTANCE_CUTOFFS["dfg_region"][0] - 1,
-                        DISTANCE_CUTOFFS["dfg_region"][0],
-                        DISTANCE_CUTOFFS["dfg_region"][1],
-                        DISTANCE_CUTOFFS["dfg_region"][1] + 1,
-                    ],
-                    "front_pocket": [
-                        DISTANCE_CUTOFFS["front_pocket"][0] - 1,
-                        DISTANCE_CUTOFFS["front_pocket"][0],
-                        DISTANCE_CUTOFFS["front_pocket"][1],
-                        DISTANCE_CUTOFFS["front_pocket"][1] + 1,
-                    ],
-                    "center": [
-                        DISTANCE_CUTOFFS["center"][0] - 1,
-                        DISTANCE_CUTOFFS["center"][0],
-                        DISTANCE_CUTOFFS["center"][1],
-                        DISTANCE_CUTOFFS["center"][1] + 1,
-                    ],
+                    subpocket_name: [-100, -100, 100, 100]
+                    for subpocket_name in ["hinge_region", "dfg_region", "front_pocket", "center"]
                 },
+                False,
                 {
                     "hinge_region": [0.0, 0.0, 1.0, 1.0],
                     "dfg_region": [0.0, 0.0, 1.0, 1.0],
@@ -118,90 +96,40 @@ class TestFingerprintNormalized:
             ),
         ],
     )
-    def test_normalize_distances_bits(self, values, values_normalized):
+    def test_normalize_distances_bits(self, values, fine_grained, values_normalized):
         """
         Test normalization of distance bits.
         """
 
         fingerprint_normalized = FingerprintNormalized()
-        values_normalized_calculated = fingerprint_normalized._normalize_distances_bits(values)
+        values_normalized_calculated = fingerprint_normalized._normalize_distances_bits(
+            values, fine_grained
+        )
         assert values_normalized_calculated == values_normalized
 
     @pytest.mark.parametrize(
-        "values, values_normalized",
+        "values, fine_grained, values_normalized",
         [
-            (None, None),
+            (None, False, None),
             (
-                {
-                    "test": [
-                        MOMENT_CUTOFFS[1][0] - 1,
-                        MOMENT_CUTOFFS[2][0] - 1,
-                        MOMENT_CUTOFFS[3][0] - 1,
-                    ],
-                },
-                {
-                    "test": [0.0, 0.0, 0.0],
-                },
+                {"test": [-100, -100, -100]},
+                False,
+                {"test": [0.0, 0.0, 0.0]},
             ),
             (
-                {
-                    "test": [
-                        MOMENT_CUTOFFS[1][0],
-                        MOMENT_CUTOFFS[2][0],
-                        MOMENT_CUTOFFS[3][0],
-                    ],
-                },
-                {
-                    "test": [0.0, 0.0, 0.0],
-                },
-            ),
-            (
-                {
-                    "test": [
-                        MOMENT_CUTOFFS[1][1],
-                        MOMENT_CUTOFFS[2][1],
-                        MOMENT_CUTOFFS[3][1],
-                    ],
-                },
-                {
-                    "test": [1.0, 1.0, 1.0],
-                },
-            ),
-            (
-                {
-                    "test": [
-                        MOMENT_CUTOFFS[1][1] + 1,
-                        MOMENT_CUTOFFS[2][1] + 1,
-                        MOMENT_CUTOFFS[3][1] + 1,
-                    ],
-                },
-                {
-                    "test": [1.0, 1.0, 1.0],
-                },
+                {"test": [100, 100, 100]},
+                False,
+                {"test": [1.0, 1.0, 1.0]},
             ),
         ],
     )
-    def test_normalize_moments_bits(self, values, values_normalized):
+    def test_normalize_moments_bits(self, values, fine_grained, values_normalized):
         """
         Test normalization of moments bits.
         """
 
         fingerprint_normalized = FingerprintNormalized()
-        values_normalized_calculated = fingerprint_normalized._normalize_moments_bits(values)
-        assert values_normalized_calculated == values_normalized
-
-    @pytest.mark.parametrize(
-        "value, minimum, maximum, value_normalized",
-        [(15, 10, 20, 0.5), (10, 10, 20, 0.0), (0, 10, 20, 0.0), (np.nan, 10, 20, np.nan)],
-    )
-    def test_min_max_normalization(self, value, minimum, maximum, value_normalized):
-        """
-        Test min-max normalization
-        """
-
-        fingerprint_normalized = FingerprintNormalized()
-        value_normalized_calculated = fingerprint_normalized._min_max_normalization(
-            value, minimum, maximum
+        values_normalized_calculated = fingerprint_normalized._normalize_moments_bits(
+            values, fine_grained
         )
-        if not np.isnan(value):
-            assert pytest.approx(value_normalized_calculated, abs=1e-4) == value_normalized
+        assert values_normalized_calculated == values_normalized

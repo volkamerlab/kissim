@@ -154,13 +154,14 @@ FEATURE_METADATA = {
 # Distance and moment cutoffs used for fingerprint normalization
 # Cutoffs defined in this notebook:
 # https://github.com/volkamerlab/kissim_app/blob/master/notebooks/004_fingerprints/002_spatial_feature_cutoffs.ipynb
-DISTANCE_CUTOFFS = {
-    "hinge_region": (2.0, 31.0),
-    "dfg_region": (0.0, 34.0),
-    "front_pocket": (1.0, 33.0),
-    "center": (1.0, 29.0),
-}
-MOMENT_CUTOFFS = {1: (11.0, 17.0), 2: (2.0, 7.0), 3: (-3.0, 7.0)}
+DISTANCE_CUTOFFS = {}
+MOMENT_CUTOFFS = {}
+for how in ["fine", "coarse"]:
+
+    DISTANCE_CUTOFFS[how] = pd.read_csv(
+        PATH_DATA / f"min_max_distances_{how}.csv", index_col=[0, 1]
+    )
+    MOMENT_CUTOFFS[how] = pd.read_csv(PATH_DATA / f"min_max_moments_{how}.csv", index_col=[0, 1])
 
 # KLIFS pocket residue subsets by DFG conformation
 with open(PATH_DATA / "klifs_pocket_residue_subset.json") as f:

@@ -10,12 +10,8 @@ import pandas as pd
 from opencadd.databases.klifs import setup_local, setup_remote
 
 from kissim.utils import enter_temp_directory
-from kissim.encoding import Fingerprint, FingerprintNormalized, FingerprintGenerator
-from kissim.schema import (
-    FEATURE_NAMES_PHYSICOCHEMICAL,
-    FEATURE_NAMES_PHYSICOCHEMICAL_DICT,
-    FEATURE_NAMES_DISTANCES_AND_MOMENTS,
-)
+from kissim.encoding import Fingerprint, FingerprintGenerator
+from kissim.schema import FEATURE_NAMES_PHYSICOCHEMICAL_DICT, FEATURE_NAMES_DISTANCES_AND_MOMENTS
 
 PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 REMOTE = setup_remote()
@@ -64,18 +60,13 @@ class TestFingerprintGenerator:
         fingerprints_values_array_sum_calculated = sum(
             [
                 np.nansum(fingerprint.values_array(True, True, True))
-                for structure_klifs_id, fingerprint in fingerprints.data.items()
+                for _, fingerprint in fingerprints.data.items()
             ]
         )
         assert (
             pytest.approx(fingerprints_values_array_sum_calculated, abs=1e-4)
             == fingerprints_values_array_sum
         )
-        # Attribute: data_normalized
-        assert isinstance(fingerprints.data_normalized, dict)
-        for key, value in fingerprints.data_normalized.items():
-            assert isinstance(key, int)
-            assert isinstance(value, FingerprintNormalized)
 
         # Property: subpocket_centers
         assert isinstance(fingerprints.subpocket_centers, pd.DataFrame)
@@ -95,10 +86,10 @@ class TestFingerprintGenerator:
         )
 
     @pytest.mark.parametrize(
-        "structure_klifs_ids, normalize, values_array_sum",
-        [([110, 118], False, 10148.4256), ([110, 118], True, 10148.4256)],
+        "structure_klifs_ids, values_array_sum",
+        [([110, 118], 10148.4256), ([110, 118], 10148.4256)],
     )
-    def test_to_from_json(self, structure_klifs_ids, normalize, values_array_sum):
+    def test_to_from_json(self, structure_klifs_ids, values_array_sum):
         """
         Test if saving/loading a fingerprint to/from a json file.
         """
@@ -113,30 +104,25 @@ class TestFingerprintGenerator:
             assert json_filepath.exists()
 
             # Load json file
-            fingerprints_reloaded = FingerprintGenerator.from_json(json_filepath, normalize)
+            fingerprints_reloaded = FingerprintGenerator.from_json(json_filepath)
 
         assert isinstance(fingerprints_reloaded, FingerprintGenerator)
         # Attribute data
         assert list(fingerprints.data.keys()) == list(fingerprints_reloaded.data.keys())
-        if normalize:
-            assert list(fingerprints.data_normalized.keys()) == list(
-                fingerprints_reloaded.data_normalized.keys()
-            )
-        else:
-            assert fingerprints_reloaded.data_normalized is None
+
         values_array_sum_calculated = sum(
             [
                 np.nansum(fingerprint.values_array(True, True, True))
-                for structure_klifs_id, fingerprint in fingerprints_reloaded.data.items()
+                for _, fingerprint in fingerprints_reloaded.data.items()
             ]
         )
         assert pytest.approx(values_array_sum_calculated, abs=1e-4) == values_array_sum
 
     @pytest.mark.parametrize(
-        "structure_klifs_ids, normalized",
-        [([110, 118], True), ([110, 118], False)],
+        "structure_klifs_ids",
+        [([110, 118]), ([110, 118])],
     )
-    def test_physicochemical_distances_moments(self, structure_klifs_ids, normalized):
+    def test_physicochemical_distances_moments(self, structure_klifs_ids):
         """
         Test feature group extraction methods.
 
@@ -148,29 +134,26 @@ class TestFingerprintGenerator:
 
         fingerprints = FingerprintGenerator.from_structure_klifs_ids(structure_klifs_ids)
 
-        physicochemical = fingerprints.physicochemical(normalized)
+        physicochemical = fingerprints.physicochemical
         assert physicochemical.index.to_list() == structure_klifs_ids
-        if normalized:
-            assert physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL
-        else:
-            assert physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
+        assert physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
         assert isinstance(physicochemical.iloc[0, 0], list)
 
-        distances = fingerprints.distances(normalized)
+        distances = fingerprints.distances
         assert distances.index.to_list() == structure_klifs_ids
         assert distances.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert isinstance(distances.iloc[0, 0], list)
 
-        moments = fingerprints.moments(normalized)
+        moments = fingerprints.moments
         assert moments.index.to_list() == structure_klifs_ids
         assert moments.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert isinstance(moments.iloc[0, 0], list)
 
     @pytest.mark.parametrize(
-        "structure_klifs_ids, normalized",
-        [([110, 118], True), ([110, 118], False)],
+        "structure_klifs_ids",
+        [([110, 118]), ([110, 118])],
     )
-    def test_physicochemical_distances_moments_exploded(self, structure_klifs_ids, normalized):
+    def test_physicochemical_distances_moments_exploded(self, structure_klifs_ids):
         """
         Test feature group extraction methods.
 
@@ -191,18 +174,15 @@ class TestFingerprintGenerator:
         index_residue_ix = list(range(1, 86)) * len(structure_klifs_ids)
         index_moment = list(range(1, 4)) * len(structure_klifs_ids)
 
-        physicochemical = fingerprints.physicochemical_exploded(normalized)
+        physicochemical = fingerprints.physicochemical_exploded
         assert physicochemical.index.get_level_values(
             "structure_klifs_id"
         ).to_list() == _index_structure_klifs_id(85)
         assert physicochemical.index.get_level_values("residue_ix").to_list() == index_residue_ix
-        if normalized:
-            assert physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL
-        else:
-            assert physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
+        assert physicochemical.columns.to_list() == FEATURE_NAMES_PHYSICOCHEMICAL_DICT
         assert physicochemical.dtypes.unique() == "float64"
 
-        distances = fingerprints.distances_exploded(normalized)
+        distances = fingerprints.distances_exploded
         assert distances.index.get_level_values(
             "structure_klifs_id"
         ).to_list() == _index_structure_klifs_id(85)
@@ -210,7 +190,7 @@ class TestFingerprintGenerator:
         assert distances.columns.to_list() == FEATURE_NAMES_DISTANCES_AND_MOMENTS
         assert distances.dtypes.unique() == "float64"
 
-        moments = fingerprints.moments_exploded(normalized)
+        moments = fingerprints.moments_exploded
         assert moments.index.get_level_values(
             "structure_klifs_id"
         ).to_list() == _index_structure_klifs_id(3)

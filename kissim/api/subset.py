@@ -114,9 +114,6 @@ def _subset_fingerprint_generator(fingerprint_generator, klifs_residue_ids):
     fingerprint_generator_subset.data = _subset_fingerprint_generator_data(
         fingerprint_generator, klifs_residue_ids
     )
-    fingerprint_generator_subset.data_normalized = _subset_fingerprint_generator_data_normalized(
-        fingerprint_generator, fingerprint_generator_subset
-    )
 
     return fingerprint_generator_subset
 
@@ -210,27 +207,3 @@ def _subset_fingerprint_generator_data(fingerprint_generator, klifs_residue_ids)
         fingerprint_generator_data_subset[id_] = fp_subset
 
     return fingerprint_generator_data_subset
-
-
-def _subset_fingerprint_generator_data_normalized(
-    fingerprint_generator, fingerprint_generator_subset
-):
-    """
-    Normalize the input fingerprint subsets.
-
-    Attributes
-    ----------
-    fingerprint_generator : kissim.encoding.FingerprintGenerator
-        Fingerprints.
-    fingerprint_generator_subset : kissim.encoding.FingerprintGenerator
-        Fingerprints subset.
-
-    Returns
-    -------
-    dict
-        Fingerprints with subset of residues only.
-    """
-
-    # If fingerprint generator contains normalized fingerprints
-    if fingerprint_generator.data_normalized is not None:
-        return fingerprint_generator_subset._normalize_fingerprints()
