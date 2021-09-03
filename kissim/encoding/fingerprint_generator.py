@@ -11,10 +11,9 @@ import logging
 from pathlib import Path
 
 from multiprocessing import Pool
-import pandas as pd
 from opencadd.databases.klifs import setup_remote
 
-from kissim.encoding import Fingerprint, FingerprintNormalized, FingerprintGeneratorBase
+from kissim.encoding import Fingerprint, FingerprintGeneratorBase
 from kissim.utils import set_n_cores
 
 logger = logging.getLogger(__name__)
