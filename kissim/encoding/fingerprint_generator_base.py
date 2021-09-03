@@ -4,9 +4,13 @@ kissim.encoding.fingerprint_generator_base
 Defines the base kissim fingerprint generator.
 """
 
+import json
 import logging
+from pathlib import Path
 
 import pandas as pd
+
+from kissim.encoding import FingerprintBase
 
 
 logger = logging.getLogger(__name__)
@@ -199,3 +203,48 @@ class FingerprintGeneratorBase:
         )
         features_exploded.index = multi_index
         return features_exploded
+
+    @classmethod
+    def from_json(cls, filepath):
+        """
+        Initialize a FingerprintGenerator object from a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+        """
+
+        filepath = Path(filepath)
+        with open(filepath, "r") as f:
+            json_string = f.read()
+        fingerprints_list = json.loads(json_string)
+
+        data = {}
+        for fingerprint_dict in fingerprints_list:
+            fingerprint = FingerprintBase._from_dict(fingerprint_dict)
+            data[fingerprint.structure_klifs_id] = fingerprint
+
+        fingerprint_generator = cls()
+        fingerprint_generator.data = data
+        fingerprint_generator.structure_klifs_ids = list(fingerprint_generator.data.keys())
+
+        return fingerprint_generator
+
+    def to_json(self, filepath):
+        """
+        Write FingerprintGenerator class attributes to a json file.
+
+        Parameters
+        ----------
+        filepath : str or pathlib.Path
+            Path to json file.
+        """
+
+        fingerprint_list = [
+            fingerprint.__dict__ for structure_klifs_id, fingerprint in self.data.items()
+        ]
+        json_string = json.dumps(fingerprint_list)
+        filepath = Path(filepath)
+        with open(filepath, "w") as f:
+            f.write(json_string)
