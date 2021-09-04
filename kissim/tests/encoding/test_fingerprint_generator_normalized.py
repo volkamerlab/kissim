@@ -16,8 +16,8 @@ class TestFingerprintGeneratorNormalized:
     @pytest.mark.parametrize(
         "method, fine_grained, structure_klifs_id, fingerprint_values_array_sum, fingerprint_normalized_values_array_sum",
         [
-            ("min_max", True, 109, 5108.226235, 409.057707),
-            ("min_max", False, 109, 5108.226235, 398.950979),
+            ("min_max", True, 109, 5108.2262, 409.0577),
+            ("min_max", False, 109, 5108.2262, 398.9509),
         ],
     )
     def test_from_fingerprint_generator(
@@ -45,7 +45,7 @@ class TestFingerprintGeneratorNormalized:
 
         fingerprint_values_array_sum_calculated = np.nansum(fingerprint.values_array())
         assert (
-            pytest.approx(fingerprint_values_array_sum_calculated, abs=1e-6)
+            pytest.approx(fingerprint_values_array_sum_calculated, abs=1e-4)
             == fingerprint_values_array_sum
         )
 
@@ -53,6 +53,6 @@ class TestFingerprintGeneratorNormalized:
             fingerprint_normalized.values_array()
         )
         assert (
-            pytest.approx(fingerprint_normalized_values_array_sum_calculated, abs=1e-6)
+            pytest.approx(fingerprint_normalized_values_array_sum_calculated, abs=1e-4)
             == fingerprint_normalized_values_array_sum
         )
