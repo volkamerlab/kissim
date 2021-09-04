@@ -1,7 +1,7 @@
 """
-kissim.encoding.fingerprint
+kissim.encoding.fingerprint_base
 
-Defines the kissim fingerprint.
+Defines the base kissim fingerprint.
 """
 
 import json

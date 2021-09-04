@@ -1,0 +1,9 @@
+subpocket,min_max,any
+hinge_region,min,2.37
+hinge_region,max,30.79
+dfg_region,min,0.87
+dfg_region,max,33.62
+front_pocket,min,1.36
+front_pocket,max,33.36
+center,min,1.11
+center,max,27.03

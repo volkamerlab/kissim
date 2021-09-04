@@ -15,6 +15,7 @@ import subprocess
 
 from kissim.cli import (
     encode_from_cli,
+    normalize_from_cli,
     compare_from_cli,
     weights_from_cli,
     outliers_from_cli,
@@ -30,6 +31,7 @@ def main():
 
     Sub-commands are:
     - encode
+    - normalize
     - compare
     - weights
     - outliers
@@ -41,6 +43,7 @@ def main():
     subparsers = parser.add_subparsers()
 
     encode_subparser = subparsers.add_parser("encode")
+    normalize_subparser = subparsers.add_parser("normalize")
     compare_subparser = subparsers.add_parser("compare")
     weights_subparser = subparsers.add_parser("weights")
     outliers_subparser = subparsers.add_parser("outliers")
@@ -79,6 +82,39 @@ def main():
         default=1,
     )
     encode_subparser.set_defaults(func=encode_from_cli)
+
+    # Arguments and function to be called for sub-command normalize
+    normalize_subparser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Path to JSON file containing fingerprint data.",
+        required=True,
+    )
+    normalize_subparser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Path to JSON file containing normalized fingerprint data.",
+        required=True,
+    )
+    normalize_subparser.add_argument(
+        "-m",
+        "--method",
+        type=str,
+        help="Normalization method.",
+        required=False,
+        default="min_max",
+    )
+    normalize_subparser.add_argument(
+        "-f",
+        "--fine_grained",
+        action="store_true",
+        help="Use fine-grained normalization (min-max per residue/subpocket for distances/moments).",
+        required=False,
+        default=False,
+    )
+    normalize_subparser.set_defaults(func=normalize_from_cli)
 
     # Arguments and function to be called for sub-command compare
     compare_subparser.add_argument(

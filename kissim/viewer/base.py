@@ -126,8 +126,8 @@ class _BaseViewer:
 
         return pd.concat(
             [
-                self._fingerprints.physicochemical_exploded(),
-                self._fingerprints.distances_exploded(),
+                self._fingerprints.physicochemical_exploded,
+                self._fingerprints.distances_exploded,
             ]
         )[self._feature_names]
 

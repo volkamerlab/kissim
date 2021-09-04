@@ -1,5 +1,5 @@
 """
-Unit and regression test for kissim's outliers CLI.
+Unit and regression test for kissim's normalized CLI.
 """
 
 from pathlib import Path
@@ -16,15 +16,17 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 @pytest.mark.parametrize(
     "args",
     [
-        f"kissim outliers -i {(PATH_TEST_DATA / 'fingerprints_test.json').absolute()} -d 5 -o fingerprints_clean_test.json",
+        f"kissim normalize -i {(PATH_TEST_DATA / 'fingerprints_test.json').absolute()} -o fingerprints_normalized_test.json",
+        f"kissim normalize -i {(PATH_TEST_DATA / 'fingerprints_test.json').absolute()} -o fingerprints_normalized_test.json -f",
+        f"kissim normalize -i {(PATH_TEST_DATA / 'fingerprints_test.json').absolute()} -o fingerprints_normalized_test.json -m min_max",
     ],
 )
-def test_main_outliers(args):
+def test_main_normalize(args):
     """
-    Test CLI for outliers using subprocesses.
+    Test CLI for normalize using subprocesses.
     """
 
-    output = Path("fingerprints_clean_test.json")
+    output = Path("fingerprints_normalized_test.json")
     args = args.split()
 
     with enter_temp_directory():

@@ -6,9 +6,8 @@ Defines the normalized kissim fingerprint.
 
 import logging
 
-import numpy as np
-
 from kissim.definitions import DISTANCE_CUTOFFS, MOMENT_CUTOFFS, DISCRETE_FEATURE_VALUES
+from kissim.utils import min_max_normalization_vector
 from kissim.encoding import FingerprintBase
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class FingerprintNormalized(FingerprintBase):
     @classmethod
-    def from_fingerprint(cls, fingerprint):
+    def from_fingerprint(cls, fingerprint, fine_grained=True):
         """
         Normalize fingerprint.
 
@@ -36,12 +35,13 @@ class FingerprintNormalized(FingerprintBase):
         fingerprint_normalized.kinase_name = fingerprint.kinase_name
         fingerprint_normalized.residue_ids = fingerprint.residue_ids
         fingerprint_normalized.residue_ixs = fingerprint.residue_ixs
-
-        fingerprint_normalized._normalize(fingerprint)
+        fingerprint_normalized.values_dict = fingerprint_normalized._normalize(
+            fingerprint, fine_grained
+        )
 
         return fingerprint_normalized
 
-    def _normalize(self, fingerprint):
+    def _normalize(self, fingerprint, fine_grained):
         """
         Normalize the fingerprint (set as values_dict attribute in FingerprintNormalized class).
 
@@ -58,21 +58,21 @@ class FingerprintNormalized(FingerprintBase):
         )
         values_dict_normalized["spatial"] = {}
         values_dict_normalized["spatial"]["distances"] = self._normalize_distances_bits(
-            fingerprint.values_dict["spatial"]["distances"]
+            fingerprint.values_dict["spatial"]["distances"], fine_grained
         )
         values_dict_normalized["spatial"]["moments"] = self._normalize_moments_bits(
-            fingerprint.values_dict["spatial"]["moments"]
+            fingerprint.values_dict["spatial"]["moments"], fine_grained
         )
 
-        self.values_dict = values_dict_normalized
+        return values_dict_normalized
 
-    def _normalize_physicochemical_bits(self, values):
+    def _normalize_physicochemical_bits(self, values_dict):
         """
         Normalize physicochemical bits.
 
         Parameters
         ----------
-        values : dict of list of float
+        values_dict : dict of list of float
             Physicochemical bits.
 
         Returns
@@ -81,85 +81,28 @@ class FingerprintNormalized(FingerprintBase):
             Normalized physicochemical bits.
         """
 
-        values_normalized = {}
+        values_normalized_dict = {}
 
-        if values is not None:
-            values_normalized["size"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["size"]),
-                    max(DISCRETE_FEATURE_VALUES["size"]),
-                )
-                for value in values["size"]
-            ]
-            values_normalized["hbd"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["hbd"]),
-                    max(DISCRETE_FEATURE_VALUES["hbd"]),
-                )
-                for value in values["hbd"]
-            ]
-            values_normalized["hba"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["hba"]),
-                    max(DISCRETE_FEATURE_VALUES["hba"]),
-                )
-                for value in values["hba"]
-            ]
-            values_normalized["charge"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["charge"]),
-                    max(DISCRETE_FEATURE_VALUES["charge"]),
-                )
-                for value in values["charge"]
-            ]
-            values_normalized["aromatic"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["aromatic"]),
-                    max(DISCRETE_FEATURE_VALUES["aromatic"]),
-                )
-                for value in values["aromatic"]
-            ]
-            values_normalized["aliphatic"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["aliphatic"]),
-                    max(DISCRETE_FEATURE_VALUES["aliphatic"]),
-                )
-                for value in values["aliphatic"]
-            ]
-            values_normalized["sco"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["sco"]),
-                    max(DISCRETE_FEATURE_VALUES["sco"]),
-                )
-                for value in values["sco"]
-            ]
-            values_normalized["exposure"] = [
-                self._min_max_normalization(
-                    value,
-                    min(DISCRETE_FEATURE_VALUES["exposure"]),
-                    max(DISCRETE_FEATURE_VALUES["exposure"]),
-                )
-                for value in values["exposure"]
-            ]
-            return values_normalized
+        if values_dict is not None:
+            for feature_name, values in values_dict.items():
+                if feature_name in DISCRETE_FEATURE_VALUES.keys():
+                    values_normalized_dict[feature_name] = min_max_normalization_vector(
+                        values,
+                        min(DISCRETE_FEATURE_VALUES[feature_name]),
+                        max(DISCRETE_FEATURE_VALUES[feature_name]),
+                    )
+            return values_normalized_dict
 
         else:
             return None
 
-    def _normalize_distances_bits(self, values):
+    def _normalize_distances_bits(self, values_dict, fine_grained):
         """
         Normalize distances bits (using cutoffs defined for each subpocket).
 
         Parameters
         ----------
-        values : dict of list of float
+        values_dict : dict of list of float
             Distances bits.
 
         Returns
@@ -168,24 +111,26 @@ class FingerprintNormalized(FingerprintBase):
             Normalized distances bits.
         """
 
-        values_normalized = {}
+        if fine_grained:
+            cutoffs = DISTANCE_CUTOFFS["fine"]
+        else:
+            cutoffs = DISTANCE_CUTOFFS["coarse"]
 
-        if values is not None:
-            for subpocket_name, distances in values.items():
-                values_normalized[subpocket_name] = [
-                    self._min_max_normalization(
-                        distance,
-                        DISTANCE_CUTOFFS[subpocket_name][0],
-                        DISTANCE_CUTOFFS[subpocket_name][1],
-                    )
-                    for distance in distances
-                ]
-            return values_normalized
+        values_normalized_dict = {}
+
+        if values_dict is not None:
+            for subpocket_name, values in values_dict.items():
+                values_normalized_dict[subpocket_name] = min_max_normalization_vector(
+                    values,
+                    cutoffs.loc[(subpocket_name, "min"), :].to_list(),
+                    cutoffs.loc[(subpocket_name, "max"), :].to_list(),
+                )
+            return values_normalized_dict
 
         else:
             return None
 
-    def _normalize_moments_bits(self, values):
+    def _normalize_moments_bits(self, values_dict, fine_grained):
         """
         Normalize moments bits (using cutoffs defined for each moment).
 
@@ -200,47 +145,32 @@ class FingerprintNormalized(FingerprintBase):
             Normalized moments bits.
         """
 
-        values_normalized = {}
+        if fine_grained:
+            cutoffs = MOMENT_CUTOFFS["fine"]
+        else:
+            cutoffs = MOMENT_CUTOFFS["coarse"]
 
-        if values is not None:
-            for subpocket_name, moments in values.items():
-                values_normalized[subpocket_name] = [
-                    self._min_max_normalization(
-                        moment, MOMENT_CUTOFFS[i + 1][0], MOMENT_CUTOFFS[i + 1][1]
-                    )
-                    for i, moment in enumerate(values[subpocket_name])
-                ]
-            return values_normalized
+        values_normalized_dict = {}
+
+        if values_dict is not None:
+            for subpocket_name, values in values_dict.items():
+
+                # This is truly ugly!
+                if fine_grained:
+                    minimum = cutoffs[cutoffs.index.get_level_values("min_max") == "min"][
+                        subpocket_name
+                    ]
+                    maximum = cutoffs[cutoffs.index.get_level_values("min_max") == "max"][
+                        subpocket_name
+                    ]
+                else:
+                    minimum = cutoffs[cutoffs.index.get_level_values("min_max") == "min"]
+                    maximum = cutoffs[cutoffs.index.get_level_values("min_max") == "max"]
+
+                values_normalized_dict[subpocket_name] = min_max_normalization_vector(
+                    values, minimum.squeeze().to_list(), maximum.squeeze().to_list()
+                )
+            return values_normalized_dict
 
         else:
             return None
-
-    @staticmethod
-    def _min_max_normalization(value, minimum, maximum):
-        """
-        Normalize a value using minimum-maximum normalization.
-        Values equal or lower / greater than the minimum / maximum value are set to 0.0 / 1.0.
-
-        Parameters
-        ----------
-        value : float or int
-            Value to be normalized.
-        minimum : float or int
-            Minimum value for normalization, values equal/greater than this minimum are set to 0.0.
-        maximum : float or int
-            Maximum value for normalization, values equal/greater than this maximum are set to 1.0.
-
-        Returns
-        -------
-        float
-            Normalized value.
-        """
-
-        if np.isnan(value):
-            return np.nan
-        elif minimum < value < maximum:
-            return (value - minimum) / float(maximum - minimum)
-        elif value <= minimum:
-            return 0.0
-        else:
-            return 1.0

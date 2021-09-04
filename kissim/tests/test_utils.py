@@ -5,7 +5,11 @@ Unit and regression test for the kissim.utils.
 import pytest
 import numpy as np
 
-from kissim.utils import set_n_cores, calculate_first_second_third_moments
+from kissim.utils import (
+    set_n_cores,
+    calculate_first_second_third_moments,
+    min_max_normalization_scalar,
+)
 
 
 @pytest.mark.parametrize(
@@ -42,3 +46,17 @@ def test_calculate_first_second_third_moment(values, moments):
         assert pytest.approx(moments_calculated, abs=1e-6) == moments
     else:
         assert all(moments_calculated) == all(moments)
+
+
+@pytest.mark.parametrize(
+    "value, minimum, maximum, value_normalized",
+    [(15, 10, 20, 0.5), (10, 10, 20, 0.0), (0, 10, 20, 0.0), (np.nan, 10, 20, np.nan)],
+)
+def test_min_max_normalization_scalar(value, minimum, maximum, value_normalized):
+    """
+    Test min-max normalization
+    """
+
+    value_normalized_calculated = min_max_normalization_scalar(value, minimum, maximum)
+    if not np.isnan(value):
+        assert pytest.approx(value_normalized_calculated, abs=1e-4) == value_normalized
