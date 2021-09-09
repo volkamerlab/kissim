@@ -9,7 +9,7 @@ from pathlib import Path
 import platform
 
 
-def configure_logger(filename=None, level=logging.INFO):
+def configure_logger(filename=None, level_kissim=logging.INFO, level_opencadd=logging.WARN):
     """
     Configure logging.
 
@@ -17,8 +17,10 @@ def configure_logger(filename=None, level=logging.INFO):
     ----------
     filename : str or None
         Path to log file.
-    level : int
-        Logging level (default: INFO).
+    level_kissim : int
+        Logging level for kissim package (default: INFO).
+    level_opencadd : int
+        Logging level for opencadd package (default: WARN).
     """
 
     # Get logger for both the kissim and opencadd package
@@ -26,8 +28,8 @@ def configure_logger(filename=None, level=logging.INFO):
     logger_opencadd = logging.getLogger("opencadd")
 
     # Set logger levels
-    logger_kissim.setLevel(level)
-    logger_opencadd.setLevel(level)
+    logger_kissim.setLevel(level_kissim)
+    logger_opencadd.setLevel(level_opencadd)
 
     # Get formatter
     formatter = logging.Formatter(logging.BASIC_FORMAT)
