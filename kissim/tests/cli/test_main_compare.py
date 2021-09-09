@@ -34,6 +34,17 @@ def test_main_compare(fingerprint_generator, args):
     input_filepath = Path(args[3])
     output_path = Path(args[5])
 
+    # Hardcode output files
+    feature_distances_filepath = output_path / "feature_distances.csv"
+    fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
+    fingerprint_distances_to_kinase_clusters_filepath = (
+        output_path / "fingerprint_distances_to_kinase_clusters.tree"
+    )
+    fingerprint_distances_to_kinase_matrix_filepath = (
+        output_path / "fingerprint_distances_to_kinase_matrix.csv"
+    )
+    kinase_annotation_filepath = output_path / "kinase_annotation.csv"
+
     # Generate
     fingerprint_generator.to_json(input_filepath)
 
@@ -41,7 +52,6 @@ def test_main_compare(fingerprint_generator, args):
 
     ### Feature distances generator
     # CSV file there?
-    feature_distances_filepath = output_path / "feature_distances.csv"
     assert feature_distances_filepath.exists()
     # CSV file can be loaded as FeatureDistancesGeneration object?
     feature_distances_generator = FeatureDistancesGenerator.from_csv(feature_distances_filepath)
@@ -50,7 +60,6 @@ def test_main_compare(fingerprint_generator, args):
 
     ### Fingerprint distance generator
     # CSV file there?
-    fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
     assert fingerprint_distance_filepath.exists()
     # CSV file can be loaded as FingerprintDistanceGeneration object?
     fingerprint_distance_generator = FingerprintDistanceGenerator.from_csv(
@@ -59,11 +68,24 @@ def test_main_compare(fingerprint_generator, args):
     assert isinstance(fingerprint_distance_generator, FingerprintDistanceGenerator)
     assert isinstance(fingerprint_distance_generator.data, pd.DataFrame)
 
+    ### Matrix and tree files
+    assert fingerprint_distances_to_kinase_clusters_filepath.exists()
+    assert fingerprint_distances_to_kinase_matrix_filepath.exists()
+    assert kinase_annotation_filepath.exists()
+
     # Delete file - cannot be done within enter_tmp_directory, since temporary files
     # apparently cannot be read from CLI
-    input_filepath.unlink()
-    feature_distances_filepath.unlink()
-    fingerprint_distance_filepath.unlink()
+    filepaths = [
+        input_filepath,
+        feature_distances_filepath,
+        fingerprint_distance_filepath,
+        fingerprint_distances_to_kinase_clusters_filepath,
+        fingerprint_distances_to_kinase_matrix_filepath,
+        kinase_annotation_filepath,
+    ]
+    for filepath in filepaths:
+        if filepath.exists():
+            filepath.unlink()
 
 
 @pytest.mark.parametrize(
