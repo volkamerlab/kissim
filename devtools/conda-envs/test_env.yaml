@@ -17,6 +17,7 @@ dependencies:
   - jupyterlab>=3
   - ipywidgets>=7.5
   - nglview>=3
+  - opencadd
   # Testing
   - pytest 5.*
   - pytest-cov
@@ -29,15 +30,6 @@ dependencies:
   # Developement
   - black
   - pylint
-  # Remove when opencadd is conda-installable
-  - rdkit
-  - bravado
-  - tqdm
   - pip:
     - black-nb
     - flake8-nb
-    - https://github.com/volkamerlab/opencadd/archive/master.zip
-
-## For Jupyter lab extensions, run:
-# jupyter labextension install @jupyter-widgets/jupyterlab-manager nglview-js-widgets @ijmbarr/jupyterlab_spellchecker
-
