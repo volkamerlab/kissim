@@ -8,8 +8,6 @@ Structural kinase similarity (`kissim`)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kissim.svg)](https://anaconda.org/conda-forge/kissim)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-> ⚠ This project is work-in-progress.
-
 **Subpocket-based structural fingerprint for kinase pocket comparison** 
 
 ![Subpocket-based structural fingerprint for kinase pockets](docs/_static/kissim_toc.png)
