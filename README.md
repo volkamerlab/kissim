@@ -30,9 +30,7 @@ Take a look at the [repository `kissim_app`](https://github.com/volkamerlab/kiss
 
 ## Documentation
 
-> This package is still in development.
-
-The `kissim` package documentation is available [here](https://kissim.readthedocs.io/).
+The `kissim` package documentation is available [here](https://kissim.readthedocs.io/), including [installation instructions](https://kissim.readthedocs.io/en/latest/installing.html).
 
 ## Contact
 
@@ -73,7 +71,7 @@ The `kissim` project is a collaboration between the Volkamer Lab (Dominique Sydo
 - Data science (PyData stack):
   [`numpy`](https://numpy.org/),
   [`pandas`](https://pandas.pydata.org/),
-  [`scikit-learn`](https://scikit-learn.org/),
+  [`scipy`](https://scipy.org/),
   [`jupyter`](https://jupyter.org/),
   [`ipywidgets`](https://ipywidgets.readthedocs.io)
 - Data visualization:
