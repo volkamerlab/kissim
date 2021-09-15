@@ -1,11 +1,12 @@
 Structural kinase similarity (`kissim`)
 ==============================
+
 [//]: # (Badges)
 [![GitHub Actions Build Status](https://github.com/volkamerlab/kissim/workflows/CI/badge.svg)](https://github.com/volkamerlab/kissim/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/volkamerlab/kissim/branch/main/graph/badge.svg)](https://codecov.io/gh/volkamerlab/kissim)
 [![Documentation Status](https://readthedocs.org/projects/kissim/badge/?version=latest)](https://kissim.readthedocs.io/en/latest/?badge=latest)
-
-> ⚠ This project is work-in-progress.
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/kissim.svg)](https://anaconda.org/conda-forge/kissim)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **Subpocket-based structural fingerprint for kinase pocket comparison** 
 

@@ -1,20 +1,47 @@
 Installing
 ==========
 
-Eventually, we will have a ``conda`` package, but for now you need to create a new environment manually.
 
-1. Install Miniconda for your OS if you don't have it already.
-2. Download a `copy of this repository <https://github.com/volkamerlab/kissim/archive/main.zip>`_.
-3. Create new conda environment::
+.. note::
 
-    conda env create -n kissim -f devtools/conda-envs/test_env.yaml
+    We are assuming you have a working ``mamba`` installation in your computer. 
+    If this is not the case, please refer to their `official documentation <https://mamba.readthedocs.io/en/latest/installation.html#mamba>`_. 
 
-4. Activate the new environment::
+
+Install from the conda package
+------------------------------
+
+1. Create a new conda environment called ``kissim`` with the ``kissim`` package and all its dependencies installed::
+
+    mamba create -n kissim kissim
+
+2. Activate the new conda environment::
 
     conda activate kissim
 
-5. Install the package with ``pip``::
+3. Test that your installation works::
 
-    python -m pip install https://github.com/volkamerlab/kissim/archive/main.tar.gz
+    kissim -h
 
-6. Run ``kissim -h`` to test it works.
+
+Install from the latest development snapshot
+--------------------------------------------
+
+Install the latest development snapshot from the `GitHub repository's main branch <https://github.com/volkamerlab/kissim>`_.
+
+
+1. Create a new conda environment called ``kissim``::
+
+    mamba env create -f https://raw.githubusercontent.com/volkamerlab/kissim/main/devtools/conda-envs/test_env.yaml -n kissim
+
+2. Activate the new conda environment::
+
+    conda activate kissim
+
+3. Install ``kissim`` package via pip::
+
+    pip install https://github.com/volkamerlab/kissim/archive/main.tar.gz
+
+4. Test that your installation works::
+
+    kissim -h

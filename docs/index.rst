@@ -15,11 +15,14 @@ Subpocket-based structural fingerprint for kinase pocket comparison
    https://codecov.io/gh/volkamerlab/kissim/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/volkamerlab/kissim/branch/main
 .. image::
+   https://readthedocs.org/projects/kissim/badge/?version=latest
+   :target: https://kissim.readthedocs.io/en/latest/
+.. image::
+   https://img.shields.io/conda/vn/conda-forge/kissim.svg
+   :target: https://anaconda.org/conda-forge/kissim
+.. image::
    https://img.shields.io/badge/License-MIT-blue.svg
    :target: https://opensource.org/licenses/MIT
-.. image::
-   https://readthedocs.org/projects/kissim/badge/?version=latest
-   :target: https://maxsmi.readthedocs.io/en/kissim/?badge=latest
 
 .. raw:: html
 
