@@ -122,5 +122,4 @@ def test_subset_fingerprint_generator_data(
     fp_subset_sum_calculated = np.nansum(
         fingerprint_generator_data[structure_klifs_id].values_array()
     )
-    print(fp_subset_sum_calculated)
     assert pytest.approx(fp_subset_sum_calculated, abs=1e-3) == fp_subset_sum
