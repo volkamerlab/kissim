@@ -17,8 +17,7 @@ dependencies:
   - jupyterlab>=3
   - ipywidgets>=7.5
   - nglview>=3
-  # Unpin opencadd when this is solved: https://github.com/volkamerlab/opencadd/pull/103
-  - opencadd=0.1.1
+  - opencadd
   # Testing
   - pytest 5.*
   - pytest-cov
