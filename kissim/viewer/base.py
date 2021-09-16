@@ -150,6 +150,8 @@ class _BaseViewer:
         texts = {}
         for structure_klifs_id in structure_klifs_ids:
             try:
+                # Hack! KLIFS IDs may be of type numpy.int32, cast to int!
+                structure_klifs_id = int(structure_klifs_id)
                 texts[structure_klifs_id] = klifs_session.coordinates.to_text(
                     structure_klifs_id, "complex", "pdb"
                 )
