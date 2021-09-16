@@ -76,7 +76,7 @@ class KinaseViewer(_BaseViewer):
     @property
     def _std(self):
 
-        return self._fingerprints_features.std(level="residue_ix")
+        return self._fingerprints_features.groupby("residue_ix").std()
 
     def residue_to_color_mapping(self, feature_name, fingerprint, plot_cmap=False):
         """
