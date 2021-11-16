@@ -19,7 +19,7 @@ def weights(feature_distances_path, feature_weights=None, fingerprint_distances_
     Parameters
     ----------
     feature_distances_path : str or pathlib.Path
-        Path to feature distances CSV file.
+        Path to feature distances CSV or CSV.bz2 file.
     feature_weights : None or list of float
         Feature weights of the following form:
         (i) None
@@ -31,7 +31,7 @@ def weights(feature_distances_path, feature_weights=None, fingerprint_distances_
             distance_to_dfg_region, distance_to_front_pocket, moment1, moment2, and moment3.
             All floats must sum up to 1.0.
     fingerprint_distances_path : None or str or pathlib.Path
-        Path to output fingerprint distances CSV file.
+        Path to output fingerprint distances CSV or CSV.bz2 file.
 
     Returns
     -------

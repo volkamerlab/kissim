@@ -128,7 +128,7 @@ def main():
         "-o",
         "--output",
         type=str,
-        help="Path to output folder where distance CSV files will be saved.",
+        help="Path to output folder where distance bzip-compressed CSV files will be saved.",
         required=True,
     )
     compare_subparser.add_argument(
@@ -154,14 +154,14 @@ def main():
         "-i",
         "--input",
         type=str,
-        help="Path to CSV file containing feature distances.",
+        help="Path to CSV or CSV.bz2 file containing feature distances.",
         required=True,
     )
     weights_subparser.add_argument(
         "-o",
         "--output",
         type=str,
-        help="Path to output folder where fingerprint distance CSV file will be saved.",
+        help="Path to output folder where fingerprint distance CSV or CSV.bz2 file will be saved.",
         required=True,
     )
     weights_subparser.add_argument(
