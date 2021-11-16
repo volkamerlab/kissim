@@ -122,7 +122,7 @@ class TestsFeatureDistancesGenerator:
 
         with enter_temp_directory():
 
-            filepath = Path("test.csv")
+            filepath = Path("test.csv.bz2")
 
             feature_distances_generator.to_csv(filepath)
             assert filepath.exists()

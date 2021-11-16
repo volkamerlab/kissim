@@ -52,8 +52,8 @@ def compare(
     if output_path is not None:
         output_path = Path(output_path)
         output_path.mkdir(parents=True, exist_ok=True)
-        feature_distances_filepath = output_path / "feature_distances.csv"
-        fingerprint_distance_filepath = output_path / f"fingerprint_distances.csv"
+        feature_distances_filepath = output_path / "feature_distances.csv.bz2"
+        fingerprint_distance_filepath = output_path / f"fingerprint_distances.csv.bz2"
     else:
         feature_distances_filepath = None
         fingerprint_distance_filepath = None
@@ -138,7 +138,7 @@ def weight_feature_distances(
 
         # Write default kinase distances to file
         kinase_distances_filepath = (
-            output_filepath.parent / f"{output_filepath.stem}_to_kinase_matrix.csv"
+            output_filepath.parent / f"{output_filepath.name.split('.')[0]}_to_kinase_matrix.csv"
         )
         kinase_matrix = fingerprint_distance_generator.kinase_distance_matrix()
         kinase_matrix.index.name = None
@@ -146,7 +146,10 @@ def weight_feature_distances(
         kinase_matrix.to_csv(kinase_distances_filepath, index=True)
 
         # Write default tree to file
-        tree_filepath = output_filepath.parent / f"{output_filepath.stem}_to_kinase_clusters.tree"
+        tree_filepath = (
+            output_filepath.parent
+            / f"{output_filepath.name.split('.')[0]}_to_kinase_clusters.tree"
+        )
         annotation_filepath = output_filepath.parent / "kinase_annotation.csv"
         tree.from_distance_matrix(kinase_matrix, tree_filepath, annotation_filepath)
 

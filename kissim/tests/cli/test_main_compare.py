@@ -35,8 +35,8 @@ def test_main_compare(fingerprint_generator, args):
     output_path = Path(args[5])
 
     # Hardcode output files
-    feature_distances_filepath = output_path / "feature_distances.csv"
-    fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
+    feature_distances_filepath = output_path / "feature_distances.csv.bz2"
+    fingerprint_distance_filepath = output_path / "fingerprint_distances.csv.bz2"
     fingerprint_distances_to_kinase_clusters_filepath = (
         output_path / "fingerprint_distances_to_kinase_clusters.tree"
     )
