@@ -11,7 +11,7 @@ import warnings
 import pandas as pd
 from Bio.PDB import HSExposure, Vector, Entity
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
-from opencadd.io import Biopython
+from opencadd.io.biopython import Biopython
 from opencadd.structure.pocket import PocketBase
 
 from .data import KlifsToKissimData

@@ -42,10 +42,10 @@ def test_compare_from_cli(args):
         compare_from_cli(args)
 
         # Feature distances CSV there?
-        assert Path("feature_distances.csv").exists()
+        assert Path("feature_distances.csv.bz2").exists()
 
         # Fingerprint distance CSV there?
-        assert Path("fingerprint_distances.csv").exists()
+        assert Path("fingerprint_distances.csv.bz2").exists()
 
         # Distances LOG there?
         if platform.system() != "Windows":

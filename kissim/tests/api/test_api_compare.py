@@ -26,11 +26,11 @@ def test_compare(fingerprint_generator, output_path, feature_weights, n_cores):
     if output_path is not None:
         output_path = Path(output_path)
 
-        feature_distances_filepath = output_path / "feature_distances.csv"
+        feature_distances_filepath = output_path / "feature_distances.csv.bz2"
         assert feature_distances_filepath.exists()
         feature_distances_filepath.unlink()
 
-        fingerprint_distance_filepath = output_path / "fingerprint_distances.csv"
+        fingerprint_distance_filepath = output_path / "fingerprint_distances.csv.bz2"
         assert fingerprint_distance_filepath.exists()
         fingerprint_distance_filepath.unlink()
 
