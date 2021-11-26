@@ -243,7 +243,37 @@ class _BaseViewer:
         component_counter,
     ):
         """
-        TODO
+        Show structure with
+        - residue coloring based on feature name
+        - protein with/without pocket side chains
+        - ligand
+        - pocket center
+
+        Parameters
+        ----------
+        view : nglview.widget.NGLWidget
+            NGLview widget to draw in.
+        structure_id : int
+            KLIFS structure ID.
+        text : str
+            Structure coordinates.
+        fingerprint : kissim.encoding.Fingerprint
+            Structure fingerprint.
+        ligand : str
+            Ligand expo ID.
+        feature_name : str
+            Name of feature whose values shall be mapped onto the structure.
+        show_side_chains : bool
+            Show side chains.
+        component_counter : int
+            Latest NGLview component ID before adding new stuff.
+
+        Returns
+        -------
+        view : nglview.widget.NGLWidget
+            NGLview widget with all new components and representations.
+        component_counter : int
+            Latest NGLview component ID after having added new stuff.
         """
 
         # Residue coloring based on feature name
@@ -257,7 +287,7 @@ class _BaseViewer:
         component = nglview.TextStructure(text, ext="pdb")
         view.add_component(component, name=f"{structure_id}")
 
-        # Add reference protein with/without side chains
+        # Add protein with/without pocket side chains
         if show_side_chains:
             residue_ids = fingerprint.residue_ids
             selection = " or ".join([str(i) for i in residue_ids])
@@ -296,7 +326,7 @@ class _BaseViewer:
 
         component_counter += 1
 
-        # Add subpocket center
+        # Add pocket center
         if feature_name in fingerprint.subpocket_centers.columns:
             center = fingerprint.subpocket_centers[feature_name].to_list()
             view.shape.add_sphere(center, [0.0, 0.0, 0.0], 1, f"{feature_name}")
@@ -338,12 +368,12 @@ class _BaseViewer:
             cmap_name = "viridis"
 
         # Define norm
-        # Discrete values and seqential colormap
+        # Discrete values and sequential colormap
         if discrete and not divergent:
             discrete_options = self._discrete_feature_values[feature_name]
             norm = colors.Normalize(vmin=min(discrete_options), vmax=max(discrete_options))
             cmap = cm.get_cmap(cmap_name, len(discrete_options))
-        # Continuous values and seqential colormap
+        # Continuous values and sequential colormap
         elif not discrete and not divergent:
             norm = colors.Normalize(vmin=data.min(), vmax=data.max())
             cmap = cm.get_cmap(cmap_name)
