@@ -50,6 +50,9 @@ class StructureViewer(_BaseViewer):
         if feature_name in self._fingerprint.physicochemical:
             data = fingerprint.physicochemical[feature_name]
             data.index = fingerprint.residue_ids
+            # If residue IDs contain None values, `data.index` will be of type float; we need int
+            data.index = data.index.astype("Int32")
+
             residue_to_color = self._residue_to_color_mapping(
                 feature_name,
                 data,
@@ -60,6 +63,9 @@ class StructureViewer(_BaseViewer):
         elif feature_name in self._fingerprint.distances:
             data = fingerprint.distances[feature_name]
             data.index = fingerprint.residue_ids
+            # If residue IDs contain None values, `data.index` will be of type float; we need int
+            data.index = data.index.astype("Int32")
+            
             residue_to_color = self._residue_to_color_mapping(
                 feature_name,
                 data,

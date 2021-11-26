@@ -102,6 +102,9 @@ class KinaseViewer(_BaseViewer):
 
         data = self._std[feature_name]
         data.index = fingerprint.residue_ids
+        # If residue IDs contain None values, `data.index` will be of type float; we need int
+        data.index = data.index.astype("Int32")
+        
         residue_to_color = self._residue_to_color_mapping(
             feature_name,
             data,
