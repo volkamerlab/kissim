@@ -73,7 +73,7 @@ class StructurePairViewer(_BaseViewer):
             feature_name,
             data,
             discrete=False,
-            divergent=True,
+            cmap_name="Blues",
             label_prefix="difference in ",
             plot_cmap=plot_cmap,
         )
