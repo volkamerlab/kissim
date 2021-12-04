@@ -189,9 +189,12 @@ class _BaseViewer:
             show_side_chains=widgets.Checkbox(
                 value=False, description="Show side chains", disabled=False, indent=False
             ),
+            gui=widgets.Checkbox(
+                value=False, description="Show NGL GUI", disabled=False, indent=False
+            ),
         )
 
-    def _show(self, feature_name, show_side_chains=True):
+    def _show(self, feature_name, show_side_chains=True, gui=True):
         """
         Show a feature mapped onto the 3D pocket.
 
@@ -229,7 +232,10 @@ class _BaseViewer:
                 component_counter,
             )
 
-        return view.display(gui=True)
+        if gui:
+            return view.display(gui=True)
+        else:
+            return view
 
     def _show_structure(
         self,
