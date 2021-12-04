@@ -40,7 +40,7 @@ class StructurePairViewer(_BaseViewer):
             features = pd.concat([fingerprint.physicochemical, fingerprint.distances], axis=1)
             features_pair.append(features)
 
-        return features_pair[0] - features_pair[1]
+        return abs(features_pair[0] - features_pair[1])
 
     def residue_to_color_mapping(self, feature_name, fingerprint, plot_cmap=False):
         """
