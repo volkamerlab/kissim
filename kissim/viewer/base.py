@@ -450,7 +450,7 @@ class _BaseViewer:
 
         fig, ax = plt.subplots(figsize=(6, 1))
         fig.subplots_adjust(bottom=0.5)
-        fig.colorbar(
+        cbar = fig.colorbar(
             cm.ScalarMappable(norm=norm, cmap=cmap),
             cax=ax,
             orientation="horizontal",
@@ -458,4 +458,5 @@ class _BaseViewer:
         )
         # If categorial, exchange tick labels with meaningful text
         if isinstance(norm, colors.NoNorm):
-            ax.set_xticklabels(xticklabels)
+            cbar.ax.set_xticks(range(0, len(cmap.colors)))
+            cbar.ax.set_xticklabels(xticklabels)
