@@ -38,9 +38,9 @@ class KinaseViewer(_BaseViewer):
         # Sort structures by quality scores
         structures = structures.sort_values(by="structure.qualityscore", ascending=False)
         structure_klifs_ids = structures["structure.klifs_id"].to_list()
+        print(f"Number of structures for input kinase: {len(structure_klifs_ids)}")
 
         # Fetch example structure PDB
-        print("Fetch example PDB...")
         if example_structure_klifs_id is None:
             # Choose structure with best quality score
             example_structure_klifs_id = structure_klifs_ids[0]
@@ -109,7 +109,7 @@ class KinaseViewer(_BaseViewer):
             feature_name,
             data,
             discrete=False,
-            divergent=False,
+            cmap_name="Blues",
             label_prefix="standard deviation of ",
             plot_cmap=plot_cmap,
         )

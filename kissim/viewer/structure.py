@@ -57,7 +57,7 @@ class StructureViewer(_BaseViewer):
                 feature_name,
                 data,
                 discrete=True,
-                divergent=False,
+                cmap_name="viridis",
                 plot_cmap=plot_cmap,
             )
         elif feature_name in self._fingerprint.distances:
@@ -70,7 +70,7 @@ class StructureViewer(_BaseViewer):
                 feature_name,
                 data,
                 discrete=False,
-                divergent=False,
+                cmap_name="Blues",
                 plot_cmap=plot_cmap,
             )
         else:

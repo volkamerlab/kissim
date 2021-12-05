@@ -189,9 +189,12 @@ class _BaseViewer:
             show_side_chains=widgets.Checkbox(
                 value=False, description="Show side chains", disabled=False, indent=False
             ),
+            gui=widgets.Checkbox(
+                value=False, description="Show NGL GUI", disabled=False, indent=False
+            ),
         )
 
-    def _show(self, feature_name, show_side_chains=True):
+    def _show(self, feature_name, show_side_chains=True, gui=True):
         """
         Show a feature mapped onto the 3D pocket.
 
@@ -229,7 +232,10 @@ class _BaseViewer:
                 component_counter,
             )
 
-        return view.display(gui=True)
+        if gui:
+            return view.display(gui=True)
+        else:
+            return view
 
     def _show_structure(
         self,
@@ -335,7 +341,13 @@ class _BaseViewer:
         return view, component_counter
 
     def _residue_to_color_mapping(
-        self, feature_name, data, discrete=False, divergent=False, label_prefix="", plot_cmap=False
+        self,
+        feature_name,
+        data,
+        discrete=False,
+        cmap_name="viridis",
+        label_prefix="",
+        plot_cmap=False,
     ):
         """
         Map (discrete) feature values using color on residues.
@@ -347,7 +359,7 @@ class _BaseViewer:
         data : pd.Series
             Values for feature.
         discrete : None or list
-            All possible categories for discrete feature.
+            All possible categories for discrete feature. Using the `PiYG` colormap.
         divergent : bool
             Use divergent colormap (PiYG) or sequential colormap (viridis)
         label_prefix : str
@@ -361,24 +373,22 @@ class _BaseViewer:
             List of color-residue ID pairs. Color given as hex string, residue PDB IDs as string.
         """
 
-        # Define color map
-        if divergent:
-            cmap_name = "PiYG"
-        else:
-            cmap_name = "viridis"
-
         # Define norm
-        # Discrete values and sequential colormap
-        if discrete and not divergent:
+        # Discrete values and sequential colormap; fingerprint's discrete values
+        if discrete and cmap_name == "viridis":
             discrete_options = self._discrete_feature_values[feature_name]
             norm = colors.Normalize(vmin=min(discrete_options), vmax=max(discrete_options))
             cmap = cm.get_cmap(cmap_name, len(discrete_options))
-        # Continuous values and sequential colormap
-        elif not discrete and not divergent:
+        # Continuous values and sequential colormap; fingerprint's continuous values
+        elif not discrete and cmap_name == "viridis":
             norm = colors.Normalize(vmin=data.min(), vmax=data.max())
             cmap = cm.get_cmap(cmap_name)
-        # Continuous values and divergent colormap
-        elif not discrete and divergent:
+        # Continuous values and sequential colormap; pair diff
+        elif not discrete and cmap_name == "Blues":
+            norm = colors.Normalize(vmin=data.min(), vmax=data.max())
+            cmap = cm.get_cmap(cmap_name)
+        # Continuous values and divergent colormap; pair diff (inactive at the moment)
+        elif not discrete and cmap_name == "PiYG":
             if data.min() != data.max():
                 norm = colors.TwoSlopeNorm(vmin=data.min(), vcenter=0.0, vmax=data.max())
                 cmap = cm.get_cmap(cmap_name)
