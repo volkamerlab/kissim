@@ -11,7 +11,7 @@ dependencies:
   - biopython=1.77
   - numpy
   - scipy
-  - matplotlib-base
+  - matplotlib-base<3.5
   - seaborn
   - jupyter
   - jupyterlab>=3
