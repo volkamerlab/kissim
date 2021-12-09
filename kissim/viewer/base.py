@@ -458,5 +458,5 @@ class _BaseViewer:
         )
         # If categorial, exchange tick labels with meaningful text
         if isinstance(norm, colors.NoNorm):
-            cbar.ax.set_xticks(range(0, len(cmap.colors)))
-            cbar.ax.set_xticklabels(xticklabels)
+            cbar.set_ticks(range(0, len(cmap.colors)))
+            cbar.set_ticklabels(xticklabels)
