@@ -15,7 +15,6 @@ from opencadd.databases.klifs import setup_remote
 
 from kissim.definitions import FEATURE_METADATA, DISCRETE_FEATURE_VALUES
 from kissim.encoding.fingerprint_generator import FingerprintGenerator
-from kissim.viewer import KinaseViewer
 
 
 class _BaseViewer:
@@ -183,6 +182,8 @@ class _BaseViewer:
 
         # If case of the KinaseViewer, do not show the first 6 SiteAlign features,
         # since they are identical between structures of the same kinase.
+        # KinaseViewer import must be here, otherwise circular import problem
+        from kissim.viewer import KinaseViewer
         if isinstance(self, KinaseViewer):
             options = options[6:]
         value = options[0]
