@@ -15,6 +15,7 @@ from opencadd.databases.klifs import setup_remote
 
 from kissim.definitions import FEATURE_METADATA, DISCRETE_FEATURE_VALUES
 from kissim.encoding.fingerprint_generator import FingerprintGenerator
+from kissim.viewer import KinaseViewer
 
 
 class _BaseViewer:
@@ -178,11 +179,20 @@ class _BaseViewer:
         Show features mapped onto the 3D pocket (select feature interactively).
         """
 
+        options = self._feature_names
+
+        # If case of the KinaseViewer, do not show the first 6 SiteAlign features,
+        # since they are identical between structures of the same kinase.
+        if isinstance(self, KinaseViewer):
+            options = options[6:]
+        value = options[0]
+            
+
         interact(
             self._show,
             feature_name=widgets.Dropdown(
-                options=self._feature_names,
-                value="size",
+                options=options,
+                value=value,
                 description="Feature: ",
                 disabled=False,
             ),
@@ -458,5 +468,5 @@ class _BaseViewer:
         )
         # If categorial, exchange tick labels with meaningful text
         if isinstance(norm, colors.NoNorm):
-            cbar.set_ticks(range(0, len(cmap.colors)))
+            cbar.set_ticks(range(0, len(xticklabels)))
             cbar.set_ticklabels(xticklabels)
