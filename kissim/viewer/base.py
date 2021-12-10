@@ -178,11 +178,22 @@ class _BaseViewer:
         Show features mapped onto the 3D pocket (select feature interactively).
         """
 
+        options = self._feature_names
+
+        # If case of the KinaseViewer, do not show the first 6 SiteAlign features,
+        # since they are identical between structures of the same kinase.
+        # KinaseViewer import must be here, otherwise circular import problem
+        from kissim.viewer import KinaseViewer
+
+        if isinstance(self, KinaseViewer):
+            options = options[6:]
+        value = options[0]
+
         interact(
             self._show,
             feature_name=widgets.Dropdown(
-                options=self._feature_names,
-                value="size",
+                options=options,
+                value=value,
                 description="Feature: ",
                 disabled=False,
             ),
@@ -450,7 +461,7 @@ class _BaseViewer:
 
         fig, ax = plt.subplots(figsize=(6, 1))
         fig.subplots_adjust(bottom=0.5)
-        fig.colorbar(
+        cbar = fig.colorbar(
             cm.ScalarMappable(norm=norm, cmap=cmap),
             cax=ax,
             orientation="horizontal",
@@ -458,4 +469,5 @@ class _BaseViewer:
         )
         # If categorial, exchange tick labels with meaningful text
         if isinstance(norm, colors.NoNorm):
-            ax.set_xticklabels(xticklabels)
+            cbar.set_ticks(range(0, len(xticklabels)))
+            cbar.set_ticklabels(xticklabels)
