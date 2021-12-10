@@ -184,10 +184,10 @@ class _BaseViewer:
         # since they are identical between structures of the same kinase.
         # KinaseViewer import must be here, otherwise circular import problem
         from kissim.viewer import KinaseViewer
+
         if isinstance(self, KinaseViewer):
             options = options[6:]
         value = options[0]
-            
 
         interact(
             self._show,
