@@ -7,7 +7,6 @@ dependencies:
   - python>=3.6
   - pip
     # Package dependencies
-  - biopandas
   - biopython=1.77
   - numpy
   - scipy
