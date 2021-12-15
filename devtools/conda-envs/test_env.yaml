@@ -7,7 +7,7 @@ dependencies:
   - python>=3.6
   - pip
     # Package dependencies
-  - biopython=1.77
+  - tqdm
   - numpy
   - scipy
   - matplotlib-base<3.5
@@ -16,6 +16,7 @@ dependencies:
   - jupyterlab>=3
   - ipywidgets>=7.5
   - nglview>=3
+  - biopython=1.77
   - opencadd
   # Testing
   - pytest 5.*
