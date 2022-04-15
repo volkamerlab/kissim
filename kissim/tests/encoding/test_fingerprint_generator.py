@@ -75,15 +75,11 @@ class TestFingerprintGenerator:
             fingerprints.subpocket_centers.columns.get_level_values(0).to_list()
             == np.repeat(FEATURE_NAMES_DISTANCES_AND_MOMENTS, 3).tolist()
         )
-        assert (
-            fingerprints.subpocket_centers.columns.get_level_values(1).to_list()
-            == [
-                "x",
-                "y",
-                "z",
-            ]
-            * len(FEATURE_NAMES_DISTANCES_AND_MOMENTS)
-        )
+        assert fingerprints.subpocket_centers.columns.get_level_values(1).to_list() == [
+            "x",
+            "y",
+            "z",
+        ] * len(FEATURE_NAMES_DISTANCES_AND_MOMENTS)
 
     @pytest.mark.parametrize(
         "structure_klifs_ids, values_array_sum",
