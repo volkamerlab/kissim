@@ -34,7 +34,7 @@ jobs:
           - os: windows-latest
             python-version: "3.7"
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Additional info about the build
       shell: bash
       run: |
@@ -45,6 +45,7 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
+        mamba-version: "*"
         environment-file: devtools/conda-envs/test_env.yaml
         channels: conda-forge,defaults
         activate-environment: test
