@@ -50,17 +50,12 @@ class TestsFeatureDistancesGenerator:
 
         # Test attributes
         assert isinstance(feature_distances_generator.data, pd.DataFrame)
-        assert (
-            feature_distances_generator.data.columns.to_list()
-            == [
-                "structure.1",
-                "structure.2",
-                "kinase.1",
-                "kinase.2",
-            ]
-            + [f"distance.{i}" for i in range(1, 16)]
-            + [f"bit_coverage.{i}" for i in range(1, 16)]
-        )
+        assert feature_distances_generator.data.columns.to_list() == [
+            "structure.1",
+            "structure.2",
+            "kinase.1",
+            "kinase.2",
+        ] + [f"distance.{i}" for i in range(1, 16)] + [f"bit_coverage.{i}" for i in range(1, 16)]
         assert isinstance(feature_distances_generator.structure_kinase_ids, list)
 
     @pytest.mark.parametrize(
