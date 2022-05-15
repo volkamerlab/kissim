@@ -10,11 +10,5 @@ build:
   tools:
     python: "mambaforge-4.10"
 
-python:
-  version: 3.8
-  install:
-    - method: pip
-      path: .
-
 conda:
   environment: devtools/conda-envs/test_env.yaml
