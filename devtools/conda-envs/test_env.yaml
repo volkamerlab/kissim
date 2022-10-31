@@ -14,7 +14,8 @@ dependencies:
   - seaborn
   - jupyter
   - jupyterlab>=3
-  - ipywidgets>=7.5
+  # https://github.com/volkamerlab/kissim/issues/112
+  - ipywidgets<8
   - nglview>=3
   - biopython=1.77
   - opencadd
