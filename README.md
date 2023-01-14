@@ -44,6 +44,21 @@ This work is published under the [MIT license](https://github.com/volkamerlab/ki
 
 Copyright (c) 2019, Volkamer Lab
 
+## Citation
+Have you used `kissim` in your research or found the tool useful? We'd be very grateful if you cited it using the following:
+
+```
+@article{sydow_2022_jcim,
+  author = {Sydow, Dominique and Aßmann, Eva and Kooistra, Albert J. and Rippmann, Friedrich and Volkamer, Andrea},
+  title = {KiSSim: Predicting Off-Targets from Structural Similarities in the Kinome},
+  journal = {Journal of Chemical Information and Modeling},
+  volume = {62},
+  number = {10},
+  pages = {2600-2616},
+  year = {2022},
+  doi = {10.1021/acs.jcim.2c00050}
+```
+
 
 ## Acknowledgements
 
