@@ -47,3 +47,20 @@ Install the latest development snapshot from the `GitHub repository's main branc
 4. Test that your installation works::
 
     kissim -h
+
+Citation
+--------
+You can use the refence below to cite ``kissim``:
+
+.. code-block::
+
+    @article{sydow_2022_jcim,
+        author = {Sydow, Dominique and Aßmann, Eva and Kooistra, Albert J. and Rippmann, Friedrich and Volkamer, Andrea},
+        title = {KiSSim: Predicting Off-Targets from Structural Similarities in the Kinome},
+        journal = {Journal of Chemical Information and Modeling},
+        volume = {62},
+        number = {10},
+        pages = {2600-2616},
+        year = {2022},
+        doi = {10.1021/acs.jcim.2c00050}
+    }
