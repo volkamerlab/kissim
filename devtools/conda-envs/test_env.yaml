@@ -12,10 +12,10 @@ dependencies:
   - scipy
   - matplotlib-base<3.5
   - seaborn
-  - jupyter
-  - jupyterlab>=3
   # https://github.com/volkamerlab/kissim/issues/112
   - ipywidgets<8
+  - jupyter
+  - jupyterlab>=3
   - nglview>=3
   - biopython=1.77
   - opencadd
