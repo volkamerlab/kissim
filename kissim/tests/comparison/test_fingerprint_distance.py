@@ -76,7 +76,6 @@ class TestsFingerprintDistance:
         ],
     )
     def test_calculate_weighted_sum(self, values, weights, calculated_weighted_sum):
-
         fingerprint_distance = FingerprintDistance()
         calculated_weighted_sum_calculated = fingerprint_distance._calculate_weighted_sum(
             values, weights
@@ -97,7 +96,6 @@ class TestsFingerprintDistance:
         ],
     )
     def test_calculate_weighted_sum_raises(self, values, weights):
-
         with pytest.raises(ValueError):
             fingerprint_distance = FingerprintDistance()
             fingerprint_distance._calculate_weighted_sum(values, weights)
@@ -122,7 +120,6 @@ class TestsFingerprintDistance:
     def test_remove_nan_distances_and_recalibrate_weights(
         self, distances, weights, distances_wo_nan, weights_wo_nan_recalibrated
     ):
-
         fingerprint_distance = FingerprintDistance()
         (
             distances_wo_nan_calculated,

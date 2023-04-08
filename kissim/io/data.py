@@ -39,7 +39,6 @@ class KlifsToKissimData:
     """
 
     def __init__(self):
-
         self.klifs_session = None
         self.structure_klifs_id = None
         self.kinase_name = None

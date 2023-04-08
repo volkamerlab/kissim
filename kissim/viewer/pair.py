@@ -34,7 +34,6 @@ class StructurePairViewer(_BaseViewer):
 
     @property
     def _diff(self):
-
         features_pair = []
         for _, fingerprint in self._fingerprints.data.items():
             features = pd.concat([fingerprint.physicochemical, fingerprint.distances], axis=1)

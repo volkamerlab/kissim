@@ -247,7 +247,6 @@ def _get_node_means(tree, matrix, node_means, leaf_mean):
 
     # Get mean only for nodes that are not a leaf
     if not tree.is_leaf():
-
         # Iterate over the nodes to the right and the left of the current node
         for left in [0, 1]:
             if left:

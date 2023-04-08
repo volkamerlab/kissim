@@ -28,7 +28,6 @@ class FingerprintGeneratorNormalized(FingerprintGeneratorBase):
     """
 
     def __init__(self):
-
         self.structure_klifs_ids = None
         self.klifs_session = None
         self.data = None

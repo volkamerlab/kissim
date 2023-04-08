@@ -143,7 +143,6 @@ def spatial_min_max_from_fingerprint_generator(
 
     min_max = []
     for subpocket, data in fps_data.items():
-
         data = data.to_frame()
         if fine_grained:
             data = data.unstack()

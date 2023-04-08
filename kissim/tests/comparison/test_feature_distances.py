@@ -206,7 +206,6 @@ class TestsFeatureDistances:
         ],
     )
     def test_from_dict(self, feature_distances_dict):
-
         feature_distances_calculated = FeatureDistances._from_dict(feature_distances_dict)
         assert isinstance(feature_distances_calculated, FeatureDistances)
         assert isinstance(feature_distances_calculated.structure_pair_ids, tuple)

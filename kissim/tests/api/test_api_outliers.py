@@ -32,7 +32,6 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 def test_outliers(
     fingerprints_path, distance_cutoff, fingerprints_wo_outliers_path, n_fingerprints_wo_outliers
 ):
-
     with enter_temp_directory():
         fingerprints = outliers(fingerprints_path, distance_cutoff, fingerprints_wo_outliers_path)
         assert isinstance(fingerprints, FingerprintGenerator)

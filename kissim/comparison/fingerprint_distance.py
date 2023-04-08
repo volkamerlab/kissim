@@ -30,7 +30,6 @@ class FingerprintDistance:
     """
 
     def __init__(self):
-
         self.structure_pair_ids = None
         self.kinase_pair_ids = None
         self.distance = None

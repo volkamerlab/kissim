@@ -23,7 +23,6 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
 def test_encode(
     structure_klifs_ids, fingerprints_json_filepath, local_klifs_download_path, n_cores
 ):
-
     with enter_temp_directory():
         fingerprint_generator = encode(
             structure_klifs_ids, fingerprints_json_filepath, local_klifs_download_path, n_cores

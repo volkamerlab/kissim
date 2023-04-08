@@ -37,7 +37,6 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     ],
 )
 def test_compare_from_cli(args):
-
     with enter_temp_directory():
         compare_from_cli(args)
 
@@ -139,7 +138,6 @@ def test_compare_from_cli(args):
     ],
 )
 def test_compare_from_cli_error(args, error):
-
     with enter_temp_directory():
         with pytest.raises(error):
             compare_from_cli(args)

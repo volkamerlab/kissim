@@ -20,7 +20,6 @@ from kissim.encoding import FingerprintGenerator
     ],
 )
 def test_compare(fingerprint_generator, output_path, feature_weights, n_cores):
-
     compare(fingerprint_generator, output_path, feature_weights, n_cores)
 
     if output_path is not None:

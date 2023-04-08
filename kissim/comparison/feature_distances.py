@@ -34,7 +34,6 @@ class FeatureDistances:
     """
 
     def __init__(self):
-
         self.structure_pair_ids = None
         self.kinase_pair_ids = None
         self.distances = None
@@ -54,7 +53,6 @@ class FeatureDistances:
         """
 
         if (self.distances is not None) and (self.bit_coverages is not None):
-
             feature_types = list(
                 chain.from_iterable(
                     [[key] * len(value) for key, value in DISTANCES_FEATURE_NAMES.items()]

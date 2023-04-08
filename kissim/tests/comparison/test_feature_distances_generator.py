@@ -69,7 +69,6 @@ class TestsFeatureDistancesGenerator:
         ],
     )
     def test_from_structure_klifs_ids(self, structure_klifs_ids, klifs_session, n_cores):
-
         # Test FeatureDistancesGenerator class attributes
         feature_distances_generator = FeatureDistancesGenerator.from_structure_klifs_ids(
             structure_klifs_ids, klifs_session, n_cores
@@ -85,14 +84,12 @@ class TestsFeatureDistancesGenerator:
         [[["pdbA", "kinaseA"], ["pdbB", "kinaseA"], ["pdbC", "kinaseB"]]],
     )
     def test_structure_kinase_ids(self, feature_distances_generator, structure_kinase_ids):
-
         assert feature_distances_generator._structure_kinase_ids == structure_kinase_ids
 
     @pytest.mark.parametrize(
         "structure_pair_ids", [[["pdbA", "pdbB"], ["pdbA", "pdbC"], ["pdbB", "pdbC"]]]
     )
     def test_structure_pair_ids(self, feature_distances_generator, structure_pair_ids):
-
         assert feature_distances_generator.structure_pair_ids == structure_pair_ids
 
     @pytest.mark.parametrize(
@@ -100,23 +97,18 @@ class TestsFeatureDistancesGenerator:
         [[["kinaseA", "kinaseA"], ["kinaseA", "kinaseB"], ["kinaseA", "kinaseB"]]],
     )
     def test_kinase_pair_ids(self, feature_distances_generator, kinase_pair_ids):
-
         assert feature_distances_generator.kinase_pair_ids == kinase_pair_ids
 
     @pytest.mark.parametrize("structure_ids", [["pdbA", "pdbB", "pdbC"]])
     def test_structure_ids(self, feature_distances_generator, structure_ids):
-
         assert feature_distances_generator.structure_ids == structure_ids
 
     @pytest.mark.parametrize("kinase_ids", [["kinaseA", "kinaseB"]])
     def test_kinase_ids(self, feature_distances_generator, kinase_ids):
-
         assert feature_distances_generator.kinase_ids == kinase_ids
 
     def test_to_from_csv(self, feature_distances_generator):
-
         with enter_temp_directory():
-
             filepath = Path("test.csv.bz2")
 
             feature_distances_generator.to_csv(filepath)

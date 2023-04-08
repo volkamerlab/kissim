@@ -65,9 +65,7 @@ def test_from_file(
     node_means,
     tree_string,
 ):
-
     with enter_temp_directory():
-
         tree_nodes_calculated, node_means_calculated = tree.from_file(
             distance_matrix_path, tree_path, annotation_path, clustering_method, similarity
         )
@@ -76,7 +74,6 @@ def test_from_file(
         assert node_means == pytest.approx(node_means_calculated, abs=1e-6)
 
         if tree_path:
-
             tree_path = Path(tree_path)
             # Tree file there?
             assert tree_path.exists()
@@ -86,7 +83,6 @@ def test_from_file(
             tree_path.unlink()
 
         if annotation_path:
-
             annotation_path = Path(annotation_path)
             # Annotation file there?
             assert annotation_path.exists()
