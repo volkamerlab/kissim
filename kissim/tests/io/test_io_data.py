@@ -34,7 +34,6 @@ class TestKlifsToKissimData:
         ],
     )
     def test_from_structure_klifs_id(self, structure_klifs_id, klifs_session, exists):
-
         data = KlifsToKissimData.from_structure_klifs_id(structure_klifs_id, klifs_session)
         if exists:
             assert isinstance(data, KlifsToKissimData)
@@ -55,7 +54,6 @@ class TestKlifsToKissimData:
         ],
     )
     def test_structure_klifs_id_exists(self, structure_klifs_id, klifs_session, exists):
-
         data = KlifsToKissimData()
         data.structure_klifs_id = structure_klifs_id
         data.klifs_session = klifs_session
@@ -69,7 +67,6 @@ class TestKlifsToKissimData:
         ],
     )
     def test_local_session_files_exist(self, structure_klifs_id, exists):
-
         data = KlifsToKissimData()
         data.structure_klifs_id = structure_klifs_id
         data.klifs_session = LOCAL
@@ -80,7 +77,6 @@ class TestKlifsToKissimData:
         [(118, LOCAL), (12347, REMOTE)],
     )
     def test_get_text_and_extension(self, structure_klifs_id, klifs_session):
-
         data = KlifsToKissimData()
         data.structure_klifs_id = structure_klifs_id
         data.klifs_session = klifs_session
@@ -93,7 +89,6 @@ class TestKlifsToKissimData:
         [(118, LOCAL), (12347, REMOTE)],
     )
     def test_get_pocket_residue_ids_and_ixs(self, structure_klifs_id, klifs_session):
-
         data = KlifsToKissimData()
         data.structure_klifs_id = structure_klifs_id
         data.klifs_session = klifs_session

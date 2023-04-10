@@ -141,7 +141,6 @@ def _subset_fingerprint_generator_data(fingerprint_generator, klifs_residue_ids)
     klifs_residue_ixs = [i - 1 for i in klifs_residue_ids]
 
     for id_, fp in fingerprint_generator.data.items():
-
         # Initialize new fingerprint
         fp_subset = Fingerprint()
         fp_subset.structure_klifs_id = fp.structure_klifs_id
@@ -151,7 +150,6 @@ def _subset_fingerprint_generator_data(fingerprint_generator, klifs_residue_ids)
 
         # Iterate over physiochemical and spatial features
         for feature_name1, features1 in fp.values_dict.items():
-
             fp_dict[feature_name1] = {}
 
             # Iterate over all physiochemical features
@@ -163,9 +161,7 @@ def _subset_fingerprint_generator_data(fingerprint_generator, klifs_residue_ids)
 
             # Iterate over all spatial features (includes distances and moments!)
             elif feature_name1 == "spatial":
-
                 for feature_name2, features2 in features1.items():
-
                     fp_dict[feature_name1][feature_name2] = {}
 
                     # Iterate over all distances

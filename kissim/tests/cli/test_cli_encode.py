@@ -49,7 +49,6 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     ],
 )
 def test_encode_from_cli(args):
-
     with enter_temp_directory():
         encode_from_cli(args)
 
@@ -85,6 +84,5 @@ def test_encode_from_cli(args):
     ],
 )
 def test_encode_from_cli_error(args, error):
-
     with pytest.raises(error):
         encode_from_cli(args)

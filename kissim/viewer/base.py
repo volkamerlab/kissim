@@ -43,7 +43,6 @@ class _BaseViewer:
         discrete_feature_values=DISCRETE_FEATURE_VALUES,
         feature_metadata=FEATURE_METADATA,
     ):
-
         self._reference_structure_id = None
         self._texts = {}
         self._fingerprints = None

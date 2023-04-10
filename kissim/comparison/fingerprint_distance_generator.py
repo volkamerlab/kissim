@@ -30,12 +30,10 @@ class FingerprintDistanceGenerator(BaseGenerator):
     """
 
     def __init__(self, *args, **kwargs):
-
         self.data = None
         self.structure_kinase_ids = None
 
     def __eq__(self, other):
-
         if isinstance(other, FingerprintDistanceGenerator):
             return (
                 self.data.equals(other.data)

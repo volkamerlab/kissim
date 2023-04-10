@@ -24,7 +24,6 @@ class TestStructureViewer:
         ],
     )
     def test_from_structure_klifs_id(self, structure_klifs_id, klifs_session):
-
         viewer = StructureViewer.from_structure_klifs_id(structure_klifs_id, klifs_session)
         assert isinstance(viewer, StructureViewer)
 
@@ -40,5 +39,4 @@ class TestStructureViewer:
         ],
     )
     def test_show(self, structure_viewer, feature_name, show_side_chains):
-
         structure_viewer._show(feature_name, show_side_chains)

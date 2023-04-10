@@ -26,7 +26,6 @@ class TestStructurePairViewer:
     def test_from_structure_pair_viewer(
         self, structure_klifs_id1, structure_klifs_id2, klifs_session
     ):
-
         viewer = StructurePairViewer.from_structure_klifs_ids(
             structure_klifs_id1, structure_klifs_id2, klifs_session
         )
@@ -44,5 +43,4 @@ class TestStructurePairViewer:
         ],
     )
     def test_show(self, structure_pair_viewer, feature_name, show_side_chains):
-
         structure_pair_viewer._show(feature_name, show_side_chains)

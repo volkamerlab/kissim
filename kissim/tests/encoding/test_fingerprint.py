@@ -179,7 +179,6 @@ class TestFingerprint:
         json_filepath = Path("fingerprint.json")
 
         with enter_temp_directory():
-
             # Save json file
             fingerprint.to_json(json_filepath)
             assert json_filepath.exists()

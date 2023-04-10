@@ -36,7 +36,6 @@ class FeatureDistancesGenerator(BaseGenerator):
         self.structure_kinase_ids = None
 
     def __eq__(self, other):
-
         if isinstance(other, FeatureDistancesGenerator):
             return (
                 self.data.equals(other.data)
@@ -195,7 +194,6 @@ class FeatureDistancesGenerator(BaseGenerator):
 
     @staticmethod
     def _feature_distances_list_to_df(feature_distances_list):
-
         structure_pair_ids_list = []
         kinase_pair_ids_list = []
         distances_list = []

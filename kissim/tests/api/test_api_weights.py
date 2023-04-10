@@ -23,7 +23,6 @@ PATH_TEST_DATA = Path(__name__).parent / "kissim" / "tests" / "data"
     ],
 )
 def test_weights(feature_distances_path, feature_weights, fingerprint_distances_path):
-
     with enter_temp_directory():
         fingerprint_distances = weights(
             feature_distances_path, feature_weights, fingerprint_distances_path

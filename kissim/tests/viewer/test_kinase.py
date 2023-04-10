@@ -28,7 +28,6 @@ class TestKinaseViewer:
     def test_from_kinase_klifs_id(
         self, kinase_klifs_id, klifs_session, example_structure_klifs_id, n_sampled
     ):
-
         viewer = KinaseViewer.from_kinase_klifs_id(
             kinase_klifs_id, klifs_session, example_structure_klifs_id, n_sampled
         )
@@ -47,7 +46,6 @@ class TestKinaseViewer:
     def test_from_kinase_klifs_id_raises(
         self, kinase_klifs_id, klifs_session, example_structure_klifs_id, n_sampled
     ):
-
         with pytest.raises(ValueError):
             KinaseViewer.from_kinase_klifs_id(
                 kinase_klifs_id, klifs_session, example_structure_klifs_id, n_sampled
@@ -65,5 +63,4 @@ class TestKinaseViewer:
         ],
     )
     def test_show(self, kinase_viewer, feature_name, show_side_chains):
-
         kinase_viewer._show(feature_name, show_side_chains)

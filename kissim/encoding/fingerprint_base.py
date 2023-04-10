@@ -77,7 +77,6 @@ class FingerprintBase:
     """
 
     def __init__(self):
-
         # TODO add more structure metadata? e.g. bound ligand?
         self.structure_klifs_id = None
         self.kinase_name = None

@@ -157,7 +157,6 @@ FEATURE_METADATA = {
 DISTANCE_CUTOFFS = {}
 MOMENT_CUTOFFS = {}
 for how in ["fine", "coarse"]:
-
     DISTANCE_CUTOFFS[how] = pd.read_csv(
         PATH_DATA / f"min_max_distances_{how}.csv", index_col=[0, 1]
     )

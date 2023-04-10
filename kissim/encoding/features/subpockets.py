@@ -37,7 +37,6 @@ class SubpocketsFeature(BaseFeature):
     """
 
     def __init__(self):
-
         self.name = None
         self._residue_ids = None
         self._residue_ixs = None

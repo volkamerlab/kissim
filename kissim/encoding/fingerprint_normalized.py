@@ -154,7 +154,6 @@ class FingerprintNormalized(FingerprintBase):
 
         if values_dict is not None:
             for subpocket_name, values in values_dict.items():
-
                 # This is truly ugly!
                 if fine_grained:
                     minimum = cutoffs[cutoffs.index.get_level_values("min_max") == "min"][

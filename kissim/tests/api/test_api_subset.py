@@ -47,9 +47,7 @@ def test_subset(
     fingerprints_subset_path,
     klifs_pocket_residue_subset,
 ):
-
     with enter_temp_directory():
-
         # Generate regular fingerprints
         fingerprints_path = Path(fingerprints_path)
         fingerprint_generator = FingerprintGenerator.from_structure_klifs_ids([12347, 3835])
@@ -73,7 +71,6 @@ def test_subset(
 
         # Test Fingerprint objects
         for fingerprint_id, fingerprint_subset in fingerprint_generator_subset.data.items():
-
             # Original fingerprint
             fingerprint = fingerprint_generator.data[fingerprint_id]
 
@@ -112,7 +109,6 @@ def test_subset(
 def test_subset_fingerprint_generator_data(
     structure_klifs_id, klifs_session, subset_residue_ids, fp_subset_sum
 ):
-
     fingerprint_generator = FingerprintGenerator.from_structure_klifs_ids(
         [structure_klifs_id], klifs_session
     )
