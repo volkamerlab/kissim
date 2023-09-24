@@ -17,8 +17,8 @@ on:
 
 jobs:
   test:
-    name: Test on {{ '${{ matrix.os }}' }}, Python {{ '${{ matrix.python-version }}' }}
-    runs-on: { { "${{ matrix.os }}" } }
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macOS-latest, ubuntu-latest, windows-latest]
