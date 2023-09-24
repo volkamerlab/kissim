@@ -2,8 +2,7 @@ name: CI
 
 on:
   # GitHub has started calling new repo's first branch "main" https://github.com/github/renaming
-  # Existing codes likely still have "master" as the primary branch
-  # Both are tracked here to keep legacy and new codes working
+  # The cookiecutter uses the "--initial-branch" flag when it runs git-init
   push:
     branches:
       - "main"
@@ -18,47 +17,45 @@ on:
 
 jobs:
   test:
-    name: Pytest
-    runs-on: ${{ matrix.cfg.os }}
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        cfg:
-          - os: ubuntu-latest
-            python-version: "3.7"
-          - os: ubuntu-latest
-            python-version: "3.9"
-          - os: macos-latest
-            python-version: "3.7"
-          - os: windows-latest
-            python-version: "3.7"
+        os: [macOS-latest, ubuntu-latest, windows-latest]
+        python-version: [3.8, 3.9, "3.10"]
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Additional info about the build
         shell: bash
         run: |
           uname -a
           df -h
           ulimit -a
-      - uses: conda-incubator/setup-miniconda@v2
+
+      # More info on options: https://github.com/marketplace/actions/provision-with-micromamba
+      - uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: ${{ matrix.cfg.python-version }}
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          activate-environment: test
           environment-file: devtools/conda-envs/test_env.yaml
+          environment-name: test
           channels: conda-forge,defaults
+          extra-specs: |
+            python=${{ matrix.python-version }}
+
       - name: Install package
         # conda setup requires this special shell
         shell: bash -l {0}
         run: |
           python -m pip install . --no-deps
-          conda list
-      - name: Run package tests
+          micromamba list
+
+      - name: Run tests
         # conda setup requires this special shell
         shell: bash -l {0}
         run: |
-          pytest -v --cov=kissim --cov-report=xml --cov-config=setup.cfg --color=yes kissim/tests/
+          pytest -v --cov=kissim --cov-report=xml --color=yes kissim/tests/
+
       - name: Run docs notebooks tests (on Linux only)
         shell: bash -l {0}
         run: |
@@ -68,6 +65,7 @@ jobs:
           else
                 echo "Do not run notebooks under $RUNNER_OS"
           fi
+
       - name: CodeCov
         uses: codecov/codecov-action@v1
         with:
@@ -81,25 +79,29 @@ jobs:
       CI_OS: ubuntu-latest
       PACKAGE: "kissim"
       PYVER: "3.8"
+
     steps:
       - name: Checkout the code
         uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+
+      - uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: "3.8"
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          activate-environment: test
           environment-file: devtools/conda-envs/test_env.yaml
+          environment-name: test
           channels: conda-forge,defaults
+          extra-specs: |
+            python=3.8
+
       - name: Install linter and formatter
         shell: bash -l {0}
         run: |
-          conda install -y pylint black
+          micromamba install -y pylint black
+
       - name: Run pylint
         shell: bash -l {0}
         run: |
           pylint $PACKAGE/
+
       - name: Run black check
         shell: bash -l {0}
         if: always()
@@ -108,17 +110,22 @@ jobs:
 
   lint-format-notebooks:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-python@v2
+
       - name: Install notebook linter and formatter
         run: |
           python -m pip install black-nb
           python -m pip install flake8-nb
+
       - name: Run black-nb
         shell: bash
         run: |
           black-nb -l 99 --check docs/tutorials/*ipynb
+
       - name: Run flake8-nb
         shell: bash
         run: |

@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-    # Base depends
-  - python>=3.6
+  # Base depends
+  - python>=3.8
   - pip
     # Package dependencies
   - tqdm
@@ -32,5 +32,5 @@ dependencies:
   - black
   - pylint
   - pip:
-    - black-nb
-    - flake8-nb
+      - black-nb
+      - flake8-nb

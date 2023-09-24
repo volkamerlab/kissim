@@ -15,31 +15,36 @@ jobs:
   docs:
     name: Docs
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+
+      - uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: "3.8"
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          activate-environment: test
           environment-file: devtools/conda-envs/test_env.yaml
+          environment-name: test
           channels: conda-forge,defaults
+          extra-specs: |
+            python=3.8
+
       - name: Additional info about the build
         shell: bash
         run: |
           uname -a
           df -h
           ulimit -a
+
       - name: Install package
         shell: bash -l {0}
         run: |
           pip install . --no-deps -vv
+
       - name: Environment Information
         shell: bash -l {0}
         run: |
           conda info --all
           conda list
+
       - name: Run Sphinx
         shell: bash -l {0}
         run: |
